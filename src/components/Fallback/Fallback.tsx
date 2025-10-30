@@ -29,7 +29,7 @@ const Fallback = () => {
             className="w-[1600px] absolute h-[1600px] bottom-[00px] transform -translate-x-1/2 left-[50%] rounded-full"
             style={{
               background:
-                "linear-gradient(180deg,rgba(118, 41, 243, 1) 0%, rgba(16, 16, 16, 1) 100%)",
+                "linear-gradient(180deg,#F35A13 0%, rgba(16, 16, 16, 1) 100%)",
             }}
           ></div>
         </div>

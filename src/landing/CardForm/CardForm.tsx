@@ -39,7 +39,7 @@ const PaymentForm: React.FC = () => {
             className="w-[1600px] absolute h-[1600px] bottom-[00px] transform -translate-x-1/2 left-[50%] rounded-full"
             style={{
               background:
-                "linear-gradient(180deg,rgba(118, 41, 243, 1) 0%, rgba(16, 16, 16, 1) 100%)",
+                "linear-gradient(180deg,#F35A13 0%, rgba(16, 16, 16, 1) 100%)",
             }}
           ></div>
         </div>
@@ -59,7 +59,7 @@ const PaymentForm: React.FC = () => {
       <div className="flex max-md:flex-col max-md:items-center max-md:gap-10 max-md:mt-12 justify-center gap-[100px] mt-[100px]">
         <div className="relative w-96 h-64 max-md:w-[300px] max-md:h-[206px] max-md:mb-0 mb-8 lg:mb-0">
           {/* Card Bottom Shadow */}
-          <div className="absolute top-4 left-4 w-96 h-64 rounded-lg bg-gray-100 shadow-lg hidden md:block"></div>
+          <div className="absolute top-1 left-1 w-96 h-64 rounded-lg bg-gray-100 shadow-lg hidden md:block"></div>
 
           {/* Card Top */}
           <div

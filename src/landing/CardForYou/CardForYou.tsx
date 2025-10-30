@@ -12,7 +12,7 @@ const firstRow = [
 
 const CardForYou = () => {
   return (
-    <div className="py-30 max-md:py-[100px] max-md:h-auto overflow-hidden h-screen flex flex-col justify-center">
+    <div className="py-30 bg-black max-md:py-[100px] max-md:h-auto overflow-hidden h-screen flex flex-col justify-center">
       <h2 className="text-white mb-18 max-md:mb-10 text-center font-butlerpro text-[80px] max-md:text-[48px] font-medium leading-[120%] tracking-[-3.84px] font-kerning-none font-feature-settings-liga-off">
         {/* Get the card built <br /> for you */}
         Pick from the
