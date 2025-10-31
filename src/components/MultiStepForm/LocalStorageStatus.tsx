@@ -5,7 +5,6 @@ export const LocalStorageStatus: React.FC = () => {
   const {
     hasStoredData,
     isDataRecent,
-    lastUpdated,
     getStoredDataAge,
     clearStoredData,
     loadStoredData,

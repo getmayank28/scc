@@ -18,6 +18,7 @@ const CreditCard = ({ background = 'linear-gradient(90deg, #454893 10%, #15162D 
             }}
         >
             <Comp className="w-96 h-[250px]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/images/card-gradient.png" className="w-96  h-[250px]" alt="card" draggable="false" />
                 <div className="absolute bottom-2 right-4">
                     <svg
@@ -88,7 +89,7 @@ const CreditCard = ({ background = 'linear-gradient(90deg, #454893 10%, #15162D 
                 <div className="absolute top-[61%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
                     <div className="flex flex-col w-[150px]">
                         <span className="text-[16px] font-medium capitalize">
-                            Mayank sonkar
+                            Jhon Doe
                         </span>
                     </div>
                 </div>

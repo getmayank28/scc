@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header"
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect"
 import { CardSpotlight } from "@/components/ui/card-spotlight"
-import { WavyBackground } from "@/components/ui/wavy-background"
 import { Footer } from "@/landing/Footer"
 import { divider } from "../page"
 import Tagline from "@/components/LandingAnimation/Tagline/Tagline"

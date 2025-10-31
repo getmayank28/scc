@@ -2,8 +2,6 @@ import { FormData } from "../../components/MultiStepForm/types";
 import { INITIAL_FORM_DATA } from "../../components/MultiStepForm/constants";
 
 const FORM_STORAGE_KEY = "credit_card_form_data";
-const STEP_STORAGE_KEY = "credit_card_current_step";
-const ACCURACY_MODE_STORAGE_KEY = "credit_card_accuracy_mode";
 
 export interface StoredFormState {
   formData: FormData;

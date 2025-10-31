@@ -33,7 +33,7 @@ const HowItWorks = () => {
       <div className='flex items-center gap-10 mt-18'>
         {
           features.map((feature, index) => (
-            <GlareCard className="flex flex-col items-center justify-center bg-[#101010]">
+            <GlareCard key={feature.title} className="flex flex-col items-center justify-center bg-[#101010]">
               <Card key={index} icon={feature.icon} title={feature.title} description={feature.description} />
             </GlareCard>
           ))

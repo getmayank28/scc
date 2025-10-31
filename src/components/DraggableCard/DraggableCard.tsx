@@ -36,7 +36,7 @@ const DraggableCard = () => {
                 If its your first card, you have to choose right.
             </p>
             {items.map((item) => (
-                <DraggableCardBody className={item.className}>
+                <DraggableCardBody key={item?.cardBackground} className={item.className}>
                     <div className="rotate-90">
                         <CreditCard background={item?.cardBackground} isCardSpotlightActive={false} />
                     </div>

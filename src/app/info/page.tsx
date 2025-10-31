@@ -1,46 +1,8 @@
 import { MultiStepForm } from "@/components/MultiStepForm";
-import { cards } from "@/libs/constants";
-import { calculateTotal } from "@/libs/logic/logic";
 import React from "react";
 
-const spend = {
-  ecommerseSpend: "",
-  amazon: "1000",
-  flipkart: "1000",
-  tataNeu: "1000",
-  myntra: "1000",
-  bigBasket: "1000",
-  blinkIt: "1000",
-  ecommerseOthers: "10000",
-  travelSpend: "",
-  makeMyTrip: "1000",
-  irctc: "1000",
-  vistara: "1000",
-  airIndia: "1000",
-  indigo: "1000",
-  easeMyTrip: "1000",
-  ola: "1000",
-  uber: "1000",
-  offlineTravelSpend: "1000",
-  diningSpend: "",
-  zomato: "1000",
-  swiggy: "1000",
-  eazyDiner: "1000",
-  luxurySpend: "1000",
-  offlineApparelFashion: "1000",
-  departmentalStoresSupermarket: "1000",
-  hotelsAndHolidays: "1000",
-  movieSpend: "",
-  pvr: "1000",
-  bookMyShow: "1000",
-  fuel: "1000",
-  utility: "1000",
-  foreignCurrencyTransaction: "1000",
-  otherSpends: "1000",
-};
 
 const page = () => {
-  const cardsData = cards?.map((ele) => calculateTotal(ele, spend));
   return (
     <div className="relative h-screen max-md:h-auto max-md:px-0 px-10 items-center justify-center gap-8 pb-[200px] max-md:pb-[50px] lg:gap-16 font-sans">
       <div className="aboslute top-0">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Scale, AlertTriangle, Target, Lock, Handshake, Copyright, Mail } from 'lucide-react';
+import { AlertTriangle, Target, Lock, Handshake, Copyright, Mail } from 'lucide-react';
 import { Header } from '@/components/Header';
 import Tagline from '@/components/LandingAnimation/Tagline/Tagline';
 import { divider } from '../page';

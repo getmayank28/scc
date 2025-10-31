@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FormProvider } from "../contexts";
-import ZijusScript from "../components/ThirdParty/ZijusScript";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

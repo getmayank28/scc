@@ -21,12 +21,10 @@ export default function MultiStepForm() {
     errors,
     superAccuracyMode,
     updateFormData,
-    setCurrentStep,
     setErrors,
     setSuperAccuracyMode,
     nextStep,
     prevStep,
-    hasStoredData,
     clearStoredData,
   } = useFormContext();
 
@@ -110,7 +108,7 @@ export default function MultiStepForm() {
       <div className="max-w-2xl mx-auto">
         <div className="p-8">
           {/* Step Indicator */}
-          <StepIndicator currentStep={currentStep} totalSteps={TOTAL_STEPS} />
+          <StepIndicator currentStep={currentStep} />
 
           {/* Step Title */}
           <div className="text-center mb-6">

@@ -1,6 +1,5 @@
 import {
   User,
-  Check,
   ShoppingCart,
   Plane,
   HandPlatter,

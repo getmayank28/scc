@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Lock, Eye, Cookie, FileText, Mail } from 'lucide-react';
+import { Lock, Eye, Cookie, FileText, Mail } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/landing/Footer';
 import Tagline from '@/components/LandingAnimation/Tagline/Tagline';

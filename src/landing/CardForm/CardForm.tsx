@@ -3,17 +3,6 @@ import { InputField, validateStep } from "@/components/MultiStepForm";
 import { useFormContext } from "@/contexts";
 import { ROUTES } from "@/libs/constants/routes";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
-
-interface PaymentFormData {
-  cardNumber: string;
-  cardHolder: string;
-  expiryMonth: string;
-  expiryYear: string;
-  cvc: string;
-  mobile: string;
-  email: string;
-}
 
 const PaymentForm: React.FC = () => {
   const { formData, errors, updateFormData, setErrors } = useFormContext();

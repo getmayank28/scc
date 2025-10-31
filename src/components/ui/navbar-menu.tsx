@@ -5,7 +5,6 @@ import { motion } from "motion/react";
 
 
 const transition = {
-  type: "spring",
   mass: 0.5,
   damping: 11.5,
   stiffness: 100,
@@ -90,6 +89,7 @@ export const ProductItem = ({
 }) => {
   return (
     <a href={href} className="flex space-x-2">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
         width={140}
@@ -109,7 +109,11 @@ export const ProductItem = ({
   );
 };
 
-export const HoveredLink = ({ children, ...rest }: any) => {
+type HoveredLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+  children?: React.ReactNode;
+};
+
+export const HoveredLink = ({ children, ...rest }: HoveredLinkProps) => {
   return (
     <a
       {...rest}

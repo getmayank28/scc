@@ -1,4 +1,3 @@
-import { useState } from "react";
 
 interface ToggleProps {
   value: string;
@@ -15,11 +14,10 @@ export default function AccuracyModeToggle({ value, onClick }: ToggleProps) {
         <div
           className={`
           w-16 h-8 rounded-full p-1 transition-all duration-700 ease-out relative overflow-hidden
-          ${
-            valueType
+          ${valueType
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/50"
               : "bg-gradient-to-r from-gray-300 to-gray-400 shadow-inner"
-          }
+            }
           group-hover:scale-105 transform
           ${valueType ? "ring-4 ring-blue-400/30" : "ring-2 ring-gray-400/20"}
         `}
@@ -87,11 +85,10 @@ export default function AccuracyModeToggle({ value, onClick }: ToggleProps) {
             <div
               className={`
               absolute inset-0 rounded-full border-2 transition-all duration-700 ease-out
-              ${
-                valueType
+              ${valueType
                   ? "border-blue-400 opacity-40 scale-150 animate-ping"
                   : "border-transparent opacity-0 scale-100"
-              }
+                }
             `}
             />
           </div>
