@@ -2,12 +2,12 @@ import { SparklesCore } from "../ui/sparkles"
 
 const CreditIntelligence = () => {
     return (
-        <div className="min-h-screen w-full bg-black flex flex-col items-center justify-center overflow-hidden rounded-md">
+        <div className="min-h-screen max-md:min-h-auto max-md:py-30 w-full bg-black flex flex-col items-center justify-center overflow-hidden rounded-md">
             <div>
-                <h1 className="text-xl font-bold text-center text-white/80 relative z-20">
+                <h1 className="text-xl max-md:text-xl font-bold text-center text-white/80 relative z-20">
                     Credit Intelligence
                 </h1>
-                <h1 className="md:text-7xl text-3xl lg:text-9xl font-bold text-center text-white/90 relative z-20">
+                <h1 className="md:text-7xl text-6xl lg:text-9xl font-bold text-center text-white/90 relative z-20">
                     Instantly
                 </h1>
             </div>

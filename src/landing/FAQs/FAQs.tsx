@@ -85,7 +85,7 @@ const FAQSection = () => {
   };
 
   return (
-    <div className="flex justify-center py-30 max-md:pt-[80px] relative z-10 -mt-0.5 text-black max-md:px-6">
+    <div className="flex justify-center py-30 max-md max-md:pt-[80px] relative z-10 -mt-0.5 text-black max-md:px-6">
       <div className="flex flex-col flex-wrap items-center lg:flex-nowrap container relative justify-between tracking-tighter">
         <div className="relative pb-[82px]">
           <h2 className="text-white text-center font-butlerpro text-[64px] font-medium leading-[120%] tracking-[-3.84px] font-kerning-none font-feature-settings-liga-off">

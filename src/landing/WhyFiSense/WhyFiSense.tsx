@@ -28,8 +28,8 @@ const WhyFiSense = () => {
       <h1 className="text-[#FFF] text-center font-butlerpro text-[80px] font-medium leading-[110%] tracking-[-6px] max-md:text-[56px] max-md:tracking-[-0.4px]">
         Why choose FiSense
       </h1>
-      <div className='h-30 w-full absolute top-[430px] bg-[#F35A13]/20'></div>
-      <div className='flex items-center gap-10 mt-18'>
+      <div className='h-30 w-full absolute top-[430px] max-md:hidden bg-[#F35A13]/20'></div>
+      <div className='flex items-center gap-10 mt-18 max-md:justify-center flex-wrap max-md:px-6'>
         {
           whyFisense.map((feature, index) => (
             <GlareCard key={feature.title} className="flex flex-col items-center justify-center bg-[#101010]">
@@ -39,7 +39,6 @@ const WhyFiSense = () => {
         }
       </div>
     </div>
-
   )
 }
 

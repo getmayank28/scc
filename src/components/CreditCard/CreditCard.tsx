@@ -4,14 +4,14 @@ import { CardSpotlight } from "../ui/card-spotlight"
 const CreditCard = ({ background = 'linear-gradient(90deg, #454893 10%, #15162D 100%)', isCardSpotlightActive = true }: { background?: string, isCardSpotlightActive?: boolean }) => {
     const Comp = isCardSpotlightActive ? CardSpotlight : 'div'
 
-    return <div className="relative w-96 h-[250px] max-md:w-[300px] max-md:h-[206px] max-md:mb-0 mb-8 lg:mb-0">
+    return <div className="relative w-96 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
         {/* Card Bottom Shadow */}
-        <div className="absolute top-[1px] left-[1px] w-96 h-[250px] rounded-lg bg-[#666666] shadow-lg hidden md:block"></div>
+        <div className="absolute top-[1px] left-[1px] w-96 h-[250px] max-md:w-[280px] max-md:h-[190px]  rounded-lg bg-[#666666] shadow-lg hidden md:block"></div>
 
         {/* Card Top */}
 
         <div
-            className="absolute top-0 left-0 w-96 h-[250px] max-md:w-[300px] max-md:h-[206px] rounded-lg shadow-xl overflow-hidden"
+            className="absolute top-0 left-0 w-96 h-[250px] max-md:w-[280px] max-md:h-[190px] rounded-lg shadow-xl overflow-hidden"
             style={{
                 background: background,
                 fontFamily: "Odibee Sans, Montserrat, sans-serif",
