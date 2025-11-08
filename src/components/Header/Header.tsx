@@ -16,6 +16,7 @@ const Header = ({ className }: { className?: string }) => {
           <div className="flex gap-4 items-center">
             <HoveredLink href="/">Home</HoveredLink>
             <HoveredLink href="/about">About</HoveredLink>
+            <HoveredLink href="/card">Card</HoveredLink>
           </div>
         </div>
       </Menu>
