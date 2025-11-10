@@ -28,13 +28,13 @@ const HowItWorks = () => {
       <h1 className="text-[#FFF] text-center font-butlerpro text-[80px] font-medium leading-[110%] tracking-[-6px] max-md:text-[56px] max-md:tracking-[-0.4px]">
         How it works
       </h1>
-      <div className='h-30 w-full absolute top-[430px] bg-[#F35A13]/20 max-md:hidden'></div>
+      <div className='h-30 w-full absolute top-[calc(50%+80px)] translate-y-[-50%] bg-[#F35A13]/20 max-md:hidden'></div>
 
       <div className='flex items-center max-md:justify-center gap-10 mt-18 flex-wrap max-md:px-6'>
         {
-          features.map((feature, index) => (
+          features.map((feature) => (
             <GlareCard key={feature.title} className="flex flex-col items-center justify-center bg-[#101010]">
-              <Card key={index} icon={feature.icon} title={feature.title} description={feature.description} />
+              <Card icon={feature.icon} title={feature.title} description={feature.description} />
             </GlareCard>
           ))
         }

@@ -2,7 +2,7 @@ import { WavyBackground } from "@/components/ui/wavy-background"
 
 const Tagline = () => {
     return (
-        <div className="text-center mt-[180px] max-md:mt-0 relative !h-[60vh] max-md:h-[50vh]  overflow-hidden">
+        <div className="text-center py-10 relative !h-[60vh] max-md:h-[50vh]  overflow-hidden">
             <WavyBackground containerClassName="absolute top-[-30%] max-md:top-[-35%]" className="max-w-4xl mx-auto pb-40">
                 <div></div>
             </WavyBackground>
