@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Card from "./card";
-import { camelCaseToWords, formatAmount } from "@/libs/utils";
+import { camelCaseToWords, formatAmount } from "@/lib/utils/index";
 import Fallback from "@/components/Fallback";
 
 const CardsRecommendations = () => {

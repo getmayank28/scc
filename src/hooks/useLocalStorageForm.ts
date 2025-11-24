@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { FormLocalStorage, StoredFormState } from "../libs/utils/localStorage";
+import { FormLocalStorage, StoredFormState } from "../lib/utils/localStorage";
 import { FormData } from "../components/MultiStepForm/types";
 
 export interface UseLocalStorageFormReturn {

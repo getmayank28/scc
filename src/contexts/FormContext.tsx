@@ -8,12 +8,12 @@ import React, {
 } from "react";
 import { FormData, FormErrors } from "../components/MultiStepForm/types";
 import { INITIAL_FORM_DATA } from "../components/MultiStepForm/constants";
-import { FormLocalStorage } from "../libs/utils";
+import { FormLocalStorage } from "../lib/utils";
 import {
   DINING_AND_MOVIE_SPEND,
   ECOMMERCE_SPEND,
   TRAVEL_SPEND,
-} from "@/libs/constants";
+} from "@/lib/constants";
 
 interface FormContextType {
   formData: FormData;

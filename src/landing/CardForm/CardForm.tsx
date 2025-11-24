@@ -1,7 +1,7 @@
 "use client";
 import { InputField, validateStep } from "@/components/MultiStepForm";
 import { useFormContext } from "@/contexts";
-import { ROUTES } from "@/libs/constants/routes";
+import { ROUTES } from "@/lib/constants/routes";
 import { useRouter } from "next/navigation";
 
 const PaymentForm: React.FC = () => {

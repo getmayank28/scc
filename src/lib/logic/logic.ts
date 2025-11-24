@@ -1,4 +1,4 @@
-import { BENEFIT_TYPES, cardRules } from "../constants";
+import { BENEFIT_TYPES, cardRules } from "../../lib/constants";
 
 // Define types for better type safety
 type CardType = keyof typeof cardRules;

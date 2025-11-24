@@ -1,5 +1,5 @@
 "use client";
-import { ROUTES } from "@/libs/constants/routes";
+import { ROUTES } from "@/lib/constants/routes";
 import { HoverBorderGradient } from "../ui/hover-border-gradient";
 import { useRouter } from "next/navigation";
 

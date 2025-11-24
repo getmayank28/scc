@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ROUTES } from "@/libs/constants/routes";
+import { ROUTES } from "@/lib/constants/routes";
 
 const Fallback = () => {
   const router = useRouter();
