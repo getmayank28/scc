@@ -1,12 +1,14 @@
-import { resend } from "@/lib/utils/resend";
+import { EmailTemplate } from "@/emails/EmailsTemplate";
 import { ApiResponse } from "@/types/ApiResponse";
-import { EmailTemplate } from "../../emails/emailsTemplate";
+import { Resend } from "resend";
 
 interface SendVerificationEmailProps {
   email: string;
   username: string;
   verificationCode: string;
 }
+
+const resend = new Resend("re_dkHwXEzF_3Hm1pbQ9GJm9LzBN1oDFdWpQ");
 
 export async function sendVerificationEmail({
   email,
@@ -15,11 +17,12 @@ export async function sendVerificationEmail({
 }: SendVerificationEmailProps): Promise<ApiResponse> {
   try {
     await resend.emails.send({
-      from: "Acme <onboarding@resend.dev>",
+      from: "Fisense <support@gofisense.com>",
       to: [email],
       subject: "Fisense | Verification code",
-      react: EmailTemplate({ username, verificationCode }),
+      html: `<div><h1>Hello ${username}</h1><h1>verifictaion code: ${verificationCode}</h1></div>`,
     });
+
     return { success: true, message: "Verification email sends successfully" };
   } catch (error) {
     console.error("Error sending verification email", error);

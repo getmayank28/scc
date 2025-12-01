@@ -1,6 +1,5 @@
 import { BENEFIT_TYPES, cardRules } from "../../lib/constants";
 
-// Define types for better type safety
 type CardType = keyof typeof cardRules;
 type Category = string;
 type Spend = string;
@@ -79,8 +78,3 @@ export function calculateTotal(
 
   return { cardType: cardType, breakdown, total: total.toFixed(2) };
 }
-
-// Example usage
-
-// console.log("Card C benefits:", calculateTotal("C", spendCategories));
-// console.log("Card E benefits:", calculateTotal("E", spendCategories));

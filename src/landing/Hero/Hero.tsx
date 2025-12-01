@@ -3,8 +3,11 @@
 import { LandingAnimation } from "@/components/LandingAnimation";
 import { ActionButton } from "@/components/ui/action-button";
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect";
+import { ROUTES } from "@/lib/constants/routes";
+import { useRouter } from "next/navigation";
 
 const Hero = () => {
+  const router = useRouter()
   return (
     <div className="flex bg-[#101010] overflow-hidden flex-col max-md:px-0 items-center justify-center pt-[220px] max-md:pt-[180px] max-md:pb-[0px] relative z-10">
       <BackgroundRippleEffect rows={18} />
@@ -23,7 +26,7 @@ const Hero = () => {
             </span>
           </p>
         </div>
-        <ActionButton title="Find my card" />
+        <ActionButton title="Find my card" onClick={() => router.push(ROUTES.CARD)}/>
       </div>
       <div className="relative overflow-hidden w-full  flex justify-center items-center mt-[70px]">
         <div className="w-[70%] relative my-10 -top-[60px] max-md:w-[300px] z-[101] h-[392px] max-md:h-[290px]">

@@ -2,8 +2,11 @@
 
 import { DraggableCard } from "@/components/DraggableCard";
 import { ActionButton } from "@/components/ui/action-button";
+import { ROUTES } from "@/lib/constants/routes";
+import { useRouter } from "next/navigation";
 
 const GetCard = () => {
+  const router = useRouter()
   return (
     <div className="border-0 max-md:py-30 min-xl:pt-[170px] min-h-screen bg-black border-white flex flex-col h-screen max-md:h-auto justify-center">
       <div className="max-md:px-0  max-md:gap-10 max-md:h-auto flex max-md:flex-col-reverse w-[80%] max-md:w-full mx-auto relative">
@@ -12,7 +15,7 @@ const GetCard = () => {
             Get the card <br className="max-md:hidden" />
             built for you
           </h2>
-          <ActionButton title="Find my card" />
+          <ActionButton title="Find my card" onClick={() => router.push(ROUTES.CARD)} />
         </div>
         <div className="grow w-[60%] max-md:w-[100%] h-[80vh] max-md:h-[60vh] overflow-hidden flex items-start justify-end">
           <DraggableCard />

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "motion/react";
+import { cn } from "@/lib/utils";
 
 
 
@@ -111,13 +112,14 @@ export const ProductItem = ({
 
 type HoveredLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
   children?: React.ReactNode;
+  className?:string
 };
 
-export const HoveredLink = ({ children, ...rest }: HoveredLinkProps) => {
+export const HoveredLink = ({ children,className, ...rest }: HoveredLinkProps) => {
   return (
     <a
       {...rest}
-      className="text-neutral-200 hover:text-white/60 "
+      className={cn("text-neutral-200 hover:text-white/60", className)}
     >
       {children}
     </a>
