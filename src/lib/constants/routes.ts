@@ -10,4 +10,5 @@ export const ROUTES = {
   SIGN_IN: "/sign-in",
   VERIFY_EMAIL: "/verify",
   GREET: "/greet",
+  SAVING_CALCULATOR: "/tools/saving-calculator",
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CreditCard } from '../CreditCard';
 
-const LandingAnimation = () => {
+const LandingAnimation = ({cardBackground}:{cardBackground?:string}) => {
     return (
         <div className="w-full max-w-7xl px-5 py-0 flex items-center justify-center mx-auto">
             {/* Card Stack Container */}
@@ -47,7 +47,7 @@ const LandingAnimation = () => {
                         e.currentTarget.style.boxShadow = '0 20px 60px rgba(0,0,0,0.3)';
                     }}
                 >
-                    <CreditCard />
+                    <CreditCard background={cardBackground}/>
                 </div>
             </div>
         </div>
