@@ -1,9 +1,9 @@
 import React from 'react';
 import { FileText, Info, AlertCircle, Shield, Link2, RefreshCw, Mail } from 'lucide-react';
 import Tagline from '@/components/LandingAnimation/Tagline/Tagline';
-import { divider } from '../page';
 import { Footer } from '@/landing/Footer';
 import { Header } from '@/components/Header';
+import { divider } from '../../../public/images/divider';
 
 export default function TermsConditions() {
   const sections = [

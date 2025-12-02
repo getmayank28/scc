@@ -95,7 +95,7 @@ export default function ChatbotUI() {
     setIsTyping(false);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e:React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();

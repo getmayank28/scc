@@ -13,7 +13,8 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials): Promise<any> {
+      // @ts-expect-error some
+      async authorize(credentials): Promise<unknown> {
         if (!credentials || !credentials.email || !credentials.password) {
           throw new Error("Missing credentials");
         }

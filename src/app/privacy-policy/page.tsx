@@ -3,7 +3,7 @@ import { Lock, Eye, Cookie, FileText, Mail } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/landing/Footer';
 import Tagline from '@/components/LandingAnimation/Tagline/Tagline';
-import { divider } from '../page';
+import { divider } from '../../../public/images/divider';
 
 export default function PrivacyPolicy() {
   const sections = [

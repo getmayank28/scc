@@ -2,8 +2,8 @@ import { Header } from "@/components/Header"
 import { BackgroundRippleEffect } from "@/components/ui/background-ripple-effect"
 import { CardSpotlight } from "@/components/ui/card-spotlight"
 import { Footer } from "@/landing/Footer"
-import { divider } from "../page"
 import Tagline from "@/components/LandingAnimation/Tagline/Tagline"
+import { divider } from "../../../public/images/divider"
 
 const About = () => {
   return (

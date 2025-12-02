@@ -17,12 +17,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(ROUTES.CARD, request.url));
   }
 
-  // if (!token && url.pathname.startsWith(ROUTES.CARD)) {
-  //   return NextResponse.redirect(new URL(ROUTES.SIGN_IN, request.url));
-  // }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [ROUTES.SIGN_IN, ROUTES.SIGN_UP, ROUTES.HOME, ROUTES.VERIFY_EMAIL],
+  matcher: ["/sign-in", "/sign-up", "/", "/verify"],
 };

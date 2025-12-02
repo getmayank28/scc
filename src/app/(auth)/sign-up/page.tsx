@@ -74,7 +74,7 @@ const SignUp = () => {
     if (usernameData?.success) {
       form.clearErrors("username");
     }
-  }, [username, usernameError?.status, usernameData?.success]);
+  }, [username, (usernameError as APIFailure)?.status, usernameData?.success]);
 
   useEffect(() => {
     if (createAccountData && createAccountData?.success) {

@@ -1,8 +1,8 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+// import { cn } from "@/lib/utils";
 
 interface GoalCardProps {
   icon: LucideIcon;
@@ -19,7 +19,7 @@ export default function DataCard({
   icon: Icon,
   title,
   description,
-  progressPercentage,
+  // progressPercentage,
   color = "purple",
   backgroundColor = "purple",
   isActive, 

@@ -55,7 +55,7 @@ export function HoverBorderGradient<E extends React.ElementType = "button">({
       }, duration * 1000);
       return () => clearInterval(interval);
     }
-  }, [hovered,duration,rotateDirection]);
+  }, [hovered,duration]);
   const Tag = (as ?? "button") as E;
   const Comp = Tag as unknown as React.ElementType;
   return React.createElement(

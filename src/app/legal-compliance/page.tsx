@@ -2,8 +2,8 @@ import React from 'react';
 import { AlertTriangle, Target, Lock, Handshake, Copyright, Mail } from 'lucide-react';
 import { Header } from '@/components/Header';
 import Tagline from '@/components/LandingAnimation/Tagline/Tagline';
-import { divider } from '../page';
 import { Footer } from '@/landing/Footer';
+import { divider } from '../../../public/images/divider';
 
 export default function LegalCompliance() {
   const sections = [

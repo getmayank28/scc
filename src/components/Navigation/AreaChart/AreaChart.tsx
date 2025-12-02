@@ -17,6 +17,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+interface ChartDataProp   { x: string; one: number; two: number;}
+
+interface ChartProps{
+  chartData:{
+    color:string;
+    data:ChartDataProp[]
+  }
+}
+
 export const description = "An area chart with icons";
 
 // const chartData = [
@@ -41,7 +50,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function CustomAreaChart({ chartData }) {
+export function CustomAreaChart({ chartData }:ChartProps) {
   return (
     <Card className="bg-background-primary border-none text-white p-0 gap-0">
       <CardHeader className="p-0">

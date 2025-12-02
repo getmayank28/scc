@@ -31,7 +31,7 @@ export async function POST() {
   try {
     const config = await SystemConfigModel.findOne();
     if (!config?.questionsVersion) {
-      await QuestionSetModel.create(questions as QuestionDocument);
+      await QuestionSetModel.create(questions as unknown as QuestionDocument);
 
       await SystemConfigModel.create({ questionsVersion: questions.version });
 

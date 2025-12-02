@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 export default function useNavigationGuard(props: { skip?: boolean }) {
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (props?.skip) return;
       e.preventDefault();
       e.returnValue = "";

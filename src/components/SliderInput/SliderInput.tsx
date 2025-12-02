@@ -10,7 +10,7 @@ interface SliderInputProps {
   max: number;
   onSubmit?: (value: number) => void;
   disabled?: boolean;
-  showMinMax: boolean;
+  showMinMax?: boolean;
   title?: string;
   description?: string;
   isOutsideControl?:boolean, 

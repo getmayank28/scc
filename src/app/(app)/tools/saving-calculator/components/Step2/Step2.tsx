@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { CustomAreaChart } from "@/components/Navigation/AreaChart/AreaChart";
 import DataCard from "@/components/DataCard/DataCard";
 import { IndianRupee, Newspaper, QrCode } from "lucide-react";

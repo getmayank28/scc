@@ -8,10 +8,10 @@ import Step3 from "./components/Step3/Step3";
 import Typography from "@/components/Typography/Typography";
 import Tagline from "@/components/LandingAnimation/Tagline/Tagline";
 import { Footer } from "@/landing/Footer";
-import { divider } from "@/app/page";
 import { ActionButton } from "@/components/ui/action-button";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
+import { divider } from "../../../../../public/images/divider";
 
 const SavingCalculator = () => {
   const [spends, setSpends] = useState<SpendProps>({
