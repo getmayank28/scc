@@ -1,4 +1,4 @@
-import useIsMobile from "@/libs/hooks/useIsMobile";
+import useIsMobile from "@/lib/hooks/useIsMobile";
 import { STEP_CONFIGS } from "./constants";
 
 interface StepIndicatorProps {

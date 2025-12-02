@@ -8,9 +8,9 @@ import { Toggle } from "../Toggle";
 import { useFormContext } from "../../contexts";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { calculateTotal } from "@/libs/logic/logic";
 import { cards } from "@/lib/constants";
 import { cardBenefits } from "@/lib/constants/cardBenefits";
+import { calculateTotal } from "@/lib/logic/logic";
 
 type CardBenefitsKeys = keyof typeof cardBenefits;
 

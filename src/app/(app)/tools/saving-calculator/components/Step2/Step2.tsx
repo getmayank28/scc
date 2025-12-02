@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { CustomAreaChart } from "@/components/Navigation/AreaChart/AreaChart";
 import DataCard from "@/components/DataCard/DataCard";
-import { HandCoins, IndianRupee, Newspaper, QrCode } from "lucide-react";
+import { IndianRupee, Newspaper, QrCode } from "lucide-react";
 import { SpendProps } from "../../types";
 import { calculateRewards } from "../../logic";
 import Typography from "@/components/Typography/Typography";
@@ -56,11 +56,11 @@ const Step2 = ({ spends }: Step2Props) => {
     },
   };
 
-  const totalSpend = useMemo(() => {
-    return (
-      spends.offlineSpend + spends.onlineBillPayment + spends.onlineShopping
-    );
-  }, [spends]);
+  // const totalSpend = useMemo(() => {
+  //   return (
+  //     spends.offlineSpend + spends.onlineBillPayment + spends.onlineShopping
+  //   );
+  // }, [spends]);
 
   const items = [
     {

@@ -1,4 +1,3 @@
-import { EmailTemplate } from "@/emails/EmailsTemplate";
 import { ApiResponse } from "@/types/ApiResponse";
 import { Resend } from "resend";
 

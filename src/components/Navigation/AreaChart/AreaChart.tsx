@@ -1,14 +1,11 @@
 "use client";
 
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { Area, AreaChart, LabelList, Tooltip, XAxis } from "recharts";
+import { Area, AreaChart,  XAxis } from "recharts";
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
 
 import {

@@ -56,7 +56,7 @@ export default function ChatbotUI() {
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [data?.result]);
+  }, [data?.result, currentMessageNumber]);
 
 
 
