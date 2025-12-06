@@ -3,7 +3,6 @@ import { Resend } from "resend";
 
 interface SendVerificationEmailProps {
   email: string;
-  username: string;
   verificationCode: string;
 }
 
@@ -11,7 +10,6 @@ const resend = new Resend("re_dkHwXEzF_3Hm1pbQ9GJm9LzBN1oDFdWpQ");
 
 export async function sendVerificationEmail({
   email,
-  username,
   verificationCode,
 }: SendVerificationEmailProps): Promise<ApiResponse> {
   try {
@@ -19,7 +17,7 @@ export async function sendVerificationEmail({
       from: "Fisense <support@gofisense.com>",
       to: [email],
       subject: "Fisense | Verification code",
-      html: `<div><h1>Hello ${username}</h1><h1>verifictaion code: ${verificationCode}</h1></div>`,
+      html: `<div><h1>Hello </h1><h1>verifictaion code: ${verificationCode}</h1></div>`,
     });
 
     return { success: true, message: "Verification email sends successfully" };

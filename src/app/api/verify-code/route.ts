@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { username, code } = await request.json();
     const decodedUsername = decodeURIComponent(username);
 
-    const user = await UserModal.findOne({ username: decodedUsername });
+    const user = await UserModal.findOne({ email: decodedUsername });
 
     if (!user) {
       return ApiResponse.error("User not found", 404);

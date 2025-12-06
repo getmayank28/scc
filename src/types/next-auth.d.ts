@@ -6,6 +6,7 @@ declare module "next-auth" {
     _id?: string;
     isVerified?: boolean;
     username?: string;
+    provider?: "google" | "credentials";
   }
 
   interface Session {

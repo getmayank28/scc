@@ -1,8 +1,10 @@
-import dbConnect from "@/lib/utils/dbConnet";
-import UserModal from "@/models/User";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import bcrypt from "bcrypt";
+import GoogleProvider from "next-auth/providers/google";
+import dbConnect from "@/lib/utils/dbConnet";
+import UserModal from "@/models/User";
+import { handleCredentialsAuth } from "../../utils/handleCredentialsAuth";
+import { AUTH_PROVIDERS } from "@/lib/constants/auth";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,69 +15,71 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      // @ts-expect-error some
-      async authorize(credentials): Promise<unknown> {
-        if (!credentials || !credentials.email || !credentials.password) {
-          throw new Error("Missing credentials");
-        }
+      authorize: handleCredentialsAuth,
+    }),
 
-        await dbConnect();
-        try {
-          const user = await UserModal.findOne({
-            $or: [
-              { email: credentials.email },
-              { username: credentials.password },
-            ],
-          });
-
-          if (!user) {
-            throw new Error("No user found");
-          }
-
-          if (!user.isVerified) {
-            throw new Error("Please verify your account first");
-          }
-
-          const isPasswordCorrect = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-
-          if (isPasswordCorrect) {
-            return user;
-          } else {
-            throw new Error("Incorrect Password");
-          }
-        } catch (err) {
-          throw new Error(err instanceof Error ? err.message : String(err));
-        }
-      },
+    GoogleProvider({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
     }),
   ],
+
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token._id = user?._id?.toString();
-        token.isVerified = user?.isVerified;
-        token.username = user?.username;
+    async signIn({ user }) {
+      await dbConnect();
+
+      const existingUser = await UserModal.findOne({ email: user.email });
+      if (!existingUser) {
+        await UserModal.create({
+          provider: AUTH_PROVIDERS.GOOGLE,
+          email: user.email,
+          isVerified: true,
+        });
+      }
+      console.log(user, "cddchbddjndj");
+      if (
+        existingUser &&
+        existingUser.provider === AUTH_PROVIDERS.CREDENTIALS &&
+        user &&
+        user.provider !== AUTH_PROVIDERS.CREDENTIALS
+      ) {
+        existingUser.isVerified = true;
+        existingUser.provider = AUTH_PROVIDERS.GOOGLE;
+        existingUser.password = "";
+        await existingUser.save();
+        return true;
       }
 
+      return true;
+    },
+
+    async jwt({ token, user }) {
+      await dbConnect();
+      if (user) {
+        token._id = user._id?.toString();
+        token.isVerified = user.isVerified;
+        token.name = user.name;
+        token.email = user.email;
+      }
       return token;
     },
+
     async session({ session, token }) {
-      if (token) {
-        session.user._id = token._id;
-        session.user.isVerified = token.isVerified;
-        session.user.username = token.username;
-      }
+      session.user._id = token._id;
+      session.user.isVerified = token.isVerified;
+      session.user.name = token.name;
+      session.user.email = token.email;
       return session;
     },
   },
+
   pages: {
     signIn: "/sign-in",
   },
+
   session: {
     strategy: "jwt",
   },
+
   secret: process.env.NEXT_AUTH_SECRET,
 };
