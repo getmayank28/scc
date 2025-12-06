@@ -1,4 +1,5 @@
 "use client";
+import ResendOTP from "@/components/ResendOTP/ResendOTP";
 import { Button } from "@/components/ui/button";
 import {
   FormControl,
@@ -80,6 +81,8 @@ const VerifyAccount = () => {
                 </FormItem>
               )}
             />
+            {/* <OTPInput/> */}
+            <ResendOTP email={params.username as string}/>
             <Button
               className="w-full mt-6 rounded-full h-12 cursor-pointer bg-primary-orange/70 hover:bg-primary-orange"
               type="submit"

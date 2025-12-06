@@ -46,7 +46,7 @@ const SignInSection = () => {
           const message = result?.error || "Failed to sign-in";
           toast.error(message);
         } else if (result?.url) {
-          router.replace("/chat");
+          router.replace(`/verify/${data.identifier.trim()}`);
         } else {
           toast.error("Something went wrong");
           console.log("Sign-in error", result);

@@ -13,6 +13,15 @@ export const api = createApi({
         params: { username },
       }),
     }),
+    sendVerificationCode: builder.mutation({
+      query: ({ email }) => ({
+        url: "/send-verification-code",
+        method: "POST",
+        body: {
+          email,
+        },
+      }),
+    }),
     createAccount: builder.mutation({
       query: (body) => ({
         url: "/sign-up",
@@ -35,4 +44,5 @@ export const {
   useLazyCheckUsernameAvailabilityQuery,
   useCreateAccountMutation,
   useVerifyCodeMutation,
+  useSendVerificationCodeMutation,
 } = api;
