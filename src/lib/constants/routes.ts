@@ -11,4 +11,5 @@ export const ROUTES = {
   VERIFY_EMAIL: "/verify",
   GREET: "/greet",
   SAVING_CALCULATOR: "/tools/saving-calculator",
+  CHANGE_PASSWORD: "/change-password",
 };

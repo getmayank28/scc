@@ -31,21 +31,24 @@ export const authOptions: NextAuthOptions = {
       const existingUser = await UserModal.findOne({ email: user.email });
       if (!existingUser) {
         await UserModal.create({
-          provider: AUTH_PROVIDERS.GOOGLE,
-          email: user.email,
           isVerified: true,
+          provider: [AUTH_PROVIDERS.GOOGLE],
+          email: user.email,
         });
       }
-      console.log(user, "cddchbddjndj");
-      if (
+
+      const existingUserWithCredentialsNowTryingGoogle =
         existingUser &&
-        existingUser.provider === AUTH_PROVIDERS.CREDENTIALS &&
+        existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
         user &&
-        user.provider !== AUTH_PROVIDERS.CREDENTIALS
-      ) {
+        !user.provider;
+
+      if (existingUserWithCredentialsNowTryingGoogle) {
         existingUser.isVerified = true;
-        existingUser.provider = AUTH_PROVIDERS.GOOGLE;
-        existingUser.password = "";
+        existingUser.provider = [
+          ...existingUser.provider,
+          AUTH_PROVIDERS.GOOGLE,
+        ];
         await existingUser.save();
         return true;
       }
@@ -60,6 +63,11 @@ export const authOptions: NextAuthOptions = {
         token.isVerified = user.isVerified;
         token.name = user.name;
         token.email = user.email;
+      } else {
+        const dbUser = await UserModal.findById(token._id);
+        if (dbUser) {
+          token.isVerified = dbUser.isVerified;
+        }
       }
       return token;
     },
@@ -76,7 +84,6 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/sign-in",
   },
-
   session: {
     strategy: "jwt",
   },

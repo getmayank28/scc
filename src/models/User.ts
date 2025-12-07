@@ -1,12 +1,13 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export type AuthProviderType = "credentials" | "google";
 export interface User extends Document {
   email: string;
   password?: string;
   verificationCode?: string;
   verificationCodeExpiry?: Date;
   isVerified: boolean;
-  provider: "credentials" | "google";
+  provider: Array<AuthProviderType>;
   name?: string;
   failedLoginAttempts?: number;
   lastFailedLogin?: Date;
@@ -36,10 +37,10 @@ const UserSchema: Schema<User> = new Schema({
     default: false,
   },
   provider: {
-    type: String,
+    type: [String],
     required: true,
     enum: ["credentials", "google"],
-    default: "credentials",
+    default: ["credentials"],
   },
   name: {
     type: String,
@@ -48,6 +49,7 @@ const UserSchema: Schema<User> = new Schema({
   failedLoginAttempts: {
     type: Number,
     default: 0,
+    required: false,
   },
   lastFailedLogin: {
     type: Date,

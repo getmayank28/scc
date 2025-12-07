@@ -17,9 +17,9 @@ export const createUserWithVerification = async (
     verificationCode: code,
     verificationCodeExpiry: expiry,
     isVerified: false,
-    provider: AUTH_PROVIDERS.CREDENTIALS,
+    provider: [AUTH_PROVIDERS.CREDENTIALS],
     failedLoginAttempts: 0,
-    lastFailedLogin: null,
+    lastFailedLogin: undefined,
   });
 
   const response = await sendVerificationEmail({

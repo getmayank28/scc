@@ -44,7 +44,7 @@ const ResendOTP = ({ email }: { email: string }) => {
     <Typography
       variant="caption"
       className={`text-left my-2 cursor-pointer ${
-        timer > 0 ? "pointer-events-none opacity-50" : ""
+        timer > 0 ? "pointer-events-none opacity-50" : "font-bold"
       }`}
       onClick={handleResend}
     >

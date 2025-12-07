@@ -19,8 +19,6 @@ export async function POST(request: Request) {
       email: decodeURIComponent(userEmail),
     };
 
-    console.log(queryParams, "bhbhbhbhb");
-
     const result = EmailQuerySchema.safeParse(queryParams);
 
     if (!result.success) {

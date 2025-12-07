@@ -1,4 +1,5 @@
 "use client";
+import ChangeEmail from "@/components/ChangeEmail/ChangeEmail";
 import ResendOTP from "@/components/ResendOTP/ResendOTP";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ROUTES } from "@/lib/constants/routes";
+import { decodeBase64, encodeBase64 } from "@/lib/utils/encodeDecode";
 import { verifySchema } from "@/schemas/verifySchema";
 import { useVerifyCodeMutation } from "@/store/api";
 import { APIFailure } from "@/types/ApiResponse";
@@ -25,6 +27,10 @@ const VerifyAccount = () => {
   const router = useRouter();
   const params = useParams();
 
+
+  const email = decodeBase64(params.username as string)
+
+
   const form = useForm<z.infer<typeof verifySchema>>({
     resolver: zodResolver(verifySchema),
   });
@@ -34,22 +40,21 @@ const VerifyAccount = () => {
   useEffect(() => {
     if (data && data?.success) {
       toast.success("Successfully verified email");
-      router.replace(ROUTES.SIGN_IN);
+      router.replace(ROUTES.GREET);
     }
     if (error && (error as APIFailure)?.status) {
       const message =
-        (error as APIFailure)?.data?.message ||
-        "Failed to verify email";
+        (error as APIFailure)?.data?.message || "Failed to verify email";
       toast.error(message);
     }
   }, [(error as APIFailure)?.status, data?.success]);
 
   const onSubmit = async (data: z.infer<typeof verifySchema>) => {
     const body = {
-      username: params.username,
+      username: email,
       code: data.code,
     };
-    await verifyCode(body);
+     await verifyCode(body);
   };
 
   return (
@@ -63,8 +68,10 @@ const VerifyAccount = () => {
         <p className="text-white opacity-70 relative z-[100] text-center font-satoshi text-[14px]  font-normal leading-[150%] tracking-[-2%] [font-feature-settings:'ss03_on']">
           Enter the verification code we sent to your email.
         </p>
+       
         <Form {...form}>
           <form className="mt-10" onSubmit={form.handleSubmit(onSubmit)}>
+          <ChangeEmail email={email} />
             <FormField
               control={form.control}
               name="code"
@@ -81,8 +88,7 @@ const VerifyAccount = () => {
                 </FormItem>
               )}
             />
-            {/* <OTPInput/> */}
-            <ResendOTP email={params.username as string}/>
+              <ResendOTP email={email} />
             <Button
               className="w-full mt-6 rounded-full h-12 cursor-pointer bg-primary-orange/70 hover:bg-primary-orange"
               type="submit"

@@ -36,6 +36,13 @@ export const api = createApi({
         body,
       }),
     }),
+    changePassword: builder.mutation({
+      query: (body) => ({
+        url: "/change-password",
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -45,4 +52,5 @@ export const {
   useCreateAccountMutation,
   useVerifyCodeMutation,
   useSendVerificationCodeMutation,
+  useChangePasswordMutation,
 } = api;

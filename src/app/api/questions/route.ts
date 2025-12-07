@@ -4,8 +4,14 @@ import dbConnect from "@/lib/utils/dbConnet";
 import QuestionSetModel, { QuestionDocument } from "@/models/Question";
 import SystemConfigModel from "@/models/SystemConfig";
 import { QuestionSchema } from "@/schemas/questionSchema";
+import { authOptions } from "../auth/[...nextauth]/options";
+import { getServerSession } from "next-auth";
 
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return ApiResponse.error("Unauthorized", 401);
+  }
   await dbConnect();
 
   try {

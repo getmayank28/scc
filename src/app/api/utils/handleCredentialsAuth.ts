@@ -4,6 +4,7 @@ import { createUserWithVerification } from "./createUserWithVerification";
 import { updateUserVerification } from "./updateUserVerification";
 import { validatePassword } from "./validatePassword";
 import { AUTH_PROVIDERS } from "@/lib/constants/auth";
+import bcrypt from "bcrypt";
 
 export const handleCredentialsAuth = async (
   credentials: Record<"email" | "password", string> | undefined
@@ -29,15 +30,19 @@ export const handleCredentialsAuth = async (
     return await updateUserVerification(user, credentials.password);
   }
 
-  if (user && user.provider === AUTH_PROVIDERS.GOOGLE && !user.password) {
-    throw new Error(
-      "Google account detected. Please use the Sign in with google."
-    );
-  }
+  if (user && user.provider.includes(AUTH_PROVIDERS.GOOGLE) && !user.password) {
+    const hashedPassword = await bcrypt.hash(credentials.password, 10);
+    user.password = hashedPassword;
+    user.failedLoginAttempts = 0;
+    user.lastFailedLogin = new Date();
+    user.provider = [...user.provider, AUTH_PROVIDERS.GOOGLE];
 
+    user.save();
+
+    return user;
+  }
   // Verified User — Validate Password
   const isValid = await validatePassword(credentials.password, user.password!);
-
   if (!isValid) {
     user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
     user.lastFailedLogin = new Date();
