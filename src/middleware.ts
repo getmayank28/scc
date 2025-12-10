@@ -6,39 +6,31 @@ import { encodeBase64 } from "./lib/utils/encodeDecode";
 export { default } from "next-auth/middleware";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXT_AUTH_SECRET,
-    secureCookie: process.env.NODE_ENV === "production",
-  });
-  const url = request.nextUrl;
+  // const token = await getToken({
+  //   req: request,
+  //   secret: process.env.NEXT_AUTH_SECRET,
+  //   secureCookie: process.env.NODE_ENV === "production",
+  // });
+  // const url = request.nextUrl;
 
-  if (token && url.pathname.startsWith(ROUTES.SIGN_IN)) {
-    if (token.isVerified) {
-      return NextResponse.redirect(new URL(ROUTES.CARD, request.url));
-    } else {
-      if (token?.picture) {
-        return NextResponse.redirect(new URL(`${ROUTES.GREET}`, request.url));
-      } else {
-        const email = encodeBase64(token?.email as string);
-        return NextResponse.redirect(
-          new URL(`${ROUTES.VERIFY_EMAIL}/${email}`, request.url)
-        );
-      }
-    }
-  }
-
-  // if (
-  //   token &&
-  //   token.isVerified &&
-  //   url.pathname.startsWith(ROUTES.VERIFY_EMAIL)
-  // ) {
-  //   return NextResponse.redirect(new URL(ROUTES.CARD, request.url));
+  // if (token && url.pathname.startsWith(ROUTES.SIGN_IN)) {
+  //   if (token.isVerified) {
+  //     return NextResponse.redirect(new URL(ROUTES.CARD, request.url));
+  //   } else {
+  //     if (token?.picture) {
+  //       return NextResponse.redirect(new URL(`${ROUTES.GREET}`, request.url));
+  //     } else {
+  //       const email = encodeBase64(token?.email as string);
+  //       return NextResponse.redirect(
+  //         new URL(`${ROUTES.VERIFY_EMAIL}/${email}`, request.url)
+  //       );
+  //     }
+  //   }
   // }
 
-  if (!token && !url.pathname.startsWith(ROUTES.SIGN_IN)) {
-    return NextResponse.redirect(new URL(ROUTES.SIGN_IN, request.url));
-  }
+  // if (!token && !url.pathname.startsWith(ROUTES.SIGN_IN)) {
+  //   return NextResponse.redirect(new URL(ROUTES.SIGN_IN, request.url));
+  // }
 
   return NextResponse.next();
 }
