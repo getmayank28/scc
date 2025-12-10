@@ -1,7 +1,7 @@
 import { ActionButton } from "../ui/action-button";
 import { WavyBackground } from "../ui/wavy-background";
 
-const ChatbotGreet = ({ onClick }: { onClick: () => void }) => {
+const ChatbotGreet = ({ onClick, loading }: { onClick: () => void, loading:boolean }) => {
   return (
     <div className="h-screen flex items-center ">
       <div className="w-full px-4 flex flex-col justify-center items-center relative !h-[60vh] max-md:h-[50vh]  overflow-hidden">
@@ -14,6 +14,7 @@ const ChatbotGreet = ({ onClick }: { onClick: () => void }) => {
           So, should we start?
         </p>
         <ActionButton
+        loading={loading}
           title="Find my card"
           onClick={onClick}
           className="hover:bg-[#F35A13]/30 transition-all duration-500"

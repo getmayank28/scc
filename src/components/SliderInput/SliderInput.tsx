@@ -16,6 +16,7 @@ interface SliderInputProps {
   isOutsideControl?:boolean, 
   value?:number;
   onChange?:(value:number)=> void
+  onSelectionSubmit?:boolean
 }
 
 export default function SliderInput({
@@ -28,9 +29,10 @@ export default function SliderInput({
   description,
   isOutsideControl, 
   onChange, 
-  value
+  value, 
+  onSelectionSubmit=false
 }: SliderInputProps) {
-  const [selecteValue, setSelectedValue] = useState(10000);
+  const [selecteValue, setSelectedValue] = useState(() => value??100000);
 
 
   const inputValue = useMemo(()=> {
@@ -78,17 +80,22 @@ export default function SliderInput({
               </p>
             )}
           </div>
-          <div>
-            <Input
-              disabled={disabled}
-              type="number"
-              value={inputValue}
-              onChange={(e) => handleChange(Number(e.target.value))}
-              className="w-30 h-10 text-2xl text-center rounded-full border border-secondary-orange text-white"
-              min={min}
-              max={max}
-            />
-          </div>
+          {
+            !onSelectionSubmit&&(
+              <div>
+              <Input
+                disabled={disabled}
+                type="number"
+                value={inputValue}
+                onChange={(e) => handleChange(Number(e.target.value))}
+                className="w-30 h-10 text-2xl text-center rounded-full border border-secondary-orange text-white"
+                min={min}
+                max={max}
+              />
+            </div>
+            )
+          }
+         
         </div>
 
         {/* Slider */}

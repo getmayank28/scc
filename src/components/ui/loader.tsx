@@ -112,7 +112,7 @@ export const LoaderThree = () => {
       strokeWidth="1"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="h-20 w-20 stroke-neutral-500 [--fill-final:var(--color-yellow-300)] [--fill-initial:var(--color-neutral-50)] dark:stroke-neutral-100 dark:[--fill-final:var(--color-yellow-500)] dark:[--fill-initial:var(--color-neutral-800)]"
+      className="h-40 w-40 stroke-neutral-500 [--fill-final:var(--color-yellow-300)] [--fill-initial:var(--color-neutral-50)] dark:stroke-neutral-100 dark:[--fill-final:var(--color-yellow-500)] dark:[--fill-initial:var(--color-neutral-800)]"
     >
       <motion.path stroke="none" d="M0 0h24v24H0z" fill="none" />
       <motion.path
@@ -191,7 +191,7 @@ export const LoaderFour = ({ text = "Loading..." }: { text?: string }) => {
 
 export const LoaderFive = ({ text }: { text: string }) => {
   return (
-    <div className="font-sans font-bold [--shadow-color:var(--color-neutral-500)] dark:[--shadow-color:var(--color-neutral-100)]">
+    <div className="font-sans font-bold [--shadow-color:var(--color-neutral-100)]">
       {text.split("").map((char, i) => (
         <motion.span
           key={i}

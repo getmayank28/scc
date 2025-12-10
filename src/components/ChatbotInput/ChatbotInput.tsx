@@ -5,7 +5,7 @@ import { KeyboardEvent, ChangeEvent } from 'react';
 
 interface ChatbotInputAreaProps {
   inputValue: string;
-  isTyping: boolean;
+  isTyping?: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress?: (e: KeyboardEvent<HTMLInputElement>) => void;

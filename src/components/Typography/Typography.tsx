@@ -23,6 +23,7 @@ const variantStyles = {
 
   subtitle:
     "text-white opacity-80 text-center font-satoshi text-[18px] max-md:text-[16px] leading-[140%]",
+    p:"text-white text-center font-satoshi text-[12px]",
 };
 
 interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
