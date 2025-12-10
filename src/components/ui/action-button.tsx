@@ -12,7 +12,7 @@ export function ActionButton({
   title: string;
   onClick: () => void;
   className?: string;
-  loading: boolean;
+  loading?: boolean;
 }) {
   return (
     <div className="mt-8" onClick={onClick}>

@@ -11,8 +11,8 @@ import {
 import { useChatState } from "@/hooks/useChatState";
 import { ChatMessage } from "@/types/chatMessages";
 import { Button } from "@/components/ui/button";
-import Greet from "../greet/page";
 import { LoaderThree } from "@/components/ui/loader";
+import GreetUser from "@/components/GreetUser/GreetUser";
 
 export default function ChatbotUI() {
   const [inputValue, setInputValue] = useState("");
@@ -42,7 +42,7 @@ export default function ChatbotUI() {
 
   useEffect(() => {
     if (!socketData?.messages) return;
-
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     socketData.messages.forEach((msg: any, index: number) => {
       // Create a unique ID for each message in the socket array
       // Using combination of type, m_id, source, and index
@@ -82,8 +82,9 @@ export default function ChatbotUI() {
   const showStartButton = useMemo(() => {
     const isLengthLessThan2 =
       socketData?.messages && socketData?.messages?.length <= 2;
+     
     const isHistory =
-      socketData?.messages &&
+      socketData?.messages &&  // @ts-expect-error this is a valid comparison
       socketData?.messages?.find((msg) => msg.type === "history")?.messages
         ?.length;
 
@@ -96,22 +97,21 @@ export default function ChatbotUI() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
   // useNavigationGuard({})
-  
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-  
-    if (startChatLoader) {
-      timer = setTimeout(() => {
-        setStartChatLoader(false);
-      }, 5000);
+useEffect(() => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+
+  if (startChatLoader) {
+    timer = setTimeout(() => {
+      setStartChatLoader(false);
+    }, 5000);
+  }
+
+  return () => {
+    if (timer !== undefined) {
+      clearTimeout(timer);
     }
-  
-    return () => {
-      if (timer !== undefined) {
-        clearTimeout(timer);
-      }
-    };
-  }, [startChatLoader]);
+  };
+}, [startChatLoader]);
 
   useEffect(() => {
     scrollToBottom();
@@ -157,7 +157,7 @@ export default function ChatbotUI() {
   return (
     <>
       {showStartButton ? (
-        <Greet
+        <GreetUser
           component
           loading={startChatLoader}
           onClick={() => {

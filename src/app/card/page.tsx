@@ -1,7 +1,5 @@
 "use client"
 import ZijusScript from "@/components/ThirdParty/ZijusScript"
-import Modal from "./modal"
-import SignInSection from "@/components/SignInSection/SignInSection"
 
 const Cards = () => {
     return (

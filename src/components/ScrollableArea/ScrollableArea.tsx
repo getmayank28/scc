@@ -4,8 +4,6 @@ import { RefObject } from "react";
 import { LoaderOne } from "../ui/loader";
 import SliderInput from "../SliderInput/SliderInput";
 import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
-import { Button } from "../ui/button";
-import { InputProps } from "@/models/Question";
 import { ChatMessage, MESSAGE_TYPE } from "@/types/chatMessages";
 import { containsMarkdownTable, markdownToJson } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
@@ -19,14 +17,13 @@ interface ChatbotScrollableAreaProps {
 }
 
 export const ChatbotScrollableArea = ({
-  currentMessageId,
+  // currentMessageId,
   messages,
   isTyping,
   messagesEndRef,
   handleSend,
 }: ChatbotScrollableAreaProps) => {
 
-  console.log(messages, "fjbvhfbvhbfhbhfbh")
 
   if (!messages) return;
   const renderInput = (message: ChatMessage) => {

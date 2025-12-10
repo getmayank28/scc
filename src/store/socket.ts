@@ -1,3 +1,4 @@
+import { BaseMessage } from "@/types/chatMessages";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const wsApi = createApi({
@@ -5,7 +6,7 @@ export const wsApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: "/" }),
   endpoints: (builder) => ({
     connectWebSocket: builder.query<
-      { messages: any[]; send: (msg: any) => void },
+      { messages: BaseMessage[]; send: (msg: BaseMessage) => void },
       { token: string; language?: string; isAudio?: boolean }
     >({
       queryFn: () => ({ data: { messages: [], send: () => {} } }),
@@ -30,7 +31,7 @@ export const wsApi = createApi({
 
             // Inject send() once socket is open
             updateCachedData((draft) => {
-              draft.send = (msg: any) => {
+              draft.send = (msg: BaseMessage) => {
                 if (socket?.readyState === WebSocket.OPEN) {
                   socket.send(JSON.stringify(msg));
                 } else {
@@ -66,8 +67,10 @@ export const wsApi = createApi({
         // Clean up
         await cacheEntryRemoved;
         // clearInterval(heartbeat);
-        clearTimeout(reconnectTimer);
-        socket?.close();
+        if (reconnectTimer) clearTimeout(reconnectTimer);
+
+        // @ts-expect-error close is exist on socket
+        socket?.close?.();
       },
     }),
   }),

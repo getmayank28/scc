@@ -31,9 +31,9 @@ export const authOptions: NextAuthOptions = {
       const existingUser = await UserModal.findOne({ email: user.email });
       if (!existingUser) {
         await UserModal.create({
+          email: user.email!,
           isVerified: true,
           provider: [AUTH_PROVIDERS.GOOGLE],
-          email: user.email,
         });
       }
 

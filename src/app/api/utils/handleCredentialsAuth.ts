@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 
 export const handleCredentialsAuth = async (
   credentials: Record<"email" | "password", string> | undefined
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any | null> => {
   if (!credentials?.email || !credentials?.password) {
     throw new Error("Missing credentials");

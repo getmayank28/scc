@@ -6,12 +6,15 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 
 
-const Greet = () => {
+const GreetUser = ({component,onClick,loading}:{component?:boolean,onClick?:()=> void, loading:boolean}) => {
     const router = useRouter()
     const session = useSession()
 
     const handleClick = () => {
-
+      if(component){
+        onClick?.()
+        return
+      }
       if(session?.status === AUTH_STATE.AUTHENTICATED){
         router.push(ROUTES.CHAT)
       }else{
@@ -24,9 +27,9 @@ const Greet = () => {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="w-30 max-md:w-24" src="/logoWithTitle.svg" alt="logo" />
         </div>
-        <ChatbotGreet loading={false} onClick={handleClick} />
+        <ChatbotGreet loading={loading} onClick={handleClick} />
       </div>
     )
 }
 
-export default Greet
+export default GreetUser

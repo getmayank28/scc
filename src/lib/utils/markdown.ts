@@ -1,13 +1,3 @@
-type Card = {
-  card: string;
-  annualSavings: string;
-  roi: string;
-  bestFor: string;
-  "whyThisCard?": string;
-  annualFee: string;
-  apply: string;
-};
-
 type ParsedMessage = {
   message: string;
   cards: Record<string, string>[];

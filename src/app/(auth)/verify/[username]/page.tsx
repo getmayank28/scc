@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { ROUTES } from "@/lib/constants/routes";
-import { decodeBase64, encodeBase64 } from "@/lib/utils/encodeDecode";
+import { decodeBase64 } from "@/lib/utils/encodeDecode";
 import { verifySchema } from "@/schemas/verifySchema";
 import { useVerifyCodeMutation } from "@/store/api";
 import { APIFailure } from "@/types/ApiResponse";
