@@ -11,6 +11,10 @@ export function containsMarkdownTable(message: string): boolean {
   return tableHeaderPattern.test(message);
 }
 
+export function convertBoldMarkdownToHtml(text: string): string {
+  return text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+}
+
 /**
  * Convert markdown table to JSON
  */

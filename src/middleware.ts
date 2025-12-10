@@ -1,8 +1,8 @@
-import { getToken } from "next-auth/jwt";
+// import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { ROUTES } from "./lib/constants/routes";
-import { encodeBase64 } from "./lib/utils/encodeDecode";
+// import { ROUTES } from "./lib/constants/routes";
+// import { encodeBase64 } from "./lib/utils/encodeDecode";
 export { default } from "next-auth/middleware";
 
 export async function middleware(request: NextRequest) {

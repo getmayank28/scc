@@ -148,7 +148,7 @@ useEffect(() => {
 
   if (showStartButton === undefined) {
     return (
-      <div className="bg-background-primary flex justify-center items-center w-full h-screen fixed border-2 border-white">
+      <div className="bg-background-primary flex justify-center items-center w-full h-screen fixed">
         <LoaderThree />
       </div>
     );

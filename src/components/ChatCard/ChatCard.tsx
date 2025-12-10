@@ -75,7 +75,7 @@ function ChatCard({
               <div className="absolute w-full top-0 left-0 h-full p-3 pt-5 pb-3 flex flex-col justify-between">
                 <div className="flex gap-1 items-center">
                   {bankIcon && <p>{bankIcon}</p>}
-                  <Typography variant="p" className="font-bold">
+                  <Typography variant="p" className="font-bold text-left">
                     {card ? card : "Credit Card"}
                   </Typography>
                 </div>

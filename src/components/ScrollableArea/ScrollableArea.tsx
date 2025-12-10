@@ -5,7 +5,11 @@ import { LoaderOne } from "../ui/loader";
 import SliderInput from "../SliderInput/SliderInput";
 import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
 import { ChatMessage, MESSAGE_TYPE } from "@/types/chatMessages";
-import { containsMarkdownTable, markdownToJson } from "@/lib/utils/markdown";
+import {
+  containsMarkdownTable,
+  convertBoldMarkdownToHtml,
+  markdownToJson,
+} from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
 
 interface ChatbotScrollableAreaProps {
@@ -23,7 +27,7 @@ export const ChatbotScrollableArea = ({
   messagesEndRef,
   handleSend,
 }: ChatbotScrollableAreaProps) => {
-
+  console.log(messages, "hbhbbhbhbh");
 
   if (!messages) return;
   const renderInput = (message: ChatMessage) => {
@@ -58,7 +62,6 @@ export const ChatbotScrollableArea = ({
 
   const getContent = (content: string) => markdownToJson(content);
 
-
   return (
     <div className="flex-1 overflow-hidden">
       <ScrollArea className="h-full px-4 py-6">
@@ -74,30 +77,40 @@ export const ChatbotScrollableArea = ({
                 className={`flex flex-col ${message.source === "user" ? "items-end" : "items-start"} flex-1 min-w-0`}
               >
                 <Card
-                  className={`${containsMarkdownTable(message?.content)?'p-0':'px-4 py-3'} gap-0 max-w-[85%] break-words ${
+                  className={`${containsMarkdownTable(message?.content) ? "p-0" : "px-4 py-3"} gap-0 max-w-[85%] break-words ${
                     message.source === "user"
                       ? "bg-transparent text-gray-100 border-[#F35A13]/30"
-                      : `bg-transparent text-gray-100 ${containsMarkdownTable(message?.content)?'border-none':'border-white/30'} `
+                      : `bg-transparent text-gray-100 ${containsMarkdownTable(message?.content) ? "border-none" : "border-white/30"} `
                   }`}
                 >
                   {containsMarkdownTable(message?.content) ? (
                     <>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30">
-                        {getContent(message?.content)?.message}
-                      </p>
+                      <p
+                       className="text-sm leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
+                        dangerouslySetInnerHTML={{
+                          __html: convertBoldMarkdownToHtml(
+                            getContent(message?.content)?.message
+                          ),
+                        }}
+                      ></p>
                       <div className="flex gap-6 mt-6">
                         {getContent(message?.content)?.cards.map(
                           (item, index) => {
-                            return <ChatCard key={index} {...item} pattern={index} />
+                            return (
+                              <ChatCard key={index} {...item} pattern={index} />
+                            );
                           }
                         )}
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      <p
+                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{
+                          __html: convertBoldMarkdownToHtml(message.content),
+                        }}
+                      ></p>
                       <div>{renderInput(message)}</div>
                     </>
                   )}
