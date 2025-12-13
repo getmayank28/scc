@@ -1,31 +1,28 @@
-"use client"
-// import type { Metadata } from "next";
-// import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { FormProvider } from "../contexts";
-import { StateProviders } from "@/contexts/StateProvider";
-import  { Toaster } from 'react-hot-toast';
-import { SessionProvider } from "next-auth/react";
-import { SidebarContainer } from "@/components/SidebarConatainer/SidebarConatainer";
-// const geistSans = Geist({
-//   variable: "--font-geist-sans",
-//   subsets: ["latin"],
-// });
+import ProvderContainer from "@/components/Providers/Providers";
 
-// const geistMono = Geist_Mono({
-//   variable: "--font-geist-mono",
-//   subsets: ["latin"],
-// });
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
 
-// export const metadata: Metadata = {
-//   title: "FiSense",
-//   description: "Find the credit card built for you.",
-//   icons: {
-//     icon: "/favicon.png",
-//     shortcut: "/favicon.png",
-//     apple: "/favicon.png",
-//   },
-// };
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "FiSense",
+  themeColor: "#F35A13",
+  description: "Find the credit card built for you.",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
+};
 
 export default function RootLayout({
   children,
@@ -35,19 +32,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        className="bg-background-primary"
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background-primary`}
       >
-        <SessionProvider>
-        <Toaster  position="top-right"/>
-        <StateProviders>
-        <FormProvider>
-        <SidebarContainer>
-          {children}
-         </SidebarContainer>
-        </FormProvider>
-        </StateProviders>
-        </SessionProvider>
+        <ProvderContainer>{children}</ProvderContainer>
       </body>
     </html>
   );
