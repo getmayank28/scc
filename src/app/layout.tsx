@@ -6,6 +6,7 @@ import { FormProvider } from "../contexts";
 import { StateProviders } from "@/contexts/StateProvider";
 import  { Toaster } from 'react-hot-toast';
 import { SessionProvider } from "next-auth/react";
+import { SidebarContainer } from "@/components/SidebarConatainer/SidebarConatainer";
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
 //   subsets: ["latin"],
@@ -35,12 +36,15 @@ export default function RootLayout({
     <html lang="en">
       <body
         // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className="bg-background-primary"
       >
         <SessionProvider>
         <Toaster  position="top-right"/>
         <StateProviders>
         <FormProvider>
+        <SidebarContainer>
           {children}
+         </SidebarContainer>
         </FormProvider>
         </StateProviders>
         </SessionProvider>

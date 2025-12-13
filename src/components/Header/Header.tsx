@@ -20,7 +20,6 @@ const Header = ({ className }: { className?: string }) => {
           <div className="flex gap-4 items-center">
             <HoveredLink href={ROUTES.HOME}>Home</HoveredLink>
             <HoveredLink href={ROUTES.ABOUT}>About</HoveredLink>
-            <HoveredLink href={ROUTES.CHAT}>Card</HoveredLink>
             <MenuItem setActive={setActive} active={active} item="Tools" >
               <div className="flex flex-col space-y-4 text-sm bg-background-primary">
                 <HoveredLink href={ROUTES.SAVING_CALCULATOR}>Saving calculator</HoveredLink>

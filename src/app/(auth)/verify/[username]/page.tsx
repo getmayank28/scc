@@ -40,7 +40,7 @@ const VerifyAccount = () => {
   useEffect(() => {
     if (data && data?.success) {
       toast.success("Successfully verified email");
-      router.replace(ROUTES.GREET);
+      router.replace(ROUTES.DASHBOARD);
     }
     if (error && (error as APIFailure)?.status) {
       const message =

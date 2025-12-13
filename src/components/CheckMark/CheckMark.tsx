@@ -1,7 +1,7 @@
-export default function Checkmark() {
+export default function Checkmark({className='w-[16px]'}:{className?:string}) {
     return (
       <div className="flex justify-center">
-        <div className="w-[16px]">
+        <div className={className}>
           <svg
             version="1.1"
             id="Layer_1"

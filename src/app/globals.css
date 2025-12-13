@@ -41,7 +41,8 @@
   font-display: swap;
   font-weight: 400;
   font-style: normal;
-  src: url("/fonts/ButlerPro-Roman.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-Roman.woff2") format("woff2"),
     url("/fonts/ButlerPro-Roman.ttf") format("truetype");
 }
 
@@ -50,7 +51,8 @@
   font-display: swap;
   font-weight: 500;
   font-style: normal;
-  src: url("/fonts/ButlerPro-Medium-Ds.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-Medium-Ds.woff2") format("woff2"),
     url("/fonts/ButlerPro-Medium-Ds.ttf") format("truetype");
 }
 
@@ -59,7 +61,8 @@
   font-display: swap;
   font-weight: 600;
   font-style: normal;
-  src: url("/fonts/ButlerPro-SemiBold-Ds.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-SemiBold-Ds.woff2") format("woff2"),
     url("/fonts/ButlerPro-SemiBold-Ds.ttf") format("truetype");
 }
 
@@ -68,7 +71,8 @@
   font-display: swap;
   font-weight: 700;
   font-style: normal;
-  src: url("/fonts/ButlerPro-Bold.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-Bold.woff2") format("woff2"),
     url("/fonts/ButlerPro-Bold.ttf") format("truetype");
 }
 
@@ -78,7 +82,8 @@
   font-display: swap;
   font-weight: 400;
   font-style: normal;
-  src: url("/fonts/ButlerPro-Roman.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-Roman.woff2") format("woff2"),
     url("/fonts/ButlerPro-Roman.ttf") format("truetype");
 }
 
@@ -87,7 +92,8 @@
   font-display: swap;
   font-weight: 500;
   font-style: normal;
-  src: url("/fonts/ButlerPro-Medium-Ds.woff2") format("woff2"),
+  src:
+    url("/fonts/ButlerPro-Medium-Ds.woff2") format("woff2"),
     url("/fonts/ButlerPro-Medium-Ds.ttf") format("truetype");
 }
 
@@ -101,7 +107,9 @@
   --font-butlerpromedium: "ButlerProMedium", "ButlerPro", Georgia, serif;
   --radius: 0.625rem;
   --background: oklch(1 0 0);
-  --background-primary:oklch(0.1776 0 0);
+  --background-primary: oklch(0.1776 0 0);
+  --primary-success: oklch(0.5198 0.176568 142.5466);
+  --secondary-success: oklch(0.6683 0.2228 142.62);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -109,8 +117,8 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
-  --primary-orange:oklch(0.6629 0.2006 40.12);
-  --secondary-orange:oklch(0.3809 0.0957 42.98);
+  --primary-orange: oklch(0.6629 0.2006 40.12);
+  --secondary-orange: oklch(0.3809 0.0957 42.98);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -136,9 +144,10 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-
 @theme inline {
   --color-background-primary: var(--background-primary);
+  --color-primary-success: var(--primary-success);
+  --color-secondary-success:var(--secondary-success);
   --color-primary-orange: var(--primary-orange);
   --color-secondary-orange: var(--secondary-orange);
   --color-background: var(--background);
@@ -294,5 +303,74 @@ body::-webkit-scrollbar {
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+  }
+
+  @keyframes slide {
+    0% {
+      transform: translateY(150px);
+      opacity: 0;
+    }
+    80% {
+      transform: translateY(-10px);
+      opacity: 80;
+    }
+    100% {
+      transform: translateY(0px);
+      opacity: 100;
+    }
+  }
+
+  @keyframes slide-bottom {
+    0% {
+      transform: translateY(-150px);
+      opacity: 0;
+    }
+    80% {
+      transform: translateY(10px);
+      opacity: 80;
+    }
+    100% {
+      transform: translateY(0px);
+      opacity: 100;
+    }
+  }
+
+  .animate-first-icon {
+    animation: slide 0.5s;
+  }
+  .animate-second-icon {
+    animation: slide 0.5s;
+    animation-delay: 0.6s;
+  }
+  .animate-third-icon {
+    animation: slide 0.5s;
+    animation-delay: 1.1s;
+  }
+  .animate-fourth-icon {
+    animation: slide-bottom 0.5s;
+    animation-delay: 1.7s;
+  }
+  .animate-fifth-icon {
+    animation: slide-bottom 0.5s;
+    animation-delay: 2.3s;
+  }
+  .animate-sixth-icon {
+    animation: slide-bottom 0.5s;
+    animation-delay: 2.9s;
   }
 }

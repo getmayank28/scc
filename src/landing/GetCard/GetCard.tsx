@@ -15,7 +15,7 @@ const GetCard = () => {
             Get the card <br className="max-md:hidden" />
             built for you
           </h2>
-          <ActionButton title="Find my card" onClick={() => router.push(ROUTES.CARD)} />
+          <ActionButton title="Find my card" onClick={() => router.push(ROUTES.SIGN_IN)} />
         </div>
         <div className="grow w-[60%] max-md:w-[100%] h-[80vh] max-md:h-[60vh] overflow-hidden flex items-start justify-end">
           <DraggableCard />

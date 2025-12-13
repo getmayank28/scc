@@ -26,7 +26,7 @@ const Hero = () => {
             </span>
           </p>
         </div>
-        <ActionButton title="Find my card" onClick={() => router.push(ROUTES.CARD)}/>
+        <ActionButton title="Find my card" onClick={() => router.push(ROUTES.SIGN_IN)}/>
       </div>
       <div className="relative overflow-hidden w-full  flex justify-center items-center mt-[70px]">
         <div className="w-[70%] relative my-10 -top-[60px] max-md:w-[300px] z-[101] h-[392px] max-md:h-[290px]">

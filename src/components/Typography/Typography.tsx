@@ -2,7 +2,7 @@ import React from "react";
 import { cn } from "@/lib/utils";
 
 
-const variantStyles = {
+export const variantStyles = {
   h1:
     "text-[#FFF] text-center relative text-[80px] font-bold leading-[110%] tracking-[-3px] max-md:text-[56px] max-md:tracking-[-0.4px]",
 

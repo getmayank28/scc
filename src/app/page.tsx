@@ -9,32 +9,28 @@ import { HowItWorks } from "@/landing/HowItWorks";
 import { WhyFiSense } from "@/landing/WhyFiSense";
 import { CreditIntelligence } from "@/components/CreditIntelligence";
 import Tagline from "@/components/LandingAnimation/Tagline/Tagline";
-import { divider } from "../../public/images/divider";
-
-
-
-
+import Divider from "@/components/Divider/Divider";
 
 export default function Home() {
   return (
     <div className="bg-[#101010] w-full">
       <Header />
       <Hero />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <GetCard />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <HowItWorks />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <CreditIntelligence />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <WhyFiSense />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <CardForYou />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <FAQSection />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <Tagline />
-      <div className="mx-auto flex justify-center">{divider}</div>
+      <Divider />
       <Footer />
     </div>
   );
