@@ -119,7 +119,7 @@ export const authOptions: NextAuthOptions = {
         secure: process.env.NODE_ENV === "production",
         domain:
           process.env.NODE_ENV === "production"
-            ? process.env.NEXTAUTH_URL
+            ? "staging.gofisense.com"
             : undefined,
       },
     },
