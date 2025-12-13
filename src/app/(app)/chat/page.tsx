@@ -175,21 +175,12 @@ useEffect(() => {
         />
       ) : (
         <div className="flex flex-col h-screen bg-[#111111]">
-          {/* Header - Fixed */}
-          <div className="p-4 flex justify-between items-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              className="w-30 max-md:w-24"
-              src="/logoWithTitle.svg"
-              alt="logo"
-            />
+          <div className="p-4 flex justify-end items-center">           
             <Button variant="outline" onClick={handleClearChat}>
               Clear chat
             </Button>
-            {/* <button onClick={sendMessage} className="text-white">Clear Chat</button> */}
           </div>
           {/* Messages Area - Scrollable */}
-
           <ChatbotScrollableArea
             currentMessageId={currentMessageId}
             messages={messages}

@@ -23,10 +23,6 @@ const GreetUser = ({component,onClick,loading}:{component?:boolean,onClick?:()=>
     }
     return (
         <div className="flex flex-col h-screen bg-[#111111]">
-        <div className="p-4">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="w-30 max-md:w-24" src="/logoWithTitle.svg" alt="logo" />
-        </div>
         <ChatbotGreet loading={loading} onClick={handleClick} />
       </div>
     )

@@ -14,6 +14,7 @@ import {
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 
 export function SidebarContainer({ children }: { children: ReactNode }) {
   const links = [
@@ -48,6 +49,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isBlockedRoute = PUBLIC_ROUTES?.includes(pathname);
+  const isAuthBlockedRoute = ['/chat']?.includes(pathname)
 
   const handleLogout = () => {
     signOut({ callbackUrl: ROUTES.HOME });
@@ -69,7 +71,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
           </SidebarBody>
         </Sidebar>
       )}
-      {!isBlockedRoute && (
+      {(!isBlockedRoute && !isAuthBlockedRoute)&& (
         <div className="w-full py-6 px-6 h-14 flex justify-end fixed top-0 left-0">
           <Button variant="outline" onClick={handleLogout}>
             <LogOutIcon /> Logout
@@ -85,7 +87,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
 }
 export const Logo = () => {
   return (
-    <a
+    <Link
       href="/home"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
     >
@@ -102,12 +104,12 @@ export const Logo = () => {
           alt="logo"
         />
       </motion.span>
-    </a>
+    </Link>
   );
 };
 export const LogoIcon = () => {
   return (
-    <a
+    <Link
       href="/home"
       className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal text-black"
     >
@@ -118,6 +120,6 @@ export const LogoIcon = () => {
         src="/logo.svg"
         alt="logo"
       />
-    </a>
+    </Link>
   );
 };

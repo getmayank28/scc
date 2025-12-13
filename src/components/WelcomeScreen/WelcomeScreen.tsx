@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import useNav from "@/lib/hooks/useNav";
 import HeaderText from "../HeaderText/HeaderText";
 import Chip from "../ui/chip";
+import { useSession } from "next-auth/react";
 
 const steps = [
   {
@@ -26,10 +27,15 @@ const steps = [
 ];
 const WelcomeScreen = () => {
   const { goToChat } = useNav();
+  const session = useSession()
+
+  const name = session?.data?.user?.name?.split(' ')?.at(0)
+  const FirstName = name ? (name.slice(0,1)?.toUpperCase()+name.slice(1)?.toLowerCase()):undefined
+
   return (
     <div className="flex flex-col justify-center">
       <HeaderText
-        title="Welcome to Fisense, Mayank"
+        title={`Welcome to Fisense, ${FirstName || ''}`}
         content="You're now part of 50,000+ users who've optimized their credit card rewards and  saved ₹2.4 Cr in fees this year. Let's find your perfect match!"
         contentClassName="max-w-2xl text-center"
       />
