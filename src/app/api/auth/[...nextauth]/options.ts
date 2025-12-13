@@ -107,6 +107,19 @@ export const authOptions: NextAuthOptions = {
           process.env.NODE_ENV === "production" ? ".gofisense.com" : undefined,
       },
     },
+    callbackUrl: {
+      name:
+        process.env.NODE_ENV === "production"
+          ? "__Secure-next-auth.callback-url"
+          : "next-auth.callback-url",
+      options: {
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        domain:
+          process.env.NODE_ENV === "production" ? ".gofisense.com" : undefined,
+      },
+    },
     csrfToken: {
       name:
         process.env.NODE_ENV === "production"
@@ -118,9 +131,7 @@ export const authOptions: NextAuthOptions = {
         path: "/",
         secure: process.env.NODE_ENV === "production",
         domain:
-          process.env.NODE_ENV === "production"
-            ? "staging.gofisense.com"
-            : undefined,
+          process.env.NODE_ENV === "production" ? ".gofisense.com" : undefined,
       },
     },
   },
