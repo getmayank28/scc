@@ -58,6 +58,7 @@ export const authOptions: NextAuthOptions = {
 
     async jwt({ token, user }) {
       await dbConnect();
+      console.log(token, user, "from jwt ");
       if (user) {
         token._id = user._id?.toString();
         token.isVerified = user.isVerified;
@@ -69,14 +70,18 @@ export const authOptions: NextAuthOptions = {
           token.isVerified = dbUser.isVerified;
         }
       }
+      console.log(token, user, "from jwt 2");
       return token;
     },
 
     async session({ session, token }) {
+      console.log(session, token, "from session ");
       session.user._id = token._id;
       session.user.isVerified = token.isVerified;
       session.user.name = token.name;
       session.user.email = token.email;
+
+      console.log(session, token, "from session 22");
       return session;
     },
   },
@@ -113,7 +118,9 @@ export const authOptions: NextAuthOptions = {
         path: "/",
         secure: process.env.NODE_ENV === "production",
         domain:
-          process.env.NODE_ENV === "production" ? ".gofisense.com" : undefined,
+          process.env.NODE_ENV === "production"
+            ? process.env.NEXTAUTH_URL
+            : undefined,
       },
     },
   },
