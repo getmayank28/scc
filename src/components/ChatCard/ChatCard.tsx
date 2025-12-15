@@ -122,7 +122,7 @@ function ChatCard({
                       variant="p"
                       className="text-left pl-10 opacity-90"
                     >
-                      ROI
+                      Return on Annual Spend
                     </Typography>
                   </div>
                 </div>

@@ -48,7 +48,8 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const isBlockedRoute = PUBLIC_ROUTES?.includes(pathname);
+  const isVerifyRoute = pathname?.includes('/verify')
+  const isBlockedRoute = PUBLIC_ROUTES?.includes(pathname) || isVerifyRoute;
   const isAuthBlockedRoute = ['/chat']?.includes(pathname)
 
   const handleLogout = () => {

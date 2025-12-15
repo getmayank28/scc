@@ -134,9 +134,9 @@ const SignInSection = () => {
       </Form>
 
       <div className="flex justify-end py-8">
-        <Link className="text-white/70 text-[12px]" href={ROUTES.CHAT}>
+        {/* <Link className="text-white/70 text-[12px]" href={ROUTES.CHAT}>
           Skip for now
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
