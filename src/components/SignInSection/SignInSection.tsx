@@ -16,8 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import toast from "react-hot-toast";
-import Link from "next/link";
-import { ROUTES } from "@/lib/constants/routes";
 import SignInWithGoogle from "@/components/SignInWithGoogle/SignInWithGoogle";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
 
