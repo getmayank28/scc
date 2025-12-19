@@ -29,7 +29,6 @@ export async function middleware(request: NextRequest) {
       }
     }
   }
-
   if (token && url.pathname === ROUTES.HOME) {
     return NextResponse.redirect(new URL(ROUTES.LOGGED_IN_HOME, request.url));
   }
@@ -42,5 +41,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/sign-in", "/sign-up", "/", "/chat"],
+  matcher: ["/sign-in", "/sign-up", "/", "/chat", "/home"],
 };
