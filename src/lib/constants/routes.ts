@@ -30,4 +30,5 @@ export const PUBLIC_ROUTES = [
   "/legal-compliance",
   "/terms",
   "/",
+  "/chat",
 ];

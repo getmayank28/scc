@@ -13,44 +13,43 @@ export function useChatState() {
     setMessages((prev) => [...prev, msg]);
   }, []);
 
-  const addAssistantMessage = useCallback(
-    (msg: ChatMessage, chunkId?: string) => {
-      // If this specific chunk was already processed, skip it
-      if (chunkId && processedChunks.current.has(chunkId)) {
-        return;
+  const messgaeTypes = ["SlotMessage", "SliderMessage"];
+
+  const addAssistantMessage = useCallback((msg: ChatMessage) => {
+    console.log(msg, "hfhfbvbfhbvhfbhvfbh");
+    if (msg.type === "SlotMessage") {
+      console.log(msg, "hfhfbvbfhbvhfbhvfbh");
+    }
+    setMessages((prev) => {
+      // Find if this assistant message already exists
+      const existingIndex = prev.findIndex(
+        (m) => m.m_id === msg.m_id && m.source === "assistant"
+      );
+
+      if (msg.type === "SlotMessage") {
+        console.log(existingIndex, "hfhfbvbfhbvhfbhvfbh 22");
       }
 
-      // Mark this chunk as processed
-      if (chunkId) {
-        processedChunks.current.add(chunkId);
+      if (
+        existingIndex === -1 &&
+        (messgaeTypes?.includes(msg.type) || msg?.content)
+      ) {
+        return [...prev, msg];
       }
 
-      setMessages((prev) => {
-        // Find if this assistant message already exists
-        const existingIndex = prev.findIndex(
-          (m) => m.m_id === msg.m_id && m.source === "assistant"
-        );
-
-        if (existingIndex === -1 && msg?.content) {
-          // New assistant message, add it
-          return [...prev, msg];
+      // Message exists, append the chunk
+      return prev.map((m, index) => {
+        if (index === existingIndex) {
+          return {
+            ...msg,
+            content: m.content + (msg?.content ? msg.content : ""),
+            ts: msg.ts,
+          };
         }
-
-        // Message exists, append the chunk
-        return prev.map((m, index) => {
-          if (index === existingIndex) {
-            return {
-              ...msg,
-              content: m.content + (msg?.content ? msg.content : ""),
-              ts: msg.ts,
-            };
-          }
-          return m;
-        });
+        return m;
       });
-    },
-    []
-  );
+    });
+  }, []);
 
   const loadHistory = useCallback((history: ChatMessage[]) => {
     if (!history || !history.length) return;

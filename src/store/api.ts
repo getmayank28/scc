@@ -43,6 +43,27 @@ export const api = createApi({
         body,
       }),
     }),
+    createChatSession: builder.mutation({
+      query: (body) => ({
+        url: "/chat/session/create",
+        method: "POST",
+        body,
+      }),
+    }),
+    chatSessionToken: builder.mutation({
+      query: (sessionId) => ({
+        url: "/chat/token",
+        method: "POST",
+        body: { sessionId },
+      }),
+    }),
+    userChatSessions: builder.mutation({
+      query: (id) => ({
+        url: "/chat/session/get",
+        method: "POST",
+        body: { id },
+      }),
+    }),
   }),
 });
 
@@ -53,4 +74,7 @@ export const {
   useVerifyCodeMutation,
   useSendVerificationCodeMutation,
   useChangePasswordMutation,
+  useCreateChatSessionMutation,
+  useChatSessionTokenMutation,
+  useUserChatSessionsMutation,
 } = api;

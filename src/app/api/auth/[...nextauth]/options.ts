@@ -58,18 +58,23 @@ export const authOptions: NextAuthOptions = {
 
     async jwt({ token, user }) {
       await dbConnect();
-      console.log(token, user, "from jwt ");
+      console.log(token, user, "from jwt");
       if (user) {
-        token._id = user._id?.toString();
+        if (user?.id) {
+          token._id = user.id;
+        } else {
+          token._id = user._id?.toString();
+        }
         token.isVerified = user.isVerified;
         token.name = user.name;
         token.email = user.email;
-      } else {
-        const dbUser = await UserModal.findById(token._id);
-        if (dbUser) {
-          token.isVerified = dbUser.isVerified;
-        }
       }
+      // else {
+      //   const dbUser = await UserModal.findById(token._id);
+      //   if (dbUser) {
+      //     token.isVerified = dbUser.isVerified;
+      //   }
+      // }
       console.log(token, user, "from jwt 2");
       return token;
     },
@@ -91,6 +96,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 24,
   },
   cookies: {
     sessionToken: {

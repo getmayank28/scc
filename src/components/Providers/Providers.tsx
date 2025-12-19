@@ -4,13 +4,18 @@ import { SessionProvider } from "next-auth/react"
 import { FormProvider } from "@/contexts"
 import { Toaster } from "react-hot-toast"
 import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer"
+import SignInModal from "../SignInModal/SignInModal"
+import useSignInControl from "@/lib/hooks/useSignInControl"
 
 const ProvderContainer =({children}:{children:React.ReactNode}) => {
+    const {showModal} = useSignInControl()
+    
     return (
         <SessionProvider>
         <Toaster  position="top-right"/>
         <StateProviders>
         <FormProvider>
+            <SignInModal open={showModal}/>
         <SidebarContainer>
           {children}
          </SidebarContainer>

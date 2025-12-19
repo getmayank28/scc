@@ -7,29 +7,23 @@ export const wsApi = createApi({
   endpoints: (builder) => ({
     connectWebSocket: builder.query<
       { messages: BaseMessage[]; send: (msg: BaseMessage) => void },
-      { token: string; language?: string; isAudio?: boolean }
+      { token: string; sessionId: string; language?: string; isAudio?: boolean }
     >({
       queryFn: () => ({ data: { messages: [], send: () => {} } }),
 
       async onCacheEntryAdded(
-        { token, language = "EN_US", isAudio = false },
+        { token, language = "EN_US", isAudio = false, sessionId },
         { updateCachedData, cacheEntryRemoved }
       ) {
         let socket: WebSocket | null = null;
-        // let heartbeat: any = null;
         let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
-        const WS_URL = `wss://sarathi-9720-411951434462.us-central1.run.app/ws?token=${token}&language=${language}&is_audio=${isAudio}`;
+        const WS_URL = `wss://sarathi-9720-411951434462.us-central1.run.app/ws?token=${token}&sessionId=${sessionId}&language=${language}&is_audio=${isAudio}`;
 
         const connect = () => {
           socket = new WebSocket(WS_URL);
 
           socket.onopen = () => {
-            // heartbeat = setInterval(() => {
-            //   socket?.send(JSON.stringify({ type: "ping" }));
-            // }, 25000);
-
-            // Inject send() once socket is open
             updateCachedData((draft) => {
               draft.send = (msg: BaseMessage) => {
                 if (socket?.readyState === WebSocket.OPEN) {
@@ -55,7 +49,6 @@ export const wsApi = createApi({
           };
 
           socket.onclose = () => {
-            // clearInterval(heartbeat);
             reconnectTimer = setTimeout(connect, 3000);
           };
 
@@ -66,7 +59,6 @@ export const wsApi = createApi({
 
         // Clean up
         await cacheEntryRemoved;
-        // clearInterval(heartbeat);
         if (reconnectTimer) clearTimeout(reconnectTimer);
 
         // @ts-expect-error close is exist on socket
@@ -76,4 +68,4 @@ export const wsApi = createApi({
   }),
 });
 
-export const { useConnectWebSocketQuery } = wsApi;
+export const { useLazyConnectWebSocketQuery } = wsApi;
