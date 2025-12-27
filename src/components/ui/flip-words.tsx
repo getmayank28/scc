@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 // Utility function (replace with your actual implementation)
-const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
+const cn = (...classes:unknown[]) => classes.filter(Boolean).join(' ');
 
 export const FlipWords = ({
   words,

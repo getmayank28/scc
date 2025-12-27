@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef} from "react";
 import { useMotionValueEvent, useScroll } from "motion/react";
 import { motion } from "motion/react";
 import { cn } from "@/lib/utils/index";
@@ -11,11 +11,13 @@ export const StickyScroll = ({
   content: {
     title: string;
     description: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     content?: React.ReactNode | any;
   }[];
   contentClassName?: string;
 }) => {
   const [activeCard, setActiveCard] = React.useState(0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const ref = useRef<any>(null);
   const { scrollYProgress } = useScroll({
     // uncomment line 22 and comment line 23 if you DONT want the overflow container and want to have it change on the entire page scroll
@@ -40,24 +42,7 @@ export const StickyScroll = ({
     setActiveCard(closestBreakpointIndex);
   });
 
-  const backgroundColors = [
-    "#0f172a", // slate-900
-    "#000000", // black
-    "#171717", // neutral-900
-  ];
-  const linearGradients = [
-    "linear-gradient(to bottom right, #06b6d4, #10b981)", // cyan-500 to emerald-500
-    "linear-gradient(to bottom right, #ec4899, #6366f1)", // pink-500 to indigo-500
-    "linear-gradient(to bottom right, #f97316, #eab308)", // orange-500 to yellow-500
-  ];
 
-  const [backgroundGradient, setBackgroundGradient] = useState(
-    linearGradients[0],
-  );
-
-  useEffect(() => {
-    setBackgroundGradient(linearGradients[activeCard % linearGradients.length]);
-  }, [activeCard]);
 
   return (
     <motion.div

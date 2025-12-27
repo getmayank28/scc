@@ -1,6 +1,6 @@
 import Typography from "@/components/Typography/Typography";
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
-import Image from "next/image";
+import Image, { StaticImageData } from "next/image";
 import { NotificationCardV2 } from "./Hero";
 import Boy from "../../../../../public/images/boy.png";
 import Girl from "../../../../../public/images/girl.png";

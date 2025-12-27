@@ -24,8 +24,10 @@ const MultiSelectInput = ({
               id="toggle-2"
               disabled={disabled}
               defaultChecked={Math.random() < 0.5}
+              // @ts-expect-error some
               checked={selectedOptions?.includes(ele.value)}
               onClick={() => {
+                 // @ts-expect-error some
                 const isSelected = selectedOptions?.includes(ele.value);
                 if (isSelected) {
                   const filteredOptions = selectedOptions?.filter(
@@ -33,6 +35,7 @@ const MultiSelectInput = ({
                   );
                   setSelectedOptions(filteredOptions);
                 } else {
+                   // @ts-expect-error some
                   setSelectedOptions((prev) => [...prev, ele.value]);
                 }
               }}

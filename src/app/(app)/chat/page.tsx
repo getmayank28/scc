@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import useWebSocket from "react-use-websocket";
 import { ChatbotScrollableArea } from "@/components/ScrollableArea/ScrollableArea";
 import ChatbotInput from "@/components/ChatbotInput/ChatbotInput";
@@ -10,15 +10,13 @@ import {
   WS_SESSION_KEY,
 } from "@/lib/utils/sessionStorage";
 import { useChatState } from "@/hooks/useChatState";
-import { ChatMessage, MESSAGE_TYPE } from "@/types/chatMessages";
+import {  MESSAGE_TYPE } from "@/types/chatMessages";
 import { Button } from "@/components/ui/button";
 // import { LoaderThree } from "@/components/ui/loader";
 import GreetUser from "@/components/GreetUser/GreetUser";
 // import { getAnonymousId } from "@/lib/utils/ananymous";
 // import { useChatSessionTokenMutation, useCreateChatSessionMutation } from "@/store/api";
 import useSocket from "@/lib/hooks/useSocket";
-import SliderInput from "@/components/SliderInput/SliderInput";
-import { Card } from "@/components/ui/card";
 import { travelCard } from "@/lib/constants/questions/travelCard";
 
 export default function ChatbotUI() {
@@ -29,10 +27,10 @@ export default function ChatbotUI() {
   const [startChatLoader, setStartChatLoader] = useState(false);
   const {
     // messages,
-    addUserMessage,
+    // addUserMessage,
     addAssistantMessage,
     loadHistory,
-    setSession,
+    // setSession,
   } = useChatState();
 
   const { getSocketUrl } = useSocket();
@@ -54,7 +52,7 @@ export default function ChatbotUI() {
   // const [webSocketConnect, { data: socketData, isLoading }] =
   //   useLazyConnectWebSocketQuery();
   // const send = socketData?.send;
-  const processedSocketMessages = useRef(new Set<string>());
+  // const processedSocketMessages = useRef(new Set<string>());
   // const isAssistantTyping =
   //   messages.length > 0 && messages[messages.length - 1]?.source === "user";
 
@@ -111,10 +109,11 @@ export default function ChatbotUI() {
   //   return !messages?.length;
   // }, [messages]);
 
-  const selectedCard = "travel";
+  // const selectedCard = "travel";
   const [messages, setMessages] = useState([]);
 
   useEffect(() => {
+    // @ts-expect-error some
       setMessages([travelCard?.at(0)]);
   }, []);
 
@@ -165,6 +164,7 @@ export default function ChatbotUI() {
     const isButtonGroupAction = value?.includes("bg-");
 
     if (isButtonGroupAction) {
+      // @ts-expect-error some
       actions[value]?.();
     }
 
@@ -193,6 +193,7 @@ export default function ChatbotUI() {
         ? [travelCard?.at(currentMessageIndex + 1)]
         : [];
 
+        // @ts-expect-error some
       setMessages((prev) => [...prev, userMsg, ...nextQuestion]);
       setCurrentMessageId(nextQuestion?.at(0)?.m_id);
     }

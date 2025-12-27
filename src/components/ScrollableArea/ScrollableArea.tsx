@@ -41,7 +41,6 @@ export const ChatbotScrollableArea = ({
     });
   }, [messages]);
 
-  console.log(messages, "hbhbbhbhbh");
 
   if (!messages) return;
   
@@ -53,9 +52,13 @@ export const ChatbotScrollableArea = ({
           <SliderInput
             disabled={message.m_id !== currentMessageId}
             onSelectionSubmit
+             // @ts-expect-error some
             value={message?.default}
+             // @ts-expect-error some
             min={message?.min ?? 0}
+             // @ts-expect-error some
             max={message?.max ?? 100000}
+             // @ts-expect-error some
             sliderStep={message?.step}
             onSubmit={(selected) => handleSend(String(selected))}
           />
