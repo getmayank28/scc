@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "../ui/card";
-import { RefObject } from "react";
+import { RefObject, useEffect, useState } from "react";
 import { LoaderOne } from "../ui/loader";
 import SliderInput from "../SliderInput/SliderInput";
 import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
@@ -11,6 +11,7 @@ import {
   markdownToJson,
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
+import MultiSelectInput from "../MultiSelectInput/MultiSelectInput";
 
 interface ChatbotScrollableAreaProps {
   currentMessageId?: string;
@@ -21,36 +22,66 @@ interface ChatbotScrollableAreaProps {
 }
 
 export const ChatbotScrollableArea = ({
-  // currentMessageId,
+  currentMessageId,
   messages,
   isTyping,
   messagesEndRef,
   handleSend,
 }: ChatbotScrollableAreaProps) => {
+  const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    // Add new messages to visible set with a slight delay for animation
+    messages.forEach((message) => {
+      if (!visibleMessages.has(message.m_id)) {
+        setTimeout(() => {
+          setVisibleMessages((prev) => new Set(prev).add(message.m_id));
+        }, 50);
+      }
+    });
+  }, [messages]);
+
   console.log(messages, "hbhbbhbhbh");
 
   if (!messages) return;
+  
   const renderInput = (message: ChatMessage) => {
     if (!message.type) return null;
     switch (message.type) {
       case MESSAGE_TYPE.SLIDER:
         return (
           <SliderInput
-            // disabled={message.m_id !==currentMessageId}
+            disabled={message.m_id !== currentMessageId}
             onSelectionSubmit
-            disabled={false}
-            value={message?.slider?.default_value}
-            min={message?.slider?.min_value ?? 0}
-            max={message?.slider?.max_value ?? 100000}
+            value={message?.default}
+            min={message?.min ?? 0}
+            max={message?.max ?? 100000}
+            sliderStep={message?.step}
             onSubmit={(selected) => handleSend(String(selected))}
           />
         );
       case MESSAGE_TYPE.SELECT:
         return (
           <SingleSelectInput
-            // disabled={message.m_id !==currentMessageId}
-            disabled={false}
+            disabled={message.m_id !== currentMessageId}
             onSelectionSubmit
+            options={message?.slots ?? []}
+            onSubmit={(selected) => handleSend(String(selected))}
+          />
+        );
+      case MESSAGE_TYPE.BUTTON_GROUP:
+        return (
+          <SingleSelectInput
+            disabled={message.m_id !== currentMessageId}
+            onSelectionSubmit
+            options={message?.slots ?? []}
+            onSubmit={(selected) => handleSend("bg-" + String(selected))}
+          />
+        );
+      case MESSAGE_TYPE.MULTI_SELECT:
+        return (
+          <MultiSelectInput
+            disabled={message.m_id !== currentMessageId}
             options={message?.slots ?? []}
             onSubmit={(selected) => handleSend(String(selected))}
           />
@@ -71,22 +102,37 @@ export const ChatbotScrollableArea = ({
               key={message.m_id}
               className={`flex gap-3 ${
                 message.source === "user" ? "flex-row-reverse" : "flex-row"
-              } animate-in fade-in slide-in-from-bottom-3 duration-500`}
+              } transition-opacity duration-500 ease-in ${
+                visibleMessages.has(message.m_id) ? "opacity-100" : "opacity-0"
+              }`}
+              style={{
+                animation: visibleMessages.has(message.m_id)
+                  ? "fadeIn 0.5s ease-in forwards"
+                  : "none",
+              }}
             >
               <div
-                className={`flex flex-col ${message.source === "user" ? "items-end" : "items-start"} flex-1 min-w-0`}
+                className={`flex flex-col ${
+                  message.source === "user" ? "items-end" : "items-start"
+                } flex-1 min-w-0`}
               >
                 <Card
-                  className={`${containsMarkdownTable(message?.content) ? "p-0" : "px-4 py-3"} gap-0 max-w-[85%] break-words ${
+                  className={`${
+                    containsMarkdownTable(message?.content) ? "p-0" : "px-4 py-3"
+                  } gap-0 max-w-[85%] break-words ${
                     message.source === "user"
                       ? "bg-transparent text-gray-100 border-[#F35A13]/30"
-                      : `bg-transparent text-gray-100 ${containsMarkdownTable(message?.content) ? "border-none" : "border-white/30"} `
+                      : `bg-transparent text-gray-100 ${
+                          containsMarkdownTable(message?.content)
+                            ? "border-none"
+                            : "border-white/30"
+                        }`
                   }`}
                 >
                   {containsMarkdownTable(message?.content) ? (
                     <>
                       <p
-                       className="text-sm leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
+                        className="text-sm leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
                         dangerouslySetInnerHTML={{
                           __html: convertBoldMarkdownToHtml(
                             getContent(message?.content)?.message
@@ -122,6 +168,18 @@ export const ChatbotScrollableArea = ({
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 };

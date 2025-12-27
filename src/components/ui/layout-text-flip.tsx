@@ -1,26 +1,30 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils/index";
 
-export const LayoutTextFlip = ({
-  text = "Build Amazing",
-  words = ["Landing Pages", "Component Blocks", "Page Sections", "3D Shaders"],
-  duration = 3000,
-}: {
-  text: string;
-  words: string[];
+type LayoutTextFlipProps = {
+  text?: ReactNode;
+  words: ReactNode[];
   duration?: number;
-}) => {
+};
+
+export const LayoutTextFlip = ({
+  text = "",
+  words,
+  duration = 3000,
+}: LayoutTextFlipProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
+    if (!words.length) return;
+
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % words.length);
+      setCurrentIndex((prev) => (prev + 1) % words.length);
     }, duration);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [words.length, duration]);
 
   return (
     <>
@@ -33,21 +37,16 @@ export const LayoutTextFlip = ({
 
       <motion.span
         layout
-        className="relative w-fit overflow-hidden rounded-md border border-transparent  px-4 py-2 font-sans text-2xl font-bold tracking-tight shadow-sm ring shadow-black/10 ring-black/10 drop-shadow-lg md:text-4xl bg-secondary-orange text-white dark:shadow-sm dark:ring-1 dark:shadow-white/10 dark:ring-white/10"
+        className="relative w-fit overflow-hidden rounded-md border border-transparent  py-2 font-sans text-2xl font-bold tracking-tight shadow-sm ring shadow-black/10 ring-black/10 drop-shadow-lg md:text-4xl bg-transparent text-white dark:shadow-sm dark:ring-1 dark:shadow-white/10 dark:ring-white/10"
       >
         <AnimatePresence mode="popLayout">
           <motion.span
             key={currentIndex}
             initial={{ y: -40, filter: "blur(10px)" }}
-            animate={{
-              y: 0,
-              filter: "blur(0px)",
-            }}
+            animate={{ y: 0, filter: "blur(0px)" }}
             exit={{ y: 50, filter: "blur(10px)", opacity: 0 }}
-            transition={{
-              duration: 0.5,
-            }}
-            className={cn("inline-block whitespace-nowrap")}
+            transition={{ duration: 0.5 }}
+            className={cn("inline-flex items-center whitespace-nowrap")}
           >
             {words[currentIndex]}
           </motion.span>

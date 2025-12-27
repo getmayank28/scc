@@ -3,7 +3,7 @@ export const questions = {
   setId: "default",
   questions: [
     {
-      questionId: "shoppingAndPayments",
+      m_id: "shoppingAndPayments",
       question:
         "How much do you spend every month on all shopping & bill payments?",
       description:
@@ -19,7 +19,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "onlineSpend",
+      m_id: "onlineSpend",
       question: "What percentage of your monthly spend happens online?",
       order: 2,
       inputs: [
@@ -32,7 +32,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "travelAndHotel",
+      m_id: "travelAndHotel",
       question: "What is your average monthly spend on Travel & Hotel?",
       description:
         "e.g. if you take 2 holiday a year costing 1,20,000, your average monthly spend is 10,000",
@@ -47,7 +47,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "travelBookings",
+      m_id: "travelBookings",
       question: "Which platform do you use most for travel bookings?",
       description:
         "Include shopping, food, travel, fuel, and bill payments and all other spend",
@@ -69,7 +69,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "onlineShoppingSpend",
+      m_id: "onlineShoppingSpend",
       question: "What is your monthly Online Shopping Spend?",
       description: "Includes fashion, groceries & other purchases done online",
       order: 5,
@@ -83,7 +83,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "onlineShopingPlatform",
+      m_id: "onlineShopingPlatform",
       question: "Which platform do you use most for online shopping?",
       order: 6,
       inputs: [
@@ -96,7 +96,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "foodAndDining",
+      m_id: "foodAndDining",
       question: "What is your average monthly spend on Food and Dining?",
       description:
         "e.g. if you order 2 times a week ( i.e 8 times a month), approx 300 per order, your food spend is 2400. If your dineout weekely with bill of ~1000, your dining bill is 4000, Total food & dining spend-Rs.6400",
@@ -117,7 +117,7 @@ export const questions = {
       ],
     },
     {
-      questionId: "miscellaneous",
+      m_id: "miscellaneous",
       question: "What is your average monthly spend on  these?",
       description:
         "In case you don’t pay these monthly- mention approx. yearly spend divided by 12",

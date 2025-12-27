@@ -18,6 +18,7 @@ export const ROUTES = {
   PRIVACY_POLICY: "privacy-policy",
   COMPLIANCE: "/legal-compliance",
   TERMS: "/terms",
+  CHOOSE_CARD: "/choose-card",
 };
 
 export const PUBLIC_ROUTES = [
@@ -31,4 +32,6 @@ export const PUBLIC_ROUTES = [
   "/terms",
   "/",
   "/chat",
+  "/choose-card",
+  "/landing",
 ];

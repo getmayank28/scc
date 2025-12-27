@@ -59,10 +59,10 @@ const useSocket = () => {
   };
 
   const createChatSessionToken = async () => {
-    const { sessionId } = await createChatSession();
-
     let token = localStorage.getItem("CHAT_SESSION_TOKEN");
     const isTokenExpired = token ? isExpired(token) : true;
+
+    const { sessionId } = await createChatSession();
 
     if (!token || isTokenExpired) {
       const tokenRes = await chatSessionTokenMutation(sessionId);

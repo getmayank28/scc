@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { BadgeCheck, Check, CheckCheck } from "lucide-react";
 
 interface SingleSelectProps {
   options: { label: string; value: string }[];
@@ -37,19 +38,19 @@ export default function SingleSelectInput({
               handleSubmitByOptionClick(platform?.value);
             }}
             variant={
-              selectedPlatform === platform?.value ? "default" : "outline"
+              platform.variant || 'outline'
             }
             className={`
               px-4 py-3 text-sm rounded-lg transition-all cursor-pointer
               ${
-                selectedPlatform === platform?.value
+                platform.variant === 'primary'
                   ? "bg-secondary-orange hover:bg-secondary-orange text-white"
                   : "bg-[#111] text-white/80 border-secondary-orange hover:text-white hover:bg-secondary-orange"
               }
             `}
             disabled={disabled}
           >
-            {platform?.label}
+            {platform?.label} {selectedPlatform ===platform.value && <BadgeCheck color="#F35A13"/>}
           </Button>
         ))}
       </div>

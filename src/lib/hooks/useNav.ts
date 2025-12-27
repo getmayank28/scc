@@ -6,7 +6,9 @@ const useNav = () => {
 
   const goToChat = () => router.push(ROUTES.CHAT);
 
-  return { goToChat };
+  const goToSignIn = () => router.replace(ROUTES.SIGN_IN);
+
+  return { goToChat, goToSignIn };
 };
 
 export default useNav;

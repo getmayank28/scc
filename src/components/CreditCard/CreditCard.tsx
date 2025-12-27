@@ -1,7 +1,7 @@
 import { CardSpotlight } from "../ui/card-spotlight"
 
 
-const CreditCard = ({ background = 'linear-gradient(90deg, #454893 10%, #15162D 100%)', isCardSpotlightActive = true }: { background?: string, isCardSpotlightActive?: boolean }) => {
+const CreditCard = ({ number, name, background = 'linear-gradient(90deg, #454893 10%, #15162D 100%)', isCardSpotlightActive = true }: { background?: string, isCardSpotlightActive?: boolean,number?:string, name?:string, }) => {
     const Comp = isCardSpotlightActive ? CardSpotlight : 'div'
 
     return <div className="relative w-96 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
@@ -82,14 +82,14 @@ const CreditCard = ({ background = 'linear-gradient(90deg, #454893 10%, #15162D 
 
                 {/* Card Number */}
                 <div className="absolute top-1/2 left-4 transform -translate-y-1/2 text-white text-xl font-mono opacity-75 tracking-wider">
-                    XXXX XXXX XXXX 8859
+                    {number || 'XXXX XXXX XXXX 8859'}
                 </div>
 
                 {/* Card Details */}
                 <div className="absolute top-[61%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
                     <div className="flex flex-col w-[150px]">
                         <span className="text-[16px] font-medium capitalize">
-                            Jhon Doe
+                           {name || 'Jhon Doe'}
                         </span>
                     </div>
                 </div>

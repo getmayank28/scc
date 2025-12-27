@@ -15,7 +15,7 @@ export function ActionButton({
   loading?: boolean;
 }) {
   return (
-    <div className="mt-8" onClick={onClick}>
+    <div className="" onClick={onClick}>
       <HoverBorderGradient
         containerClassName="rounded-full"
         as="button"

@@ -6,6 +6,8 @@ export const MESSAGE_TYPE = {
   HISTORY: "HISTORY",
   SELECT: "SlotMessage",
   SLIDER: "SliderMessage",
+  MULTI_SELECT: "MultiSelect",
+  BUTTON_GROUP: "ButtonGroup",
 };
 
 export type MessageType =

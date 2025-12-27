@@ -3,11 +3,12 @@ import * as React from "react";
 import { cn } from "@/lib/utils/index";
 type InputProps = React.ComponentProps<"input"> & {
   rightIcon?: React.ReactNode;
+  containerClassName?:string
 };
 
-function Input({ className, type, rightIcon, ...props }: InputProps) {
+function Input({ className, type, rightIcon,containerClassName, ...props }: InputProps) {
   return (
-    <div className="relative h-12 w-full">
+    <div className={cn("relative h-12 w-full flex justify-center items-center", containerClassName)}>
       <input
         type={type}
         data-slot="input"

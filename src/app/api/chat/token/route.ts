@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
   const token = issueChatToken({
     userId: session?.user?._id,
-    anonymousId: chatSession.anonymousId,
+    anonymousId: chatSession?.anonymousId,
   });
 
   return Response.json({ token: "Bearer " + token });

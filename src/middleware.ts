@@ -12,6 +12,10 @@ export async function middleware(request: NextRequest) {
   });
   const url = request.nextUrl;
 
+  if (url.pathname.startsWith("/api")) {
+    return NextResponse.next();
+  }
+
   if (token && url.pathname.startsWith(ROUTES.SIGN_IN)) {
     if (token.isVerified) {
       return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url));
