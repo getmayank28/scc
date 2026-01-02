@@ -1,24 +1,29 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "../ui/card";
 import { RefObject, useEffect, useState } from "react";
-import { LoaderOne } from "../ui/loader";
-import SliderInput from "../SliderInput/SliderInput";
-import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
-import { ChatMessage, MESSAGE_TYPE } from "@/types/chatMessages";
+// import SliderInput from "../SliderInput/SliderInput";
+// import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
+import { ChatMessage } from "@/types/chatMessages";
 import {
   containsMarkdownTable,
   convertBoldMarkdownToHtml,
   markdownToJson,
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
-import MultiSelectInput from "../MultiSelectInput/MultiSelectInput";
+// import MultiSelectInput from "../MultiSelectInput/MultiSelectInput";
+import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader";
+// import FormInput from "../FormInput/FormInput";
+import { renderInput } from "@/lib/utils/renderInput";
 
 interface ChatbotScrollableAreaProps {
   currentMessageId?: string;
   messages: ChatMessage[];
   isTyping?: boolean;
   messagesEndRef?: RefObject<HTMLDivElement | null>;
-  handleSend: (value: string) => void;
+ handleSend: (
+    value: string | Record<string, string | number>,
+    id?: string
+  ) => void;
 }
 
 export const ChatbotScrollableArea = ({
@@ -28,7 +33,9 @@ export const ChatbotScrollableArea = ({
   messagesEndRef,
   handleSend,
 }: ChatbotScrollableAreaProps) => {
-  const [visibleMessages, setVisibleMessages] = useState<Set<string>>(new Set());
+  const [visibleMessages, setVisibleMessages] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     // Add new messages to visible set with a slight delay for animation
@@ -41,58 +48,7 @@ export const ChatbotScrollableArea = ({
     });
   }, [messages]);
 
-
   if (!messages) return;
-  
-  const renderInput = (message: ChatMessage) => {
-    if (!message.type) return null;
-    switch (message.type) {
-      case MESSAGE_TYPE.SLIDER:
-        return (
-          <SliderInput
-            disabled={message.m_id !== currentMessageId}
-            onSelectionSubmit
-             // @ts-expect-error some
-            value={message?.default}
-             // @ts-expect-error some
-            min={message?.min ?? 0}
-             // @ts-expect-error some
-            max={message?.max ?? 100000}
-             // @ts-expect-error some
-            sliderStep={message?.step}
-            onSubmit={(selected) => handleSend(String(selected))}
-          />
-        );
-      case MESSAGE_TYPE.SELECT:
-        return (
-          <SingleSelectInput
-            disabled={message.m_id !== currentMessageId}
-            onSelectionSubmit
-            options={message?.slots ?? []}
-            onSubmit={(selected) => handleSend(String(selected))}
-          />
-        );
-      case MESSAGE_TYPE.BUTTON_GROUP:
-        return (
-          <SingleSelectInput
-            disabled={message.m_id !== currentMessageId}
-            onSelectionSubmit
-            options={message?.slots ?? []}
-            onSubmit={(selected) => handleSend("bg-" + String(selected))}
-          />
-        );
-      case MESSAGE_TYPE.MULTI_SELECT:
-        return (
-          <MultiSelectInput
-            disabled={message.m_id !== currentMessageId}
-            options={message?.slots ?? []}
-            onSubmit={(selected) => handleSend(String(selected))}
-          />
-        );
-      default:
-        return null;
-    }
-  };
 
   const getContent = (content: string) => markdownToJson(content);
 
@@ -121,7 +77,9 @@ export const ChatbotScrollableArea = ({
               >
                 <Card
                   className={`${
-                    containsMarkdownTable(message?.content) ? "p-0" : "px-4 py-3"
+                    containsMarkdownTable(message?.content)
+                      ? "p-0"
+                      : "px-4 py-3"
                   } gap-0 max-w-[85%] break-words ${
                     message.source === "user"
                       ? "bg-transparent text-gray-100 border-[#F35A13]/30"
@@ -160,14 +118,21 @@ export const ChatbotScrollableArea = ({
                           __html: convertBoldMarkdownToHtml(message.content),
                         }}
                       ></p>
-                      <div>{renderInput(message)}</div>
+                      <div>
+                        {renderInput({
+                          message: message,
+                          currentMessageId: currentMessageId || "",
+                          isTyping: isTyping || false,
+                          handleSend,
+                        })}
+                      </div>
                     </>
                   )}
                 </Card>
               </div>
             </div>
           ))}
-          {isTyping && <LoaderOne />}
+          {isTyping && <MultiStepChatLoader />}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Typography from "@/components/Typography/Typography";
 import Image from "next/image";
+import { convertBoldMarkdownToHtml } from "@/lib/utils/markdown";
 
 interface CardProps {
   card?: string;
@@ -34,15 +35,53 @@ function ChatCard({
     setIsFlipped(!isFlipped);
   };
 
+  const getBulletText = (text: string): string => {
+    const isFirstWordAnd =
+      text?.trim()?.split(" ")?.at(0)?.toLowerCase() === "and";
+    const newText = isFirstWordAnd
+      ? text?.trim()?.split(" ")?.slice(1)?.join(" ")
+      : text.trim();
+    const firstLetterUpperCase = newText?.slice(0, 1)?.toUpperCase();
+    const restLetterLowerCase = newText?.slice(1)?.toLowerCase();
 
-  const getBulletText = (text:string):string => {
-    const isFirstWordAnd = text?.trim()?.split(' ')?.at(0)?.toLowerCase() === 'and'
-    const newText = isFirstWordAnd? text?.trim()?.split(" ")?.slice(1)?.join(" ") :text.trim()
-    const firstLetterUpperCase = newText?.slice(0, 1)?.toUpperCase()
-    const restLetterLowerCase = newText?.slice(1)?.toLowerCase()
+    return firstLetterUpperCase + restLetterLowerCase;
+  };
 
-    return firstLetterUpperCase+restLetterLowerCase
-  }
+  // const whyThis = [
+  //   {
+  //     id: 1,
+  //     name: "Why this card?",
+  //     designation: "",
+  //     icon: <BadgeQuestionMark size={24} />,
+  //   },
+  // ];
+  // const applyNow = [
+  //   {
+  //     id: 1,
+  //     name: "Apply now",
+  //     designation: "",
+  //     icon: <SquareArrowOutUpRight size={20} />,
+  //   },
+  // ];
+
+  // const addToFav = [
+  //   {
+  //     id: 1,
+  //     name: "Add to Favourite",
+  //     designation: "",
+  //     icon: <Heart size={24} />,
+  //   },
+  // ]; 
+
+  // const goBack = [
+  //   {
+  //     id: 1,
+  //     name: "Go Back",
+  //     designation: "",
+  //     icon: <ArrowBigLeft size={24} />,
+  //   },
+  // ]; 
+
 
   return (
     <div className="flex items-center justify-center rounded-lg">
@@ -72,11 +111,19 @@ function ChatCard({
                 draggable="false"
               />
 
-              <div className="absolute w-full top-0 left-0 h-full p-3 pt-5 pb-3 flex flex-col justify-between">
+              <div className="absolute w-full top-0 left-0 h-full p-3 py-3 flex flex-col justify-between">
                 <div className="flex gap-1 items-center">
                   {bankIcon && <p>{bankIcon}</p>}
                   <Typography variant="p" className="font-bold text-left">
-                    {card ? card : "Credit Card"}
+                    {card ? (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: convertBoldMarkdownToHtml(card),
+                        }}
+                      ></span>
+                    ) : (
+                      "Credit Card"
+                    )}
                   </Typography>
                 </div>
 
@@ -126,7 +173,6 @@ function ChatCard({
                     </Typography>
                   </div>
                 </div>
-
                 <div className="flex gap-2">
                   <button
                     className="text-white w-full border border-primary-orange/70 rounded-full text-[12px] py-1 p-2 cursor-pointer"
@@ -146,6 +192,14 @@ function ChatCard({
                     </a>
                   )}
                 </div>
+                {/* <div className="flex pl-0 p-4 py-1 gap-8 justify-center">
+                  <AnimatedTooltip onClick={handleFlip} items={whyThis} />
+                  <AnimatedTooltip
+                    onClick={() => window.open(apply, "_blank")}
+                    items={applyNow}
+                  />
+                  <AnimatedTooltip onClick={() => handleAddToFav()} items={addToFav} />
+                </div> */}
               </div>
             </div>
           </div>
@@ -167,15 +221,23 @@ function ChatCard({
                 alt="card"
                 draggable="false"
               />
-              <div className="absolute w-full top-0 left-0 h-full p-3 pt-5 pb-3 flex flex-col">
+              <div className="absolute w-full top-0 left-0 h-full p-3 py-3 flex flex-col">
                 <div className="flex gap-1 items-center">
                   {bankIcon && <p>{bankIcon}</p>}
-                  <Typography variant="p" className="font-bold">
-                    {card ? card : "Credit Card"}
+                  <Typography variant="p" className="font-bold text-left">
+                    {card ? (
+                      <span
+                        dangerouslySetInnerHTML={{
+                          __html: convertBoldMarkdownToHtml(card),
+                        }}
+                      ></span>
+                    ) : (
+                      "Credit Card"
+                    )}
                   </Typography>
                 </div>
 
-                <div className="flex flex-col gap-2 mt-6">
+                <div className="flex flex-col gap-2 mt-3">
                   {props?.["whyThisCard?"] && (
                     <div>
                       <Typography
@@ -188,7 +250,7 @@ function ChatCard({
                         variant="p"
                         className="text-left opacity-90 font-medium"
                       >
-                        {props?.["whyThisCard?"]}
+                        {props?.["whyThisCard?"]?.slice(0,380)}
                       </Typography>
                     </div>
                   )}
@@ -207,8 +269,7 @@ function ChatCard({
                             variant="p"
                             className="text-left opacity-90 font-medium"
                           >
-                            •{" "}{getBulletText(text)}
-                            
+                            • {getBulletText(text)}
                           </Typography>
                         ))}
                       </div>
@@ -235,6 +296,15 @@ function ChatCard({
                     </a>
                   )}
                 </div>
+
+                {/* <div className="flex pl-0 p-4 py-1 gap-8 justify-center">
+                  <AnimatedTooltip onClick={handleFlip} items={goBack} />
+                  <AnimatedTooltip
+                    onClick={() => window.open(apply, "_blank")}
+                    items={applyNow}
+                  />
+                  <AnimatedTooltip onClick={() => {}} items={addToFav} />
+                </div> */}
               </div>
             </div>
           </div>

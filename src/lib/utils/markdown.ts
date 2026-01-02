@@ -12,6 +12,7 @@ export function containsMarkdownTable(message: string): boolean {
 }
 
 export function convertBoldMarkdownToHtml(text: string): string {
+  if (!text) return "";
   return text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
 }
 
@@ -42,15 +43,11 @@ export function markdownToJson(mdText: string): ParsedMessage {
   const lines = tableMd.split("\n").filter(Boolean);
   if (lines.length < 2) return { message, cards: [] };
 
-  //   console.log(lines)
-
   // Parse headers
   const headers = lines[0]
     .split("|")
     .map((h) => h.trim())
     .filter(Boolean);
-
-  // console.log(headers)
 
   const cards = [];
 
@@ -62,8 +59,6 @@ export function markdownToJson(mdText: string): ParsedMessage {
       .filter(Boolean);
     if (cols.length !== headers.length) continue;
 
-    // console.log(cols)
-
     const card: Record<string, string> = {};
 
     for (let i = 0; i < headers.length; i++) {
@@ -73,7 +68,6 @@ export function markdownToJson(mdText: string): ParsedMessage {
         card[toCamelCase(headers[i])] = cols[i];
       }
     }
-    // console.log(card)
     cards.push(card);
   }
 

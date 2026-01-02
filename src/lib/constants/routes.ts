@@ -19,6 +19,7 @@ export const ROUTES = {
   COMPLIANCE: "/legal-compliance",
   TERMS: "/terms",
   CHOOSE_CARD: "/choose-card",
+  CARD_INDO: "/card-info",
 };
 
 export const PUBLIC_ROUTES = [

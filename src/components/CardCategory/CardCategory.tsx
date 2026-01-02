@@ -3,23 +3,26 @@ import Image from "next/image";
 import Typography from "../Typography/Typography";
 import NeonBorder from "../Fallback/NeaonBorder/NeaonBorder";
 import useNav from "@/lib/hooks/useNav";
+import { saveToSessionStorage } from "@/lib/utils/sessionStorage";
+import { CARD_CATEGORY_KEY } from "@/lib/constants/storage";
+import { CARD_CATEGORY } from "@/lib/data/cards";
 
-const cardData = (navigate:() => void) => [
+const cardData = (handleClick: (value:string) => void) => [
   {
     title: "All rounder",
     description: (
       <>
-       Want all in one? <br/> Discover options  <br/>
+        Want all in one? <br /> Discover options <br />
         <span className="text-secondary-gray">
-        with great rewards  <br/> and flexible benefits
+          with great rewards <br /> and flexible benefits
         </span>
       </>
     ),
     image: "/images/all-rounder.svg",
-    imgWidth:240,
-    imgHeight:222,
-    imgStyle:"absolute bottom-5 -right-5",
-    onClick: navigate,
+    imgWidth: 240,
+    imgHeight: 222,
+    imgStyle: "absolute bottom-5 -right-5",
+    onClick:() =>  handleClick(CARD_CATEGORY.ALL_ROUNDER),
   },
   {
     title: "travel",
@@ -35,54 +38,63 @@ const cardData = (navigate:() => void) => [
       </>
     ),
     image: "/images/travel.svg",
-    imgWidth:280,
-    imgHeight:222,
-    imgStyle:"absolute top-[-4px] right-0",
-    onClick: navigate,
-
+    imgWidth: 280,
+    imgHeight: 222,
+    imgStyle: "absolute top-[-4px] right-0",
+   onClick:() =>  handleClick(CARD_CATEGORY.TRAVEL),
   },
   {
     title: "food & dining",
     description: (
       <>
-      Find perfect choices <br/>for earning more <br/>
+        Find perfect choices <br />
+        for earning more <br />
         <span className="text-secondary-gray">
-          on meals, dining, <br/> and delivery.
+          on meals, dining, <br /> and delivery.
         </span>
       </>
     ),
     image: "/images/food.svg",
-    imgWidth:190,
-    imgHeight:222,
-    imgStyle:"absolute bottom-3 right-3",
-    onClick: navigate,
+    imgWidth: 190,
+    imgHeight: 222,
+    imgStyle: "absolute bottom-3 right-3",
+   onClick:() =>  handleClick(CARD_CATEGORY.FOOD),
   },
   {
     title: "shopping",
     description: (
       <>
-      Find great choices for <br/>   maximizing rewards<br/>
+        Find great choices for <br /> maximizing rewards
+        <br />
         <span className="text-secondary-gray">
-         on online and<br/> store shopping
+          on online and
+          <br /> store shopping
         </span>
       </>
     ),
     image: "/images/shopping.svg",
-    imgWidth:240,
-    imgHeight:222,
-    imgStyle:"absolute -bottom-5 right-0",
-    onClick: navigate,
+    imgWidth: 240,
+    imgHeight: 222,
+    imgStyle: "absolute -bottom-5 right-0",
+   onClick:() =>  handleClick(CARD_CATEGORY.SHOPPING),
   },
 ];
 const CardCategory = () => {
+  const { goToChat } = useNav();
 
-  const {goToChat} = useNav()
+
+  const handleClick = (value:string) => {
+    saveToSessionStorage(CARD_CATEGORY_KEY,value)
+    goToChat?.()
+  }
 
   return (
     <div className="pl-16 min-h-screen flex flex-col justify-center items-center gap-10">
-      <Typography variant="h3" className="font-butlerpro">What are you looking for?</Typography>
+      <Typography variant="h3" className="font-butlerpro">
+        What are you looking for?
+      </Typography>
       <div className="grid grid-cols-[fit-content(420px)_1fr] gap-10 max-w-4xl mx-auto">
-        {cardData?.(goToChat)?.map((card) => (
+        {cardData?.(handleClick)?.map((card) => (
           <NeonBorder key={card.title} onClick={card.onClick}>
             <div className="border bg-background-primary border-secondary-orange flex relative p-6 w-[420px] h-[260px] rounded-lg">
               <div>

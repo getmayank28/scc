@@ -5,7 +5,6 @@ import { KeyboardEvent, ChangeEvent } from 'react';
 
 interface ChatbotInputAreaProps {
   inputValue: string;
-  isTyping?: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress?: (e: KeyboardEvent<HTMLInputElement>) => void;
@@ -15,7 +14,6 @@ interface ChatbotInputAreaProps {
 
 const ChatbotInput = ({
   inputValue,
-  isTyping,
   onInputChange,
   onSend,
   onKeyPress,
@@ -32,8 +30,7 @@ const ChatbotInput = ({
     }
   };
 
-  const isDisabled = disabled || isTyping;
-  const isSendDisabled = !inputValue.trim() || isDisabled;
+  const isSendDisabled = !inputValue.trim() || disabled;
 
   return (
     <div className="flex-shrink-0 p-4 pb-6">
@@ -45,7 +42,7 @@ const ChatbotInput = ({
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
-            disabled={isDisabled}
+            disabled={disabled}
             className="flex-1 p-6 bg-[#101010] border-0 text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Button

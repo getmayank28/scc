@@ -18,6 +18,7 @@ interface SliderInputProps {
   onChange?: (value: number) => void;
   onSelectionSubmit?: boolean;
   sliderStep?: number;
+  enableInputs?: boolean;
 }
 
 export default function SliderInput({
@@ -33,6 +34,7 @@ export default function SliderInput({
   sliderStep = 10,
   value,
   onSelectionSubmit = false,
+  enableInputs,
 }: SliderInputProps) {
   const [selecteValue, setSelectedValue] = useState(() => value ?? 100000);
 
@@ -41,11 +43,14 @@ export default function SliderInput({
     return selecteValue;
   }, [isOutsideControl, selecteValue, value]);
 
-  const handleChange = (value: number) => {
+  const handleChange = (newValue: number) => {
     if (isOutsideControl) {
-      onChange?.(value);
+      onChange?.(newValue);
     } else {
-      setSelectedValue(value);
+      if (enableInputs) {
+        onSubmit?.(newValue);
+      }
+      setSelectedValue(newValue);
     }
   };
   const handleSubmit = () => {
@@ -112,7 +117,7 @@ export default function SliderInput({
             <div className="flex gap-2 justify-center items-center">
               <Button
                 className="w-10 font-black cursor-pointer h-10 rounded-full bg-secondary-orange"
-                disabled={disabled||selecteValue <= min}
+                disabled={disabled || selecteValue <= min}
                 onClick={() => handleChange(Number(selecteValue) - sliderStep)}
               >
                 -
@@ -129,19 +134,21 @@ export default function SliderInput({
               />
               <Button
                 className="w-10 h-10 font-black cursor-pointer rounded-full bg-secondary-orange"
-                disabled={disabled||selecteValue >= max}
-                onClick={() =>  handleChange(Number(selecteValue) + sliderStep)}
+                disabled={disabled || selecteValue >= max}
+                onClick={() => handleChange(Number(selecteValue) + sliderStep)}
               >
                 +
               </Button>
             </div>
-            <Button
-              onClick={handleSubmit}
-              disabled={!inputValue || disabled}
-              className="ml-auto px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-secondary-orange/70 cursor-pointer"
-            >
-              Submit
-            </Button>
+            {!enableInputs && (
+              <Button
+                onClick={handleSubmit}
+                disabled={!inputValue || disabled}
+                className="ml-auto px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-secondary-orange/70 cursor-pointer"
+              >
+                Submit
+              </Button>
+            )}
           </div>
         )}
       </div>

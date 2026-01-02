@@ -8,7 +8,9 @@ const useNav = () => {
 
   const goToSignIn = () => router.replace(ROUTES.SIGN_IN);
 
-  return { goToChat, goToSignIn };
+  const goToCardCategory = () => router.replace(ROUTES.CHOOSE_CARD);
+
+  return { goToChat, goToSignIn, goToCardCategory };
 };
 
 export default useNav;

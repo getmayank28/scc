@@ -58,7 +58,6 @@ export const authOptions: NextAuthOptions = {
 
     async jwt({ token, user }) {
       await dbConnect();
-      console.log(token, user, "from jwt");
       if (user) {
         if (user?.id) {
           token._id = user.id;
@@ -75,18 +74,15 @@ export const authOptions: NextAuthOptions = {
       //     token.isVerified = dbUser.isVerified;
       //   }
       // }
-      console.log(token, user, "from jwt 2");
       return token;
     },
 
     async session({ session, token }) {
-      console.log(session, token, "from session ");
       session.user._id = token._id;
       session.user.isVerified = token.isVerified;
       session.user.name = token.name;
       session.user.email = token.email;
 
-      console.log(session, token, "from session 22");
       return session;
     },
   },

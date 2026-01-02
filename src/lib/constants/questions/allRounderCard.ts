@@ -1,0 +1,192 @@
+import {
+  BaseMessage,
+  MESSAGE_SOURCE,
+  MESSAGE_TYPE,
+} from "@/types/chatMessages";
+import { CHAT_ACTIONS } from "../actions";
+
+export const allRounderCard = [
+  {
+    m_id: "monthly-spend",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content:
+      "About how much do you spend in a typical month (online + offline)?",
+    botContent: " my monthly spend is ",
+    order: 1,
+    type: MESSAGE_TYPE.SLIDER,
+    default: 50000,
+    min: 1000,
+    max: 200000,
+    step: 1000,
+  },
+  {
+    m_id: "online-spend",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "Out of this, roughly how much is spent online?",
+    botContent: " my monthly online spend is ",
+    order: 2,
+    type: MESSAGE_TYPE.SLIDER,
+    dynamicFileds: ["default", "max"],
+    default: (answers: BaseMessage[]) => {
+      console.log(answers, "fhvbfhvbfhbvh");
+      const requiredQuestion = answers?.find(
+        (item: BaseMessage) => item?.questionId === "monthly-spend"
+      );
+      console.log(Number(requiredQuestion?.content) * 0.6, "fhbvhfbvbfhb");
+      return Number(requiredQuestion?.content) * 0.6;
+    },
+    min: 1000,
+    max: (answers: BaseMessage[]) => {
+      const requiredQuestion = answers?.find(
+        (item: BaseMessage) => item?.questionId === "monthly-spend"
+      );
+      return Number(requiredQuestion?.content);
+    },
+    step: 1000,
+  },
+  {
+    m_id: "most-spend-category",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "Which categories do you spend the most on? (Select up to 2)",
+    botContent: " categories I spend the most on is ",
+    order: 3,
+    type: MESSAGE_TYPE.MULTI_SELECT,
+    maxSelect: 2,
+    slots: [
+      {
+        label: "Travel",
+        value: "Travel",
+      },
+      {
+        label: "Food & Dining",
+        value: "Food & Dining",
+      },
+      {
+        label: "Online Shopping",
+        value: "Online Shopping",
+      },
+      {
+        label: "Utility Bills",
+        value: "Utility Bills",
+      },
+      {
+        label: "Fuel",
+        value: "Fuel",
+      },
+      {
+        label: "Rent / Insurance / Fees",
+        value: "Rent / Insurance / Fees",
+      },
+    ],
+  },
+  {
+    m_id: "all-rounder-early-recommendation",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content:
+      "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
+    order: 4,
+    type: MESSAGE_TYPE.BUTTON_GROUP,
+    slots: [
+      {
+        label: "I want the perfect card",
+        value: "I want the perfect card",
+        variant: "primary",
+      },
+      {
+        label: "Show me now",
+        value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
+        variant: "outline",
+      },
+    ],
+  },
+  {
+    m_id: "yearly-travel-spend",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "Roughly how much do you spend on travel in a year?",
+    botContent: " my travel spend in a year is ",
+    order: 5,
+    type: MESSAGE_TYPE.SLIDER,
+    default: 100000,
+    min: 0,
+    max: 1000000,
+    step: 1000,
+  },
+  {
+    m_id: "food-bills-shopping",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "",
+    type: MESSAGE_TYPE.FORM,
+    inputs: [
+      {
+        m_id: "food-and-dining",
+        source: MESSAGE_SOURCE.ASSISTANT,
+        content: "Food delivery & Dining",
+        botContent: " my food delivery & dining spend is ",
+        order: 6,
+        type: MESSAGE_TYPE.SLIDER,
+        default: 5000,
+        min: 0,
+        max: 50000,
+        step: 1000,
+      },
+      {
+        m_id: "bill-payments",
+        source: MESSAGE_SOURCE.ASSISTANT,
+        content: "Bill Payment",
+        botContent: " my bill payment spend is ",
+        order: 6,
+        type: MESSAGE_TYPE.SLIDER,
+        default: 5000,
+        min: 0,
+        max: 50000,
+        step: 1000,
+      },
+      {
+        m_id: "online-shopping",
+        source: MESSAGE_SOURCE.ASSISTANT,
+        content:
+          "Shopping on online platform ( fashion, groceries, daily needs etc.)",
+        botContent:
+          " my online shopping platform(fashion,groceries,daily needs) spend is ",
+        order: 6,
+        type: MESSAGE_TYPE.SLIDER,
+        default: 50000,
+        min: 0,
+        max: 200000,
+        step: 1000,
+      },
+    ],
+  },
+  {
+    m_id: "fuel-and-taxes",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "",
+    type: MESSAGE_TYPE.FORM,
+    inputs: [
+      {
+        m_id: "fuel",
+        source: MESSAGE_SOURCE.ASSISTANT,
+        content: "Fuel expenses",
+        botContent: " my fuel spend is ",
+        order: 6,
+        type: MESSAGE_TYPE.SLIDER,
+        default: 5000,
+        min: 0,
+        max: 50000,
+        step: 1000,
+      },
+      {
+        m_id: "taxes-insurance-rent",
+        source: MESSAGE_SOURCE.ASSISTANT,
+        content: "Taxes, Insurance or rent paid on via credit card",
+        botContent: " my spend on taxes, insurance or rent  is ",
+        order: 6,
+        type: MESSAGE_TYPE.SLIDER,
+        default: 5000,
+        min: 0,
+        max: 50000,
+        step: 1000,
+      },
+    ],
+  },
+];

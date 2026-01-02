@@ -13,7 +13,7 @@ export default function SingleSelectInput({
   disabled,
   options,
   onSubmit,
-  onSelectionSubmit=false
+  onSelectionSubmit=false,
 }: SingleSelectProps) {
   const [selectedPlatform, setSelectedPlatform] = useState("");
 

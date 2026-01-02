@@ -2,17 +2,20 @@ import { useState } from "react";
 import Typography from "../Typography/Typography";
 import { Checkbox } from "../ui/checkbox";
 import { Button } from "../ui/button";
+import toast from "react-hot-toast";
 
 interface MultiSelectInputProps {
   options: { label: string; value: string }[];
   disabled: boolean;
   onSubmit: (selected: Array<string>) => void;
+  maxSelect?:number
 }
 
 const MultiSelectInput = ({
   options,
   disabled,
   onSubmit,
+  maxSelect
 }: MultiSelectInputProps) => {
   const [selectedOptions, setSelectedOptions] = useState([]);
   return (
@@ -27,6 +30,7 @@ const MultiSelectInput = ({
               // @ts-expect-error some
               checked={selectedOptions?.includes(ele.value)}
               onClick={() => {
+
                  // @ts-expect-error some
                 const isSelected = selectedOptions?.includes(ele.value);
                 if (isSelected) {
@@ -35,6 +39,11 @@ const MultiSelectInput = ({
                   );
                   setSelectedOptions(filteredOptions);
                 } else {
+
+                if(maxSelect && selectedOptions?.length >= maxSelect){
+                  toast(`You can max select ${maxSelect} options`)
+                  return 
+                }
                    // @ts-expect-error some
                   setSelectedOptions((prev) => [...prev, ele.value]);
                 }

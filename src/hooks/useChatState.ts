@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { ChatMessage, SessionMessage } from "@/types/chatMessages";
+import { BaseMessage, ChatMessage, SessionMessage } from "@/types/chatMessages";
 import { WS_SESSION_KEY } from "@/lib/utils/sessionStorage";
 
 export function useChatState() {
@@ -9,26 +9,24 @@ export function useChatState() {
   // Track processed message chunks to avoid duplicates
   const processedChunks = useRef(new Set<string>());
 
-  const addUserMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) => [...prev, msg]);
+  const addUserMessage = useCallback((msg: BaseMessage | undefined) => {
+    if (!msg) return;
+
+    setMessages((prev) => {
+      const isExist = prev.some((item) => item.m_id === msg.m_id);
+      if (isExist) return prev;
+      else return [...prev, msg];
+    });
   }, []);
 
   const messgaeTypes = ["SlotMessage", "SliderMessage"];
 
   const addAssistantMessage = useCallback((msg: ChatMessage) => {
-    console.log(msg, "hfhfbvbfhbvhfbhvfbh");
-    if (msg.type === "SlotMessage") {
-      console.log(msg, "hfhfbvbfhbvhfbhvfbh");
-    }
     setMessages((prev) => {
       // Find if this assistant message already exists
       const existingIndex = prev.findIndex(
         (m) => m.m_id === msg.m_id && m.source === "assistant"
       );
-
-      if (msg.type === "SlotMessage") {
-        console.log(existingIndex, "hfhfbvbfhbvhfbhvfbh 22");
-      }
 
       if (
         existingIndex === -1 &&

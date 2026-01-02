@@ -64,6 +64,40 @@ export const api = createApi({
         body: { id },
       }),
     }),
+    getCardBySearch: builder.query({
+      query: ({ query }) => ({
+        url: `cards/search`,
+        params: { q: query },
+      }),
+    }),
+    AddCard: builder.mutation({
+      query: (body) => ({
+        url: "cards/user/add",
+        method: "POST",
+        body,
+      }),
+    }),
+    getUserCards: builder.query({
+      query: ({ userId }) => ({
+        url: `cards/${userId}`,
+      }),
+    }),
+    removeUserCard: builder.mutation({
+      query: (body) => ({
+        url: `cards/remove`,
+        method: "DELETE",
+        body,
+      }),
+    }),
+    chatCommunication: builder.mutation({
+      query: (message) => ({
+        url: `cards/communicate`,
+        method: "POST",
+        body: {
+          message,
+        },
+      }),
+    }),
   }),
 });
 
@@ -77,4 +111,9 @@ export const {
   useCreateChatSessionMutation,
   useChatSessionTokenMutation,
   useUserChatSessionsMutation,
+  useLazyGetCardBySearchQuery,
+  useAddCardMutation,
+  useGetUserCardsQuery,
+  useRemoveUserCardMutation,
+  useChatCommunicationMutation,
 } = api;
