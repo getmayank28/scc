@@ -15,6 +15,34 @@ import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader"
 // import FormInput from "../FormInput/FormInput";
 import { renderInput } from "@/lib/utils/renderInput";
 
+
+const loadingStates = [
+  {
+    text: "Learning your spending",
+  },
+  {
+    text: "Categorizing your expenses",
+  },
+  {
+    text: "Scanning 500+ credit cards",
+  },
+  {
+    text: "Analyzing rewards, and benefits",
+  },
+  {
+    text: "Matching cards to your lifestyle",
+  },
+  {
+    text: "Optimizing for maximum benefits",
+  },
+  {
+    text: "Running cards comparisons",
+  },
+  {
+    text: "Finding your best match",
+  },
+];
+
 interface ChatbotScrollableAreaProps {
   currentMessageId?: string;
   messages: ChatMessage[];
@@ -132,7 +160,7 @@ export const ChatbotScrollableArea = ({
               </div>
             </div>
           ))}
-          {isTyping && <MultiStepChatLoader />}
+          {isTyping && <MultiStepChatLoader loadingStates={loadingStates} />}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

@@ -20,6 +20,7 @@ export const ROUTES = {
   TERMS: "/terms",
   CHOOSE_CARD: "/choose-card",
   CARD_INDO: "/card-info",
+  SPEND_OPTIMIZER: "/spend-optimizer",
 };
 
 export const PUBLIC_ROUTES = [
@@ -33,6 +34,5 @@ export const PUBLIC_ROUTES = [
   "/terms",
   "/",
   "/chat",
-  "/choose-card",
   "/landing",
 ];

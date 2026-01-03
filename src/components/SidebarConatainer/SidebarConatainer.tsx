@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
 import {
+  Brain,
   CreditCard,
   House,
   LogOutIcon,
@@ -24,7 +25,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       icon: <House className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
-      label: "Chats",
+      label: "AI Advisor",
       href: ROUTES.CHOOSE_CARD,
       icon: <MessagesSquare className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
@@ -33,13 +34,18 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       href: ROUTES.MY_CARDS,
       icon: <CreditCard className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
+    {
+      label: "Spend Optimizer",
+      href: ROUTES.SPEND_OPTIMIZER,
+      icon: <Brain className="h-5 w-5 shrink-0 text-neutral-200" />,
+    },
     // {
     //   label: "Favorites",
     //   href: ROUTES.FAVORITES,
     //   icon: <Heart className="h-5 w-5 shrink-0 text-neutral-200" />,
     // },
     {
-      label: "Card info",
+      label: "Explore Cards",
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
     },

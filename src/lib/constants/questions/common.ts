@@ -10,7 +10,7 @@ export const continueJourney = {
   slots: [
     {
       label: "No, I am good",
-      value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
+      value: CHAT_ACTIONS.END_JOURNEY,
       variant: "outline",
     },
     {

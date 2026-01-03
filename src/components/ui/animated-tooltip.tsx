@@ -8,12 +8,15 @@ import {
   useMotionValue,
   useSpring,
 } from "motion/react";
+import { cn } from "@/lib/utils";
 
 export const AnimatedTooltip = ({
   items,
   onClick,
+  iconClassName
 }: {
-  onClick: () => void;
+  onClick?: () => void;
+  iconClassName?:string
   items: {
     id: number;
     name: string;
@@ -77,11 +80,11 @@ export const AnimatedTooltip = ({
                   rotate: rotate,
                   whiteSpace: "nowrap",
                 }}
-                className="absolute -top-16 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center justify-center rounded-md bg-black px-4 py-2 text-xs shadow-xl"
+                className="absolute  z-[9999999] -top-16 left-1/2  flex -translate-x-1/2 flex-col items-center justify-center rounded-md bg-black px-4 py-2 text-xs shadow-xl"
               >
                 <div className="absolute inset-x-10 -bottom-px z-30 h-px w-[20%] bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
                 <div className="absolute -bottom-px left-10 z-30 h-px w-[40%] bg-gradient-to-r from-transparent via-sky-500 to-transparent" />
-                <div className="relative z-30 text-base font-bold text-white">
+                <div className="relative z-[9999999] text-base font-bold text-white">
                   {item.name}
                 </div>
                 <div className="text-xs text-white">{item.designation}</div>
@@ -92,7 +95,7 @@ export const AnimatedTooltip = ({
             <div
               onClick={onClick}
               onMouseMove={handleMouseMove}
-              className="relative hover:bg-primary-orange cursor-pointer bg-secondary-orange flex items-center justify-center !m-0 h-12 w-12 rounded-full object-cover object-top !p-0 transition duration-500 group-hover:z-30 group-hover:scale-105"
+              className={cn("relative hover:bg-primary-orange cursor-pointer bg-primary-orange flex items-center justify-center !m-0 h-12 w-12 rounded-full object-cover object-top !p-0 transition duration-500 group-hover:z-30 group-hover:scale-105", iconClassName)}
             >
               {item.icon}
             </div>

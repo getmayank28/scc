@@ -59,3 +59,44 @@ export const getMessageContent = ({
 
   return contentMsg;
 };
+
+type Message = {
+  content: string;
+  m_id: string;
+  ts: string;
+};
+
+type JoinedMessage = Message & {
+  content: string;
+};
+
+export function joinTextMessagesByMid(messages: Message[]): JoinedMessage[] {
+  const grouped = new Map<string, Message[]>();
+
+  // Group by m_id
+  for (const msg of messages) {
+    if (!grouped.has(msg.m_id)) {
+      grouped.set(msg.m_id, []);
+    }
+    grouped.get(msg.m_id)!.push(msg);
+  }
+
+  // Sort by ts and join content
+  const result: JoinedMessage[] = [];
+
+  for (const [, group] of grouped) {
+    const sorted = group.sort(
+      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
+    );
+
+    const joinedContent = sorted.map((m) => m.content).join("");
+
+    // Use the first message as base metadata
+    result.push({
+      ...sorted[0],
+      content: joinedContent,
+    });
+  }
+
+  return result;
+}

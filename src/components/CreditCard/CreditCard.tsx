@@ -1,7 +1,10 @@
-import {  X } from "lucide-react";
+import { X } from "lucide-react";
 import Typography from "../Typography/Typography";
-import { Button } from "../ui/button";
 import { CardSpotlight } from "../ui/card-spotlight";
+import { AnimatedTooltip } from "../ui/animated-tooltip";
+import Image from "next/image";
+import { normalizeString } from "@/lib/utils";
+import { useRef, useState } from "react";
 // import { Input } from "../ui/input";
 // import { useState } from "react";
 // import { creditCardSchema } from "@/schemas/creditCard";
@@ -21,12 +24,25 @@ const CreditCard = ({
   name?: string;
   cardName?: string;
   onCardNumberUpdate?: (number: string) => void;
-  onRemove?:()=> void
+  onRemove?: () => void;
 }) => {
   // const [error, setError] = useState(false);
   // const [cardNumber, setCardNumber] = useState("");
   // const [showNumberForm, setShowNumberForm] = useState(false);
   const Comp = isCardSpotlightActive ? CardSpotlight : "div";
+  const [hovered, setHovered] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMouseEnter = () => {
+    timerRef.current = setTimeout(() => {
+      setHovered(true);
+    }, 300);
+  };
+
+  const handleMouseLeave = () => {
+    if(timerRef.current) clearTimeout(timerRef.current);
+    setHovered(false);
+  };
 
   // const handleSubmit = () => {
   //   const result = creditCardSchema.safeParse(cardNumber);
@@ -44,25 +60,36 @@ const CreditCard = ({
   //   setError(false);
   // };
 
+  const goBack = [
+    {
+      id: 1,
+      name: "",
+      designation: "Remove card",
+      icon: <X color="#FFF" size={16} />,
+    },
+  ];
+
   return (
-    <div className="relative w-96 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
+    <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
       {/* Card Bottom Shadow */}
-      <div className="absolute top-[1px] left-[1px] w-96 h-[250px] max-md:w-[280px] max-md:h-[190px]  rounded-lg bg-[#666666] shadow-lg hidden md:block"></div>
+      <div className="absolute  w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  rounded-lg shadow-lg hidden md:block"></div>
 
       {/* Card Top */}
 
       <div
-        className="absolute top-0 left-0 w-96 h-[250px] max-md:w-[280px] max-md:h-[190px] rounded-lg shadow-xl overflow-hidden"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        className={`absolute group ${hovered ? "overflow-visible" : "overflow-hidden"} border border-secondary-orange top-0 left-0 w-98 h-[250px] max-md:w-[280px] max-md:h-[190px] rounded-lg shadow-xl`}
         style={{
           background: background,
           fontFamily: "Odibee Sans, Montserrat, sans-serif",
         }}
       >
-        <Comp className="w-96 h-[250px]">
+        <Comp className="w-98 h-[250px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/card-gradient.png"
-            className="w-96  h-[250px]"
+            className="w-98  h-[250px] opacity-30"
             alt="card"
             draggable="false"
           />
@@ -170,54 +197,36 @@ const CreditCard = ({
               </defs>
             </svg>
           </div>
-          <div className={`absolute top-6 left-4`}>
+          <div className={`absolute top-6 left-4 flex items-center gap-1`}>
+            <Image
+              width={20}
+              height={15}
+              src="/logos/hdfc.png"
+              alt="bank-logo"
+              className="w-[20px] h-[20px]"
+            />
             <Typography
               variant="body"
               className="text-left font-bold opacity-100 max-w-[320px]"
             >
-              {cardName}
+              {normalizeString(cardName as string)}
             </Typography>
           </div>
-          <div className={`absolute top-3 right-3`}>
-            <Button onClick={onRemove} className="rounded-full p-0 h-8 w-8">
-              <X />
-            </Button>
+          <div
+            className={`absolute top-0 -right-14 group-hover:right-0 transition-all duration-500 rounded-lg`}
+          >
+            <div className="h-[247px] flex flex-col p-4 px-3 bg-background-primary border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
+              <AnimatedTooltip
+                iconClassName="w-8 h-8"
+                onClick={onRemove}
+                items={goBack}
+              />
+            </div>
           </div>
 
           {/* Card Number */}
-          <div className="absolute top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white text-lg">
-            {number || "XXXX XXXX XXXX 5434"}
-            {/* Add card number */}
-            {/* {number || (
-              <>
-                {showNumberForm ? (
-                 <>
-                 <Input
-                   type="number"
-                   onChange={(e) => {
-                     setCardNumber(e.target.value);
-                     setError(false);
-                   }}
-                   className={`${error && "border-destructive"}`}
-                 />
-                 <Button disabled={error} onClick={handleSubmit} className="rounded-[6px] p-0 h-8 w-8">
-                   <Plus />
-                 </Button>
-                 <Button onClick={handleCancel} className="rounded-[6px] p-0 h-8 w-8">
-                   <X/>
-                 </Button>
-               </> 
-                ) : (
-                  <div className="flex items-center gap-2">
-                   <p className="font-bold">XXXX XXXX XXXX XXXX</p>
-                  <Button onClick={() => setShowNumberForm(true)} className="rounded-[6px] p-0 h-8 w-8">
-                   <Plus />
-                 </Button>
-                  </div>
-                 
-                )}
-              </>
-            )} */}
+          <div className="absolute top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 text-lg">
+            {number || "XXXX XXXX XXXX XXXX"}
           </div>
 
           {/* Card Details */}

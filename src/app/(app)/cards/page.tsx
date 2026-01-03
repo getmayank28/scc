@@ -46,10 +46,10 @@ const items = [
   },
 ];
 
-function getCardColor(cardIndex: number) {
-  const colorIndex = (cardIndex % 7) % items.length;
-  return items[colorIndex]?.bg;
-}
+// function getCardColor(cardIndex: number) {
+//   const colorIndex = (cardIndex % 7) % items.length;
+//   return items[colorIndex]?.bg;
+// }
 
 const Cards = () => {
   const [selected, setSelected] = useState<{
@@ -64,7 +64,9 @@ const Cards = () => {
   const [addCard] =
     useAddCardMutation();
 
-  const { data: userCards } = useGetUserCardsQuery({ userId });
+  const { data: userCards } = useGetUserCardsQuery({ userId }, {
+    skip:!userId
+  });
 
   const [removeUserCard] = useRemoveUserCardMutation();
 
@@ -120,7 +122,7 @@ const Cards = () => {
           <CreditCard
             key={card?._id}
             isCardSpotlightActive={false}
-            background={getCardColor(index)}
+            background={"#111"}
             cardName={card?.cardId?.name}
             name={name || ""}
             onRemove={() => handleCardRemove(card?.cardId?._id)}

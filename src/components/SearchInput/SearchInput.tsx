@@ -3,7 +3,7 @@
 import { RefObject, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Card as UiCard, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { BadgeX, Loader2 } from "lucide-react";
 import { useLazyGetCardBySearchQuery } from "@/store/api";
 
 interface Card {
@@ -18,12 +18,14 @@ export default function SearchSelect({
   selected,
   setSelected,
   searchInputRef,
+  onClearInput
 }: {
   selected: Card | null;
   setSelected: (card: Card | null) => void;
   query: string;
   setQuery: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
+  onClearInput?:() => void
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
 
@@ -74,6 +76,11 @@ export default function SearchSelect({
       {isFetching && (
         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 animate-spin text-white" />
       )}
+
+      {(selected ||
+        query) && (
+          <BadgeX className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 text-white cursor-pointer" onClick={onClearInput} />
+        )}
 
       {open && data.length > 0 && !selected && (
         <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-background-primary">

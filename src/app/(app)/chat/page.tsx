@@ -24,7 +24,7 @@ import { useChatScroll } from "@/lib/hooks/useChatScroll";
 import {
   createBotRecommendationContent,
   getMessageContent,
-} from "@/lib/constants/content";
+} from "@/lib/utils/content";
 import { CHAT_ACTIONS } from "@/lib/constants/actions";
 import { ActionTypes } from "@/types/actions";
 import { continueJourney as continueJourneyMessage } from "@/lib/constants/questions/common";
@@ -111,16 +111,18 @@ export default function ChatbotUI() {
     return userMessage;
   };
 
-  const evaluateEarly = (messages: BaseMessage[]) => {
+  const evaluateEarly = (messages: BaseMessage[], content:string) => {
     setShowTypingLoader(true);
-    addUserMessage({
-      source: "user",
-      content: "Show me now",
-      m_id: crypto.randomUUID(),
-      ts: new Date().toISOString(),
-      type: "TextMessage",
-    });
 
+    if(content){
+      addUserMessage({
+        source: "user",
+        content,
+        m_id: crypto.randomUUID(),
+        ts: new Date().toISOString(),
+        type: "TextMessage",
+      });
+    }
     const botMessage = createBotRecommendationContent(
       getUserMessage(messages),
       cardCategory as CardsType
@@ -192,6 +194,9 @@ export default function ChatbotUI() {
 
     return resolvedQuestion;
   };
+  const handleEndJourney = () =>{
+    setChatInputDisabled(false)
+  }
 
   const handleSend = async (
     value: string | Record<string, string | number>
@@ -199,9 +204,10 @@ export default function ChatbotUI() {
     if (typeof value === "string" && !value.trim()) return;
 
     const actions = {
-      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () => evaluateEarly(messages),
+      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () => evaluateEarly(messages, "Recommend me a card now"),
       [CHAT_ACTIONS.CONTINUE_JOURNEY]: continueJourney,
       [CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER]: switchToAllRounder,
+      [CHAT_ACTIONS.END_JOURNEY]: handleEndJourney,
     };
 
     const isButtonGroupAction =
@@ -282,7 +288,7 @@ export default function ChatbotUI() {
       setJoruneyMessageId((prev) => [...prev, resolvedQuestion?.m_id]);
     } else if (nextIndex >= selectedCardData.length && readyState === 1) {
       // Reached the end of questions
-      evaluateEarly?.([...messages, userMsg] as BaseMessage[]);
+      evaluateEarly?.([...messages, userMsg] as BaseMessage[],  "");
       setChatInputDisabled(false)
     }
 
@@ -300,6 +306,8 @@ export default function ChatbotUI() {
     clearFromSessionStorage(WS_SESSION_KEY);
     window.location.reload();
   };
+
+  
 
   const handleMessage = (message: BaseMessage | HistoryMessage) => {
     if (message.type !== "history" && message.source === "assistant") {
