@@ -166,7 +166,7 @@ export const allRounderCard = [
       {
         m_id: "fuel",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Fuel expenses",
+        content: "Payment of fuel using a credit card",
         botContent: " my fuel spend is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,
@@ -178,7 +178,7 @@ export const allRounderCard = [
       {
         m_id: "taxes-insurance-rent",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Taxes, Insurance or rent paid on via credit card",
+        content: "Payment of taxes, insurance, or rent using a credit card",
         botContent: " my spend on taxes, insurance or rent  is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,

@@ -197,13 +197,13 @@ const CreditCard = ({
               </defs>
             </svg>
           </div>
-          <div className={`absolute top-6 left-4 flex items-center gap-1`}>
+          <div className={`absolute top-6 left-4 flex items-start gap-1`}>
             <Image
               width={20}
               height={15}
               src="/logos/hdfc.png"
               alt="bank-logo"
-              className="w-[20px] h-[20px]"
+              className="w-[20px] h-[20px] mt-[5px]"
             />
             <Typography
               variant="body"

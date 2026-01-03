@@ -6,11 +6,11 @@ import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
 import {
   Brain,
-  CreditCard,
   House,
   LogOutIcon,
   MessagesSquare,
   Search,
+  User,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "../ui/button";
@@ -30,11 +30,6 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       icon: <MessagesSquare className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
-      label: "My Cards",
-      href: ROUTES.MY_CARDS,
-      icon: <CreditCard className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
-    {
       label: "Spend Optimizer",
       href: ROUTES.SPEND_OPTIMIZER,
       icon: <Brain className="h-5 w-5 shrink-0 text-neutral-200" />,
@@ -49,13 +44,13 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
-    // {
-    //     label: "Profile",
-    //     href: ROUTES.PROFILE,
-    //     icon: (
-    //       <User className="h-5 w-5 shrink-0 text-neutral-200" />
-    //     ),
-    //   },
+    {
+        label: "Profile",
+        href: ROUTES.PROFILE,
+        icon: (
+          <User className="h-5 w-5 shrink-0 text-neutral-200" />
+        ),
+      },
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();

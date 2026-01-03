@@ -13,7 +13,6 @@ export const ROUTES = {
   PROFILE: "/profile",
   FAVORITES: "/favourites",
   DASHBOARD: "/home",
-  MY_CARDS: "/cards",
   LOGOUT: "/logout",
   PRIVACY_POLICY: "privacy-policy",
   COMPLIANCE: "/legal-compliance",

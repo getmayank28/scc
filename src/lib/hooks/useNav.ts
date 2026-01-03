@@ -10,7 +10,9 @@ const useNav = () => {
 
   const goToCardCategory = () => router.replace(ROUTES.CHOOSE_CARD);
 
-  return { goToChat, goToSignIn, goToCardCategory };
+  const navigateToProfile = () => router.replace(ROUTES.PROFILE);
+
+  return { goToChat, goToSignIn, goToCardCategory, navigateToProfile };
 };
 
 export default useNav;

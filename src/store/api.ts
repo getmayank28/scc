@@ -121,3 +121,4 @@ export const {
   useRemoveUserCardMutation,
   useChatCommunicationMutation,
 } = api;
+export default api;

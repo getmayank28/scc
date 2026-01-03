@@ -27,6 +27,7 @@ import {
   Wallet,
   Gift,
   LucideIcon,
+  CirclePlus,
 } from "lucide-react";
 import HeaderText from "@/components/HeaderText/HeaderText";
 import useUserData from "@/lib/hooks/useUserData";
@@ -34,6 +35,7 @@ import { useGetUserCardsQuery } from "@/store/api";
 import Typography from "@/components/Typography/Typography";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
+import useNav from "@/lib/hooks/useNav";
 
 interface Category {
   value: string;
@@ -141,6 +143,8 @@ export default function SpendOptimizer() {
   const { userId } = useUserData();
   const { data: cards } = useGetUserCardsQuery({ userId });
 
+  const { navigateToProfile } = useNav();
+
   useEffect(() => {
     if (cards) {
       const cardIds = cards?.map((card: { _id: string }) => card?._id);
@@ -213,7 +217,6 @@ export default function SpendOptimizer() {
     setErrors({ ...errors, emi: false });
   };
 
-
   return (
     <div className="flex flex-col p-20 h-screen">
       <HeaderText
@@ -224,7 +227,66 @@ export default function SpendOptimizer() {
         contentVariant="caption"
         content="Which of my cards should I use for this purchase?"
       />
-      <div className="space-y-6 py-10">
+      <div className="pt-8">
+        <Typography variant="body" className="font-bold opacity-90 text-left">
+          Your cards
+        </Typography>
+        {cards?.length ? (
+          <div className="flex gap-6 py-2">
+            {cards?.map((card: { _id: string; cardId: { name: string } }) => {
+              return (
+                <div
+                  key={card?._id}
+                  className={`flex p-3 px-4 rounded-sm items-center justify-between w-[430px] border ${userCards?.includes(card?._id) ? "border-secondary-orange" : "border-white/30"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Image
+                      width={25}
+                      height={25}
+                      src="/logos/hdfc.png"
+                      alt="bank-logo"
+                    />
+                    <Typography
+                      variant="caption"
+                      className="text-sm font-semibold"
+                    >
+                      {card?.cardId?.name}
+                    </Typography>
+                  </div>
+                  <Checkbox
+                    checked={userCards?.includes(card?._id)}
+                    onClick={() => {
+                      const isSelected = userCards?.includes(card?._id);
+                      console.log(isSelected);
+                      if (isSelected) {
+                        const filteredOptions = userCards?.filter(
+                          (option) => option !== card?._id
+                        );
+                        setUserCards(filteredOptions);
+                      } else {
+                        setUserCards((prev) => [...prev, card?._id]);
+                      }
+                    }}
+                    className="w-6 h-6 data-[state=checked]:border-secondary-orange border-secondary-orange data-[state=checked]:bg-secondary-orange data-[state=checked]:text-white"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div
+            className="border cursor-pointer px-3 flex justify-start items-center gap-2 mt-2 border-dashed border-white/60 rounded-lg h-12 w-[430px]"
+            onClick={navigateToProfile}
+          >
+            <CirclePlus className="text-white/60" size={25} />
+            <Typography variant="caption" className="font-semibold">
+              Add card to start optimizing your spend
+            </Typography>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-6 py-6">
         <div className="grid grid-cols-3 gap-5">
           {/* Category Selection */}
           <div className="space-y-2">
@@ -420,57 +482,12 @@ export default function SpendOptimizer() {
           </div>
 
           <Button
+            disabled={!cards?.length}
             onClick={handleSubmit}
             className={`w-full h-12 text-base text-white font-semibold ${errors.paymentMethod || errors.emi ? "self-center" : "self-end"}`}
           >
             Find Best Card
           </Button>
-        </div>
-      </div>
-      <div>
-        <Typography variant="body" className="font-bold opacity-90 text-left">
-          Your cards
-        </Typography>
-        <div className="flex gap-6 py-2">
-          {cards?.map((card: { _id: string; cardId: { name: string } }) => {
-            return (
-              <div
-                key={card?._id}
-                className={`flex p-3 px-4 rounded-sm items-center justify-between w-[430px] border ${userCards?.includes(card?._id)?"border-secondary-orange":"border-white/30"}`}
-              >
-                <div className="flex items-center gap-3">
-                  <Image
-                    width={25}
-                    height={25}
-                    src="/logos/hdfc.png"
-                    alt="bank-logo"
-                  />
-                  <Typography
-                    variant="caption"
-                    className="text-sm font-semibold"
-                  >
-                    {card?.cardId?.name}
-                  </Typography>
-                </div>
-                <Checkbox
-                  checked={userCards?.includes(card?._id)}
-                  onClick={() => {
-                    const isSelected = userCards?.includes(card?._id);
-                    console.log(isSelected);
-                    if (isSelected) {
-                      const filteredOptions = userCards?.filter(
-                        (option) => option !== card?._id
-                      );
-                      setUserCards(filteredOptions);
-                    } else {
-                      setUserCards((prev) => [...prev, card?._id]);
-                    }
-                  }}
-                  className="w-6 h-6 data-[state=checked]:border-secondary-orange border-secondary-orange data-[state=checked]:bg-secondary-orange data-[state=checked]:text-white"
-                />
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>

@@ -28,15 +28,17 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       await dbConnect();
 
-      const existingUser = await UserModal.findOne({ email: user.email });
+      let existingUser = await UserModal.findOne({ email: user.email });
       if (!existingUser) {
-        await UserModal.create({
+        existingUser = await UserModal.create({
+          // @ts-expect-error some
+          name: user.name,
           email: user.email!,
           isVerified: true,
           provider: [AUTH_PROVIDERS.GOOGLE],
         });
       }
-
+      user._id = existingUser._id.toString();
       const existingUserWithCredentialsNowTryingGoogle =
         existingUser &&
         existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
@@ -59,21 +61,11 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       await dbConnect();
       if (user) {
-        if (user?.id) {
-          token._id = user.id;
-        } else {
-          token._id = user._id?.toString();
-        }
+        token._id = user._id?.toString();
         token.isVerified = user.isVerified;
         token.name = user.name;
         token.email = user.email;
       }
-      // else {
-      //   const dbUser = await UserModal.findById(token._id);
-      //   if (dbUser) {
-      //     token.isVerified = dbUser.isVerified;
-      //   }
-      // }
       return token;
     },
 
