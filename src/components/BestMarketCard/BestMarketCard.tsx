@@ -8,7 +8,7 @@ import InfoCard from "../InfoCard/InfoCard";
 
  
 const BestMarketCard = () => {
-  const { goToChat } = useNav();
+  const { goToCardCategory } = useNav();
 
   const infoCardData = [
     {
@@ -18,7 +18,7 @@ const BestMarketCard = () => {
       subtitle: "Ideal for international travel & foreign online spends",
       chips: ["0 Forex", "Best ROI", "Great Return"],
       buttonLabel: "View all options",
-      onClick: goToChat,
+      onClick: goToCardCategory,
     },
     {
       icon: <Globe />,
@@ -27,7 +27,7 @@ const BestMarketCard = () => {
       subtitle: "Complimentary airport lounges worldwide",
       chips: ["Lounge Access", "Travel Rewards", "Low Fees"],
       buttonLabel: "Explore cards",
-      onClick: goToChat,
+      onClick: goToCardCategory,
     },
     {
       icon: <ShieldCheck />,
@@ -36,7 +36,7 @@ const BestMarketCard = () => {
       subtitle: "Advanced security for all transactions",
       chips: ["Fraud Shield", "Instant Alerts", "24x7 Support"],
       buttonLabel: "See details",
-      onClick: goToChat,
+      onClick: goToCardCategory,
     },
   ];
   
@@ -47,7 +47,7 @@ const BestMarketCard = () => {
         <Typography variant="caption" className="-mr-2">
           To know what fits you best
         </Typography>
-        <Button variant="link" onClick={goToChat}>
+        <Button variant="link" onClick={goToCardCategory}>
           Ask the agent →
         </Button>
       </div>

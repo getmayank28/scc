@@ -17,7 +17,7 @@ type ModalProps = {
 export function Modal({ children, open, onChange, className }: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={onChange}>
-      <DialogContent className={className}>
+      <DialogContent className={className} showCloseButton={false}>
         {children}
       </DialogContent>
     </Dialog>

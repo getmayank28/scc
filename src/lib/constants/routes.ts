@@ -35,4 +35,5 @@ export const PUBLIC_ROUTES = [
   "/",
   "/chat",
   "/landing",
+  "/choose-card",
 ];

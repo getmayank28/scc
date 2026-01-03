@@ -1,10 +1,10 @@
 import Typography from "@/components/Typography/Typography";
 import CreditCardComparison from "./DrainCard";
-import useNav from "@/lib/hooks/useNav";
 import { Button } from "@/components/ui/stateful-button";
+import { useSignInControl } from "@/contexts/SignInContext";
 
 const CardDrainYou = () => {
-  const { goToSignIn } = useNav();
+  const { openSignUpModal } = useSignInControl();
 
   return (
     <>
@@ -24,9 +24,9 @@ const CardDrainYou = () => {
 
           <Button
             className="text-sm font-bold py-4 px-10 my-10"
-            onClick={goToSignIn}
+            onClick={openSignUpModal}
           >
-            Step into smarter spending
+            Analyze my card spending
           </Button>
         </div>
 

@@ -3,9 +3,11 @@ import Typography from "@/components/Typography/Typography";
 import AnimatedCircles from "./CircleAnimation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/stateful-button";
+import { useSignInControl } from "@/contexts/SignInContext";
 
 const YourSpendings = () => {
   const [isAnimated, setIsAnimated] = useState(false);
+  const { openSignUpModal } = useSignInControl();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -24,11 +26,6 @@ const YourSpendings = () => {
   }, []);
 
 
-
-  const handleClick = () => {
-    setIsAnimated(prev => !prev)
-
-    };
   return (
     <>
       <div className="flex h-screen bg-background-primary gap-30 overflow-hidden items-center justify-center relative z-10">
@@ -46,9 +43,9 @@ const YourSpendings = () => {
           <div>
             <Button
               className="text-sm font-bold py-4 px-10 my-10"
-              onClick={handleClick}
+              onClick={openSignUpModal}
             >
-              step1
+              Check my card now
             </Button>
           </div>
         </div>

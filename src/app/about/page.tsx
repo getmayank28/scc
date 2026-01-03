@@ -38,7 +38,7 @@ const About = () => {
           </div>
         </div>
       </div>
-      <div className="flex items-center justify-center gap-10 mt-[330px] max-md:mt-[200px] max-md:mb-[100px] flex-wrap "> 
+      <div className="flex items-center justify-center gap-10 mt-[330px] mb-[140px] max-md:mt-[200px] max-md:mb-[100px] flex-wrap "> 
         <CardSpotlight>
           <div className="text-center  relative z-10 w-[320px] py-12 rounded-xl">
             <div className="text-7xl font-bold text-white mb-2">500+</div>

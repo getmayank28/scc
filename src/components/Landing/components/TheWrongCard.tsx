@@ -2,11 +2,12 @@ import Typography from "@/components/Typography/Typography";
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 import Image, { StaticImageData } from "next/image";
 import { NotificationCardV2 } from "./Hero";
-import Boy from "../../../../../public/images/boy.png";
-import Girl from "../../../../../public/images/girl.png";
-import Boy2 from "../../../../../public/images/boy2.png";
-import Girl2 from "../../../../../public/images/girl2.png";
+import Boy from "../../../../public/images/boy.png";
+import Girl from "../../../../public/images/girl.png";
+import Boy2 from "../../../../public/images/boy2.png";
+import Girl2 from "../../../../public/images/girl2.png";
 import { Button } from "@/components/ui/stateful-button";
+import { useSignInControl } from "@/contexts/SignInContext";
 
 const TheWrongCardRightContent = ({message, card, img, color, cardImg}:{message:string;card:string;img:string;color:string, cardImg:StaticImageData}) => {
     return (
@@ -39,6 +40,7 @@ const TheWrongCardRightContent = ({message, card, img, color, cardImg}:{message:
   };
 
 const TheWrongCard = () => {
+  const { openSignUpModal } = useSignInControl();
 
     const spendMessages = [
       // 1st cycle
@@ -148,13 +150,11 @@ const TheWrongCard = () => {
   
             <Button
               className="text-sm font-bold py-4 px-10 my-10"
-              onClick={() => {}}
+              onClick={openSignUpModal}
             >
-              Step into smarter spending
+              Recommend my best card
             </Button>
           </div>
-  
-          {/* RIGHT CONTENT */}
           <LayoutTextFlip words={rightContentList} />
         </div>
       </>

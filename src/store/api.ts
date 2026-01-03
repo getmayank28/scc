@@ -3,6 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // adjust backend URL
+  tagTypes: ["UserCards"],
   endpoints: (builder) => ({
     getQuestions: builder.query({
       query: () => "/questions",
@@ -76,11 +77,13 @@ export const api = createApi({
         method: "POST",
         body,
       }),
+      invalidatesTags: ["UserCards"],
     }),
     getUserCards: builder.query({
       query: ({ userId }) => ({
         url: `cards/${userId}`,
       }),
+      providesTags: ["UserCards"],
     }),
     removeUserCard: builder.mutation({
       query: (body) => ({
@@ -88,6 +91,7 @@ export const api = createApi({
         method: "DELETE",
         body,
       }),
+      invalidatesTags: ["UserCards"],
     }),
     chatCommunication: builder.mutation({
       query: (message) => ({

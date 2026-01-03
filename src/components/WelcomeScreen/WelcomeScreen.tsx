@@ -26,7 +26,7 @@ const steps = [
   },
 ];
 const WelcomeScreen = () => {
-  const { goToChat } = useNav();
+  const { goToCardCategory } = useNav();
   const session = useSession()
 
   const name = session?.data?.user?.name?.split(' ')?.at(0)
@@ -76,7 +76,7 @@ const WelcomeScreen = () => {
               Unclock:Personalised savings up to{" "}
               <span className="text-primary-orange">25,000/year</span>
             </Typography>
-            <Button className="w-full h-[60px] mt-5" onClick={goToChat}>
+            <Button className="w-full h-[60px] mt-5" onClick={goToCardCategory}>
               Let&apos;s Go
               <p className="font-bold">→</p>
             </Button>

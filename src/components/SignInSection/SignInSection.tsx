@@ -19,9 +19,7 @@ import toast from "react-hot-toast";
 import SignInWithGoogle from "@/components/SignInWithGoogle/SignInWithGoogle";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
 
-
-
-const SignInSection = () => {
+const SignInSection = ({ showSkip = false, onSkip }: { showSkip?: boolean, onSkip?:()=>void }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof signInSchema>>({
@@ -100,7 +98,7 @@ const SignInSection = () => {
                 </FormItem>
               )}
             />
-            <ForgetPassword form={form}/>
+            <ForgetPassword form={form} />
           </div>
 
           <div>
@@ -118,23 +116,15 @@ const SignInSection = () => {
                 "Sign in"
               )}
             </Button>
-            {/* <p className="text-white mt-2 opacity-70 relative z-[100] text-center font-satoshi  text-[14px] font-normal leading-[150%] tracking-[-2%]  [font-feature-settings:'ss03_on']">
-                Don&apos;t have an account?
-                <Link
-                  className="underline text-white !opacity-100 ml-1"
-                  href={ROUTES.SIGN_UP}
-                >
-                  Sign up
-                </Link>
-              </p> */}
           </div>
         </form>
       </Form>
-
       <div className="flex justify-end py-8">
-        {/* <Link className="text-white/70 text-[12px]" href={ROUTES.CHAT}>
-          Skip for now
-        </Link> */}
+        {showSkip && (
+          <p className="text-white/70 text-[12px] cursor-pointer" onClick={onSkip}>
+            Skip for now
+          </p>
+        )}
       </div>
     </div>
   );
