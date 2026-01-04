@@ -196,6 +196,7 @@ export default function ChatbotUI() {
   };
   const handleEndJourney = () =>{
     setChatInputDisabled(false)
+    setCurrentMessageId("");
   }
 
   const handleSend = async (
@@ -204,32 +205,40 @@ export default function ChatbotUI() {
     if (typeof value === "string" && !value.trim()) return;
 
     const actions = {
-      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () => evaluateEarly(messages, "Recommend me a card now"),
+      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () => evaluateEarly(messages, "Recommend me a card"),
       [CHAT_ACTIONS.CONTINUE_JOURNEY]: continueJourney,
       [CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER]: switchToAllRounder,
       [CHAT_ACTIONS.END_JOURNEY]: handleEndJourney,
     };
 
+    
+
     const isButtonGroupAction =
       typeof value === "string" && value?.includes("action-");
 
-    if (isButtonGroupAction) {
-      actions[value as ActionTypes]?.();
-      return;
-    }
-    const currentMessageIndex = selectedCardData?.findIndex(
-      (msg) => msg.m_id === currentMessageId
-    );
 
-    const currentQuestion: BaseMessage = selectedCardData?.at(
-      currentMessageIndex
-    ) || {
-      m_id: "",
-      content: "",
-      source: MESSAGE_SOURCE.USER,
-      type: MESSAGE_TYPE.TEXT,
-      botContent: "",
-    };
+      if (isButtonGroupAction) {
+        actions[value as ActionTypes]?.();
+        return;
+      }
+
+      const currentMessageIndex = selectedCardData?.findIndex(
+        (msg) => msg.m_id === currentMessageId
+      );
+  
+      const currentQuestion: BaseMessage = selectedCardData?.at(
+        currentMessageIndex
+      ) || {
+        m_id: "",
+        content: "",
+        source: MESSAGE_SOURCE.USER,
+        type: MESSAGE_TYPE.TEXT,
+        botContent: "",
+      };
+
+      const isSubmit =   typeof currentQuestion?.submit === "string" && currentQuestion?.submit?.includes("action-") 
+
+
     const contentMsg = getMessageContent({
       messageType: currentQuestion.type,
       inputValue: value,
@@ -248,6 +257,12 @@ export default function ChatbotUI() {
     };
     // Add user message first
     addUserMessage(userMsg as BaseMessage);
+
+
+    if (isSubmit) {
+      actions[currentQuestion?.submit as ActionTypes]?.();
+      return;
+    }
 
     // Find next valid question to render
     let nextIndex = currentMessageIndex + 1;
@@ -307,16 +322,17 @@ export default function ChatbotUI() {
     window.location.reload();
   };
 
-  
+
 
   const handleMessage = (message: BaseMessage | HistoryMessage) => {
     if (message.type !== "history" && message.source === "assistant") {
       addAssistantMessage(message);
-      // setCurrentMessageId(message?.m_id);
       setShowTypingLoader(false);
       if (jouneyMessageId.length < selectedCardData.length) {
         addUserMessage(continueJourneyMessage as BaseMessage);
         setCurrentMessageId(continueJourneyMessage?.m_id);
+      }else{
+        setCurrentMessageId(message?.m_id);
       }
 
       return;

@@ -59,12 +59,54 @@ export const foodCard = [
     ],
   },
   {
+    m_id: "opt-for-all-rounder-card",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content:
+      "Your spending is not suitable for a food specific card, you should opt for an all rounder card",
+    order: 4,
+    type: MESSAGE_TYPE.BUTTON_GROUP,
+    conditionalRender: true,
+    condition: (answers: BaseMessage[]) => {
+      const onlineOrderFrequency =
+        answers?.find(
+          (item) => item.questionId === "online-food-order-frequency"
+        )?.content || "";
+
+      const dineOutFrequency =
+        answers?.find((item) => item.questionId === "dine-out-frequency")
+          ?.content || "";
+
+      const onlineFood = ["1–2 times a week", "Rarely or never"]?.includes(
+        onlineOrderFrequency
+      );
+
+      const dineOut = ["1–2 times a month", "Rarely or never"]?.includes(
+        dineOutFrequency
+      );
+
+      return onlineFood && dineOut;
+    },
+    slots: [
+      {
+        label: "Yes, go for all roundet card",
+        value: CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER,
+        variant: "primary",
+      },
+      {
+        label: "No, recommend me a food card",
+        value: "No, recommend me a food card",
+        variant: "outline",
+      },
+    ],
+  },
+  {
     m_id: "food-dining-platform",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "Do you have a preferred platform for food & dining?",
     botContent: " preferred platform for food & dining is ",
     order: 3,
     type: MESSAGE_TYPE.SELECT,
+    submit: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
     slots: [
       {
         label: "Zomato",
@@ -81,57 +123,6 @@ export const foodCard = [
       {
         label: "No preference",
         value: "No preference",
-      },
-    ],
-  },
-  {
-    m_id: "opt-for-all-rounder-card",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content:
-      "Your spending is not suitable for a food specific card, you should opt for an all rounder card",
-    order: 4,
-    type: MESSAGE_TYPE.BUTTON_GROUP,
-    conditionalRender: true,
-    condition: (answers: BaseMessage[]) => {
-      const dineOutFrequency =
-        answers?.find((item) => item.questionId === "dine-out-frequency")
-          ?.content || "";
-      const isRecommendAllRounder = [
-        "1–2 times a month",
-        "Rarely or never",
-      ]?.includes(dineOutFrequency);
-      return isRecommendAllRounder;
-    },
-    slots: [
-      {
-        label: "Yes, go for all roundet card",
-        value: CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER,
-        variant: "primary",
-      },
-      {
-        label: "No, recommend me a travel card",
-        value: "No, recommend me a travel card",
-        variant: "outline",
-      },
-    ],
-  },
-  {
-    m_id: "food-early-recommendation",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content:
-      "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
-    order: 4,
-    type: MESSAGE_TYPE.BUTTON_GROUP,
-    slots: [
-      {
-        label: "I want the perfect card",
-        value: "I want the perfect card",
-        variant: "primary",
-      },
-      {
-        label: "Show me now",
-        value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
-        variant: "outline",
       },
     ],
   },

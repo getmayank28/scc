@@ -28,7 +28,6 @@ export const allRounderCard = [
     type: MESSAGE_TYPE.SLIDER,
     dynamicFileds: ["default", "max"],
     default: (answers: BaseMessage[]) => {
-      console.log(answers, "fhvbfhvbfhbvh");
       const requiredQuestion = answers?.find(
         (item: BaseMessage) => item?.questionId === "monthly-spend"
       );
@@ -51,6 +50,7 @@ export const allRounderCard = [
     botContent: " categories I spend the most on is ",
     order: 3,
     type: MESSAGE_TYPE.MULTI_SELECT,
+    submit: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
     maxSelect: 2,
     slots: [
       {
@@ -76,26 +76,6 @@ export const allRounderCard = [
       {
         label: "Rent / Insurance / Fees",
         value: "Rent / Insurance / Fees",
-      },
-    ],
-  },
-  {
-    m_id: "all-rounder-early-recommendation",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content:
-      "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
-    order: 4,
-    type: MESSAGE_TYPE.BUTTON_GROUP,
-    slots: [
-      {
-        label: "I want the perfect card",
-        value: "I want the perfect card",
-        variant: "primary",
-      },
-      {
-        label: "Show me now",
-        value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
-        variant: "outline",
       },
     ],
   },

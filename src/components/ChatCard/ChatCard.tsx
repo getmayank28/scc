@@ -7,8 +7,8 @@ import { convertBoldMarkdownToHtml } from "@/lib/utils/markdown";
 
 interface CardProps {
   card?: string;
-  annualSavings?: string;
-  roi?: string;
+  'annualSavingsAfterFee)'?: string;
+  returnOnSpend?: string;
   annualFee?: string;
   bankIcon?: React.ReactNode;
   apply?: string;
@@ -17,20 +17,20 @@ interface CardProps {
   bestFor?: string;
 }
 
-function ChatCard({
-  card,
-  annualSavings,
-  roi,
-  annualFee,
-  bankIcon,
-  apply,
-  pattern = 0,
-  bestFor,
-  ...props
-}: CardProps) {
+function ChatCard(props: CardProps) {
+
+  const {
+    card,
+    'annualSavingsAfterFee)':annualSavings,
+    returnOnSpend:roi,
+    annualFee,
+    bankIcon,
+    apply,
+    pattern = 0,
+    bestFor,
+  } = props
   const [isFlipped, setIsFlipped] = useState(false);
   const isWavedText = annualFee?.toLowerCase()?.includes("waiv");
-
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
   };

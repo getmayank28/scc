@@ -22,8 +22,7 @@ export async function GET(req: Request) {
       .lean();
 
     return NextResponse.json(cards);
-  } catch (error) {
-    console.error("Card search error:", error);
+  } catch {
     return NextResponse.json(
       { message: "Internal Server Error" },
       { status: 500 }

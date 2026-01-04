@@ -79,7 +79,7 @@ export const ChatbotScrollableArea = ({
   if (!messages) return;
 
   const getContent = (content: string) => markdownToJson(content);
-
+  
   return (
     <div className="flex-1 overflow-hidden">
       <ScrollArea className="h-full px-4 py-6">

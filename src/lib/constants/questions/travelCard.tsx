@@ -55,7 +55,6 @@ export const travelCard:BaseMessage[] = [
       },
     ],
   },
-
   {
     m_id: "spend-per-holiday",
     source: MESSAGE_SOURCE.ASSISTANT,
@@ -63,6 +62,7 @@ export const travelCard:BaseMessage[] = [
     botContent: " my per holiday spend is ",
     order: 3,
     type: MESSAGE_TYPE.SELECT,
+    submit:CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
     slots: [
       {
         label: "Less than ₹50,000",
@@ -86,26 +86,26 @@ export const travelCard:BaseMessage[] = [
       },
     ],
   },
-  {
-    m_id: "travel-early-recommendation",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content:
-      "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
-    order: 4,
-    type: MESSAGE_TYPE.BUTTON_GROUP,
-    slots: [
-      {
-        label: "I want the perfect card",
-        value: 'I want the perfect card',
-        variant: "primary",
-      },
-      {
-        label: "Show me now",
-        value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
-        variant: "outline",
-      },
-    ],
-  },
+  // {
+  //   m_id: "travel-early-recommendation",
+  //   source: MESSAGE_SOURCE.ASSISTANT,
+  //   content:
+  //     "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
+  //   order: 4,
+  //   type: MESSAGE_TYPE.BUTTON_GROUP,
+  //   slots: [
+  //     {
+  //       label: "I want the perfect card",
+  //       value: 'I want the perfect card',
+  //       variant: "primary",
+  //     },
+  //     {
+  //       label: "Show me now",
+  //       value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
+  //       variant: "outline",
+  //     },
+  //   ],
+  // },
   {
     m_id: "international-holiday-trip",
     source: MESSAGE_SOURCE.ASSISTANT,

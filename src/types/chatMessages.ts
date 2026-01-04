@@ -63,6 +63,7 @@ export interface BaseMessage {
   questionId?: string;
   questionType?: string;
   dynamicFileds?: DynamicFileds[];
+  submit?: boolean | string;
 }
 
 export interface SessionMessage {

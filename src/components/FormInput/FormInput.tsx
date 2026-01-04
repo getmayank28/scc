@@ -26,7 +26,7 @@ const FormInput = ({
   };
 
   const disableButton = Object.values(formState)?.some((ele) => !ele);
-
+  
   return (
     <div className="flex flex-col items-end p-1">
       <div className="flex flex-col gap-2">
@@ -38,7 +38,7 @@ const FormInput = ({
                 message: input,
                 currentMessageId: currentMessageId,
                 isTyping: false,
-                enableInputs: true,
+                enableInputs: !disabled,
                 handleSend: (value, id) => {
                   setFormState((prev) => ({
                     ...prev,

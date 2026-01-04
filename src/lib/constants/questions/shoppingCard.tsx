@@ -62,6 +62,7 @@ export const shoppingCard = [
     botContent: " preferred online platform is ",
     order: 3,
     type: MESSAGE_TYPE.MULTI_SELECT,
+    submit:CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
     slots: [
       {
         label: "Amazon",
@@ -82,26 +83,6 @@ export const shoppingCard = [
       {
         label: "Nyka",
         value: "Nyka",
-      },
-    ],
-  },
-  {
-    m_id: "shopping-early-recommendation",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content:
-      "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
-    order: 4,
-    type: MESSAGE_TYPE.BUTTON_GROUP,
-    slots: [
-      {
-        label: "I want the perfect card",
-        value: "I want the perfect card",
-        variant: "primary",
-      },
-      {
-        label: "Show me now",
-        value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
-        variant: "outline",
       },
     ],
   },

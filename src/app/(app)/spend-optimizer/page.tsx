@@ -257,7 +257,6 @@ export default function SpendOptimizer() {
                     checked={userCards?.includes(card?._id)}
                     onClick={() => {
                       const isSelected = userCards?.includes(card?._id);
-                      console.log(isSelected);
                       if (isSelected) {
                         const filteredOptions = userCards?.filter(
                           (option) => option !== card?._id
