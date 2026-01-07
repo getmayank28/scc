@@ -33,7 +33,7 @@ const WhyFiSense = () => {
         {
           whyFisense.map((feature, index) => (
             <GlareCard key={feature.title} className="flex flex-col items-center justify-center bg-[#101010]">
-              <Card key={index} icon={feature.icon} title={feature.title} description={feature.description} />
+              <Card key={index}  title={feature.title} description={feature.description} />
             </GlareCard>
           ))
         }

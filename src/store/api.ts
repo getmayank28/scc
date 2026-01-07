@@ -102,6 +102,13 @@ export const api = createApi({
         },
       }),
     }),
+    waitlist: builder.mutation({
+      query: (body) => ({
+        url: `waitlist`,
+        method: "POST",
+        body,
+      }),
+    }),
   }),
 });
 
@@ -120,5 +127,6 @@ export const {
   useGetUserCardsQuery,
   useRemoveUserCardMutation,
   useChatCommunicationMutation,
+  useWaitlistMutation,
 } = api;
 export default api;

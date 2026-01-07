@@ -13,7 +13,7 @@ import MasterCard from "../../../../public/images/cardList/mastercard_icon.png";
 import AMEX from "../../../../public/images/cardList/amex-dark.png";
 import Visa from "../../../../public/images/cardList/visa-white.png";
 import Rupay from "../../../../public/images/cardList/rupay-icon.png";
-import { useSignInControl } from "@/contexts/SignInContext";
+import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
 
 const NotificationCard = ({
   message,
@@ -27,26 +27,26 @@ const NotificationCard = ({
   imgWidth?: number;
 }) => {
   return (
-    <div className="w-sm border bg-background-primary border-secondary-gray/80 p-2 flex rounded-lg gap-4 items-center">
-      <div className="w-[54px] h-[54px] bg-white/20 flex justify-center items-center rounded-lg">
-        <Image height={39} width={imgWidth} src={img} alt="user" />
+    <div className="w-sm max-md:w-[280px] border bg-background-primary border-secondary-gray/80 p-2 max-md:py-1 flex rounded-lg gap-4 items-center">
+      <div className="w-[54px] h-[54px] max-md:!w-[40px] max-md:h-[40px] bg-white/20 flex justify-center items-center rounded-lg">
+        <Image height={39} width={imgWidth} src={img} alt="user" className="max-md:w-[20px]" />
       </div>
       <div className="flex flex-col justify-between">
         <Typography
           variant="caption"
-          className="text-start opacity-100 font-medium"
+          className="text-start opacity-100 font-medium max-md:text-[12px]"
         >
           {message}
         </Typography>
         <Typography
           variant="caption"
-          className="text-start text-[12px] mt-2 opacity-100 font-medium text-secondary-gray"
+          className="text-start text-[12px]  max-md:text-[10px] mt-2 opacity-100 font-medium text-secondary-gray"
         >
           {time}
         </Typography>
       </div>
       <div className="ml-auto">
-        <CircleCheck color="#aaaaaa" size={30} />
+        <CircleCheck color="#aaaaaa" size={30} className="max-md:w-[20px]"/>
       </div>
     </div>
   );
@@ -63,25 +63,25 @@ export const NotificationCardV2 = ({
   img: StaticImageData;
 }) => {
   return (
-    <div className="w-sm border bg-background-primary border-secondary-gray/80 p-2 pr-3 flex rounded-lg gap-4 items-center">
-      <div className="w-[54px] h-[54px] bg-white/20 flex justify-center items-end rounded-lg">
-        <Image height={50} width={50} src={img} alt="user" />
+    <div className="w-sm max-md:w-[280px] max-md:p-1 border bg-background-primary border-secondary-gray/80 p-2 pr-3 flex rounded-lg gap-4 items-center">
+      <div className="w-[54px] h-[54px] max-md:!w-[40px] max-md:h-[40px] bg-white/20 flex justify-center items-end rounded-lg">
+        <Image height={50} width={50} src={img} alt="user" className="max-md:!w-[30px]" />
       </div>
       <div className="flex flex-col justify-between grow">
         {variant !== "v2" && (
           <div className="flex items-center justify-between">
-            <div className="flex gap-2 items-center justify-center">
+            <div className="flex  gap-2 items-center justify-center">
               <Typography
                 variant="caption"
-                className="text-[14px] text-start opacity-100 font-medium"
+                className="text-[14px] max-md:text-[12px] max-md:opacity-90 text-start opacity-100 font-medium"
               >
                 Recevied Cashback
               </Typography>
-              <BadgeCheck color="#F15A29" size={14} />
+              <BadgeCheck color="#F15A29" size={14} className="max-md:w-[12px]" />
             </div>
             <Typography
               variant="caption"
-              className="text-[12px] text-start opacity-100 font-medium"
+              className="text-[12px] max-md:text-[10px] text-start opacity-100 font-medium"
             >
               {time ? time : "2 Min"}
             </Typography>
@@ -89,7 +89,7 @@ export const NotificationCardV2 = ({
         )}
         <Typography
           variant="body"
-          className={`text-start ${variant === "v2" ? "text-[16px] uppercase tracking-wider font-medium" : "text-[14px] font-bold "} opacity-100 mt-1 text-white`}
+          className={`text-start ${variant === "v2" ? "text-[16px] max-md:text-[12px] max-md:text-left uppercase tracking-wider font-medium" : "max-md:text-[12px] max-md:text-left text-[14px] font-bold "} opacity-100 mt-1 text-white`}
         >
           {message}
         </Typography>
@@ -239,21 +239,22 @@ const rewardsReceived = [
     time="45 Min"
   />,
 ];
+
 const HeroSection = () => {
-  const { openSignUpModal } = useSignInControl();
+  const landingCTA = useLandingCTAs()
 
   return (
-    <div className="flex pt-16 h-screen bg-background-primary gap-30 overflow-hidden items-center justify-center  relative z-10">
-      <div className="flex flex-col justify-start items-start z-10">
+    <div className="flex max-md:px-4 max-md:pb-14 max-md:gap-0 max-md:flex-col-reverse max-md:pt-14 pt-16 h-screen max-md:h-auto bg-background-primary gap-30 overflow-hidden items-center justify-center  relative z-10">
+      <div className="max-md:-mt-2 flex flex-col max-md:items-center justify-start items-start z-10">
         <div className="max-w-[984px] mx-auto text-center">
           <Typography
             variant="caption"
-            className="font-medium text-left text-primary-orange uppercase opacity-100 tracking-[6px] -mb-1"
+            className="font-medium max-md:text-center max-md:text-[12px] text-left text-primary-orange uppercase opacity-100 tracking-[6px] -mb-1"
           >
             The card is a key to
           </Typography>
-          <Typography className="font-butlerpro font-medium text-left leading-24">
-            turning spending <br /> into{" "}
+          <Typography className="font-butlerpro max-md:mt-3 font-medium text-left leading-24 max-md:text-center">
+          turning <br className="hidden max-md:inline"/> spending <br className="max-md:hidden" /> into <br className="hidden max-md:inline" />{" "}
             <span className="font-bold">
               <ColourfulText text="benefits" />
             </span>
@@ -264,17 +265,17 @@ const HeroSection = () => {
           </Typography>
         </div>
         <Button
-          className="text-sm font-bold py-4 px-10 my-10"
-          onClick={openSignUpModal}
+          className="text-sm max-md:mt-6 font-bold py-4 px-10 my-10"
+          onClick={landingCTA}
         >
           Step into smarter spending
         </Button>
       </div>
-      <div className="w-[450px] relative flex flex-col justify-center items-center z-10">
+      <div className="w-[450px]  relative flex flex-col justify-center items-center z-10">
         <div className="w-[390px] self-start h-[80px] relative -bottom-14 flex justify-center items-center">
           <LayoutTextFlip words={billPaids} />
         </div>
-        <div className="rotate-90 ">
+        <div className="rotate-90">
           <ElectricBorderCard />
         </div>
         <div className="w-[390px] h-[80px] self-end relative bottom-14 flex justify-center items-center">

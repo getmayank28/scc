@@ -68,7 +68,7 @@ const content = [
 ];
 export function HowItWorks() {
   return (
-    <div className="w-full flex flex-col justify-center items-center py-20">
+    <div className="w-full max-md:hidden flex flex-col justify-center items-center py-20">
       <Typography className="font-butlerpro mb-10 font-medium text-center leading-24">
         How it works?
       </Typography>

@@ -51,7 +51,7 @@ const Card = ({
 }) => {
   return (
     <div
-      className={`relative cursor-pointer group border ${isSelected ? "border-secondary-success" : "border-primary-orange"} py-2 px-6 rounded-xl`}
+      className={`relative cursor-pointer group border ${isSelected ? "border-secondary-success" : "border-primary-orange"} max-md:pb-1 max-md:pt-0 py-2 px-6 rounded-xl`}
       onClick={onClick}
     >
       <div
@@ -67,7 +67,7 @@ const Card = ({
 
       <Typography
         variant="caption"
-        className="text-center capitalize font-medium"
+        className="text-center max-md:text-[10px] max-md:mt-[2px] capitalize font-medium"
       >
         {label}
       </Typography>
@@ -237,6 +237,15 @@ export default function ElectricBorderCard() {
           -webkit-mask-image: linear-gradient(to right, transparent, black, transparent);
           mask-image: linear-gradient(to right, transparent, black, transparent);
         }
+
+        @media (max-width: 768px) {
+        .electric-main-card {
+          width: 220px;
+          height: 330px;
+           margin-top: 0px;
+          margin-left: 0px;
+        }
+}
       `,
         }}
       />
@@ -354,12 +363,15 @@ export default function ElectricBorderCard() {
           <div className="electric-overlay-1"></div>
           <div className="electric-overlay-2"></div>
           <div className="electric-background-glow"></div>
-          <div className="absolute -rotate-90 w-[450px] h-[280px] top-22 -left-20 right-0 bottom-0 flex flex-col">
-            <div className="p-5">
-              <Typography variant="body" className="text-center opacity-100 tracking-[3px] uppercase">
+          <div className="absolute -rotate-90 w-[450px] h-[280px] max-md:w-[330px] max-md:h-[220px] max-md:top-15 max-md:-left-13 top-22 -left-20 right-0 bottom-0 flex flex-col">
+            <div className="p-5 max-md:p-2 max-md:mt-4">
+              <Typography
+                variant="body"
+                className="text-center max-md:font-semibold max-md:text-center opacity-100 tracking-[3px] uppercase"
+              >
                 Pick what you need!
               </Typography>
-              <div className="pt-10 flex items-center flex-col gap-8">
+              <div className="pt-10 flex items-center flex-col gap-8 ">
                 <div className="flex w-fit gap-10 animate-scroll-right hover:pause">
                   {firstRow.map((ele) => (
                     <Card
@@ -369,15 +381,14 @@ export default function ElectricBorderCard() {
                       isSelected={selectedIds?.includes(ele?.id)}
                       img={ele?.img}
                       onClick={() => {
-                       
                         if (selectedIds?.includes(ele?.id)) {
                           const filtered = selected?.filter(
                             (card) => card?.id !== ele?.id
                           );
                           setSelected(filtered);
                         } else {
-                          if(selected?.length === 5){
-                            return
+                          if (selected?.length === 5) {
+                            return;
                           }
                           setSelected((prev) => [...prev, ele]);
                         }
@@ -385,74 +396,77 @@ export default function ElectricBorderCard() {
                     />
                   ))}
                 </div>
-                <div className="flex  gap-2">
-                  <div className="h-14 w-14 flex justify-center items-center border border-primary-orange rounded-full">
+                <div className="flex  gap-2 ">
+                  <div className="h-14 w-14 max-md:h-10 max-md:w-10 flex justify-center items-center border border-primary-orange rounded-full">
                     {selected?.length && selected?.at(0) ? (
                       <Image
                         width={25}
                         height={25}
                         src={selected?.at(0)?.img || ""}
                         alt={selected?.at(0)?.label || ""}
+                        className="max-md:h-[18px] max-md:w-[18px]"
                       />
                     ) : (
                       <></>
                     )}
                   </div>
-                  <div className="h-14 w-14 flex justify-center items-center border border-primary-orange rounded-full">
+                  <div className="h-14 w-14 max-md:h-10 max-md:w-10 flex justify-center items-center border border-primary-orange rounded-full">
                     {selected?.length && selected?.at(1) ? (
                       <Image
                         width={25}
                         height={25}
                         src={selected?.at(1)?.img || ""}
                         alt={selected?.at(1)?.label || ""}
+                        className="max-md:h-[18px] max-md:w-[18px]"
                       />
                     ) : (
                       <></>
                     )}
                   </div>
-                  <div className="h-14 w-14 flex justify-center items-center border border-primary-orange rounded-full">
+                  <div className="h-14 w-14 max-md:h-10 max-md:w-10 flex justify-center items-center border border-primary-orange rounded-full">
                     {selected?.length && selected?.at(2) ? (
                       <Image
                         width={25}
                         height={25}
                         src={selected?.at(2)?.img || ""}
                         alt={selected?.at(2)?.label || ""}
+                        className="max-md:h-[18px] max-md:w-[18px]"
                       />
                     ) : (
                       <></>
                     )}
                   </div>
-                  <div className="h-14 w-14 flex justify-center items-center border border-primary-orange rounded-full">
+                  <div className="h-14 w-14 max-md:h-10 max-md:w-10 flex justify-center items-center border border-primary-orange rounded-full">
                     {selected?.length && selected?.at(3) ? (
                       <Image
                         width={25}
                         height={25}
                         src={selected?.at(3)?.img || ""}
                         alt={selected?.at(3)?.label || ""}
+                        className="max-md:h-[18px] max-md:w-[18px]"
                       />
                     ) : (
                       <></>
                     )}
                   </div>
-                  <div className="h-14 w-14 flex justify-center items-center border border-primary-orange rounded-full">
+                  <div className="h-14 w-14 max-md:h-10 max-md:w-10 flex justify-center items-center border border-primary-orange rounded-full">
                     {selected?.length && selected?.at(4) ? (
                       <Image
                         width={25}
                         height={25}
                         src={selected?.at(4)?.img || ""}
                         alt={selected?.at(4)?.label || ""}
+                        className="max-md:h-[18px] max-md:w-[18px]"
                       />
                     ) : (
                       <></>
                     )}
                   </div>
-                  {
-                    selectedIds?.length === 5 &&(
-                      <Button className="h-14 w-14"><Send /> </Button>
-                    )
-                  }
-
-                
+                  {selectedIds?.length === 5 && (
+                    <Button className="h-14 w-14 max-md:h-10 max-md:w-10">
+                      <Send />{" "}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -474,9 +488,10 @@ export default function ElectricBorderCard() {
           will-change: transform;
         }
 
-        .hover\:pause:hover {
-          animation-play-state: paused;
-        }
+      @media (hover: hover) and (pointer: fine) {
+  .hover\:pause:hover {
+    animation-play-state: paused;
+  }
       `}</style>
     </>
   );

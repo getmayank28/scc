@@ -30,15 +30,15 @@ export default function CreditCardComparison() {
   }, []);
 
   return (
-    <div className="bg-background-primary flex items-center justify-center overflow-hidden relative">
+    <div className="bg-background-primary max-md:px-4 flex items-center justify-center overflow-hidden relative">
       <div className="animate-fadeIn">
         <div className="relative bg-transparent overflow-hidden mb-8">
-          <div className="mx-auto rounded-xl w-[440px] h-[260px] border border-destructive/80 flex justify-center bg-transparent relative overflow-hidden">
+          <div className="mx-auto rounded-xl w-[440px] h-[260px] max-md:w-[342px] max-md:h-[232px]  border border-destructive/80 flex justify-center bg-transparent relative overflow-hidden">
             <div className="w-[440px] h-[260px]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/card-gradient.png"
-                className="w-[440px] h-[260px]"
+                className="w-[440px] h-[260px] max-md:w-[342px] max-md:h-[232px]"
                 alt="card"
                 draggable="false"
               />
@@ -183,7 +183,7 @@ export default function CreditCardComparison() {
 
           <div className="mt-6 p-3 px-4 text-center border-destructive/70 rounded-xl border">
             <div className="flex items-center justify-center text-white opacity-80">
-              Missing out on cashback, points, and rewards on every <br />{" "}
+              Missing out on cashback, points, and rewards on every <br className="max-md:hidden" />{" "}
               single spent you do!
             </div>
           </div>

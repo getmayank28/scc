@@ -18,10 +18,18 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import SignInWithGoogle from "@/components/SignInWithGoogle/SignInWithGoogle";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
+import { X } from "lucide-react";
+import { useSignInControl } from "@/contexts/SignInContext";
 
-const SignInSection = ({ showSkip = false, onSkip }: { showSkip?: boolean, onSkip?:()=>void }) => {
+const SignInSection = ({
+  showSkip = false,
+  onSkip,
+}: {
+  showSkip?: boolean;
+  onSkip?: () => void;
+}) => {
   const [isLoading, setIsLoading] = useState(false);
-
+  const { closeSignUpModal } = useSignInControl();
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -52,6 +60,14 @@ const SignInSection = ({ showSkip = false, onSkip }: { showSkip?: boolean, onSki
 
   return (
     <div className="relative z-10 w-[545px] bg-background-primary p-12 px-14 pb-0 rounded-2xl border border-white/20">
+      {showSkip && (
+        <div
+          onClick={closeSignUpModal}
+          className="absolute cursor-pointer top-3 right-3 border border-white p-1 rounded-full"
+        >
+          <X color="#fff" size={20} />
+        </div>
+      )}
       <h1 className="text-[#FFF] text-center relative z-[100] font-butlerpro text-[40px] font-medium leading-[110%]">
         Sign In
       </h1>
@@ -121,7 +137,10 @@ const SignInSection = ({ showSkip = false, onSkip }: { showSkip?: boolean, onSki
       </Form>
       <div className="flex justify-end py-8">
         {showSkip && (
-          <p className="text-white/70 text-[12px] cursor-pointer" onClick={onSkip}>
+          <p
+            className="text-white/70 text-[12px] cursor-pointer"
+            onClick={onSkip}
+          >
             Skip for now
           </p>
         )}

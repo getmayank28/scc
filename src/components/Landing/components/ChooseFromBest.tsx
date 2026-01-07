@@ -30,14 +30,14 @@ const ChooseFromTheBest = () => {
     ];
   
     return (
-      <div className="bg-black pt-12 pb-8">
+      <div className="bg-black pt-12 max-md:mt-6 max-md:pb-6 pb-8">
         <Typography
           variant="body"
           className="text-[14px] font-semibold uppercase tracking-[3px] opacity-60"
         >
           bringing From the best
         </Typography>
-        <div className="relative overflow-hidden mt-5">
+        <div className="relative overflow-hidden mt-5 max-md:mt-2">
           <div className="flex w-fit animate-scroll-right hover:pause">
             {firstRow.map((ele, index) => (
               <div

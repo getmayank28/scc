@@ -1,40 +1,39 @@
 import { Card } from '@/components/Card'
 import React from 'react'
-import { BadgeIndianRupee, Handshake, ListTodo } from 'lucide-react';
 import { GlareCard } from '@/components/ui/glare-card';
 
 const features = [
   {
-    icon: BadgeIndianRupee,
-    title: "Tell FiSense about your spends",
-    description: "Answer a few quick questions or upload a statement for precise reward analysis."
+    title: "Share how you spend",
+    description: "Answer a few quick questions about your shopping, travel, and everyday expenses. No exact numbers. No bank jargon."
   },
   {
-    icon: Handshake,
-    title: "Get ranked card matches",
-    description: "We review over 500 credit cards across banks to bring you transparent result."
+    title: "We analyse your spending",
+    description: "FiSense uses intelligent analysis to match credit cards to your lifestyle and spending habits, so you earn more from the same spending."
   },
   {
-    icon: ListTodo,
-    title: "Track & Optimize (Coming Soon)",
-    description: "Activate your dashboard to monitor monthly savings and discover missed opportunities."
+    title: "Get personalised card matches",
+    description: "We recommend credit cards and smart 2-card combinations when useful based on your lifestyle, not generic lists."
+  },
+  {
+    title: "Decide when it feels right",
+    description: "Compare with your current card, see potential savings, and apply only if and when you’re comfortable."
   }
 ];
 
 
-const HowItWorks = () => {
+const HowItWorksMobile = () => {
   return (
-    <div className='flex min-h-screen flex-col items-center justify-center py-30 relative'>
-      <h1 className="text-[#FFF] text-center font-butlerpro text-[80px] font-medium leading-[110%] tracking-[-6px] max-md:text-[56px] max-md:tracking-[-0.4px]">
+    <div className='hidden max-md:flex min-h-screen max-md:h-auto max-md:py-20 flex-col items-center justify-center py-30 relative'>
+      <h1 className="text-[#FFF] text-center font-butlerpro text-[80px] font-medium leading-[110%] tracking-[-6px] max-md:text-[48px] max-md:tracking-[-0.4px]">
         How it works
       </h1>
-      <div className='h-30 w-full absolute top-[calc(50%+80px)] translate-y-[-50%] bg-[#F35A13]/20 max-md:hidden'></div>
 
-      <div className='flex items-center max-md:justify-center gap-10 mt-18 flex-wrap max-md:px-6'>
+      <div className='flex items-center max-md:gap-6 max-md:justify-center gap-10 mt-18 max-md:mt-10 flex-wrap max-md:px-6'>
         {
           features.map((feature) => (
             <GlareCard key={feature.title} className="flex flex-col items-center justify-center bg-[#101010]">
-              <Card icon={feature.icon} title={feature.title} description={feature.description} />
+              <Card title={feature.title} description={feature.description} />
             </GlareCard>
           ))
         }
@@ -44,4 +43,4 @@ const HowItWorks = () => {
   )
 }
 
-export default HowItWorks
+export default HowItWorksMobile

@@ -2,10 +2,11 @@
 import Image from "next/image";
 import Typography from "../Typography/Typography";
 import NeonBorder from "../Fallback/NeaonBorder/NeaonBorder";
-import useNav from "@/lib/hooks/useNav";
 import { saveToSessionStorage } from "@/lib/utils/sessionStorage";
 import { CARD_CATEGORY_KEY } from "@/lib/constants/storage";
 import { CARD_CATEGORY } from "@/lib/data/cards";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/lib/constants/routes";
 
 const cardData = (handleClick: (value:string) => void) => [
   {
@@ -80,12 +81,12 @@ const cardData = (handleClick: (value:string) => void) => [
   },
 ];
 const CardCategory = () => {
-  const { goToChat } = useNav();
+  const router = useRouter()
 
 
   const handleClick = (value:string) => {
     saveToSessionStorage(CARD_CATEGORY_KEY,value)
-    goToChat?.()
+    router.replace(ROUTES.CHAT)
   }
 
   return (
