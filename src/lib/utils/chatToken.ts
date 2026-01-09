@@ -2,34 +2,31 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 export interface IssueChatTokenParams {
   userId?: string;
-  anonymousId?: string;
 }
 
 export interface ChatTokenPayload extends JwtPayload {
-  sub: string; // userId OR anonymousId
+  userId: string; // userId OR anonymousId
   scope: "chat:write";
 }
 
-export function issueChatToken({
-  userId,
-  anonymousId,
-}: IssueChatTokenParams): string {
-  if (!userId && !anonymousId) {
-    throw new Error("Either userId or anonymousId must be provided");
-  }
+export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
+  const PRIVATE_KEY = process.env.CHAT_TOKEN_SECRET;
 
-  const secret = process.env.CHAT_TOKEN_SECRET;
-  if (!secret) {
+  if (!PRIVATE_KEY) {
     throw new Error("CHAT_TOKEN_SECRET is not defined");
   }
 
   const payload: ChatTokenPayload = {
-    sub: userId ?? anonymousId!,
+    userId: userId,
     scope: "chat:write",
   };
 
-  return jwt.sign(payload, secret, {
+  return jwt.sign(payload, PRIVATE_KEY, {
+    algorithm: "RS256",
     expiresIn: "15m",
+    issuer: "gofisense",
+    audience: "partner-chat",
+    keyid: "chat-key-2026",
   });
 }
 

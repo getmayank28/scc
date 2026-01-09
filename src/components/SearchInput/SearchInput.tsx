@@ -28,12 +28,13 @@ export default function SearchSelect({
   onClearInput?: () => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-
+  
   const [open, setOpen] = useState(false);
 
   const [triggerSearch, { data = [], isFetching }] =
     useLazyGetCardBySearchQuery();
 
+  // Trigger search with debounce
   useEffect(() => {
     if (!query || selected) return;
 
@@ -45,6 +46,7 @@ export default function SearchSelect({
     return () => clearTimeout(timer);
   }, [query, selected, triggerSearch]);
 
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -56,7 +58,8 @@ export default function SearchSelect({
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -69,14 +72,16 @@ export default function SearchSelect({
           setSelected(null);
           setQuery(e.target.value);
         }}
-        onFocus={() => data.length && setOpen(true)}
+        onFocus={() => data.length > 0 && setOpen(true)}
         className="text-white text-lg h-12 border-primary-orange"
       />
 
+      {/* Loader */}
       {isFetching && (
         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 animate-spin text-white" />
       )}
 
+      {/* Clear icon */}
       {(selected || query) && !isFetching && (
         <BadgeX
           className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6 text-white cursor-pointer"
@@ -84,6 +89,7 @@ export default function SearchSelect({
         />
       )}
 
+      {/* Results */}
       {open && data.length > 0 && !selected && (
         <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-background-primary">
           <CardContent className="p-1">
@@ -95,7 +101,7 @@ export default function SearchSelect({
                   setSelected(card);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer justify-between rounded-xl px-3 py-2 text-left text-sm group"
+                className="flex w-full justify-between rounded-xl px-3 py-2 text-left text-sm group"
               >
                 <span className="font-medium text-white group-hover:text-primary-orange">
                   {card.name}
@@ -105,6 +111,15 @@ export default function SearchSelect({
                 </span>
               </button>
             ))}
+          </CardContent>
+        </UiCard>
+      )}
+
+      {/* No results */}
+      {open && !isFetching && data.length === 0 && query && !selected && (
+        <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-background-primary">
+          <CardContent className="p-4 text-center text-sm text-gray-400">
+            No cards found as per your query
           </CardContent>
         </UiCard>
       )}

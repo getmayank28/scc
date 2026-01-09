@@ -60,6 +60,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
 
   const handleLogout = () => {
     signOut({ callbackUrl: ROUTES.HOME });
+    localStorage.clear()
   };
 
   return (

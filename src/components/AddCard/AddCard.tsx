@@ -84,6 +84,10 @@ const AddCards = () => {
           setQuery={setQuery}
           selected={selected}
           setSelected={setSelected}
+          onClearInput={()=> {
+            setQuery('')
+            setSelected(null)
+          }}
         />
         <Button
           disabled={!selected?.name || isAddingCard}

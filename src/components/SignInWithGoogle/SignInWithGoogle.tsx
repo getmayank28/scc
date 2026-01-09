@@ -4,10 +4,14 @@ import { divider } from "../../../public/images/divider";
 import Typography from "../Typography/Typography";
 import GoogleLogo from "../../../public/images/google-logo.png"
 import Image from "next/image";
+import { Spinner } from "../ui/spinner";
+import { useState } from "react";
 
 const SignInWithGoogle = () => {
+  const [isLoading, setIsLoading] = useState(false)
 
   const handleSignIn =  () => {
+    setIsLoading(true)
     signIn("google")
   }
   return (
@@ -17,7 +21,7 @@ const SignInWithGoogle = () => {
         onClick={handleSignIn}
       >
         
-        Sign in With <Image width={60} src={GoogleLogo} alt="google-logo"/>
+       {isLoading&& <Spinner />} Sign in With <Image width={60} src={GoogleLogo} alt="google-logo"/>
       </Button>
       
       <div className="mt-8 -mb-8 relative">
