@@ -34,7 +34,6 @@ import { foodCard } from "@/lib/constants/questions/foodCard";
 import { shoppingCard } from "@/lib/constants/questions/shoppingCard";
 import { allRounderCard } from "@/lib/constants/questions/allRounderCard";
 import { CardsType } from "@/types/card";
-import useUserData from "@/lib/hooks/useUserData";
 
 const cardData = {
   [CARD_CATEGORY.TRAVEL]: travelCard,

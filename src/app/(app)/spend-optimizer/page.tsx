@@ -31,7 +31,10 @@ import {
 } from "lucide-react";
 import HeaderText from "@/components/HeaderText/HeaderText";
 import useUserData from "@/lib/hooks/useUserData";
-import { useChatCommunicationMutation, useGetUserCardsQuery } from "@/store/api";
+import {
+  useChatCommunicationMutation,
+  useGetUserCardsQuery,
+} from "@/store/api";
 import Typography from "@/components/Typography/Typography";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -146,7 +149,7 @@ export default function SpendOptimizer() {
 
   const { navigateToProfile } = useNav();
 
-  const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
+  const [communicateToBot] = useChatCommunicationMutation();
 
   useEffect(() => {
     if (cards) {
@@ -155,7 +158,7 @@ export default function SpendOptimizer() {
     }
   }, [cards]);
 
-  const handleSubmit = async (): void => {
+  const handleSubmit = async () => {
     // Validate all fields
     const newErrors: FormErrors = {
       category: !formData.category,
@@ -175,14 +178,13 @@ export default function SpendOptimizer() {
       return;
     }
 
-
-const message = "INTENT=OPTIMIZE_EXISTING_CARD_SPEND | CARDS=[DINERS_CLUB_BLACK,INFINIA_METAL] | CATEGORY=ONLINE_SHOPPING_NON_TRAVEL | MERCHANT=AMAZON | AMOUNT=10000 | CURRENCY=INR | PAYMENT_MODE=DIRECT | EMI=false"
-
+    const message =
+      "INTENT=OPTIMIZE_EXISTING_CARD_SPEND | CARDS=[DINERS_CLUB_BLACK,INFINIA_METAL] | CATEGORY=ONLINE_SHOPPING_NON_TRAVEL | MERCHANT=AMAZON | AMOUNT=10000 | CURRENCY=INR | PAYMENT_MODE=DIRECT | EMI=false";
 
     const data = await communicateToBot(message);
     const content = joinTextMessagesByMid(data?.data?.messages);
 
-    console.log(content, "chbvhvfbhbfhbvhfb")
+    console.log(content, "chbvhvfbhbfhbvhfb");
     // Add your submit logic here
   };
 
@@ -349,7 +351,7 @@ const message = "INTENT=OPTIMIZE_EXISTING_CARD_SPEND | CARDS=[DINERS_CLUB_BLACK,
               htmlFor="amount"
               className="text-base text-white/80 font-semibold"
             >
-               Spend Amount <span className="text-destructive">*</span>
+              Spend Amount <span className="text-destructive">*</span>
             </Label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-orange font-medium">
