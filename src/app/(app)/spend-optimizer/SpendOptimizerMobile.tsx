@@ -135,6 +135,10 @@ export default function SpendOptimizerMobile() {
   const [currentField, setCurrentField] = useState<FieldName | null>(null);
   const [stepContent, setStepContent] = useState<FieldName | null>(null);
 
+  // Refs for auto-focus
+  const amountInputRef = React.useRef<HTMLInputElement>(null);
+  const merchantInputRef = React.useRef<HTMLInputElement>(null);
+
   const fieldOrder: FieldName[] = [
     "category",
     "amount",
@@ -229,6 +233,17 @@ export default function SpendOptimizerMobile() {
       setTimeout(() => {
         setStepContent(nextUnfilled);
         setCurrentField(nextUnfilled);
+        
+        // Auto-focus the next input field after animation
+        setTimeout(() => {
+          if (nextUnfilled === "amount" && amountInputRef.current) {
+            amountInputRef.current.focus();
+            amountInputRef.current.click(); // Helps on some mobile browsers
+          } else if (nextUnfilled === "merchant" && merchantInputRef.current) {
+            merchantInputRef.current.focus();
+            merchantInputRef.current.click(); // Helps on some mobile browsers
+          }
+        }, 100);
       }, 300);
     } else {
       // All fields are filled, close the bottom sheet
@@ -552,11 +567,11 @@ export default function SpendOptimizerMobile() {
                 ₹
               </span>
               <Input
+                ref={amountInputRef}
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
                 placeholder="0"
-                autoFocus
                 value={formatCurrency(tempFormData.amount)}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const value = e.target.value.replace(/[^\d]/g, "");
@@ -590,10 +605,10 @@ export default function SpendOptimizerMobile() {
         {stepContent === "merchant" && (
           <div className="space-y-4 animate-fade-in">
             <Input
+              ref={merchantInputRef}
               type="text"
               inputMode="text"
               placeholder="e.g., Amazon, Swiggy, MakeMyTrip"
-              autoFocus
               value={tempFormData.merchant}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setTempFormData({ ...tempFormData, merchant: e.target.value })
