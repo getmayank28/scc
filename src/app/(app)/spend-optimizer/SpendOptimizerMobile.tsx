@@ -320,7 +320,7 @@ export default function SpendOptimizerMobile() {
   );
 
   return (
-    <div className="bg-background-primary py-6 hidden max-md:flex">
+    <div className="bg-background-primary py-6 hidden max-md:flex flex-col min-h-screen">
       <style>{`
         @keyframes slide-up {
           from {
@@ -348,7 +348,7 @@ export default function SpendOptimizerMobile() {
         }
       `}</style>
 
-      <div className="w-full">
+      <div className="w-full flex-1 overflow-auto pb-20">
         <div className="flex flex-col gap-3 mb-6">
           {/* Category Selection */}
           <div className="space-y-2">
@@ -503,12 +503,15 @@ export default function SpendOptimizerMobile() {
           </div>
         </div>
 
-        <Button
-          onClick={handleSubmit}
-          className="w-full h-12 text-base text-white font-semibold"
-        >
-          Find Best Card
-        </Button>
+        {/* Fixed Bottom Button */}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background-primary border-t border-white/10">
+          <Button
+            onClick={handleSubmit}
+            className="w-full h-12 text-base text-white font-semibold"
+          >
+            Find Best Card
+          </Button>
+        </div>
       </div>
 
       {/* Bottom Sheet */}
@@ -545,11 +548,13 @@ export default function SpendOptimizerMobile() {
         {stepContent === "amount" && (
           <div className="space-y-4 animate-fade-in">
             <div className="relative">
-              <span className="absolute z-30 left-4 top-1/2 -translate-y-1/2 text-primary-orange font-medium text-lg">
+              <span className="absolute z-30 left-4 top-1/2 -translate-y-1/2 text-primary-orange font-medium text-lg pointer-events-none">
                 ₹
               </span>
               <Input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="0"
                 autoFocus
                 value={formatCurrency(tempFormData.amount)}
@@ -586,6 +591,7 @@ export default function SpendOptimizerMobile() {
           <div className="space-y-4 animate-fade-in">
             <Input
               type="text"
+              inputMode="text"
               placeholder="e.g., Amazon, Swiggy, MakeMyTrip"
               autoFocus
               value={tempFormData.merchant}
