@@ -27,7 +27,7 @@ export default function SingleSelectInput({
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-0 mt-4">
+    <div className="w-full max-w-4xl mx-auto p-0 mt-4 max-md:h-auto max-md:mt-2">
       <div className="flex flex-wrap gap-4">
         {options.map((platform) => (
           <Button
@@ -42,7 +42,7 @@ export default function SingleSelectInput({
               platform.variant || 'outline'
             }
             className={`
-              px-4 py-3 text-sm rounded-lg transition-all cursor-pointer
+              px-4 py-3 max-md:py-1 max-md:px-3 max-md:text-xs text-sm rounded-lg transition-all cursor-pointer
               ${
               // @ts-expect-error some
                 platform.variant === 'primary'
@@ -57,7 +57,7 @@ export default function SingleSelectInput({
         ))}
       </div>
 
-      <div className="mt-6 flex justify-between items-center">
+      <div className="mt-6 max-md:mt-0 flex justify-between items-center">
         <div
           className={`p-4 pl-0 py-0 flex items-center transition-all duration-500`}
         >

@@ -7,18 +7,18 @@ export const variantStyles = {
     "text-[#FFF] text-center max-md:text-center  relative text-[80px] font-bold leading-[110%] tracking-[-3px] max-md:text-[48px] max-md:font-black max-md:leading-[130%] max-md:tracking-[-0.4px]",
 
   body:
-    "text-white max-md:text-center opacity-70 relative text-center font-satoshi text-[20px] max-md:text-[16px] font-normal leading-[150%] tracking-[-2%] max-md:tracking-[-0.48px] [font-feature-settings:'ss03_on']",
+    "text-white opacity-70 relative text-center font-satoshi text-[20px] max-md:text-[16px] font-normal leading-[150%] tracking-[-2%] max-md:tracking-[-0.48px] [font-feature-settings:'ss03_on']",
 
   h2:
     "text-white text-center text-[60px] font-medium leading-[110%] tracking-[-3px] max-md:text-[40px]",
     h3:
-    "text-white text-center text-[40px] font-medium leading-[110%] max-md:text-[40px]",
+    "text-white text-center text-[40px] font-medium leading-[110%] max-md:text-[24px]",
     h4:
     "text-white text-center text-[28px] font-medium leading-[110%] max-md:leading-[20%] max-md:text-[20px]",
     h5:
     "text-white text-center text-[20px] font-medium leading-[110%] max-md:text-[40px]",
     caption:
-    "text-white opacity-70 relative text-center font-satoshi  text-[16px]  font-normal leading-[150%] [font-feature-settings:'ss03_on']",
+    "text-white opacity-70 relative text-center font-satoshi  text-[16px] max-md:text-[12px] font-normal leading-[150%] [font-feature-settings:'ss03_on']",
 
 
   subtitle:

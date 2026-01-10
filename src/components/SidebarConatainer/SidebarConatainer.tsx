@@ -87,7 +87,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
         </div>
       )}
 
-      <div className={`w-full ${isBlockedRoute ? "pl-0" : "pl-[28px]"}`}>
+      <div className={`w-full ${isBlockedRoute ? "pl-0" : "max-md:pl-0 pl-[28px]"}`}>
         {children}
       </div>
     </div>

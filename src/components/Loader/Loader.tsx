@@ -36,3 +36,21 @@ export default function Loader() {
     </div>
   )
 }
+
+
+export function SpendOptimizerCreditCardSkeleton() {
+  return (
+    <div className="flex p-3 px-4 rounded-sm items-center justify-between w-[430px] border border-white/30">
+      <div className="flex items-center gap-3">
+        {/* Logo skeleton */}
+        <Skeleton className="h-[25px] w-[25px] rounded-sm" />
+
+        {/* Card name skeleton */}
+        <Skeleton className="h-4 w-40" />
+      </div>
+
+      {/* Checkbox skeleton */}
+      <Skeleton className="h-6 w-6 rounded-sm" />
+    </div>
+  );
+}

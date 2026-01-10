@@ -7,6 +7,8 @@ import { CARD_CATEGORY_KEY } from "@/lib/constants/storage";
 import { CARD_CATEGORY } from "@/lib/data/cards";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
+import useIsMobile from "@/lib/hooks/useIsMobile";
+import { cn } from "@/lib/utils";
 
 const cardData = (handleClick: (value:string) => void) => [
   {
@@ -23,6 +25,8 @@ const cardData = (handleClick: (value:string) => void) => [
     imgWidth: 240,
     imgHeight: 222,
     imgStyle: "absolute bottom-5 -right-5",
+    mobileImgStyle: "absolute top-0 left-4 max-md:w-[150px]",
+    titleStyle:"max-md:mt-[115px]",
     onClick:() =>  handleClick(CARD_CATEGORY.ALL_ROUNDER),
   },
   {
@@ -42,6 +46,8 @@ const cardData = (handleClick: (value:string) => void) => [
     imgWidth: 280,
     imgHeight: 222,
     imgStyle: "absolute top-[-4px] right-0",
+    titleStyle:"max-md:mt-[115px]",
+    mobileImgStyle: "absolute top-0 left-2 max-md:w-[140px]",
    onClick:() =>  handleClick(CARD_CATEGORY.TRAVEL),
   },
   {
@@ -59,6 +65,8 @@ const cardData = (handleClick: (value:string) => void) => [
     imgWidth: 190,
     imgHeight: 222,
     imgStyle: "absolute bottom-3 right-3",
+    titleStyle:"max-md:mt-[115px]",
+    mobileImgStyle: "absolute top-2 left-7 max-md:w-[110px]",
    onClick:() =>  handleClick(CARD_CATEGORY.FOOD),
   },
   {
@@ -77,11 +85,14 @@ const cardData = (handleClick: (value:string) => void) => [
     imgWidth: 240,
     imgHeight: 222,
     imgStyle: "absolute -bottom-5 right-0",
+    titleStyle:"max-md:mt-[115px]",
+    mobileImgStyle: "absolute -top-4 left-1 max-md:w-[150px]",
    onClick:() =>  handleClick(CARD_CATEGORY.SHOPPING),
   },
 ];
 const CardCategory = () => {
   const router = useRouter()
+ const {isMobile} = useIsMobile()
 
 
   const handleClick = (value:string) => {
@@ -90,24 +101,24 @@ const CardCategory = () => {
   }
 
   return (
-    <div className="pl-16 min-h-screen flex flex-col justify-center items-center gap-10">
+    <div className="pl-16 max-md:pb-[96px] max-md:pl-0 min-h-screen max-md:h-auto flex flex-col justify-center items-center gap-10">
       <Typography variant="h3" className="font-butlerpro">
-        What are you looking for?
+        What are you <br className="hidden max-md:inline"/> looking for?
       </Typography>
-      <div className="grid grid-cols-[fit-content(420px)_1fr] gap-10 max-w-4xl mx-auto">
+      <div className="grid grid-cols-[fit-content(420px)_1fr] max-md:grid-cols-2 max-md:gap-4 gap-10 max-w-4xl mx-auto">
         {cardData?.(handleClick)?.map((card) => (
           <NeonBorder key={card.title} onClick={card.onClick}>
-            <div className="border bg-background-primary border-secondary-orange flex relative p-6 w-[420px] h-[260px] rounded-lg">
+            <div className="border max-md:flex-col-reverse max-md:p-2 max-md:justify-center max-md:items-center max-md:gap-0 max-md:h-[150px] max-md:w-[160px] bg-background-primary border-secondary-orange flex relative p-6 w-[420px] h-[260px] rounded-lg">
               <div>
                 <Typography
                   variant="body"
-                  className=" text-[20px] text-left uppercase font-bold tracking-[6px] opacity-100 text-tertiary-orange"
+                  className={cn("text-[20px] max-md:text-[12px] max-md:tracking-[3px] text-left max-md:text-left uppercase font-bold tracking-[6px] opacity-100 text-tertiary-orange", card?.titleStyle)}
                 >
                   {card?.title}
                 </Typography>
                 <Typography
                   variant="body"
-                  className="text-left opacity-100 mt-4 font-medium"
+                  className="text-left max-md:hidden opacity-100  mt-4 font-medium"
                 >
                   {card.description}
                 </Typography>
@@ -117,7 +128,7 @@ const CardCategory = () => {
                 height={card.imgHeight}
                 src={card.image}
                 alt="travel"
-                className={card.imgStyle}
+                className={isMobile?card.mobileImgStyle:card.imgStyle}
               />
             </div>
           </NeonBorder>

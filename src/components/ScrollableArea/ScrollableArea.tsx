@@ -82,7 +82,7 @@ export const ChatbotScrollableArea = ({
   
   return (
     <div className="flex-1 overflow-hidden">
-      <ScrollArea className="h-full px-4 py-6">
+      <ScrollArea className="h-full px-4 py-6 max-md:py-2">
         <div className="max-w-4xl mx-auto space-y-6 pb-4">
           {messages.map((message) => (
             <div
@@ -107,8 +107,8 @@ export const ChatbotScrollableArea = ({
                   className={`${
                     containsMarkdownTable(message?.content)
                       ? "p-0"
-                      : "px-4 py-3"
-                  } gap-0 max-w-[85%] break-words ${
+                      : "px-4 py-3 max-md:px-3"
+                  } gap-0 max-w-[85%] max-md:max-w-[75%] break-words ${
                     message.source === "user"
                       ? "bg-transparent text-gray-100 border-[#F35A13]/30"
                       : `bg-transparent text-gray-100 ${
@@ -121,7 +121,7 @@ export const ChatbotScrollableArea = ({
                   {containsMarkdownTable(message?.content) ? (
                     <>
                       <p
-                        className="text-sm leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
+                        className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
                         dangerouslySetInnerHTML={{
                           __html: convertBoldMarkdownToHtml(
                             getContent(message?.content)?.message
@@ -141,7 +141,7 @@ export const ChatbotScrollableArea = ({
                   ) : (
                     <>
                       <p
-                        className="text-sm leading-relaxed whitespace-pre-wrap"
+                        className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{
                           __html: convertBoldMarkdownToHtml(message.content),
                         }}

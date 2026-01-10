@@ -12,7 +12,9 @@ const useNav = () => {
 
   const navigateToProfile = () => router.replace(ROUTES.PROFILE);
 
-  return { goToChat, goToSignIn, goToCardCategory, navigateToProfile };
+  const goBack = () => router.back();
+
+  return { goToChat, goBack, goToSignIn, goToCardCategory, navigateToProfile };
 };
 
 export default useNav;

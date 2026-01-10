@@ -34,6 +34,8 @@ import { foodCard } from "@/lib/constants/questions/foodCard";
 import { shoppingCard } from "@/lib/constants/questions/shoppingCard";
 import { allRounderCard } from "@/lib/constants/questions/allRounderCard";
 import { CardsType } from "@/types/card";
+import Image from "next/image";
+import { ChevronLeft } from "lucide-react";
 
 const cardData = {
   [CARD_CATEGORY.TRAVEL]: travelCard,
@@ -69,7 +71,7 @@ export default function ChatbotUI() {
     useChatState();
   const { getSocketUrl } = useSocket();
   const messagesEndRef = useChatScroll(messages);
-  const { goToCardCategory } = useNav();
+  const { goToCardCategory,goBack } = useNav();
 
   useEffect(() => {
     if (!cardCategory) {
@@ -111,10 +113,10 @@ export default function ChatbotUI() {
     return userMessage;
   };
 
-  const evaluateEarly = (messages: BaseMessage[], content:string) => {
+  const evaluateEarly = (messages: BaseMessage[], content: string) => {
     setShowTypingLoader(true);
 
-    if(content){
+    if (content) {
       addUserMessage({
         source: "user",
         content,
@@ -194,10 +196,10 @@ export default function ChatbotUI() {
 
     return resolvedQuestion;
   };
-  const handleEndJourney = () =>{
-    setChatInputDisabled(false)
+  const handleEndJourney = () => {
+    setChatInputDisabled(false);
     setCurrentMessageId("");
-  }
+  };
 
   const handleSend = async (
     value: string | Record<string, string | number>
@@ -205,39 +207,38 @@ export default function ChatbotUI() {
     if (typeof value === "string" && !value.trim()) return;
 
     const actions = {
-      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () => evaluateEarly(messages, "Recommend me a card"),
+      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () =>
+        evaluateEarly(messages, "Recommend me a card"),
       [CHAT_ACTIONS.CONTINUE_JOURNEY]: continueJourney,
       [CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER]: switchToAllRounder,
       [CHAT_ACTIONS.END_JOURNEY]: handleEndJourney,
     };
 
-    
-
     const isButtonGroupAction =
       typeof value === "string" && value?.includes("action-");
 
+    if (isButtonGroupAction) {
+      actions[value as ActionTypes]?.();
+      return;
+    }
 
-      if (isButtonGroupAction) {
-        actions[value as ActionTypes]?.();
-        return;
-      }
+    const currentMessageIndex = selectedCardData?.findIndex(
+      (msg) => msg.m_id === currentMessageId
+    );
 
-      const currentMessageIndex = selectedCardData?.findIndex(
-        (msg) => msg.m_id === currentMessageId
-      );
-  
-      const currentQuestion: BaseMessage = selectedCardData?.at(
-        currentMessageIndex
-      ) || {
-        m_id: "",
-        content: "",
-        source: MESSAGE_SOURCE.USER,
-        type: MESSAGE_TYPE.TEXT,
-        botContent: "",
-      };
+    const currentQuestion: BaseMessage = selectedCardData?.at(
+      currentMessageIndex
+    ) || {
+      m_id: "",
+      content: "",
+      source: MESSAGE_SOURCE.USER,
+      type: MESSAGE_TYPE.TEXT,
+      botContent: "",
+    };
 
-      const isSubmit =   typeof currentQuestion?.submit === "string" && currentQuestion?.submit?.includes("action-") 
-
+    const isSubmit =
+      typeof currentQuestion?.submit === "string" &&
+      currentQuestion?.submit?.includes("action-");
 
     const contentMsg = getMessageContent({
       messageType: currentQuestion.type,
@@ -258,6 +259,12 @@ export default function ChatbotUI() {
     // Add user message first
     addUserMessage(userMsg as BaseMessage);
 
+    // if(chatInputDisabled){
+    //   sendMessage(JSON.stringify(userMsg));
+    //   return 
+    // }
+
+    console.log(userMsg,currentMessageIndex,currentQuestion,chatInputDisabled, "jfbfjnvjfnvjnfjnvjfn")
 
     if (isSubmit) {
       actions[currentQuestion?.submit as ActionTypes]?.();
@@ -303,8 +310,8 @@ export default function ChatbotUI() {
       setJoruneyMessageId((prev) => [...prev, resolvedQuestion?.m_id]);
     } else if (nextIndex >= selectedCardData.length && readyState === 1) {
       // Reached the end of questions
-      evaluateEarly?.([...messages, userMsg] as BaseMessage[],  "");
-      setChatInputDisabled(false)
+      evaluateEarly?.([...messages, userMsg] as BaseMessage[], "");
+      setChatInputDisabled(false);
     }
 
     setInputValue("");
@@ -328,7 +335,7 @@ export default function ChatbotUI() {
       if (jouneyMessageId.length < selectedCardData.length) {
         addUserMessage(continueJourneyMessage as BaseMessage);
         setCurrentMessageId(continueJourneyMessage?.m_id);
-      }else{
+      } else {
         setCurrentMessageId(message?.m_id);
       }
 
@@ -343,7 +350,12 @@ export default function ChatbotUI() {
 
   return (
     <div className="flex flex-col h-screen bg-background-primary">
-      <div className="p-4 flex justify-end items-center">
+      <div className="p-4 px-8 max-md:px-4 flex justify-between items-center">
+        <Button variant="ghost" className="!p-0 !gap-1" onClick={goBack}>
+          <ChevronLeft color="#fff"/>
+        <Image width={110} height={20} src="/logoWithTitle.svg" alt="logo" />
+        </Button>
+      
         <Button variant="outline" onClick={handleClearChat}>
           Clear chat
         </Button>
@@ -361,12 +373,12 @@ export default function ChatbotUI() {
       {/* Input Area - Fixed at Bottom */}
       <ChatbotInput
         disabled={chatInputDisabled || showTypingLoader}
+        // disabled={false}
         inputValue={inputValue}
         onInputChange={setInputValue}
         onSend={() => handleSend(inputValue)}
         placeholder="Ask me anything..."
         onKeyPress={handleKeyPress}
-       
       />
     </div>
   );
