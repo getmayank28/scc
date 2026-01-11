@@ -60,7 +60,7 @@ const CardInfo = () => {
   };
 
   return (
-    <div className="flex flex-col p-20 h-screen">
+    <div className="flex flex-col max-md:px-4 max-md:pt-24 p-20 h-screen">
       <HeaderText
         containerClassName="items-start"
         title="Card explore"
@@ -69,7 +69,7 @@ const CardInfo = () => {
         titleVariant="h3"
         titleClassName="font-bold"
       />
-      <div className="flex gap-2 mt-4 mb-2">
+      <div className="flex gap-2 mt-4 mb-2 max-md:flex-col">
         <SearchSelect
           searchInputRef={searchInputRef}
           query={query}
@@ -82,8 +82,8 @@ const CardInfo = () => {
           }}
         />
         <Button
-          disabled={!selected?.name}
-          className="rounded-lg h-12 px-8"
+          disabled={!selected?.name||isLoading}
+          className="rounded-lg h-12 px-8 bg-primary-orange/70"
           onClick={handleSubmit}
         >
          Search

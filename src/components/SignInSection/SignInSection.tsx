@@ -59,7 +59,7 @@ const SignInSection = ({
   };
 
   return (
-    <div className="relative z-10 w-[545px] bg-background-primary p-12 px-14 pb-0 rounded-2xl border border-white/20">
+    <div className="relative z-10 max-md:w-[345px] max-md:px-6 max-md:mx-6 w-[545px] bg-background-primary p-12 px-14 pb-0 rounded-2xl border border-white/20">
       {showSkip && (
         <div
           onClick={closeSignUpModal}

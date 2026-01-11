@@ -16,63 +16,72 @@ const UserCards = () => {
   });
   const { navigateToProfile } = useNav();
 
-
   useEffect(() => {
     if (cards) {
       const cardIds = cards?.map((card: { _id: string }) => card?._id);
       setUserCards(cardIds);
     }
   }, [cards]);
-  
+
   return (
-    <div className="pt-8 max-md:overflow-x-auto">
+    <div className="pt-8">
       <Typography variant="body" className="font-bold opacity-90 text-left">
         Your cards
       </Typography>
       {cards?.length || isCardsLoading ? (
-        <div className="flex gap-6 py-2 w-[754px] max-md:!overflow-x-auto">
+        <div className="flex gap-6 py-2 overflow-x-auto whitespace-nowrap">
           {isCardsLoading ? (
             <>
               <SpendOptimizerCreditCardSkeleton />
               <SpendOptimizerCreditCardSkeleton />
             </>
           ) : (
-            cards?.map((card: { _id: string; cardId: { name: string } }) => {
+            cards?.map((card: { _id: string; cardId: { name: string, bankName:string } }) => {
               return (
                 <div
-                  key={card?._id}
-                  className={`flex p-3 px-4 rounded-sm items-center justify-between w-[430px] max-md:w-[327px] border ${userCards?.includes(card?._id) ? "border-secondary-orange" : "border-white/30"}`}
-                >
-                  <div className="flex items-center gap-3">
+                key={card?._id}
+                className={`shrink-0 flex cursor-pointer p-3 px-4 max-md:px-2 gap-3 rounded-sm items-center justify-between w-[430px] max-md:w-[300px] border ${userCards?.includes(card?._id) ? "border-primary-orange" : "bg-white/5 border-white/30"}`}
+                onClick={() => {
+                  const isSelected = userCards?.includes(card?._id);
+                  if (isSelected) {
+                    const filteredOptions = userCards?.filter(
+                      (option) => option !== card?._id
+                    );
+                    setUserCards(filteredOptions);
+                  } else {
+                    setUserCards((prev) => [...prev, card?._id]);
+                  }
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`${userCards?.includes(card?._id) ?'bg-primary-orange/15':'bg-white/20'} rounded-sm p-3 px-4 max-md:py-2 max-md:px-3`}>
                     <Image
-                      width={25}
-                      height={25}
+                      width={20}
+                      height={20}
                       src="/logos/hdfc.png"
                       alt="bank-logo"
                     />
+                  </div>
+                  <div className="flex flex-col gap-1 items-start">
                     <Typography
                       variant="caption"
-                      className="text-sm font-semibold"
+                      className="text-md opacity-90 font-semibold"
                     >
                       {card?.cardId?.name}
                     </Typography>
+                    <Typography
+                      variant="caption"
+                      className="text-xs opacity-80 font-semibold"
+                    >
+                      {card?.cardId?.bankName}
+                    </Typography>
                   </div>
-                  <Checkbox
-                    checked={userCards?.includes(card?._id)}
-                    onClick={() => {
-                      const isSelected = userCards?.includes(card?._id);
-                      if (isSelected) {
-                        const filteredOptions = userCards?.filter(
-                          (option) => option !== card?._id
-                        );
-                        setUserCards(filteredOptions);
-                      } else {
-                        setUserCards((prev) => [...prev, card?._id]);
-                      }
-                    }}
-                    className="w-6 h-6 data-[state=checked]:border-secondary-orange border-secondary-orange data-[state=checked]:bg-secondary-orange data-[state=checked]:text-white"
-                  />
                 </div>
+                <Checkbox
+                  checked={userCards?.includes(card?._id)}
+                  className="w-6 h-6 data-[state=checked]:border-secondary-orange border-secondary-orange data-[state=checked]:bg-secondary-orange data-[state=checked]:text-white"
+                />
+              </div>
               );
             })
           )}

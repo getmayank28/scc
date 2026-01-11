@@ -145,13 +145,13 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, name }) => {
 
   return (
     <div className="py-6">
-      <Typography variant='body' className='opacity-100 font-semibold text-left mb-2'>{normalizeString(name)}</Typography>
+      <Typography variant='body' className='opacity-100 max-md:text-[14px] font-semibold text-left mb-2'>{normalizeString(name)}</Typography>
       <div className="space-y-6">
         {elements.map((element) => {
           switch (element.type) {
             case 'intro':
               return (
-                <p key={element.key} className="text-white opacity-80 leading-relaxed text-base mb-6">
+                <p key={element.key} className="text-white max-md:text-[14px] opacity-80 leading-relaxed text-base mb-6">
                   {formatText(element.text)}
                 </p>
               );
@@ -159,7 +159,7 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, name }) => {
             case 'section':
               return (
                 <div key={element.key} className="mb-6">
-                  <h2 className="text-lg font-bold uppercase tracking-[1px] text-primary-orange/90 mb-3 pb-2 border-b-2 border-secondary-orange">
+                  <h2 className="text-lg max-md:text-[14px] font-bold uppercase tracking-[1px] text-primary-orange/90 mb-3 pb-2 border-b-2 border-secondary-orange">
                     {element.title}
                   </h2>
                   <div className="ml-4 space-y-3">
@@ -168,17 +168,17 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, name }) => {
                         {item.type === 'subsection' ? (
                           <div className="mb-2">
                             <div className="flex items-start">
-                              <span className="mr-3 mt-1 text-sm">●</span>
+                              <span className="mr-3 max-md:text-[14px] mt-1 text-sm">●</span>
                               <div className="flex-1">
-                                <span className="font-semibold text-white">{item.title}:</span>
-                                <span className="text-white ml-1">{item.content}</span>
+                                <span className="font-semibold text-white max-md:text-[14px]">{item.title}:</span>
+                                <span className="text-white ml-1 max-md:text-[14px] max-md:leading-[22px]">{item.content}</span>
                               </div>
                             </div>
                           </div>
                         ) : (
                           <div className="flex items-start">
-                            <span className="text-white/80 mr-3 mt-1">•</span>
-                            <span className="text-white/90 flex-1">{formatText(item.content)}</span>
+                            <span className="text-white/80 mr-3 mt-1 max-md:text-[14px]">•</span>
+                            <span className="text-white/90 flex-1 max-md:text-[14px]  max-md:leading-[22px]">{formatText(item.content)}</span>
                           </div>
                         )}
                       </div>
@@ -191,10 +191,10 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, name }) => {
               return (
                 <div key={element.key} className="mb-4 ml-4">
                   <div className="flex items-start">
-                    <span className="mr-3 mt-1 text-sm">●</span>
+                    <span className="mr-3 mt-1 text-sm max-md:text-[14px]">●</span>
                     <div className="flex-1">
-                      <span className="font-semibold text-white">{element.title}:</span>
-                      <span className="text-white ml-1">{element.content}</span>
+                      <span className="font-semibold text-white max-md:text-[14px]">{element.title}:</span>
+                      <span className="text-white ml-1 max-md:text-[14px] max-md:leading-[22px]">{element.content}</span>
                     </div>
                   </div>
                 </div>

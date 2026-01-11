@@ -4,18 +4,10 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import {
-  Brain,
-  House,
-  LogOutIcon,
-  MessagesSquare,
-  Search,
-  User,
-} from "lucide-react";
+import { Brain, House, MessagesSquare, Search, User } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { Button } from "../ui/button";
-import { signOut } from "next-auth/react";
 import Link from "next/link";
+import LoggedInHeader from "../LoggedInHeader";
 
 export function SidebarContainer({ children }: { children: ReactNode }) {
   const links = [
@@ -34,34 +26,19 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       href: ROUTES.SPEND_OPTIMIZER,
       icon: <Brain className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
-    // {
-    //   label: "Favorites",
-    //   href: ROUTES.FAVORITES,
-    //   icon: <Heart className="h-5 w-5 shrink-0 text-neutral-200" />,
-    // },
     {
       label: "Explore Cards",
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
-    {
-        label: "Profile",
-        href: ROUTES.PROFILE,
-        icon: (
-          <User className="h-5 w-5 shrink-0 text-neutral-200" />
-        ),
-      },
+    }
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const isVerifyRoute = pathname?.includes('/verify')
+  const isVerifyRoute = pathname?.includes("/verify");
   const isBlockedRoute = PUBLIC_ROUTES?.includes(pathname) || isVerifyRoute;
-  const isAuthBlockedRoute = ['/chat']?.includes(pathname)
+  const isAuthBlockedRoute = ["/chat"]?.includes(pathname);
 
-  const handleLogout = () => {
-    signOut({ callbackUrl: ROUTES.HOME });
-    localStorage.clear()
-  };
+  const showHeaderWhileLoggedIn = ["/choose-card"]?.includes(pathname);
 
   return (
     <div className={"flex w-full rounded-md min-h-screen"}>
@@ -79,15 +56,12 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
           </SidebarBody>
         </Sidebar>
       )}
-      {(!isBlockedRoute && !isAuthBlockedRoute)&& (
-        <div className="w-full py-6 px-6 h-14 flex justify-end fixed top-0 left-0">
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOutIcon /> Logout
-          </Button>
-        </div>
-      )}
+      {!isBlockedRoute && !isAuthBlockedRoute && <LoggedInHeader />}
+      {showHeaderWhileLoggedIn && <LoggedInHeader showBack />}
 
-      <div className={`w-full ${isBlockedRoute ? "pl-0" : "max-md:pl-0 pl-[28px]"}`}>
+      <div
+        className={`w-full ${isBlockedRoute ? "pl-0" : "max-md:pl-0 pl-[28px]"}`}
+      >
         {children}
       </div>
     </div>

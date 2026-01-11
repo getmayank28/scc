@@ -61,16 +61,16 @@ const VerifyAccount = () => {
     <div className="h-screen relative overflow-hidden bg-background-primary flex items-center justify-center">
       <div className="absolute rotate-[60deg] -top-[50%] -left-[8%] w-200 h-200 rounded-[120px] bg-secondary-orange/30"></div>
       <div className="absolute rotate-[60deg] -bottom-[50%] -right-[8%] w-200 h-200 rounded-[120px] bg-secondary-orange/30"></div>
-      <div className="relative z-10 w-[545px] bg-background-primary p-12 px-14 rounded-2xl border border-white/20">
+      <div className="relative z-10 max-md:w-[345px] max-md:px-6 w-[545px] bg-background-primary p-12 px-14 rounded-2xl border border-white/20">
         <h1 className="text-[#FFF] text-center relative z-[100] font-butlerpro text-[40px] font-medium leading-[110%]">
-          Please Verify Your Email
+          Verify Your Email
         </h1>
         <p className="text-white opacity-70 relative z-[100] text-center font-satoshi text-[14px]  font-normal leading-[150%] tracking-[-2%] [font-feature-settings:'ss03_on']">
-          Enter the verification code we sent to your email.
+          Enter the verification code <br className="hidden max-md:inline"/>we sent to your email.
         </p>
        
         <Form {...form}>
-          <form className="mt-10" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="mt-10 max-md:mt-4" onSubmit={form.handleSubmit(onSubmit)}>
           <ChangeEmail email={email} />
             <FormField
               control={form.control}

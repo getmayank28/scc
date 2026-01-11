@@ -52,10 +52,9 @@ export const api = createApi({
       }),
     }),
     chatSessionToken: builder.mutation({
-      query: (sessionId) => ({
+      query: () => ({
         url: "/chat/token",
         method: "POST",
-        body: { sessionId },
       }),
     }),
     userChatSessions: builder.mutation({

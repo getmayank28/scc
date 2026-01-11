@@ -58,7 +58,7 @@ const ChangePasswordComp = () => {
     <div className="h-screen relative overflow-hidden bg-background-primary flex items-center justify-center">
       <div className="absolute rotate-[60deg] -top-[50%] -left-[8%] w-200 h-200 rounded-[120px] bg-secondary-orange/30"></div>
       <div className="absolute rotate-[60deg] -bottom-[50%] -right-[8%] w-200 h-200 rounded-[120px] bg-secondary-orange/30"></div>
-      <div className="relative z-10 w-[545px] bg-background-primary p-12 px-14 rounded-2xl border border-white/20">
+      <div className="relative z-10 max-md:w-[345px] max-md:px-6 w-[545px] bg-background-primary p-12 px-14 rounded-2xl border border-white/20">
         <h1 className="text-[#FFF] text-center relative z-[100] font-butlerpro text-[40px] font-medium leading-[110%]">
           Change Password
         </h1>

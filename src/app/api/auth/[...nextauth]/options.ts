@@ -65,7 +65,13 @@ export const authOptions: NextAuthOptions = {
         token.isVerified = user.isVerified;
         token.name = user.name;
         token.email = user.email;
+      } else {
+        const dbUser = await UserModal.findById(token._id);
+        if (dbUser) {
+          token.isVerified = dbUser.isVerified;
+        }
       }
+
       return token;
     },
 

@@ -41,8 +41,8 @@ const BestMarketCard = () => {
   ];
   
   return (
-    <div className="py-12">
-      <HeaderText title="Explore top cards in the market" content="" />
+    <div className="py-12 max-md:pt-4">
+      <HeaderText title="Explore top cards" content="" />
       <div className="flex items-center justify-center">
         <Typography variant="caption" className="-mr-2">
           To know what fits you best
@@ -51,7 +51,7 @@ const BestMarketCard = () => {
           Ask the agent →
         </Button>
       </div>
-      <div className="flex gap-6 mt-10">
+      <div className="flex gap-6 mt-10 max-md:flex-wrap max-md:justify-center">
         {infoCardData?.map((card) => (
           <InfoCard key={card.title} {...card} />
         ))}

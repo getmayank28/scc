@@ -36,6 +36,8 @@ import { allRounderCard } from "@/lib/constants/questions/allRounderCard";
 import { CardsType } from "@/types/card";
 import Image from "next/image";
 import { ChevronLeft } from "lucide-react";
+import LoggedInHeader from "@/components/LoggedInHeader";
+import ChatSidebar from "@/components/ChatSidebar/ChatSidebar";
 
 const cardData = {
   [CARD_CATEGORY.TRAVEL]: travelCard,
@@ -71,7 +73,7 @@ export default function ChatbotUI() {
     useChatState();
   const { getSocketUrl } = useSocket();
   const messagesEndRef = useChatScroll(messages);
-  const { goToCardCategory,goBack } = useNav();
+  const { goToCardCategory, goBack } = useNav();
 
   useEffect(() => {
     if (!cardCategory) {
@@ -129,6 +131,7 @@ export default function ChatbotUI() {
       getUserMessage(messages),
       cardCategory as CardsType
     );
+
     sendMessage(JSON.stringify(botMessage));
   };
 
@@ -197,6 +200,15 @@ export default function ChatbotUI() {
     return resolvedQuestion;
   };
   const handleEndJourney = () => {
+    sendMessage(
+      JSON.stringify({
+        source: "user",
+        content: "Start the follow up",
+        m_id: crypto.randomUUID(),
+        ts: new Date().toISOString(),
+        type: "TextMessage",
+      })
+    );
     setChatInputDisabled(false);
     setCurrentMessageId("");
   };
@@ -259,13 +271,6 @@ export default function ChatbotUI() {
     // Add user message first
     addUserMessage(userMsg as BaseMessage);
 
-    // if(chatInputDisabled){
-    //   sendMessage(JSON.stringify(userMsg));
-    //   return 
-    // }
-
-    console.log(userMsg,currentMessageIndex,currentQuestion,chatInputDisabled, "jfbfjnvjfnvjnfjnvjfn")
-
     if (isSubmit) {
       actions[currentQuestion?.submit as ActionTypes]?.();
       return;
@@ -324,10 +329,6 @@ export default function ChatbotUI() {
     }
   };
 
-  const handleClearChat = () => {
-    clearFromSessionStorage(WS_SESSION_KEY);
-    window.location.reload();
-  };
   const handleMessage = (message: BaseMessage | HistoryMessage) => {
     if (message.type !== "history" && message.source === "assistant") {
       addAssistantMessage(message);
@@ -349,37 +350,30 @@ export default function ChatbotUI() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background-primary">
-      <div className="p-4 px-8 max-md:px-4 flex justify-between items-center">
-        <Button variant="ghost" className="!p-0 !gap-1" onClick={goBack}>
-          <ChevronLeft color="#fff"/>
-        <Image width={110} height={20} src="/logoWithTitle.svg" alt="logo" />
-        </Button>
-      
-        <Button variant="outline" onClick={handleClearChat}>
-          Clear chat
-        </Button>
+    <div className="flex">
+      <ChatSidebar />
+      <div className="flex w-full mx-auto  flex-col pl-[180px] pt-16 h-screen bg-background-primary">
+        <LoggedInHeader />
+        {/* Messages Area - Scrollable */}
+        <ChatbotScrollableArea
+          currentMessageId={currentMessageId}
+          messages={messages}
+          handleSend={handleSend}
+          messagesEndRef={messagesEndRef}
+          isTyping={showTypingLoader}
+        />
+
+        {/* Input Area - Fixed at Bottom */}
+        <ChatbotInput
+          disabled={chatInputDisabled || showTypingLoader}
+          // disabled={false}
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onSend={() => handleSend(inputValue)}
+          placeholder="Ask me anything..."
+          onKeyPress={handleKeyPress}
+        />
       </div>
-
-      {/* Messages Area - Scrollable */}
-      <ChatbotScrollableArea
-        currentMessageId={currentMessageId}
-        messages={messages}
-        handleSend={handleSend}
-        messagesEndRef={messagesEndRef}
-        isTyping={showTypingLoader}
-      />
-
-      {/* Input Area - Fixed at Bottom */}
-      <ChatbotInput
-        disabled={chatInputDisabled || showTypingLoader}
-        // disabled={false}
-        inputValue={inputValue}
-        onInputChange={setInputValue}
-        onSend={() => handleSend(inputValue)}
-        placeholder="Ask me anything..."
-        onKeyPress={handleKeyPress}
-      />
     </div>
   );
 }

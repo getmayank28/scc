@@ -1,14 +1,37 @@
 import { useSession } from "next-auth/react";
 import { AUTH_STATE } from "../constants/auth";
+import { useGetUserByIdQuery } from "@/store/userApi";
+import { useMemo } from "react";
 
 const useUserData = () => {
   const session = useSession();
   const isUserAuthenticated = session?.status === AUTH_STATE.AUTHENTICATED;
-  const name = session?.data?.user?.name || null;
-  const email = session?.data?.user?.email || null;
   const userId = session?.data?.user?._id || null;
 
-  return { isUserAuthenticated, name, email, userId };
+  const { data } = useGetUserByIdQuery(userId, {
+    skip: !userId,
+  });
+
+  const name = data?.name || null;
+  const email = data?.email || null;
+  const firstName = useMemo(() => {
+    const firstName = data?.name?.split(" ")?.at(0);
+    const formattedName = firstName
+      ? firstName.slice(0, 1)?.toUpperCase() + firstName.slice(1)?.toLowerCase()
+      : undefined;
+
+    return formattedName;
+  }, [data?.name]);
+
+  const nameInitials = useMemo(() => {
+    let initials = "";
+    data?.name?.split(" ")?.forEach((word: string) => {
+      initials = initials + word?.slice(0, 1)?.toUpperCase() || "";
+    });
+    return initials;
+  }, [data?.name]);
+
+  return { isUserAuthenticated, name, email, userId, firstName, nameInitials };
 };
 
 export default useUserData;

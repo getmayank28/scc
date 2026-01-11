@@ -17,6 +17,7 @@ const CreditCard = ({
   isCardSpotlightActive = true,
   // onCardNumberUpdate,
   onRemove,
+  forShow,
 }: {
   background?: string;
   isCardSpotlightActive?: boolean;
@@ -25,6 +26,7 @@ const CreditCard = ({
   cardName?: string;
   onCardNumberUpdate?: (number: string) => void;
   onRemove?: () => void;
+  forShow?: boolean;
 }) => {
   // const [error, setError] = useState(false);
   // const [cardNumber, setCardNumber] = useState("");
@@ -40,7 +42,7 @@ const CreditCard = ({
   };
 
   const handleMouseLeave = () => {
-    if(timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
     setHovered(false);
   };
 
@@ -198,13 +200,15 @@ const CreditCard = ({
             </svg>
           </div>
           <div className={`absolute top-6 left-4 flex items-start gap-1`}>
-            <Image
-              width={20}
-              height={15}
-              src="/logos/hdfc.png"
-              alt="bank-logo"
-              className="w-[20px] h-[20px] mt-[5px]"
-            />
+            {!forShow && (
+              <Image
+                width={20}
+                height={15}
+                src="/logos/hdfc.png"
+                alt="bank-logo"
+                className="w-[20px] h-[20px] mt-[5px]"
+              />
+            )}
             <Typography
               variant="body"
               className="text-left font-bold opacity-100 max-w-[320px]"
@@ -212,17 +216,19 @@ const CreditCard = ({
               {normalizeString(cardName as string)}
             </Typography>
           </div>
-          <div
-            className={`absolute top-0 -right-14 group-hover:right-0 transition-all duration-500 rounded-lg`}
-          >
-            <div className="h-[247px] flex flex-col p-4 px-3 bg-background-primary border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
-              <AnimatedTooltip
-                iconClassName="w-8 h-8"
-                onClick={onRemove}
-                items={goBack}
-              />
+          {!forShow && (
+            <div
+              className={`absolute top-0 -right-14 group-hover:right-0 transition-all duration-500 rounded-lg`}
+            >
+              <div className="h-[247px] flex flex-col p-4 px-3 bg-background-primary border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
+                <AnimatedTooltip
+                  iconClassName="w-8 h-8"
+                  onClick={onRemove}
+                  items={goBack}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Card Number */}
           <div className="absolute top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 text-lg">

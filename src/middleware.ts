@@ -16,7 +16,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (token && url.pathname.startsWith(ROUTES.SIGN_IN)) {
+  if (
+    token &&
+    (url.pathname.startsWith(ROUTES.SIGN_IN) ||
+      url.pathname.startsWith(ROUTES.VERIFY_EMAIL))
+  ) {
     if (token.isVerified) {
       return NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url));
     } else {
@@ -36,7 +40,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(ROUTES.LOGGED_IN_HOME, request.url));
   }
 
-  if (!token && !PUBLIC_ROUTES?.includes(url.pathname)) {
+  if (
+    (!token || !token?.isVerified) &&
+    !PUBLIC_ROUTES?.includes(url.pathname)
+  ) {
     return NextResponse.redirect(new URL(ROUTES.SIGN_IN, request.url));
   }
 
@@ -44,5 +51,17 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/sign-in", "/sign-up", "/", "/chat", "/home"],
+  matcher: [
+    "/sign-in",
+    "/sign-up",
+    "/",
+    "/chat",
+    "/home",
+    "/profile",
+    "/home",
+    "/choose-card",
+    "/spend-optimizer",
+    "/card-info",
+    "/verify/:path*",
+  ],
 };

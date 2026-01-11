@@ -15,6 +15,7 @@ interface SidebarContextProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   animate: boolean;
+  isVaraint2?:boolean
 }
 
 const SidebarContext = createContext<SidebarContextProps | undefined>(
@@ -39,6 +40,7 @@ export const SidebarProvider = ({
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
+  isVaraint2?:boolean
 }) => {
   const [openState, setOpenState] = useState(false);
 
@@ -62,6 +64,7 @@ export const Sidebar = ({
   open?: boolean;
   setOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   animate?: boolean;
+  isVaraint2?:boolean
 }) => {
   return (
     <SidebarProvider open={open} setOpen={setOpen} animate={animate}>
@@ -70,7 +73,9 @@ export const Sidebar = ({
   );
 };
 
-export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
+export const SidebarBody = (props: React.ComponentProps<typeof motion.div>&{
+  isVaraint2?:boolean
+}) => {
   return (
     <>
       <DesktopSidebar {...props} />
@@ -82,21 +87,25 @@ export const SidebarBody = (props: React.ComponentProps<typeof motion.div>) => {
 export const DesktopSidebar = ({
   className,
   children,
+  isVaraint2,
   ...props
-}: React.ComponentProps<typeof motion.div>) => {
+}: React.ComponentProps<typeof motion.div>&{
+  isVaraint2?:boolean
+}) => {
   const { open, setOpen, animate } = useSidebar();
+  console.log(isVaraint2, "fjvfvbfhbvfhb")
   return (
     <>
       <motion.div
         className={cn(
-          "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[300px] shrink-0",
+          "h-full px-4 py-4 hidden  md:flex md:flex-col bg-neutral-100 dark:bg-neutral-800 w-[60px] shrink-0",
           className
         )}
         animate={{
-          width: animate ? (open ? "300px" : "60px") : "300px",
+          width: animate ? (open ? "180px" : "60px") : "60px",
         }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
+        onMouseEnter={() => isVaraint2?{}:setOpen(true)}
+        onMouseLeave={() => isVaraint2?{}:setOpen(false)}
         {...props}
       >
         {children}

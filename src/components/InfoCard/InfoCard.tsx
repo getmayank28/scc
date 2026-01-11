@@ -23,8 +23,8 @@ const InfoCard: React.FC<InfoCardProps> = ({
   onClick,
 }) => {
   return (
-    <div className="border border-secondary-orange p-2 max-w-[410px] max-h-[294px] rounded-4xl bg-secondary-orange/20">
-      <div className="p-8 rounded-4xl w-[390px] bg-background-primary h-[238px]">
+    <div className="border border-secondary-orange p-2 max-md:w-[340px] max-w-[410px] max-h-[294px] rounded-4xl bg-secondary-orange/20">
+      <div className="p-8 rounded-4xl max-md:px-4 max-md:py-5 max-md:w-[320px] max-md:h-[210px] w-[390px] bg-background-primary h-[238px]">
         {/* Icon + Label */}
         <div className="flex justify-start items-center gap-2">
           {icon}
@@ -38,7 +38,7 @@ const InfoCard: React.FC<InfoCardProps> = ({
 
         {/* Title & Subtitle */}
         <div className="flex flex-col gap-1 my-6">
-          <Typography variant="h5" className="text-left">
+          <Typography variant="h5" className="text-left max-md:text-[16px]">
             {title}
           </Typography>
           <Typography variant="body" className="text-[16px] text-left">
@@ -49,14 +49,14 @@ const InfoCard: React.FC<InfoCardProps> = ({
         {/* Chips */}
         <div className="flex flex-wrap justify-start items-center gap-2">
           {chips.map((chip, index) => (
-            <Chip key={index} label={chip} variant="faded" size="sm" />
+            <Chip key={index} label={chip} variant="faded" size="sm" className="max-md:text-[9px]" />
           ))}
         </div>
       </div>
 
       {/* Button */}
       <Button
-        className="w-full uppercase tracking-wider font-normal bg-transparent hover:bg-transparent text-primary-orange"
+        className="w-full uppercase tracking-wider max-md:text-lg font-normal bg-transparent hover:bg-transparent text-primary-orange"
         size="lg"
         onClick={onClick}
       >

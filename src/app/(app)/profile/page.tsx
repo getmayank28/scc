@@ -33,7 +33,6 @@ const Profile = () => {
     name: "",
     email: "",
   });
-
   const { data } = useGetUserByIdQuery(userId, {
     skip: !userId,
   });
@@ -45,7 +44,11 @@ const Profile = () => {
   }, [data?.name, data?.email]);
 
   const handleDataUpdate = () => {
-    if (data?.name && data?.email) {
+    if(data && !data?.name){
+      setIsEditing(true)
+      setUserData({ name: '', email: data?.email });
+      setErrors(prev => ({...prev, name:"What should we call you"}))
+    }else{
       setUserData({ name: data?.name, email: data?.email });
     }
   };
@@ -149,7 +152,7 @@ const Profile = () => {
               <p className="text-xs text-destructive">{errors.email}</p>
             )}
           </div>
-          <div className="self-end w-full">
+          <div className={`${errors?.name || errors?.email?'self-center':'self-end'} w-full`}>
             {isEditing ? (
               <div className="flex gap-2">
                 <Button

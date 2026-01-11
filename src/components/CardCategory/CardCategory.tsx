@@ -102,7 +102,7 @@ const CardCategory = () => {
 
   return (
     <div className="pl-16 max-md:pb-[96px] max-md:pl-0 min-h-screen max-md:h-auto flex flex-col justify-center items-center gap-10">
-      <Typography variant="h3" className="font-butlerpro">
+      <Typography variant="h3" >
         What are you <br className="hidden max-md:inline"/> looking for?
       </Typography>
       <div className="grid grid-cols-[fit-content(420px)_1fr] max-md:grid-cols-2 max-md:gap-4 gap-10 max-w-4xl mx-auto">

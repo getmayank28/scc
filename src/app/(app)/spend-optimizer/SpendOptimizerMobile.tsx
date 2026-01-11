@@ -210,7 +210,7 @@ export default function SpendOptimizerMobile() {
     // Reset temp data on cancel
     setTempFormData({ amount: "", merchant: "" });
     setStepContent(null);
-    setTimeout(() => setCurrentField(null), 300);
+    setCurrentField(null)
   };
 
   const handleFieldSubmit = (
@@ -335,7 +335,7 @@ export default function SpendOptimizerMobile() {
   );
 
   return (
-    <div className="bg-background-primary py-6 hidden max-md:flex flex-col min-h-screen">
+    <div className="bg-background-primary py-6 pt-8 hidden max-md:flex flex-col">
       <style>{`
         @keyframes slide-up {
           from {
@@ -347,19 +347,6 @@ export default function SpendOptimizerMobile() {
         }
         .animate-slide-up {
           animation: slide-up 0.3s ease-out;
-        }
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.3s ease-out;
         }
       `}</style>
 
@@ -540,7 +527,7 @@ export default function SpendOptimizerMobile() {
       >
         {/* Category Selection */}
         {stepContent === "category" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-3">
             {categories.map((cat) => {
               const Icon = cat.icon;
               return (
@@ -561,7 +548,7 @@ export default function SpendOptimizerMobile() {
 
         {/* Amount Input */}
         {stepContent === "amount" && (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-4">
             <div className="relative">
               <span className="absolute z-30 left-4 top-1/2 -translate-y-1/2 text-primary-orange font-medium text-lg pointer-events-none">
                 ₹
@@ -603,7 +590,7 @@ export default function SpendOptimizerMobile() {
 
         {/* Merchant Input */}
         {stepContent === "merchant" && (
-          <div className="space-y-4 animate-fade-in">
+          <div className="space-y-4">
             <Input
               ref={merchantInputRef}
               type="text"
@@ -620,7 +607,7 @@ export default function SpendOptimizerMobile() {
 
         {/* Payment Method */}
         {stepContent === "paymentMethod" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-3">
             {paymentMethods.map((method) => (
               <button
                 key={method.value}
@@ -637,7 +624,7 @@ export default function SpendOptimizerMobile() {
 
         {/* EMI Options */}
         {stepContent === "emi" && (
-          <div className="space-y-3 animate-fade-in">
+          <div className="space-y-3">
             {emiOptions.map((option) => (
               <button
                 key={option.value}
