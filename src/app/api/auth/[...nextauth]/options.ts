@@ -39,6 +39,7 @@ export const authOptions: NextAuthOptions = {
         });
       }
       user._id = existingUser._id.toString();
+      user.isVerified = existingUser.isVerified;
       const existingUserWithCredentialsNowTryingGoogle =
         existingUser &&
         existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
