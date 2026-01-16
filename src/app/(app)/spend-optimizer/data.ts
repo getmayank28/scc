@@ -32,6 +32,17 @@ interface EmiOption {
   label: string;
 }
 
+export interface SpendTransaction {
+  category: string;
+  amount: string;
+  merchant: string;
+  paymentMethod: string;
+  emi: string;
+  cardIds: string[];
+  cardName: string | undefined;
+  expectedBenefit: string | undefined;
+}
+
 export interface FormData {
   category: string;
   amount: string;

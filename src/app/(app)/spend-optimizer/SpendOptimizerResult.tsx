@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { CreditCard, Lightbulb, Target } from "lucide-react";
 import { FormData } from "./data";
 import { MultiStepChatLoader } from "@/components/MultiStepChatLoader/MultiStepChatLoader";
-import { useMemo } from "react";
+import { getDashedFormattedValue } from "@/lib/utils/spendTransaction";
 
 const loadingStates = [
   {
@@ -41,28 +41,6 @@ interface PaymentCardBenefit {
   howItWorks: string;
 }
 
-interface CardBenefit {
-  card: string;
-  bestPaymentPath: string;
-  expectedBenefit: string; // e.g. "₹250"
-  howItWorks: string;
-}
-
-function parseBenefit(amount: string): number {
-  return Number(amount.replace(/[^\d.]/g, ""));
-}
-
-function getBestCard(cards: CardBenefit[]): CardBenefit | null {
-  if (cards?.length === 0) return null;
-
-  return cards?.reduce((maxCard, currentCard) => {
-    const maxBenefit = parseBenefit(maxCard.expectedBenefit);
-    const currentBenefit = parseBenefit(currentCard.expectedBenefit);
-
-    return currentBenefit > maxBenefit ? currentCard : maxCard;
-  });
-}
-
 const Card = ({
   isActive,
   name,
@@ -96,12 +74,12 @@ const Card = ({
           >
             {name}
           </Typography>
-          <Typography
+          {/* <Typography
             variant="caption"
             className="text-[12px] text-left font-semibold capitalize"
           >
             Cashback specialist
-          </Typography>
+          </Typography> */}
         </div>
         <div className="bg-white/10 rounded-md p-2 px-4">
           <CreditCard
@@ -171,12 +149,20 @@ const Tag = ({ title }: { title: string }) => {
   );
 };
 
+interface CardBenefit {
+  card: string;
+  bestPaymentPath: string;
+  expectedBenefit: string; // e.g. "₹250"
+  howItWorks: string;
+}
+
 const SpendOptimizerResult = ({
   data,
   open,
   onChange,
   formData,
   isLoading,
+  winnerCard,
 }: {
   data: {
     message: string;
@@ -187,22 +173,13 @@ const SpendOptimizerResult = ({
   onChange: () => void;
   formData: FormData;
   isLoading?: boolean;
+  winnerCard?: CardBenefit | null;
 }) => {
-
-  const getFormattedValue = (value: string) => {
-    const needToFormat = value?.includes("-");
-
-    if (!needToFormat) return value;
-
-    return value?.split("-")?.join(" ");
-  };
-
-  const winnerCard = useMemo(() => {
-    return getBestCard(data?.cards as CardBenefit[]);
-  }, [data?.cards]);
-
   const getBenefitInPercentage = (expectedBenefit: string) => {
-    const benefit = Number(expectedBenefit?.slice(1)?.split(" ")?.at(0));
+    const firstDigit = expectedBenefit?.slice(1)?.split(" ")?.at(0);
+    const benefit = firstDigit?.includes(",")
+      ? Number(firstDigit.replace(/,/g, ""))
+      : Number(firstDigit);
     const totalAmount = Number(formData?.amount);
 
     if (!benefit || !totalAmount) return 0;
@@ -227,33 +204,36 @@ const SpendOptimizerResult = ({
         ) : (
           <div>
             <div className="flex justify-between items-center">
-            <div className="bg-primary-orange/30 border border-primary-orange rounded-full w-[140px] py-2 px-2 flex justify-center items-center">
-              <Typography
-                variant="caption"
-                className="text-[12px] text-left opacity-100 uppercase font-black"
-              >
-                current spend
-              </Typography>
-            </div>
-            <Button disabled={isLoading} onClick={onChange}>
-             Got it
-          </Button>
+              <div className="bg-primary-orange/30 border border-primary-orange rounded-full w-[140px] py-2 px-2 flex justify-center items-center">
+                <Typography
+                  variant="caption"
+                  className="text-[12px] text-left opacity-100 uppercase font-black"
+                >
+                  current spend
+                </Typography>
               </div>
+              <Button disabled={isLoading} onClick={onChange}>
+                Got it
+              </Button>
+            </div>
             <Typography variant="h3" className="text-left font-bold my-3">
               Optimizing rewards for{" "}
               <span className="text-primary-orange">₹{formData?.amount}</span>
             </Typography>
             <div className="flex gap-2 items-center justify-start mb-5">
-              <Tag title={getFormattedValue(formData?.category)} />
-              <Tag title={getFormattedValue(formData?.merchant)} />
-              <Tag title={getFormattedValue(formData?.paymentMethod)} />
-              <Tag title={getFormattedValue(formData?.emi)} />
+              <Tag title={getDashedFormattedValue(formData?.category)} />
+              <Tag title={getDashedFormattedValue(formData?.merchant)} />
+              <Tag title={getDashedFormattedValue(formData?.paymentMethod)} />
+              <Tag title={getDashedFormattedValue(formData?.emi)} />
             </div>
             <div className="flex gap-4 py-5 mt-5 overflow-x-auto">
               {data?.cards?.map((card: PaymentCardBenefit) => (
                 <Card
                   key={card?.card}
-                  isActive={winnerCard?.card?.toLowerCase() === card?.card?.toLowerCase()}
+                  isActive={
+                    winnerCard?.card?.toLowerCase() ===
+                    card?.card?.toLowerCase()
+                  }
                   name={card?.card}
                   expectedBenefit={card?.expectedBenefit}
                   howItWorks={card?.howItWorks}
@@ -263,8 +243,8 @@ const SpendOptimizerResult = ({
                 />
               ))}
             </div>
-            <div className="w-full flex gap-2 justify-start items-center rounded-lg border p-4 border-secondary-orange">
-              <div className="flex gap-2 justify-start items-center">
+            <div className="w-full flex gap-2 justify-start items-center rounded-lg border p-4 py-3 border-secondary-orange">
+              <div className="flex gap-4 justify-start items-center">
                 <div className="bg-primary-orange rounded-full p-3">
                   <Lightbulb size={30} className="text-white" />
                 </div>
@@ -280,8 +260,11 @@ const SpendOptimizerResult = ({
                       variant="caption"
                       className="text-[14px] text-left font-semibold opacity-100"
                     >
-                      Use your <span className="font-bold text-primary-orange !opacity-100">{winnerCard?.card}</span> for this
-                      transaction to maximize your returns
+                      Use your{" "}
+                      <span className="font-bold text-primary-orange !opacity-100">
+                        {winnerCard?.card}
+                      </span>{" "}
+                      for this transaction to maximize your returns
                     </Typography>
                     <Typography
                       variant="caption"
@@ -291,7 +274,8 @@ const SpendOptimizerResult = ({
                       <span className="font-bold text-secondary-success !opacity-100">
                         {getBenefitInPercentage(
                           winnerCard?.expectedBenefit as string
-                        )}%
+                        )}
+                        %
                       </span>{" "}
                       of value with this card
                     </Typography>
@@ -301,7 +285,6 @@ const SpendOptimizerResult = ({
             </div>
           </div>
         )}
-
       </div>
     </Modal>
   );

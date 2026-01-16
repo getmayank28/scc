@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -20,18 +20,43 @@ import {
   FormData,
   FormErrors,
   paymentMethods,
+  SpendTransaction,
 } from "./data";
 import { CreditCard } from "@/types/card";
 import useSocket from "@/lib/hooks/useSocket";
 import SpendOptimizerResult from "./SpendOptimizerResult";
 import toast from "react-hot-toast";
 
+interface CardBenefit {
+  card: string;
+  bestPaymentPath: string;
+  expectedBenefit: string; // e.g. "₹250"
+  howItWorks: string;
+}
+
+function parseBenefit(amount: string): number {
+  return Number(amount.replace(/[^\d.]/g, ""));
+}
+
+function getBestCard(cards: CardBenefit[]): CardBenefit | null {
+  if (cards?.length === 0) return null;
+
+  return cards?.reduce((maxCard, currentCard) => {
+    const maxBenefit = parseBenefit(maxCard.expectedBenefit);
+    const currentBenefit = parseBenefit(currentCard.expectedBenefit);
+
+    return currentBenefit > maxBenefit ? currentCard : maxCard;
+  });
+}
+
 export default function SpendOptimizerDesktop({
   selectedCards,
-  isCardsLoading
+  isCardsLoading,
+  onAddSpendTransaction,
 }: {
   selectedCards: CreditCard[];
-  isCardsLoading:boolean
+  isCardsLoading: boolean;
+  onAddSpendTransaction: (payload: SpendTransaction) => void;
 }) {
   const [formData, setFormData] = useState<FormData>({
     category: "online-shopping",
@@ -54,6 +79,11 @@ export default function SpendOptimizerDesktop({
 
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
   const { createChatSessionToken } = useSocket();
+
+  const winnerCard = useMemo(() => {
+    //@ts-expect-error some
+    return getBestCard(data?.cards);
+  }, [data?.cards]);
 
   const handleSubmit = async () => {
     // Validate all fields
@@ -78,7 +108,7 @@ export default function SpendOptimizerDesktop({
       toast.error("Please add your cards to start optimizing your spend");
       return;
     }
-    setOpenModal(true);
+
     const token = await createChatSessionToken();
 
     let cardNames = "";
@@ -89,10 +119,23 @@ export default function SpendOptimizerDesktop({
       formData?.emi === "no-emi" ? "" : `my emi method is ${formData?.emi}`;
 
     const message = `<I have ${selectedCards?.length} ${cardNames},  my spend category is ${formData?.category}, my spend amount is ${formData?.amount}, platform/app I am going to use ${formData?.merchant} , I a paying by ${formData?.paymentMethod}, ${emiOption}, which credit card I should use for maximum benefits only for this transaction>`;
+    setOpenModal(true);
     const data = await communicateToBot({ message, token });
+
     const content = joinTextMessagesByMid(data?.data?.messages);
+
     const finalData = markdownToJson(content?.at(0)?.content as string);
+    // @ts-expect-error some
+    const winnerCard = getBestCard(finalData?.cards);
+    const payload = {
+      ...formData,
+      cardIds: selectedCards?.map((card) => card?.cardId?._id),
+      cardName: winnerCard?.card,
+      expectedBenefit: winnerCard?.expectedBenefit,
+    };
+
     setData(finalData);
+    onAddSpendTransaction?.(payload);
   };
 
   const formatCurrency = (value: string): string => {
@@ -320,7 +363,7 @@ export default function SpendOptimizerDesktop({
 
         <Button
           onClick={handleSubmit}
-          disabled={isCardsLoading||isLoading}
+          disabled={isCardsLoading || isLoading}
           className={`w-full h-12 text-base text-white font-semibold ${errors.paymentMethod || errors.emi ? "self-center" : "self-end"}`}
         >
           Find Best Card
@@ -330,6 +373,7 @@ export default function SpendOptimizerDesktop({
         isLoading={isLoading}
         formData={formData}
         open={openModal}
+        winnerCard={winnerCard}
         // @ts-expect-error this is expected
         data={data}
         onChange={() => setOpenModal(false)}
