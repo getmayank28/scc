@@ -2,26 +2,22 @@ import { SpendOptimizerCreditCardSkeleton } from "@/components/Loader/Loader";
 import Typography from "@/components/Typography/Typography";
 import { Checkbox } from "@/components/ui/checkbox";
 import useNav from "@/lib/hooks/useNav";
-import useUserData from "@/lib/hooks/useUserData";
-import { useGetUserCardsQuery } from "@/store/api";
+import { CreditCard } from "@/types/card";
 import { CirclePlus } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
 
-const UserCards = () => {
-  const [userCards, setUserCards] = useState<Array<string>>([]);
-  const { userId } = useUserData();
-  const { data: cards, isFetching: isCardsLoading } = useGetUserCardsQuery({
-    userId,
-  });
+
+interface UserCards {
+  cards:CreditCard[];
+  userCards:string[];
+  isCardsLoading:boolean;
+  setUserCards:(cards:string[]) => void
+}
+
+const UserCards = ({cards, userCards, isCardsLoading,setUserCards}:UserCards) => {
   const { navigateToProfile } = useNav();
 
-  useEffect(() => {
-    if (cards) {
-      const cardIds = cards?.map((card: { _id: string }) => card?._id);
-      setUserCards(cardIds);
-    }
-  }, [cards]);
+
 
   return (
     <div className="pt-8">
@@ -49,6 +45,7 @@ const UserCards = () => {
                     );
                     setUserCards(filteredOptions);
                   } else {
+                    // @ts-expect-error this is correct
                     setUserCards((prev) => [...prev, card?._id]);
                   }
                 }}

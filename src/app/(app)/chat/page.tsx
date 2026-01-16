@@ -4,13 +4,10 @@ import useWebSocket from "react-use-websocket";
 import { ChatbotScrollableArea } from "@/components/ScrollableArea/ScrollableArea";
 import ChatbotInput from "@/components/ChatbotInput/ChatbotInput";
 import {
-  clearFromSessionStorage,
   getFromSessionStorage,
   saveToSessionStorage,
-  WS_SESSION_KEY,
 } from "@/lib/utils/sessionStorage";
 import { useChatState } from "@/hooks/useChatState";
-import { Button } from "@/components/ui/button";
 import useSocket from "@/lib/hooks/useSocket";
 import { travelCard } from "@/lib/constants/questions/travelCard";
 import { CARD_CATEGORY } from "@/lib/data/cards";
@@ -34,8 +31,6 @@ import { foodCard } from "@/lib/constants/questions/foodCard";
 import { shoppingCard } from "@/lib/constants/questions/shoppingCard";
 import { allRounderCard } from "@/lib/constants/questions/allRounderCard";
 import { CardsType } from "@/types/card";
-import Image from "next/image";
-import { ChevronLeft } from "lucide-react";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import ChatSidebar from "@/components/ChatSidebar/ChatSidebar";
 

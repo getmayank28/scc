@@ -1,9 +1,6 @@
-import CardLandingAnimation from "@/components/CardLandingAnimation/CardLandingAnimation";
 import Checkmark from "@/components/CheckMark/CheckMark";
 import Typography from "@/components/Typography/Typography";
 import { Button } from "@/components/ui/button";
-import useNav from "@/lib/hooks/useNav";
-import Chip from "../ui/chip";
 import useUserData from "@/lib/hooks/useUserData";
 import { CreditCard } from "../CreditCard";
 import Image from "next/image";

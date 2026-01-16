@@ -63,7 +63,7 @@ const CardInfo = () => {
     <div className="flex flex-col max-md:px-4 max-md:pt-24 p-20 h-screen">
       <HeaderText
         containerClassName="items-start"
-        title="Card explore"
+        title="Explore cards"
         content="Get any card deatils in a blink"
         contentVariant="caption"
         titleVariant="h3"

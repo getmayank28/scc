@@ -1,6 +1,7 @@
-type ParsedMessage = {
+export type ParsedMessage = {
   message: string;
   cards: Record<string, string>[];
+  endMessage: string;
 };
 
 /**
@@ -37,11 +38,15 @@ function containsLink(input: string): boolean {
 
 export function markdownToJson(mdText: string): ParsedMessage {
   const splitIndex = mdText.indexOf("\n\n|");
+  const endIndex = mdText.indexOf("|\n\n");
+
   const message = splitIndex >= 0 ? mdText.slice(0, splitIndex).trim() : mdText;
-  const tableMd = splitIndex >= 0 ? mdText.slice(splitIndex).trim() : "";
+  const tableMd =
+    splitIndex >= 0 ? mdText.slice(splitIndex, endIndex).trim() : "";
+  const endMessage = endIndex >= 0 ? mdText.slice(endIndex).trim() : "";
 
   const lines = tableMd.split("\n").filter(Boolean);
-  if (lines.length < 2) return { message, cards: [] };
+  if (lines.length < 2) return { message, cards: [], endMessage };
 
   // Parse headers
   const headers = lines[0]
@@ -71,5 +76,5 @@ export function markdownToJson(mdText: string): ParsedMessage {
     cards.push(card);
   }
 
-  return { message, cards };
+  return { message, cards, endMessage };
 }

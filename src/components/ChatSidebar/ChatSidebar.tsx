@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ROUTES } from "@/lib/constants/routes";
-import { House, MessagesSquare, SquarePen } from "lucide-react";
+import { SquarePen } from "lucide-react";
 import Typography from "../Typography/Typography";
 
 export const Logo = () => {

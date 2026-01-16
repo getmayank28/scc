@@ -93,11 +93,15 @@ export const api = createApi({
       invalidatesTags: ["UserCards"],
     }),
     chatCommunication: builder.mutation({
-      query: (message) => ({
-        url: `cards/communicate`,
+      query: ({ message, token }) => ({
+        url: `https://studio.zijus.com/api/sarathi-9720`,
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token?.token,
+        },
         body: {
-          message,
+          messages: [{ content: message }],
         },
       }),
     }),

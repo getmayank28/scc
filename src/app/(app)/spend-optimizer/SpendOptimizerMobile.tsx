@@ -147,7 +147,6 @@ export default function SpendOptimizerMobile() {
     "emi",
   ];
 
-  // Get next unfilled field
   const getNextUnfilledField = (startField: FieldName): FieldName | null => {
     const startIndex = fieldOrder.indexOf(startField);
     
@@ -173,19 +172,16 @@ export default function SpendOptimizerMobile() {
   };
 
   const openField = (fieldName: FieldName): void => {
-    // If all fields are filled, don't open bottom sheet
     if (areAllFieldsFilled()) {
       return;
     }
 
-    // Initialize temp data with current saved values
     if (fieldName === "amount") {
       setTempFormData({ ...tempFormData, amount: formData.amount });
     } else if (fieldName === "merchant") {
       setTempFormData({ ...tempFormData, merchant: formData.merchant });
     }
 
-    // If this field is already filled, find the next unfilled field
     if (formData[fieldName]) {
       const nextUnfilled = getNextUnfilledField(fieldName);
       if (nextUnfilled) {
@@ -193,13 +189,11 @@ export default function SpendOptimizerMobile() {
         setStepContent(null);
         setTimeout(() => setStepContent(nextUnfilled), 50);
       } else {
-        // All subsequent fields are filled, open the clicked field
         setCurrentField(fieldName);
         setStepContent(null);
         setTimeout(() => setStepContent(fieldName), 50);
       }
     } else {
-      // Field is not filled, open it
       setCurrentField(fieldName);
       setStepContent(null);
       setTimeout(() => setStepContent(fieldName), 50);
@@ -207,7 +201,6 @@ export default function SpendOptimizerMobile() {
   };
 
   const closeSheet = (): void => {
-    // Reset temp data on cancel
     setTempFormData({ amount: "", merchant: "" });
     setStepContent(null);
     setCurrentField(null)

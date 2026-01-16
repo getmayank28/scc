@@ -4,7 +4,7 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { Brain, House, MessagesSquare, Search, User } from "lucide-react";
+import { Brain, House, MessagesSquare, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";

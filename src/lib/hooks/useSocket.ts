@@ -77,13 +77,12 @@ const useSocket = () => {
       return null;
     }
 
-    const newBase = `wss://agent-test-runtime-shared-1-411951434462.us-central1.run.app/ws/sarathi-9720`;
+    const prodUrl = "wss://studio.zijus.com/ws/sarathi-9720";
 
-    const base = "wss://sarathi-9720-411951434462.us-central1.run.app/ws";
-    return `${newBase}?token=${token}&language=EN_US&is_audio=false`;
+    return `${prodUrl}?token=${token}&language=EN_US&is_audio=false`;
   };
 
-  return { getSocketUrl, isLoading, error };
+  return { getSocketUrl, isLoading, error, createChatSessionToken };
 };
 
 export default useSocket;

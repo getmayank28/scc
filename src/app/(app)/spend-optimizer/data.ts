@@ -85,8 +85,8 @@ export const categories: Category[] = [
 ];
 
 export const paymentMethods: PaymentMethod[] = [
-  { value: "direct", label: "Directly on the website/app" },
-  { value: "in-store", label: "In-store / swipe / tap" },
+  { value: "direct-payment", label: "Directly on the website/app" },
+  { value: "in-store-payment", label: "In-store / swipe / tap" },
   {
     value: "rewards-portal",
     label:

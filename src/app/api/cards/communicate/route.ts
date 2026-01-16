@@ -11,7 +11,11 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const { message, session_id } = body;
+    const { message, session_id, token } = body;
+
+    if (!token) {
+      return NextResponse.json({ error: "Unauthenticated" }, { status: 401 });
+    }
 
     if (!message) {
       return NextResponse.json(
@@ -28,12 +32,11 @@ export async function POST(req: NextRequest) {
     if (session_id) {
       payload.session_id = session_id;
     }
-
     const response = await fetch(ZIJUS_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ZIJUS_API_TOKEN}`,
+        Authorization: token?.token,
       },
       body: JSON.stringify(payload),
     });
