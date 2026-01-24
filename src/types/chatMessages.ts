@@ -64,11 +64,14 @@ export interface BaseMessage {
   questionType?: string;
   dynamicFileds?: DynamicFileds[];
   submit?: boolean | string;
+  custom_metadata?: Record<string, string>[];
+  thread?: number;
 }
 
 export interface SessionMessage {
   type: "session";
   token: string;
+  session_id: string;
 }
 
 export interface HistoryMessage {

@@ -1,7 +1,15 @@
-import { BaseMessage, MESSAGE_SOURCE, MESSAGE_TYPE } from "@/types/chatMessages";
+import {
+  BaseMessage,
+  MESSAGE_SOURCE,
+  MESSAGE_TYPE,
+} from "@/types/chatMessages";
 import { CHAT_ACTIONS } from "../actions";
+import { chooseCardCategory } from "./common";
 
-export const travelCard:BaseMessage[] = [
+
+
+export const travelCard: BaseMessage[] = [
+  chooseCardCategory,
   {
     m_id: "domestic-international-holidays-trips",
     source: MESSAGE_SOURCE.ASSISTANT,
@@ -62,7 +70,7 @@ export const travelCard:BaseMessage[] = [
     botContent: " my per holiday spend is ",
     order: 3,
     type: MESSAGE_TYPE.SELECT,
-    submit:CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
+    submit: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
     slots: [
       {
         label: "Less than ₹50,000",
@@ -86,31 +94,11 @@ export const travelCard:BaseMessage[] = [
       },
     ],
   },
-  // {
-  //   m_id: "travel-early-recommendation",
-  //   source: MESSAGE_SOURCE.ASSISTANT,
-  //   content:
-  //     "I have 3 strong contenders, but 1  more minutes gets you THE perfect match!  Shall we dive deeper?",
-  //   order: 4,
-  //   type: MESSAGE_TYPE.BUTTON_GROUP,
-  //   slots: [
-  //     {
-  //       label: "I want the perfect card",
-  //       value: 'I want the perfect card',
-  //       variant: "primary",
-  //     },
-  //     {
-  //       label: "Show me now",
-  //       value: CHAT_ACTIONS.EVALUTE_RECOMMENDATION,
-  //       variant: "outline",
-  //     },
-  //   ],
-  // },
   {
     m_id: "international-holiday-trip",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "No. of international holiday trip each Year?",
-    botContent:" international holiday trip I take in a year is ",
+    botContent: " international holiday trip I take in a year is ",
     order: 5,
     type: MESSAGE_TYPE.SLIDER,
     default: 3,
@@ -122,7 +110,7 @@ export const travelCard:BaseMessage[] = [
     m_id: "per-international-trip-spend",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "Approx how much do you spend on each international trip?",
-    botContent:" my spend on each international trip is ",
+    botContent: " my spend on each international trip is ",
     order: 6,
     type: MESSAGE_TYPE.SELECT,
     slots: [
@@ -148,7 +136,7 @@ export const travelCard:BaseMessage[] = [
     m_id: "additional-flights",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "Additional flight spend (excluding holidays)",
-    botContent:" my additional flight spend excluding holidays is ",
+    botContent: " my additional flight spend excluding holidays is ",
     order: 7,
     type: MESSAGE_TYPE.SELECT,
     slots: [
@@ -178,7 +166,7 @@ export const travelCard:BaseMessage[] = [
     m_id: "travel-priority",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "What’s your priority?",
-    botContent:" my travel priority is ",
+    botContent: " my travel priority is ",
     order: 8,
     type: MESSAGE_TYPE.MULTI_SELECT,
     slots: [

@@ -8,7 +8,7 @@ const useUserData = () => {
   const isUserAuthenticated = session?.status === AUTH_STATE.AUTHENTICATED;
   const userId = session?.data?.user?._id || null;
 
-  const { data } = useGetUserByIdQuery(userId, {
+  const { data, isFetching: isUserDataLoading } = useGetUserByIdQuery(userId, {
     skip: !userId,
   });
 
@@ -31,7 +31,15 @@ const useUserData = () => {
     return initials;
   }, [data?.name]);
 
-  return { isUserAuthenticated, name, email, userId, firstName, nameInitials };
+  return {
+    isUserAuthenticated,
+    name,
+    email,
+    userId,
+    firstName,
+    nameInitials,
+    isUserDataLoading,
+  };
 };
 
 export default useUserData;

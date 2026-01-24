@@ -29,26 +29,21 @@ const useSocket = () => {
     [creatingChatSessionTokenError]
   );
 
-  // const createChatSession = async () => {
-  //   const anonId = getAnonymousId();
+  const getChatSessionId = () => {
+    if (typeof window === "undefined") return null;
 
-  //   let sessionId = localStorage.getItem("chat_session_id");
+    const sessionId = localStorage.getItem("chat_session_id");
 
-  //   if (!sessionId) {
-  //     const response = await getUserSession(anonId);
+    if (!sessionId) {
+      return null;
+    }
+    const isSessionIdValid = localStorage.getItem("is_chat_session_id_valid");
 
-  //     if (!response?.data?.sessions?.length) {
-  //       const res = await createChatSessionMutation({ anonymousId: anonId });
-  //       sessionId = res?.data?.sessionId;
-  //     } else {
-  //       sessionId = response?.data?.sessions?.at(0)?.sessionId;
-  //     }
-
-  //     if (sessionId) localStorage.setItem("chat_session_id", sessionId);
-  //   }
-
-  //   return { sessionId };
-  // };
+    if (!isSessionIdValid) {
+      return null;
+    }
+    return sessionId;
+  };
 
   const isExpired = (token: string) => {
     const { exp } = JSON.parse(atob(token.split(".")[1]));
@@ -56,10 +51,9 @@ const useSocket = () => {
   };
 
   const createChatSessionToken = async () => {
+    if (typeof window === "undefined") return;
     let token = localStorage.getItem("CHAT_SESSION_TOKEN");
     const isTokenExpired = token ? isExpired(token) : true;
-
-    // const { sessionId } = await createChatSession();
 
     if (!token || isTokenExpired) {
       const tokenRes = await chatSessionTokenMutation({});
@@ -72,6 +66,8 @@ const useSocket = () => {
 
   const getSocketUrl = async () => {
     const data = await createChatSessionToken();
+    const sessionId = getChatSessionId();
+
     const token = data?.token;
     if (!token) {
       return null;
@@ -79,7 +75,9 @@ const useSocket = () => {
 
     const prodUrl = "wss://studio.zijus.com/ws/sarathi-9720";
 
-    return `${prodUrl}?token=${token}&language=EN_US&is_audio=false`;
+    const sessionIdString = sessionId ? `&session_id=${sessionId}` : "";
+
+    return `${prodUrl}?token=${token}${sessionIdString}&language=EN_US&is_audio=false`;
   };
 
   return { getSocketUrl, isLoading, error, createChatSessionToken };

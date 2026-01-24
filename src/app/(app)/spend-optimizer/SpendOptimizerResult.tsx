@@ -54,7 +54,7 @@ const Card = ({
 }) => {
   return (
     <div
-      className={`border min-w-[400px] flex-shrink-0 relative ${isActive ? "border-primary-orange" : "border-[#617087]/60"} bg-background-primary p-5 rounded-lg max-w-md`}
+      className={`border min-w-[400px] flex-shrink-0 relative ${isActive ? "border-primary-orange" : "border-brown-border"} bg-brown-sidebar p-5 rounded-lg max-w-md`}
     >
       {isActive && (
         <div className="absolute -top-[12px] bg-primary-orange rounded-full w-[90px] py-1 px-2 flex justify-center items-center">
@@ -138,7 +138,7 @@ const Card = ({
 
 const Tag = ({ title }: { title: string }) => {
   return (
-    <div className="bg-[#0A0C10] p-2 px-3 border border-white/10 rounded-md">
+    <div className="bg-brown-sidebar p-2 px-3 border border-white/10 rounded-md">
       <Typography
         variant="caption"
         className="text-[10px] text-left opacity-100 text-white/80 capitalize font-bold tracking-[1px]"
@@ -193,7 +193,7 @@ const SpendOptimizerResult = ({
       onClose={onChange}
       removeCloseButton
       allowOutsideClickClose={false}
-      className="m-10 p-10 h-fit min-h-[70vh] border-2 border-white/20  bg-black w-[900px] min-w-[950px] max-w-[80vw]"
+      className="m-10 p-10 h-fit min-h-[70vh] border-2 border-brown-border  bg-brown-background w-[900px] min-w-[950px] max-w-[80vw]"
     >
       {/* 996 758 */}
       <div className="flex flex-col justify-between">
@@ -243,7 +243,7 @@ const SpendOptimizerResult = ({
                 />
               ))}
             </div>
-            <div className="w-full flex gap-2 justify-start items-center rounded-lg border p-4 py-3 border-secondary-orange">
+            <div className="w-full flex gap-2 justify-start items-center rounded-lg border p-4 py-3 border-brown-border">
               <div className="flex gap-4 justify-start items-center">
                 <div className="bg-primary-orange rounded-full p-3">
                   <Lightbulb size={30} className="text-white" />

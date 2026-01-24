@@ -1,0 +1,253 @@
+import { InputButtonGroupActionTypes } from "@/types/actions";
+import useInputButtonGroupAction from "./useInputButtonGroupAction";
+import { useChatContext } from "@/contexts/ChatContext";
+import { filterUserMessage, getMessageContent } from "../utils/content";
+import {
+  BaseMessage,
+  HistoryMessage,
+  MESSAGE_SOURCE,
+  MESSAGE_TYPE,
+  SessionMessage,
+} from "@/types/chatMessages";
+import { useChatState } from "@/hooks/useChatState";
+import { continueJourney as continueJourneyMessage } from "@/lib/constants/questions/common";
+import { CHAT_ACTIONS, HISTORY_ACTIONS } from "../constants/actions";
+import { MessageSourceType } from "@/types/card";
+import { INPUT_MESSAGE_SOURCE } from "../constants/chatJourney";
+import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
+
+const useChatActions = () => {
+  const buttonGroupInputActions = useInputButtonGroupAction();
+  const {
+    journeyCurrentQuestion,
+    currentMessageIndex,
+    selectedCardCategoryJourney,
+    setCurrentMessageId,
+    disableChatInput,
+    setInputValue,
+    inputValue,
+    disableTypingLoader,
+    messages,
+    enableTypingLoader,
+    enableChatInput,
+    setShowContinueJourneyMessage,
+    showContinueJourneyMessage,
+  } = useChatContext();
+  const {
+    addUserMessage,
+    addAssistantMessage,
+    loadHistory,
+    setSessionId,
+    setSessionIdValidation,
+  } = useChatState();
+  const { sendMessageToSocket } = useAppWebSocketConnection();
+
+  const handleMessageFormatting = (
+    message: BaseMessage | HistoryMessage | SessionMessage
+  ) => {
+    if (
+      message.type !== "history" &&
+      message.type !== "session" &&
+      message.source === "assistant"
+    ) {
+      addAssistantMessage(message);
+      disableTypingLoader?.();
+      enableChatInput();
+      if (showContinueJourneyMessage) {
+        addUserMessage(continueJourneyMessage as BaseMessage);
+        setCurrentMessageId(continueJourneyMessage?.m_id);
+      } else {
+        setCurrentMessageId(message?.m_id);
+      }
+
+      return;
+    }
+    if (message.type === "session") {
+      setSessionId(message as SessionMessage);
+      return;
+    }
+
+    if (message.type === "history") {
+      loadHistory(message.messages);
+      return;
+    }
+  };
+
+  const handleButtonGroupInput = (
+    value: string | Record<string, string | number>
+  ) => {
+    const isButtonGroupAction =
+      typeof value === "string" && value?.includes("action-");
+
+    if (isButtonGroupAction) {
+      const isActionHavingValue = value?.includes("%");
+      const action = isActionHavingValue ? value?.split("%")?.at(0) : value;
+      buttonGroupInputActions[action as InputButtonGroupActionTypes]?.({
+        content: "Recommend me a card",
+        selectedValue: value?.split("%")?.at(1),
+      });
+      return true;
+    }
+
+    return false;
+  };
+
+  const getNextJourneyQuestion = (userMsg: BaseMessage) => {
+    let nextIndex = currentMessageIndex + 1;
+    let nextQuestion = null;
+
+    while (nextIndex < selectedCardCategoryJourney.length) {
+      const potentialNextQuestion = selectedCardCategoryJourney[nextIndex];
+
+      if (potentialNextQuestion?.conditionalRender) {
+        // Check if condition is met
+        const shouldRender = potentialNextQuestion.condition?.(
+          filterUserMessage([...messages, userMsg] as BaseMessage[])
+        );
+
+        if (shouldRender) {
+          // Condition met, use this question
+          nextQuestion = potentialNextQuestion;
+          break;
+        } else {
+          // Condition not met, skip to next question
+          nextIndex++;
+          continue;
+        }
+      } else {
+        // No conditional render, use this question
+        nextQuestion = potentialNextQuestion;
+        break;
+      }
+    }
+
+    return { nextQuestion, nextIndex };
+  };
+
+  const resolveDynamicFields = (
+    question: BaseMessage,
+    answers: BaseMessage[]
+  ): BaseMessage => {
+    if (!question.dynamicFileds?.length) return question;
+
+    const resolvedQuestion: BaseMessage = { ...question };
+
+    question.dynamicFileds.forEach((field) => {
+      const filedValue = question[field];
+
+      if (typeof filedValue === "function") {
+        // @ts-expect-error some
+        resolvedQuestion[field] = filedValue(answers);
+      }
+    });
+
+    return resolvedQuestion;
+  };
+
+  const handleSendMessage = async (
+    value: string | Record<string, string | number>,
+    messageSource?: MessageSourceType
+  ) => {
+    if (typeof value === "string" && !value.trim()) return;
+
+    if (messageSource === INPUT_MESSAGE_SOURCE.DIRECT) {
+      const userMsg = {
+        content: value,
+        m_id: crypto.randomUUID(),
+        source: MESSAGE_SOURCE.USER,
+        type: MESSAGE_TYPE.TEXT,
+        custom_metadat: [],
+      };
+      addUserMessage(userMsg as BaseMessage);
+      sendMessageToSocket(JSON.stringify(userMsg));
+      setSessionIdValidation(true);
+      disableChatInput();
+      setCurrentMessageId("");
+      enableTypingLoader();
+      setInputValue("");
+      return;
+    }
+    const isButtonGroupInput = handleButtonGroupInput(value);
+
+    if (isButtonGroupInput) {
+      return;
+    }
+
+    const isSubmit =
+      typeof journeyCurrentQuestion?.submit === "string" &&
+      journeyCurrentQuestion?.submit?.includes("action-");
+
+    const contentMsg = getMessageContent({
+      messageType: journeyCurrentQuestion.type,
+      inputValue: value,
+      questions: journeyCurrentQuestion.inputs,
+    });
+
+    const userMsg = {
+      name: journeyCurrentQuestion?.content,
+      content: contentMsg!,
+      m_id: crypto.randomUUID(),
+      source: MESSAGE_SOURCE.USER,
+      type: MESSAGE_TYPE.TEXT,
+      questionId: journeyCurrentQuestion?.m_id,
+      questionType: journeyCurrentQuestion?.type,
+      botContent: journeyCurrentQuestion?.botContent,
+    };
+
+    // Add user message first
+    addUserMessage(userMsg as BaseMessage);
+
+    if (isSubmit) {
+      buttonGroupInputActions[
+        journeyCurrentQuestion?.submit as InputButtonGroupActionTypes
+      ]?.({
+        updatedMessageState: [...messages, userMsg],
+        action: HISTORY_ACTIONS.EARLY_RECOMMENDATION,
+      });
+      setShowContinueJourneyMessage(true);
+      return;
+    }
+
+    const { nextQuestion, nextIndex } = getNextJourneyQuestion(
+      userMsg as BaseMessage
+    );
+    if (nextQuestion) {
+      const resolvedQuestion = resolveDynamicFields(
+        nextQuestion,
+        filterUserMessage([...messages, userMsg] as BaseMessage[])
+      );
+      addUserMessage(resolvedQuestion as BaseMessage);
+      setCurrentMessageId(resolvedQuestion?.m_id);
+
+      return;
+    } else if (
+      nextIndex >= selectedCardCategoryJourney.length
+      // && readyState === 1
+    ) {
+      // Reached the end of questions
+      buttonGroupInputActions?.[CHAT_ACTIONS.EVALUTE_RECOMMENDATION]?.({
+        action: HISTORY_ACTIONS.END_RECOMMENDATION,
+        updatedMessageState: [...messages, userMsg],
+      });
+      disableChatInput?.();
+      return;
+    }
+  };
+
+  const handleKeyPressSendMessage = (
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(inputValue, INPUT_MESSAGE_SOURCE.DIRECT);
+    }
+  };
+
+  return {
+    handleSendMessage,
+    handleKeyPressSendMessage,
+    handleMessageFormatting,
+  };
+};
+
+export default useChatActions;

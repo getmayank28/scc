@@ -18,7 +18,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
     },
     {
       label: "AI Advisor",
-      href: ROUTES.CHOOSE_CARD,
+      href: ROUTES.CHAT + "/new",
       icon: <MessagesSquare className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
@@ -30,13 +30,16 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       label: "Explore Cards",
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
-    }
+    },
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const isVerifyRoute = pathname?.includes("/verify");
-  const isBlockedRoute = PUBLIC_ROUTES?.includes(pathname) || isVerifyRoute;
-  const isAuthBlockedRoute = ["/chat"]?.includes(pathname);
+  const isBlockedRoute =
+    PUBLIC_ROUTES?.includes(pathname) ||
+    isVerifyRoute ||
+    pathname.includes("/chat");
+  const isAuthBlockedRoute = pathname.includes("/chat");
 
   const showHeaderWhileLoggedIn = ["/choose-card"]?.includes(pathname);
 
@@ -44,7 +47,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
     <div className={"flex w-full rounded-md min-h-screen"}>
       {!isBlockedRoute && (
         <Sidebar open={open} setOpen={setOpen}>
-          <SidebarBody className="fixed z-100 justify-between bg-background-primary gap-10 h-screen border-r border-secondary-orange">
+          <SidebarBody className="fixed z-100 justify-between bg-brown-sidebar gap-10 h-screen">
             <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
               {open ? <Logo /> : <LogoIcon />}
               <div className="mt-8 flex flex-col gap-2">

@@ -28,12 +28,12 @@ const WelcomeScreen = () => {
 
   return (
     <div className="flex flex-col justify-center max-w-6xl w-full px-6">
-      <div className="flex max-md:flex-col  justify-between items-center border border-secondary-orange p-4 rounded-md">
+      <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-brown-border p-4 rounded-md">
         <div className="flex gap-3 max-md:gap-2">
-          <div className="border flex justify-center items-center max-md:w-12 max-md:h-12 border-primary-orange/60 rounded-full p-4 bg-secondary-orange/20">
+          <div className="flex justify-center items-center max-md:w-12 max-md:h-12 rounded-full p-4 border border-brown-border bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
             <Typography
               variant="body"
-              className="text-left opacity-100 font-bold text-primary-orange/90"
+              className="text-left opacity-100 font-bold text-secondary-gray"
             >
               {nameInitials || "UN"}
             </Typography>
@@ -50,16 +50,16 @@ const WelcomeScreen = () => {
             </Typography>
           </div>
         </div>
-        <Button className="h-12 max-md:mt-4 bg-secondary-orange/30 border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+        <Button className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
           Step into smart spending <p className="font-black">→</p>
         </Button>
       </div>
 
-      <div className="border w-full overflow-hidden relative border-secondary-orange px-6 max-md:px-3 py-4 rounded-md mt-12 max-md:mt-6">
+      <div className="border w-full bg-brown-sidebar overflow-hidden relative border-brown-border px-6 max-md:px-3 py-4 rounded-md mt-12 max-md:mt-6">
         <div className="relative z-10">
           <Typography
             variant="body"
-            className="text-left opacity-100 font-semibold text-primary-orange uppercase tracking-[3px]"
+            className="text-left opacity-100 text-secondary-gray font-semibold uppercase tracking-[3px]"
           >
             Card built around your spending
           </Typography>
@@ -79,7 +79,7 @@ const WelcomeScreen = () => {
                 </Typography>
               </div>
             ))}
-            <Button className="h-12 bg-secondary-orange/30 border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
+            <Button className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
               Get your personalised card <p className="font-black">→</p>
             </Button>
           </div>
@@ -88,11 +88,11 @@ const WelcomeScreen = () => {
           <CreditCard forShow name={name} background="#111" />
         </div>
       </div>
-      <div className="border w-full overflow-hidden relative border-secondary-orange px-6 py-4 pb-7 rounded-md mt-12 max-md:px-3 max-md:mt-6">
+      <div className="border w-full overflow-hidden relative bg-brown-sidebar  border-brown-border px-6 py-4 pb-7 rounded-md mt-12 max-md:px-3 max-md:mt-6">
         <div className="relative z-10">
           <Typography
             variant="body"
-            className="text-left opacity-100 font-semibold text-primary-orange uppercase tracking-[3px] mb-2 max-md:mb-0"
+            className="text-left opacity-100 font-semibold text-secondary-gray uppercase tracking-[3px] mb-2 max-md:mb-0"
           >
             Join smart spenders squad
           </Typography>
@@ -101,10 +101,10 @@ const WelcomeScreen = () => {
             className="text-left opacity-100 text-[16px] max-md:text-[14px]"
           >
             You have 3 cards with different benefits. Enter any purchase amount
-            and we&apos;ll show you <br className="max-md:hidden" /> which card
+            and  <br className="max-md:hidden" /> we&apos;ll show you which card
             saves you the most.
           </Typography>
-          <div className="bg-[#2D1A13] p-2 px-4 max-w-[531px] mt-3 mb-7 max-md:mb-5">
+          <div className="bg-brown-background p-2 px-4 max-w-[531px] mt-3 mb-7 max-md:mb-5">
             <Typography
               variant="body"
               className="text-left opacity-100 text-[12px] max-md:text-[12px] font-semibold"
@@ -117,7 +117,7 @@ const WelcomeScreen = () => {
               transaction?
             </Typography>
           </div>
-          <Button className="h-12 bg-[#2D1A13] border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+          <Button className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
             Check best card for a spend <p className="font-black">→</p>
           </Button>
         </div>

@@ -4,10 +4,12 @@ import {
   MESSAGE_TYPE,
 } from "@/types/chatMessages";
 import { CHAT_ACTIONS } from "../actions";
+import { chooseCardCategory } from "./common";
 
 export const foodCard = [
+  chooseCardCategory,
   {
-    m_id: "online-food-order-frequency",
+    m_id: "online-food-order-frequency-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "How often do you order food online?",
     botContent: " my online food order frequency is  ",
@@ -33,7 +35,7 @@ export const foodCard = [
     ],
   },
   {
-    m_id: "dine-out-frequency",
+    m_id: "dine-out-frequency-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "How often do you dine out at restaurants?",
     botContent: " my dine out at restaurants frequency is ",
@@ -59,7 +61,7 @@ export const foodCard = [
     ],
   },
   {
-    m_id: "opt-for-all-rounder-card",
+    m_id: "opt-for-all-rounder-card-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content:
       "Your spending is not suitable for a food specific card, you should opt for an all rounder card",
@@ -100,7 +102,7 @@ export const foodCard = [
     ],
   },
   {
-    m_id: "food-dining-platform",
+    m_id: "food-dining-platform-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "Do you have a preferred platform for food & dining?",
     botContent: " preferred platform for food & dining is ",
@@ -127,7 +129,7 @@ export const foodCard = [
     ],
   },
   {
-    m_id: "per-online-food-order",
+    m_id: "per-online-food-order-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "What is your average spend per online food order?",
     botContent: " my average spend per online food order is ",
@@ -139,7 +141,7 @@ export const foodCard = [
     step: 50,
   },
   {
-    m_id: "dining-out-average-bill",
+    m_id: "dining-out-average-bill-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "What is your average bill when dining out?",
     botContent: " my average bill when dining out is ",
@@ -151,7 +153,7 @@ export const foodCard = [
     step: 500,
   },
   {
-    m_id: "preferred-food-platform",
+    m_id: "preferred-food-platform-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "",
     order: 7,

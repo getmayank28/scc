@@ -35,7 +35,7 @@ const ChatbotInput = ({
   return (
     <div className="flex-shrink-0 p-4 pb-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-2 bg-[#101010] backdrop-blur-sm rounded-full border border-[#F35A13]/40 px-2 py-1">
+        <div className={`flex items-center gap-2 bg-brown-sidebar backdrop-blur-sm rounded-full border ${disabled?'border-white/30':'border-primary-orange/90'} px-2 py-1`}>
           <Input
             type="text"
             value={inputValue}
@@ -43,13 +43,13 @@ const ChatbotInput = ({
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
             disabled={disabled}
-            className="flex-1 p-6 bg-[#101010] border-0 text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 p-6 bg-brown-sidebar border-0 text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <Button
             onClick={onSend}
             disabled={isSendDisabled}
             size="icon"
-            className="rounded-full cursor-pointer bg-[#F35A13]/50 hover:bg-[#F35A13] transition-all duration-300 disabled:bg-gray-700 h-10 w-10 flex-shrink-0"
+            className="rounded-full cursor-pointer bg-primary-orange hover:bg-primary-orange/70 transition-all duration-300 disabled:bg-gray-700 h-10 w-10 flex-shrink-0"
           >
             <Send className="h-4 w-4" />
           </Button>

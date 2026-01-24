@@ -38,7 +38,7 @@ const SpendOptimizer = () => {
   };
 
   return (
-    <div className="flex flex-col p-20 h-screen max-md:p-6 max-md:h-auto">
+    <div className="flex bg-brown-background flex-col p-20 h-screen max-md:p-6 max-md:h-auto">
       <div className="flex justify-between items-center">
         <HeaderText
           containerClassName="items-start"

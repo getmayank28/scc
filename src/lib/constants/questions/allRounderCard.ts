@@ -4,8 +4,10 @@ import {
   MESSAGE_TYPE,
 } from "@/types/chatMessages";
 import { CHAT_ACTIONS } from "../actions";
+import { chooseCardCategory } from "./common";
 
 export const allRounderCard = [
+  chooseCardCategory,
   {
     m_id: "monthly-spend",
     source: MESSAGE_SOURCE.ASSISTANT,
@@ -31,7 +33,6 @@ export const allRounderCard = [
       const requiredQuestion = answers?.find(
         (item: BaseMessage) => item?.questionId === "monthly-spend"
       );
-      console.log(Number(requiredQuestion?.content) * 0.6, "fhbvhfbvbfhb");
       return Number(requiredQuestion?.content) * 0.6;
     },
     min: 1000,

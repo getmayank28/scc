@@ -1,374 +1,86 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
-import useWebSocket from "react-use-websocket";
+import React, { useEffect } from "react";
 import { ChatbotScrollableArea } from "@/components/ScrollableArea/ScrollableArea";
 import ChatbotInput from "@/components/ChatbotInput/ChatbotInput";
-import {
-  getFromSessionStorage,
-  saveToSessionStorage,
-} from "@/lib/utils/sessionStorage";
 import { useChatState } from "@/hooks/useChatState";
-import useSocket from "@/lib/hooks/useSocket";
-import { travelCard } from "@/lib/constants/questions/travelCard";
-import { CARD_CATEGORY } from "@/lib/data/cards";
-import {
-  BaseMessage,
-  HistoryMessage,
-  MESSAGE_SOURCE,
-  MESSAGE_TYPE,
-} from "@/types/chatMessages";
+import { BaseMessage } from "@/types/chatMessages";
 import { useChatScroll } from "@/lib/hooks/useChatScroll";
-import {
-  createBotRecommendationContent,
-  getMessageContent,
-} from "@/lib/utils/content";
-import { CHAT_ACTIONS } from "@/lib/constants/actions";
-import { ActionTypes } from "@/types/actions";
-import { continueJourney as continueJourneyMessage } from "@/lib/constants/questions/common";
-import { CARD_CATEGORY_KEY } from "@/lib/constants/storage";
-import useNav from "@/lib/hooks/useNav";
-import { foodCard } from "@/lib/constants/questions/foodCard";
-import { shoppingCard } from "@/lib/constants/questions/shoppingCard";
-import { allRounderCard } from "@/lib/constants/questions/allRounderCard";
-import { CardsType } from "@/types/card";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import ChatSidebar from "@/components/ChatSidebar/ChatSidebar";
-
-const cardData = {
-  [CARD_CATEGORY.TRAVEL]: travelCard,
-  [CARD_CATEGORY.FOOD]: foodCard,
-  [CARD_CATEGORY.SHOPPING]: shoppingCard,
-  [CARD_CATEGORY.ALL_ROUNDER]: allRounderCard,
-} as Record<CardsType, BaseMessage[]>;
+import useChatActions from "@/lib/hooks/useChatActions";
+import { useChatContext } from "@/contexts/ChatContext";
+import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
+import { INPUT_MESSAGE_SOURCE } from "@/lib/constants/chatJourney";
+import { CardSelectorSkeleton } from "@/components/Loader/Loader";
 
 export default function ChatbotUI() {
-  const [cardCategory, setCardCategory] = useState(() =>
-    getFromSessionStorage(CARD_CATEGORY_KEY)
-  );
-  const selectedCardData = useMemo(
-    () => cardData?.[cardCategory as CardsType],
-    [cardCategory]
-  );
+  // const {
+  //   selectedCardCategoryJourney,
+  //   currentMessageId,
+  //   showTypingLoader,
+  //   inputValue,
+  //   chatInputDisabled,
+  //   setInputValue,
+  //   messages,
+  // } = useChatContext();
 
-  const [inputValue, setInputValue] = useState("");
-  const [socketUrl, setSocketUrl] = useState<string | null>(null);
-  const [showTypingLoader, setShowTypingLoader] = useState(false);
-  const [chatInputDisabled, setChatInputDisabled] = useState(true);
+  // const { addUserMessage } = useChatState();
+  // const messagesEndRef = useChatScroll(messages);
+  // const {
+  //   handleSendMessage,
+  //   handleKeyPressSendMessage,
+  //   handleMessageFormatting,
+  // } = useChatActions();
 
-  const [currentMessageId, setCurrentMessageId] = useState(
-    () => selectedCardData?.at(0)?.m_id
-  );
-  const [jouneyMessageId, setJoruneyMessageId] = useState([
-    selectedCardData?.at(0)?.m_id,
-  ]);
-  const { sendMessage, lastMessage, readyState } = useWebSocket(
-    socketUrl ? socketUrl : null
-  );
-  const { messages, addUserMessage, addAssistantMessage, loadHistory } =
-    useChatState();
-  const { getSocketUrl } = useSocket();
-  const messagesEndRef = useChatScroll(messages);
-  const { goToCardCategory, goBack } = useNav();
+  // const {lastMessage, isSocketLoading} = useAppWebSocketConnection()
 
-  useEffect(() => {
-    if (!cardCategory) {
-      goToCardCategory();
-    }
-  }, []);
 
-  useEffect(() => {
-    const conectSocket = async () => {
-      const baseUrl = await getSocketUrl();
-      if (baseUrl) setSocketUrl(baseUrl);
-    };
-    conectSocket();
-  }, []);
+  // useEffect(() => {
+  //   if (!lastMessage) return;
+  //   let parsed;
+  //   try {
+  //     parsed = JSON.parse(lastMessage.data);
+  //   } catch {
+  //     console.error("Invalid JSON from socket:", lastMessage.data);
+  //     return;
+  //   }
 
-  useEffect(() => {
-    if (!messages.length) {
-      addUserMessage(selectedCardData?.at(0) as BaseMessage | undefined);
-    }
-  }, []);
+  //   handleMessageFormatting(parsed);
+  // }, [lastMessage]);
 
-  useEffect(() => {
-    if (!lastMessage) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(lastMessage.data);
-    } catch {
-      console.error("Invalid JSON from socket:", lastMessage.data);
-      return;
-    }
+  // useEffect(() => {
+  //   if (!messages.length && !isSocketLoading) {
+  //     addUserMessage(
+  //       selectedCardCategoryJourney?.at(0) as BaseMessage | undefined
+  //     );
+  //   }
+  // }, [isSocketLoading]);
 
-    handleMessage(parsed);
-  }, [lastMessage]);
-
-  const getUserMessage = (messages: BaseMessage[]) => {
-    const userMessage = messages?.filter(
-      (msg) => msg.source === MESSAGE_SOURCE.USER
-    );
-    return userMessage;
-  };
-
-  const evaluateEarly = (messages: BaseMessage[], content: string) => {
-    setShowTypingLoader(true);
-
-    if (content) {
-      addUserMessage({
-        source: "user",
-        content,
-        m_id: crypto.randomUUID(),
-        ts: new Date().toISOString(),
-        type: "TextMessage",
-      });
-    }
-    const botMessage = createBotRecommendationContent(
-      getUserMessage(messages),
-      cardCategory as CardsType
-    );
-
-    sendMessage(JSON.stringify(botMessage));
-  };
-
-  const continueJourney = () => {
-    const currentMessageIndex = selectedCardData?.findIndex(
-      (msg) => msg.m_id === jouneyMessageId?.at(-1)
-    );
-    const currentQuestion: BaseMessage = selectedCardData?.at(
-      currentMessageIndex
-    ) || {
-      m_id: "",
-      content: "",
-      source: MESSAGE_SOURCE.USER,
-      type: MESSAGE_TYPE.TEXT,
-      botContent: "",
-    };
-
-    const userMsg = {
-      name: currentQuestion?.content,
-      content: "Great, let's move forward",
-      m_id: crypto.randomUUID(),
-      source: MESSAGE_SOURCE.USER,
-      type: "TextMessage",
-      questionType: currentQuestion?.type,
-      questionId: currentQuestion?.m_id,
-      botContent: currentQuestion?.botContent,
-    };
-
-    if (currentMessageIndex + 1 < selectedCardData.length) {
-      const nextQuestion = selectedCardData?.at(currentMessageIndex + 1)
-        ? selectedCardData?.at(currentMessageIndex + 1)
-        : { m_id: "" };
-      addUserMessage(userMsg as BaseMessage);
-      addUserMessage(nextQuestion as BaseMessage);
-      setCurrentMessageId(nextQuestion?.m_id);
-      setJoruneyMessageId((prev) => [...prev, nextQuestion?.m_id]);
-    }
-  };
-
-  const switchToAllRounder = () => {
-    saveToSessionStorage(CARD_CATEGORY_KEY, CARD_CATEGORY.ALL_ROUNDER);
-    setCardCategory(CARD_CATEGORY.ALL_ROUNDER);
-    const question = cardData?.[CARD_CATEGORY.ALL_ROUNDER]?.at(0);
-    addUserMessage(question);
-    setCurrentMessageId(question?.m_id);
-    setJoruneyMessageId((prev) => [...prev, question?.m_id]);
-  };
-
-  const resolveDynamicFields = (
-    question: BaseMessage,
-    answers: BaseMessage[]
-  ): BaseMessage => {
-    if (!question.dynamicFileds?.length) return question;
-
-    const resolvedQuestion: BaseMessage = { ...question };
-
-    question.dynamicFileds.forEach((field) => {
-      const filedValue = question[field];
-
-      if (typeof filedValue === "function") {
-        // @ts-expect-error some
-        resolvedQuestion[field] = filedValue(answers);
-      }
-    });
-
-    return resolvedQuestion;
-  };
-  const handleEndJourney = () => {
-    sendMessage(
-      JSON.stringify({
-        source: "user",
-        content: "Start the follow up",
-        m_id: crypto.randomUUID(),
-        ts: new Date().toISOString(),
-        type: "TextMessage",
-      })
-    );
-    setChatInputDisabled(false);
-    setCurrentMessageId("");
-  };
-
-  const handleSend = async (
-    value: string | Record<string, string | number>
-  ) => {
-    if (typeof value === "string" && !value.trim()) return;
-
-    const actions = {
-      [CHAT_ACTIONS.EVALUTE_RECOMMENDATION]: () =>
-        evaluateEarly(messages, "Recommend me a card"),
-      [CHAT_ACTIONS.CONTINUE_JOURNEY]: continueJourney,
-      [CHAT_ACTIONS.SWITCH_TO_ALL_ROUNDER]: switchToAllRounder,
-      [CHAT_ACTIONS.END_JOURNEY]: handleEndJourney,
-    };
-
-    const isButtonGroupAction =
-      typeof value === "string" && value?.includes("action-");
-
-    if (isButtonGroupAction) {
-      actions[value as ActionTypes]?.();
-      return;
-    }
-
-    const currentMessageIndex = selectedCardData?.findIndex(
-      (msg) => msg.m_id === currentMessageId
-    );
-
-    const currentQuestion: BaseMessage = selectedCardData?.at(
-      currentMessageIndex
-    ) || {
-      m_id: "",
-      content: "",
-      source: MESSAGE_SOURCE.USER,
-      type: MESSAGE_TYPE.TEXT,
-      botContent: "",
-    };
-
-    const isSubmit =
-      typeof currentQuestion?.submit === "string" &&
-      currentQuestion?.submit?.includes("action-");
-
-    const contentMsg = getMessageContent({
-      messageType: currentQuestion.type,
-      inputValue: value,
-      questions: currentQuestion.inputs,
-    });
-
-    const userMsg = {
-      name: currentQuestion?.content,
-      content: contentMsg,
-      m_id: crypto.randomUUID(),
-      source: MESSAGE_SOURCE.USER,
-      type: MESSAGE_TYPE.TEXT,
-      questionId: currentQuestion?.m_id,
-      questionType: currentQuestion?.type,
-      botContent: currentQuestion?.botContent,
-    };
-    // Add user message first
-    addUserMessage(userMsg as BaseMessage);
-
-    if (isSubmit) {
-      actions[currentQuestion?.submit as ActionTypes]?.();
-      return;
-    }
-
-    // Find next valid question to render
-    let nextIndex = currentMessageIndex + 1;
-    let nextQuestion = null;
-
-    while (nextIndex < selectedCardData.length) {
-      const potentialNextQuestion = selectedCardData[nextIndex];
-
-      if (potentialNextQuestion?.conditionalRender) {
-        // Check if condition is met
-        const shouldRender = potentialNextQuestion.condition?.(
-          getUserMessage([...messages, userMsg] as BaseMessage[])
-        );
-
-        if (shouldRender) {
-          // Condition met, use this question
-          nextQuestion = potentialNextQuestion;
-          break;
-        } else {
-          // Condition not met, skip to next question
-          nextIndex++;
-          continue;
-        }
-      } else {
-        // No conditional render, use this question
-        nextQuestion = potentialNextQuestion;
-        break;
-      }
-    }
-
-    if (nextQuestion) {
-      const resolvedQuestion = resolveDynamicFields(
-        nextQuestion,
-        getUserMessage([...messages, userMsg] as BaseMessage[])
-      );
-      addUserMessage(resolvedQuestion as BaseMessage);
-      setCurrentMessageId(resolvedQuestion?.m_id);
-      setJoruneyMessageId((prev) => [...prev, resolvedQuestion?.m_id]);
-    } else if (nextIndex >= selectedCardData.length && readyState === 1) {
-      // Reached the end of questions
-      evaluateEarly?.([...messages, userMsg] as BaseMessage[], "");
-      setChatInputDisabled(false);
-    }
-
-    setInputValue("");
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend(inputValue);
-    }
-  };
-
-  const handleMessage = (message: BaseMessage | HistoryMessage) => {
-    if (message.type !== "history" && message.source === "assistant") {
-      addAssistantMessage(message);
-      setShowTypingLoader(false);
-      if (jouneyMessageId.length < selectedCardData.length) {
-        addUserMessage(continueJourneyMessage as BaseMessage);
-        setCurrentMessageId(continueJourneyMessage?.m_id);
-      } else {
-        setCurrentMessageId(message?.m_id);
-      }
-
-      return;
-    }
-
-    if (message.type === "history") {
-      loadHistory(message.messages);
-      return;
-    }
-  };
 
   return (
     <div className="flex">
-      <ChatSidebar />
-      <div className="flex w-full mx-auto  flex-col pl-[180px] pt-16 h-screen bg-background-primary">
+      {/* <ChatSidebar /> */}
+
+      {/* <div className="flex w-full mx-auto flex-col pl-[180px] pt-16 h-screen bg-brown-background">
+        <CardSelectorSkeleton className={`${isSocketLoading?'inline':'hidden'}`}/>
         <LoggedInHeader />
-        {/* Messages Area - Scrollable */}
         <ChatbotScrollableArea
           currentMessageId={currentMessageId}
           messages={messages}
-          handleSend={handleSend}
+          handleSend={handleSendMessage}
           messagesEndRef={messagesEndRef}
           isTyping={showTypingLoader}
         />
 
-        {/* Input Area - Fixed at Bottom */}
         <ChatbotInput
-          disabled={chatInputDisabled || showTypingLoader}
-          // disabled={false}
+          disabled={chatInputDisabled || showTypingLoader||isSocketLoading}
           inputValue={inputValue}
           onInputChange={setInputValue}
-          onSend={() => handleSend(inputValue)}
+          onSend={() => handleSendMessage(inputValue, INPUT_MESSAGE_SOURCE.DIRECT)}
           placeholder="Ask me anything..."
-          onKeyPress={handleKeyPress}
+          onKeyPress={handleKeyPressSendMessage}
         />
-      </div>
+      </div> */}
     </div>
   );
 }

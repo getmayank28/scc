@@ -3,7 +3,6 @@ import { importSPKI, exportJWK } from "jose";
 
 const PUBLIC_KEY_PEM = process.env.CHAT_TOKEN_PUBLIC_SECRET!;
 
-// Cache the result (important for performance)
 let cachedJWKS: unknown = null;
 
 export async function GET() {

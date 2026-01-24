@@ -8,21 +8,26 @@ import { SignInProvider } from "@/contexts/SignInContext";
 import { WaitlistProvider } from "@/contexts/WaitlistContext";
 import { FeatureFlagProvider } from "@/contexts/FeatureContext";
 import { featureFlags } from "@/lib/constants/featureFlags";
+import { ChatContextProvider } from "@/contexts/ChatContext";
+import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
-
   return (
     <SessionProvider>
       <FeatureFlagProvider flags={featureFlags}>
-      <SignInProvider>
-        <WaitlistProvider>
-        <Toaster position="top-right" />
-        <StateProviders>
-          <SignInModal />
-          <SidebarContainer>{children}</SidebarContainer>
-        </StateProviders>
-        </WaitlistProvider>
-      </SignInProvider>
+        <SignInProvider>
+          <ChatContextProvider>
+            <WaitlistProvider>
+              <Toaster position="top-right" />
+              <StateProviders>
+                <WebSocketConnectionProvider>
+                  <SignInModal />
+                  <SidebarContainer>{children}</SidebarContainer>
+                </WebSocketConnectionProvider>
+              </StateProviders>
+            </WaitlistProvider>
+          </ChatContextProvider>
+        </SignInProvider>
       </FeatureFlagProvider>
     </SessionProvider>
   );

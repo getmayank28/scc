@@ -46,8 +46,8 @@ export default function SingleSelectInput({
               ${
               // @ts-expect-error some
                 platform.variant === 'primary'
-                  ? "bg-secondary-orange hover:bg-primary-orange text-white"
-                  : `bg-[#111] text-white/80 ${selectedPlatform ===platform.value?"text-primary-orange border-primary-orange":"border-secondary-orange"}  hover:text-white hover:border-primary-orange`
+                  ? "bg-primary-orange hover:bg-primary-orange/70 text-white font-semibold"
+                  : `bg-brown-sidebar text-white font-semibold ${selectedPlatform ===platform.value?"text-primary-orange border-primary-orange":"border-primary-orange"}  hover:text-white hover:border-primary-orange`
               }
             `}
             disabled={disabled}

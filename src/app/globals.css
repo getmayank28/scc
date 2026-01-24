@@ -144,9 +144,15 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --brown-sidebar: oklch(0.2582 0.0141 57.59);
+  --brown-background:oklch(0.2084 0.0162 53.6);
+  --brown-border:oklch(0.3216 0.0451 55.68);
 }
 
 @theme inline {
+  --color-brown-sidebar:var(--brown-sidebar);
+  --color-brown-background:var(--brown-background);
+  --color-brown-border:var(--brown-border);
   --color-background-primary: var(--background-primary);
   --color-primary-success: var(--primary-success);
   --color-secondary-success:var(--secondary-success);

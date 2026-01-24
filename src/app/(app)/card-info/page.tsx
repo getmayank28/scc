@@ -8,6 +8,8 @@ import { BaseMessage } from "@/types/chatMessages";
 import { useRef, useState } from "react";
 import ContentRenderer from "./ContentRender";
 import { MultiStepChatLoader } from "@/components/MultiStepChatLoader/MultiStepChatLoader";
+import useSocket from "@/lib/hooks/useSocket";
+import NoCardData from "./NoDataAnim";
 
 const loadingStates = [
   {
@@ -45,26 +47,29 @@ const CardInfo = () => {
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [cardDetails, setCardDetails] = useState<BaseMessage | null>(null);
-  const [cardName, setCardName] = useState("")
+  const [cardName, setCardName] = useState("");
+  const { createChatSessionToken } = useSocket();
 
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
 
   const handleSubmit = async () => {
     setCardDetails(null);
-    const data = await communicateToBot(
-      `tell me everything about ${selected?.name}`
-    );
+    const token = await createChatSessionToken();
+    const data = await communicateToBot({
+      message: `tell me everything about ${selected?.name}`,
+      token: token,
+    });
     const content = joinTextMessagesByMid(data?.data?.messages);
     setCardDetails(content?.at(0) as BaseMessage);
-    setCardName(selected?.name as string)
+    setCardName(selected?.name as string);
   };
 
   return (
-    <div className="flex flex-col max-md:px-4 max-md:pt-24 p-20 h-screen">
+    <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-24 p-20 min-h-screen">
       <HeaderText
         containerClassName="items-start"
-        title="Explore cards"
-        content="Get any card deatils in a blink"
+        title="Start your search"
+        content="Get credit card rewards, perks, fees in seconds"
         contentVariant="caption"
         titleVariant="h3"
         titleClassName="font-bold"
@@ -82,11 +87,11 @@ const CardInfo = () => {
           }}
         />
         <Button
-          disabled={!selected?.name||isLoading}
+          disabled={!selected?.name || isLoading}
           className="rounded-lg h-12 px-8 bg-primary-orange/70"
           onClick={handleSubmit}
         >
-         Search
+          Search
         </Button>
       </div>
       {isLoading && (
@@ -100,6 +105,7 @@ const CardInfo = () => {
           content={cardDetails?.content}
         />
       )}
+      {!cardDetails?.content && !isLoading && <NoCardData />}
     </div>
   );
 };

@@ -52,6 +52,7 @@ interface ChatbotScrollableAreaProps {
     value: string | Record<string, string | number>,
     id?: string
   ) => void;
+  isSocketLoading?:boolean
 }
 
 export const ChatbotScrollableArea = ({
@@ -60,6 +61,7 @@ export const ChatbotScrollableArea = ({
   isTyping,
   messagesEndRef,
   handleSend,
+  isSocketLoading
 }: ChatbotScrollableAreaProps) => {
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(
     new Set()
@@ -68,9 +70,9 @@ export const ChatbotScrollableArea = ({
   useEffect(() => {
     // Add new messages to visible set with a slight delay for animation
     messages.forEach((message) => {
-      if (!visibleMessages.has(message.m_id)) {
+      if (!visibleMessages.has(message?.m_id)) {
         setTimeout(() => {
-          setVisibleMessages((prev) => new Set(prev).add(message.m_id));
+          setVisibleMessages((prev) => new Set(prev).add(message?.m_id));
         }, 50);
       }
     });
@@ -81,19 +83,19 @@ export const ChatbotScrollableArea = ({
   const getContent = (content: string) => markdownToJson(content);
   
   return (
-    <div className="flex-1 overflow-hidden">
+    <div className={`flex-1 overflow-hidden ${isSocketLoading?'opacity-0':'opacity-100'}`}>
       <ScrollArea className="h-full px-4 py-6 max-md:py-2">
         <div className="max-w-4xl mx-auto space-y-6 pb-4">
           {messages.map((message) => (
             <div
-              key={message.m_id}
+              key={message?.m_id}
               className={`flex gap-3 ${
                 message.source === "user" ? "flex-row-reverse" : "flex-row"
               } transition-opacity duration-500 ease-in ${
-                visibleMessages.has(message.m_id) ? "opacity-100" : "opacity-0"
+                visibleMessages.has(message?.m_id) ? "opacity-100" : "opacity-0"
               }`}
               style={{
-                animation: visibleMessages.has(message.m_id)
+                animation: visibleMessages.has(message?.m_id)
                   ? "fadeIn 0.5s ease-in forwards"
                   : "none",
               }}
@@ -110,18 +112,18 @@ export const ChatbotScrollableArea = ({
                       : "px-4 py-3 max-md:px-3"
                   } gap-0 max-w-[85%] max-md:max-w-[75%] break-words ${
                     message.source === "user"
-                      ? "bg-transparent text-gray-100 border-[#F35A13]/30"
-                      : `bg-transparent text-gray-100 ${
+                      ? "bg-brown-sidebar text-gray-100 border-primary-orange/50"
+                      : `bg-brown-sidebar text-gray-100 ${
                           containsMarkdownTable(message?.content)
-                            ? "border-none"
-                            : "border-white/30"
+                            ? "border-none bg-transparent"
+                            : "border-brown-border"
                         }`
                   }`}
                 >
                   {containsMarkdownTable(message?.content) ? (
                     <>
                       <p
-                        className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-white/30"
+                        className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{
                           __html: convertBoldMarkdownToHtml(
                             getContent(message?.content)?.message

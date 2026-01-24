@@ -26,6 +26,7 @@ import { CreditCard } from "@/types/card";
 import useSocket from "@/lib/hooks/useSocket";
 import SpendOptimizerResult from "./SpendOptimizerResult";
 import toast from "react-hot-toast";
+import Typography from "@/components/Typography/Typography";
 
 interface CardBenefit {
   card: string;
@@ -179,104 +180,134 @@ export default function SpendOptimizerDesktop({
 
   return (
     <div className="space-y-6 py-6 max-md:hidden">
-      <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
-        <div className="space-y-2">
-          <Label
-            htmlFor="category"
-            className="text-base text-white/80 font-semibold"
+      <div>
+        <div className="flex gap-2 items-center">
+          <div
+            className={`rounded-lg flex justify-center items-center text-xl h-9 w-9 border-2 bg-[#E0EAFF] text-[#6496FF] border-[#6496FF] font-bold uppercas`}
           >
-            Spend category <span className="text-destructive">*</span>
-          </Label>
-          <Select
-            value={formData.category}
-            onValueChange={handleCategoryChange}
+            02
+          </div>
+          <Typography
+            variant="body"
+            className="font-bold opacity-100 text-left"
           >
-            <SelectTrigger
-              id="category"
-              className={`!h-12 w-full text-white ${
-                errors.category
-                  ? "border-destructive"
-                  : "border-secondary-orange"
-              }`}
-            >
-              <SelectValue placeholder="Select a category" />
-            </SelectTrigger>
-            <SelectContent
-              className="!max-h-[300px]"
-              position="popper"
-              sideOffset={4}
-            >
-              {categories.map((cat) => {
-                const Icon = cat.icon;
-                return (
-                  <SelectItem key={cat.value} value={cat.value}>
-                    <div className="flex items-center gap-2">
-                      <Icon className="h-4 w-4 text-primary-orange" />
-                      <span>{cat.label}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-          {errors.category && (
-            <p className="text-xs text-destructive">Please select a category</p>
-          )}
+            Transaction Details
+          </Typography>
         </div>
-        <div className="space-y-2">
-          <Label
-            htmlFor="amount"
-            className="text-base text-white/80 font-semibold"
-          >
-            Spend Amount <span className="text-destructive">*</span>
-          </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-orange font-medium">
-              ₹
-            </span>
+        <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1 pt-2">
+          <div className="space-y-2">
+            <Label
+              htmlFor="category"
+              className="text-base text-white/80 font-semibold"
+            >
+              Spend category <span className="text-destructive">*</span>
+            </Label>
+            <Select
+              value={formData.category}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger
+                id="category"
+                className={`!h-12 w-full text-white ${
+                  errors.category
+                    ? "border-destructive"
+                    : "border-primary-orange"
+                }`}
+              >
+                <SelectValue placeholder="Select a category" />
+              </SelectTrigger>
+              <SelectContent
+                className="!max-h-[300px]"
+                position="popper"
+                sideOffset={4}
+              >
+                {categories.map((cat) => {
+                  const Icon = cat.icon;
+                  return (
+                    <SelectItem key={cat.value} value={cat.value}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4 text-primary-orange" />
+                        <span>{cat.label}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {errors.category && (
+              <p className="text-xs text-destructive">
+                Please select a category
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="amount"
+              className="text-base text-white/80 font-semibold"
+            >
+              Spend Amount <span className="text-destructive">*</span>
+            </Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-primary-orange font-medium">
+                ₹
+              </span>
+              <Input
+                id="amount"
+                type="text"
+                placeholder="0"
+                value={formatCurrency(formData.amount)}
+                onChange={handleAmountChange}
+                className={`h-12 pl-8 text-lg text-white ${
+                  errors.amount ? "border-destructive" : "border-primary-orange"
+                }`}
+              />
+            </div>
+            {errors.amount && (
+              <p className="text-xs text-destructive">Please enter an amount</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label
+              htmlFor="merchant"
+              className="text-base text-white/80 font-semibold"
+            >
+              Platform / Merchant / App{" "}
+              <span className="text-destructive">*</span>
+            </Label>
             <Input
-              id="amount"
+              id="merchant"
               type="text"
-              placeholder="0"
-              value={formatCurrency(formData.amount)}
-              onChange={handleAmountChange}
-              className={`h-12 pl-8 text-lg text-white ${
-                errors.amount ? "border-destructive" : "border-secondary-orange"
+              placeholder="e.g., Amazon, Swiggy, MakeMyTrip"
+              value={formData.merchant}
+              onChange={handleMerchantChange}
+              className={`h-12 text-white ${
+                errors.merchant ? "border-destructive" : "border-primary-orange"
               }`}
             />
+            {errors.merchant && (
+              <p className="text-xs text-destructive">
+                Please enter merchant name
+              </p>
+            )}
           </div>
-          {errors.amount && (
-            <p className="text-xs text-destructive">Please enter an amount</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label
-            htmlFor="merchant"
-            className="text-base text-white/80 font-semibold"
-          >
-            Platform / Merchant / App{" "}
-            <span className="text-destructive">*</span>
-          </Label>
-          <Input
-            id="merchant"
-            type="text"
-            placeholder="e.g., Amazon, Swiggy, MakeMyTrip"
-            value={formData.merchant}
-            onChange={handleMerchantChange}
-            className={`h-12 text-white ${
-              errors.merchant ? "border-destructive" : "border-secondary-orange"
-            }`}
-          />
-          {errors.merchant && (
-            <p className="text-xs text-destructive">
-              Please enter merchant name
-            </p>
-          )}
         </div>
       </div>
-
-      <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1">
+     <div>
+     <div className="flex gap-2 items-center">
+          <div
+            className={`rounded-lg flex justify-center items-center text-xl h-9 w-9 border-2 bg-[#D0DFE0] text-[#165F61] border-[#165F61] font-bold uppercas`}
+          >
+            03
+          </div>
+          <Typography
+            variant="body"
+            className="font-bold opacity-100 text-left"
+          >
+            Transaction Details
+          </Typography>
+        </div>
+      <div className="grid grid-cols-3 gap-5 max-md:grid-cols-1 mt-2">
         <div className="space-y-2">
           <Label
             htmlFor="paymentMethod"
@@ -293,7 +324,7 @@ export default function SpendOptimizerDesktop({
               className={`!h-12 w-full text-white ${
                 errors.paymentMethod
                   ? "border-destructive"
-                  : "border-secondary-orange"
+                  : "border-primary-orange"
               }`}
             >
               <SelectValue placeholder="Select payment method" />
@@ -333,7 +364,7 @@ export default function SpendOptimizerDesktop({
             <SelectTrigger
               id="emi"
               className={`!h-12 w-full text-white ${
-                errors.emi ? "border-destructive" : "border-secondary-orange"
+                errors.emi ? "border-destructive" : "border-primary-orange"
               }`}
             >
               <SelectValue placeholder="Select an option" />
@@ -366,9 +397,10 @@ export default function SpendOptimizerDesktop({
           disabled={isCardsLoading || isLoading}
           className={`w-full h-12 text-base text-white font-semibold ${errors.paymentMethod || errors.emi ? "self-center" : "self-end"}`}
         >
-          Find Best Card
+         Optimize Spend
         </Button>
       </div>
+     </div>
       <SpendOptimizerResult
         isLoading={isLoading}
         formData={formData}

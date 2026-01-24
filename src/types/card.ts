@@ -4,3 +4,5 @@ export interface CreditCard {
   _id: string;
   cardId: { _id: string; name: string; bankName: string };
 }
+
+export type MessageSourceType = "DIRECT" | "JOURNEY";

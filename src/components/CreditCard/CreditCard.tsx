@@ -17,6 +17,7 @@ const CreditCard = ({
   isCardSpotlightActive = true,
   // onCardNumberUpdate,
   onRemove,
+  removeImage,
   forShow,
 }: {
   background?: string;
@@ -27,6 +28,7 @@ const CreditCard = ({
   onCardNumberUpdate?: (number: string) => void;
   onRemove?: () => void;
   forShow?: boolean;
+  removeImage?: boolean;
 }) => {
   // const [error, setError] = useState(false);
   // const [cardNumber, setCardNumber] = useState("");
@@ -89,28 +91,31 @@ const CreditCard = ({
       >
         <Comp className="w-98 h-[250px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/card-gradient.png"
-            className="w-98  h-[250px] opacity-30"
-            alt="card"
-            draggable="false"
-          />
-          <div className="absolute bottom-2 right-4">
-            <svg
-              version="1.1"
-              id="visa"
-              xmlns="http://www.w3.org/2000/svg"
-              x="0px"
-              y="0px"
-              width="64px"
-              height="64px"
-              viewBox="0 0 47.834 47.834"
-              fill="white"
-            >
-              <g>
+          {!removeImage && (
+            <img
+              src="/images/card-gradient.png"
+              className="w-98  h-[250px] opacity-30"
+              alt="card"
+              draggable="false"
+            />
+          )}
+          {!removeImage && (
+            <div className="absolute bottom-2 right-4">
+              <svg
+                version="1.1"
+                id="visa"
+                xmlns="http://www.w3.org/2000/svg"
+                x="0px"
+                y="0px"
+                width="64px"
+                height="64px"
+                viewBox="0 0 47.834 47.834"
+                fill="white"
+              >
                 <g>
-                  <path
-                    d="M44.688,16.814h-3.004c-0.933,0-1.627,0.254-2.037,1.184l-5.773,13.074h4.083c0,0,0.666-1.758,0.817-2.143
+                  <g>
+                    <path
+                      d="M44.688,16.814h-3.004c-0.933,0-1.627,0.254-2.037,1.184l-5.773,13.074h4.083c0,0,0.666-1.758,0.817-2.143
                      c0.447,0,4.414,0.006,4.979,0.006c0.116,0.498,0.474,2.137,0.474,2.137h3.607L44.688,16.814z M39.893,26.01
                      c0.32-0.819,1.549-3.987,1.549-3.987c-0.021,0.039,0.317-0.825,0.518-1.362l0.262,1.23c0,0,0.745,3.406,0.901,4.119H39.893z
                      M34.146,26.404c-0.028,2.963-2.684,4.875-6.771,4.875c-1.743-0.018-3.422-0.361-4.332-0.76l0.547-3.193l0.501,0.228
@@ -121,11 +126,12 @@ const CreditCard = ({
                      C7.795,20.842,4.691,18.099,0,16.962z M17.581,16.812l-6.123,14.239l-4.114,0.007L3.862,19.161
                      c2.503,1.602,4.635,4.144,5.386,5.914l0.406,1.469l3.808-9.729L17.581,16.812L17.581,16.812z M19.153,16.8h3.89L20.61,31.066
                      h-3.888L19.153,16.8z"
-                  />
+                    />
+                  </g>
                 </g>
-              </g>
-            </svg>
-          </div>
+              </svg>
+            </div>
+          )}
 
           <div className={`absolute ${cardName ? "bottom-6" : "top-6"} left-4`}>
             <svg

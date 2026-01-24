@@ -62,7 +62,7 @@ export function DataTable<T extends object>({
   return (
     <div className={cn("rounded-lg overflow-hidden", className)}>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full border-separate border-spacing-y-4">
           <TableHeader
             onApplyFilter={onApplyFilter}
             columns={columns}
@@ -70,7 +70,7 @@ export function DataTable<T extends object>({
             onSortChange={onSortChange}
             hasActions={actions.length > 0}
           />
-          <tbody className="bg-background-primary">
+          <tbody className="bg-brown-sidebar border border-white">
             {data?.length === 0 ? (
               <tr>
                 <td

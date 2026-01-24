@@ -4,8 +4,12 @@ import { TableColumn } from "@/types/table";
 import dayjs from "dayjs";
 import { SpendTransaction } from "./data";
 import { getDashedFormattedValue } from "@/lib/utils/spendTransaction";
+import StateHandler from "@/components/ui/state-handler";
+import { TransactionHistorySkeleton } from "@/components/Loader/Loader";
+import { getErrorProp } from "@/lib/utils/error";
+import Typography from "@/components/Typography/Typography";
 
-const ICON_COLORS = [
+export const ICON_COLORS = [
   "bg-[#FFE0EA] text-[#FF6496] border-[#FF6496]",
   "bg-[#E0EAFF] text-[#6496FF] border-[#6496FF]",
   "bg-[#FFF4E0] text-[#FFC864] border-[#FFC864]",
@@ -32,9 +36,12 @@ export const spendOptimizerColumns: TableColumn<
             {merchant?.slice(0, 1)?.toUpperCase()}
           </div>
           <div className="flex flex-col gap-1">
-            <span className="text-sm text-white font-semibold capitalize">{merchant}</span>
+            <span className="text-sm text-white font-semibold capitalize">
+              {merchant}
+            </span>
             <span className="text-xs text-muted-foreground capitalize">
-              {getDashedFormattedValue(category)} • {getDashedFormattedValue(paymentMethod)}
+              {getDashedFormattedValue(category)} •{" "}
+              {getDashedFormattedValue(paymentMethod)}
             </span>
           </div>
         </div>
@@ -69,7 +76,9 @@ export const spendOptimizerColumns: TableColumn<
     title: "EMI",
     width: "15%",
     render: (value) => (
-      <span className="text-sm font-semibold text-white capitalize">{getDashedFormattedValue(value as string)}</span>
+      <span className="text-sm font-semibold text-white capitalize">
+        {getDashedFormattedValue(value as string)}
+      </span>
     ),
   },
   {
@@ -95,26 +104,31 @@ export const spendOptimizerColumns: TableColumn<
 ];
 
 const SpendTransactionHistory = () => {
-  const { data: spendTransaction } = useGetUserSpendTransactionQuery({});
+  const {
+    data: spendTransaction,
+    isFetching,
+    error,
+    refetch,
+  } = useGetUserSpendTransactionQuery({});
 
   return (
-    <div className="dark mt-10">
-      <DataTable
-        data={spendTransaction}
-        columns={spendOptimizerColumns}
-        loading={false}
-        emptyText="No alerts found"
-        // pagination={{
-        //   ...paginationConfig,
-        //   showSizeChanger: true,
-        //   showTotal: false,
-        //   pageSizeOptions: [10, 20, 50, 100],
-        // }}
-        // onPaginationChange={handlePaginationChange}
-        className="bg-background-primary"
-        // rowClassName="py-10"
-        // onApplyFilter={handleApplyFilter}
-      />
+    <div className="dark mt-8">
+      <Typography variant="caption" className="font-bold opacity-secondary-gray text-left">
+        Showing last 10 transactions
+      </Typography>
+      <StateHandler
+        error={getErrorProp(error)}
+        onErrorTryAgain={refetch}
+        loading={isFetching}
+        loader={<TransactionHistorySkeleton />}
+      >
+        <DataTable
+          data={spendTransaction}
+          columns={spendOptimizerColumns}
+          loading={false}
+          emptyText="No alerts found"
+        />
+      </StateHandler>
     </div>
   );
 };

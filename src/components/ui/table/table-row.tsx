@@ -59,13 +59,13 @@ export function TableRow<T extends object>({
   return (
     <tr
       className={cn(
-        "transition-colors",
+        "transition-colors rounded-lg",
         onRowClick && "cursor-pointer",
         className
       )}
       onClick={handleRowClick}
     >
-      {columns.map((column) => {
+      {columns.map((column, ind) => {
         const value = getValue(record, column.key);
         const displayValue: React.ReactNode = column.render
           ? column.render(value as React.ReactNode, record, index)
@@ -75,10 +75,12 @@ export function TableRow<T extends object>({
           <td
             key={String(column.key)}
             className={cn(
-              "px-4 py-3 text-sm",
+              "px-4 py-3 text-sm border-y border-brown-border",
               column.align === "center" && "text-center",
               column.align === "right" && "text-right",
-              column.className
+              column.className,
+              ind === 0 && "border-l rounded-tl-lg rounded-bl-lg",
+              ind === columns?.length-1 && "border-r rounded-tr-lg rounded-br-lg"
             )}
           >
             {displayValue}

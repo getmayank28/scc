@@ -10,7 +10,7 @@ const LoggedInHeader = ({ showBack }: { showBack?: boolean }) => {
 
   return (
     <div
-      className={`w-full border-b gap-2 items-center z-[19] shadow-2xl border-secondary-orange bg-background-primary px-6 max-md:px-2 h-16 flex ${showBack || isMobile ? "justify-between" : "justify-end"} fixed top-0 left-0`}
+      className={`w-full bg-brown-background gap-2 items-center z-[19] shadow-2x px-6 max-md:px-2 h-16 flex ${showBack || isMobile ? "justify-between" : "justify-end"} fixed top-0 left-0`}
     >
       {(showBack || isMobile) && (
         <div
@@ -21,7 +21,7 @@ const LoggedInHeader = ({ showBack }: { showBack?: boolean }) => {
           <Image width={110} height={20} src="/logoWithTitle.svg" alt="logo" />
         </div>
       )}
-      <div className="dark">
+      <div className="dark mt-5 mr-0">
         <ProfileDropdown />
       </div>
     </div>

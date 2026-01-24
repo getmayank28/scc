@@ -93,6 +93,7 @@ const cardData = (handleClick: (value:string) => void) => [
 const CardCategory = () => {
   const router = useRouter()
  const {isMobile} = useIsMobile()
+//  const { getSocketUrl } = useSocket();
 
 
   const handleClick = (value:string) => {
@@ -101,14 +102,14 @@ const CardCategory = () => {
   }
 
   return (
-    <div className="pl-16 max-md:pb-[96px] max-md:pl-0 min-h-screen max-md:h-auto flex flex-col justify-center items-center gap-10">
-      <Typography variant="h3" >
+    <div className="pl-16 bg-brown-background max-md:pb-[96px] max-md:pl-0 min-h-screen max-md:h-auto flex flex-col justify-center items-center gap-10">
+      <Typography variant="h3" className="" >
         What are you <br className="hidden max-md:inline"/> looking for?
       </Typography>
       <div className="grid grid-cols-[fit-content(420px)_1fr] max-md:grid-cols-2 max-md:gap-4 gap-10 max-w-4xl mx-auto">
         {cardData?.(handleClick)?.map((card) => (
           <NeonBorder key={card.title} onClick={card.onClick}>
-            <div className="border max-md:flex-col-reverse max-md:p-2 max-md:justify-center max-md:items-center max-md:gap-0 max-md:h-[150px] max-md:w-[160px] bg-background-primary border-secondary-orange flex relative p-6 w-[420px] h-[260px] rounded-lg">
+            <div className="border max-md:flex-col-reverse max-md:p-2 max-md:justify-center max-md:items-center max-md:gap-0 max-md:h-[150px] max-md:w-[160px] bg-brown-sidebar border-secondary-orange flex relative p-6 w-[420px] h-[260px] rounded-lg">
               <div>
                 <Typography
                   variant="body"

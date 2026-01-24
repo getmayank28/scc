@@ -78,7 +78,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="flex flex-col p-20 h-screen">
+    <div className="flex flex-col p-20 h-screen bg-brown-background">
       <HeaderText
         containerClassName="items-start"
         title="Profile"

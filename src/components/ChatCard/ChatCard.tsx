@@ -101,12 +101,12 @@ function ChatCard(props: CardProps) {
             className="absolute w-full h-full backface-hidden rounded-2xl shadow-2xl bg-white p-8 flex flex-col items-center justify-center"
             style={{ backfaceVisibility: "hidden" }}
           >
-            <div className="w-[230px]  h-[350px] shadow-[0_15px_40px_rgba(0,0,0,0.7)] overflow-visible bg-background-primary border border-secondary-orange rounded-lg relative">
+            <div className="w-[230px]  h-[350px] shadow-sm overflow-visible border border-primary-orange bg-[linear-gradient(135deg,#30251E_60%,#6F4D34_100%,#AD744A_100%)] rounded-lg relative">
               <Image
                 width={230}
                 height={350}
                 src={`/images/pattern${pattern + 1}.png`}
-                className="w-[230px] h-[350px] rounded-lg opacity-10"
+                className="w-[230px] h-[350px] rounded-lg opacity-0"
                 alt="card"
                 draggable="false"
               />

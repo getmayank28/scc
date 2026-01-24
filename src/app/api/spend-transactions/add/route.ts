@@ -33,7 +33,6 @@ export async function POST(req: Request) {
     if (!cards.length) {
       return NextResponse.json({ error: "Invalid cards" }, { status: 400 });
     }
-    console.log(cardName, expectedBenefit, "fhvfhbvhfbvhbf");
     const foundCards = cards.map((c) => ({
       cardId: c._id,
       name: c.name,

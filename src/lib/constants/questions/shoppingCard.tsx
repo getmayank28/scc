@@ -1,7 +1,9 @@
 import { BaseMessage, MESSAGE_SOURCE, MESSAGE_TYPE } from "@/types/chatMessages";
 import { CHAT_ACTIONS } from "../actions";
+import { chooseCardCategory } from "./common";
 
 export const shoppingCard = [
+  chooseCardCategory,
   {
     m_id: "average-shopping-spend",
     source: MESSAGE_SOURCE.ASSISTANT,

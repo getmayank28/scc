@@ -116,7 +116,7 @@ export default function SliderInput({
           <div className="flex items-center gap-4">
             <div className="flex gap-2 justify-center items-center">
               <Button
-                className="w-10 font-black cursor-pointer h-10 rounded-full bg-secondary-orange"
+                className="w-10 font-black cursor-pointer h-10 rounded-full bg-primary-orange"
                 disabled={disabled || selecteValue <= min}
                 onClick={() => handleChange(Number(selecteValue) - sliderStep)}
               >
@@ -128,12 +128,12 @@ export default function SliderInput({
                 value={inputValue}
                 onChange={(e) => handleChange(Number(e.target.value))}
                 containerClassName="max-w-30"
-                className="w-30 h-10 text-2xl text-center rounded-full border border-secondary-orange text-white"
+                className="w-30 h-10 text-2xl text-center rounded-full border border-primary-orange text-white"
                 min={min}
                 max={max}
               />
               <Button
-                className="w-10 h-10 font-black cursor-pointer rounded-full bg-secondary-orange"
+                className="w-10 h-10 font-black cursor-pointer rounded-full bg-primary-orange"
                 disabled={disabled || selecteValue >= max}
                 onClick={() => handleChange(Number(selecteValue) + sliderStep)}
               >
@@ -144,7 +144,7 @@ export default function SliderInput({
               <Button
                 onClick={handleSubmit}
                 disabled={!inputValue || disabled}
-                className="ml-auto px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-secondary-orange/70 cursor-pointer"
+                className="ml-auto px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-primary-orange cursor-pointer"
               >
                 Submit
               </Button>

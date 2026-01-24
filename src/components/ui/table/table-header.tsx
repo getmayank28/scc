@@ -269,10 +269,10 @@ export function TableHeader<T>({ columns, sortConfig, onSortChange, hasActions =
   };
 
   return (
-    <thead className="bg-primary">
+    <thead className="bg-brown-background">
       <tr>
         {columns.map((column) => (
-          <th key={String(column.key)} className={cn('px-4 py-3 text-left text-sm font-bold uppercase bg-background-primary text-[#909EB3]', column.align === 'center' && 'text-center', column.align === 'right' && 'text-right', column.className)} style={{ width: column.width }}>
+          <th key={String(column.key)} className={cn('px-4 py-3 text-left text-sm font-bold uppercase bg-brown-background text-secondary-gray', column.align === 'center' && 'text-center', column.align === 'right' && 'text-right', column.className)} style={{ width: column.width }}>
             {column.sortable ? (
               <Button variant="ghost" size="sm" onClick={() => handleSort(column)} className="h-auto p-0 font-medium hover:bg-transparent hover:text-foreground">
                 {column.title}

@@ -48,7 +48,7 @@ const MultiSelectInput = ({
                   setSelectedOptions((prev) => [...prev, ele.value]);
                 }
               }}
-              className="w-6 h-6 data-[state=checked]:border-secondary-orange border-secondary-orange data-[state=checked]:bg-secondary-orange data-[state=checked]:text-white"
+              className="w-6 h-6 data-[state=checked]:border-primary-orange border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
             />
             <Typography variant="caption" className="text-left">
               {ele?.label}
@@ -60,7 +60,7 @@ const MultiSelectInput = ({
      <Button
         onClick={() => onSubmit?.(selectedOptions)}
         disabled={!selectedOptions?.length || disabled}
-        className="ml-auto mt-4 px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-secondary-orange/70 cursor-pointer"
+        className="ml-auto mt-4 px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-primary-orange cursor-pointer"
       >
         Submit
       </Button>

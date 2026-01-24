@@ -105,6 +105,22 @@ export const api = createApi({
         },
       }),
     }),
+    getUserChatSession: builder.query({
+      query: () => ({
+        url: `user/sessions`,
+      }),
+    }),
+    getUserBotChatSessions: builder.query({
+      query: () => ({
+        url: `chat/session/bot`,
+      }),
+    }),
+    getUserBotChatSessionsDetails: builder.query({
+      query: (sessionId) => ({
+        url: `chat/session/bot/details`,
+        params: { sessionId },
+      }),
+    }),
     waitlist: builder.mutation({
       query: (body) => ({
         url: `waitlist`,
@@ -116,6 +132,9 @@ export const api = createApi({
 });
 
 export const {
+  useGetUserBotChatSessionsDetailsQuery,
+  useGetUserBotChatSessionsQuery,
+  useGetUserChatSessionQuery,
   useGetQuestionsQuery,
   useLazyCheckUsernameAvailabilityQuery,
   useCreateAccountMutation,
