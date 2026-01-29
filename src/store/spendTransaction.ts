@@ -12,11 +12,15 @@ export const spendTransaction = api.injectEndpoints({
         body,
       }),
     }),
+    getTransactionAnalytics: builder.query({
+      query: () => `/cards/analytics`,
+    }),
   }),
   overrideExisting: false, // safe default
 });
 
 export const {
+  useGetTransactionAnalyticsQuery,
   useGetUserSpendTransactionQuery,
   useAddSpendTransactionMutation,
 } = spendTransaction;

@@ -15,9 +15,12 @@ import TopPerformingCardSection from "./components/TopPerformingCardSection";
 import RecendSpendTransactionSection from "./components/RecendSpendTransactionSection";
 import StatsSection from "./components/StatsSection";
 import LastRecommendation from "./components/LastRecommendation";
+import { useGetTransactionAnalyticsQuery } from "@/store/spendTransaction";
 
 const Home = () => {
-  const { userId } = useUserData();
+const {data} = useGetTransactionAnalyticsQuery({})
+
+// console.log(data, "gvfgvgfvfjbvfjbvjfnfjnjf")
 
   // useEffect(() => {
   //   const handleAPI = async () => {
@@ -48,7 +51,7 @@ const Home = () => {
 
   return (
     <div className="w-full grow bg-brown-background text-white min-h-screen pt-30 pb-10 flex flex-col justify-start gap-8 items-center">
-      <WelcomeScreen />
+   <WelcomeScreen /> 
 
       {/* <div className="flex gap-8 justify-center mx-auto">
         <TopPerformingCardSection />

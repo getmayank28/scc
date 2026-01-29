@@ -125,7 +125,9 @@ export default function SpendOptimizerDesktop({
 
     const content = joinTextMessagesByMid(data?.data?.messages);
 
-    const finalData = markdownToJson(content?.at(0)?.content as string);
+    const msg = content?.find(msg => msg?.m_id && msg?.content)?.content
+
+    const finalData = markdownToJson(msg as string);
     // @ts-expect-error some
     const winnerCard = getBestCard(finalData?.cards);
     const payload = {
