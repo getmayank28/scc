@@ -1,3 +1,5 @@
+import { BotRecommendationCreditCardProps } from "@/types/card";
+
 export type ParsedMessage = {
   message: string;
   cards: Record<string, string>[];
@@ -12,15 +14,49 @@ export function containsMarkdownTable(message: string): boolean {
   return tableHeaderPattern.test(message);
 }
 
-export function convertBoldMarkdownToHtml(text: string): string {
-  if (!text) return "";
-  return text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+
+
+export function isCardRecommendationResponse(txt:string) {
+  const text = convertBoldMarkdownToHtml(txt)
+  let data;
+
+  try {
+    data = typeof text === "string" ? JSON.parse(text) : text;
+  } catch {
+    return false;
+  }
+
+  if (!data || typeof data !== "object") return false;
+
+
+  return data.cards.every((card:BotRecommendationCreditCardProps) =>
+    card &&
+    typeof card === "object" &&
+    typeof card.cardName === "string" &&
+    typeof card.returnOnSpend === "string" &&
+    typeof card.applyLink === "string"
+  );
 }
+
+
+
+
+export function convertBoldMarkdownToHtml(text:string) {
+  if (!text) return "";
+
+  return text
+    // remove ```json or ``` (opening fence)
+    .replace(/^```[\w]*\n?/, "")
+    // remove closing ```
+    .replace(/\n?```$/, "")
+    // convert **bold** to <b>
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+}
+
 
 /**
  * Convert markdown table to JSON
  */
-
 function toCamelCase(input: string): string {
   return input
     .toLowerCase()

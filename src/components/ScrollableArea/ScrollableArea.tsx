@@ -1,58 +1,27 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "../ui/card";
 import { RefObject, useEffect, useState } from "react";
-// import SliderInput from "../SliderInput/SliderInput";
-// import SingleSelectInput from "../SliderInput/SingleSelectInput/SingleSelectInput";
-import { ChatMessage } from "@/types/chatMessages";
+import { ChatMessage, MessageSource } from "@/types/chatMessages";
 import {
-  containsMarkdownTable,
   convertBoldMarkdownToHtml,
-  markdownToJson,
+  isCardRecommendationResponse,
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
-// import MultiSelectInput from "../MultiSelectInput/MultiSelectInput";
 import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader";
-// import FormInput from "../FormInput/FormInput";
 import { renderInput } from "@/lib/utils/renderInput";
-
-
-const loadingStates = [
-  {
-    text: "Learning your spending",
-  },
-  {
-    text: "Categorizing your expenses",
-  },
-  {
-    text: "Scanning 500+ credit cards",
-  },
-  {
-    text: "Analyzing rewards, and benefits",
-  },
-  {
-    text: "Matching cards to your lifestyle",
-  },
-  {
-    text: "Optimizing for maximum benefits",
-  },
-  {
-    text: "Running cards comparisons",
-  },
-  {
-    text: "Finding your best match",
-  },
-];
+import { BotRecommendationCreditCardProps } from "@/types/card";
+import { chatLoaderStates } from "@/lib/constants/loader";
 
 interface ChatbotScrollableAreaProps {
   currentMessageId?: string;
   messages: ChatMessage[];
   isTyping?: boolean;
   messagesEndRef?: RefObject<HTMLDivElement | null>;
- handleSend: (
+  handleSend: (
     value: string | Record<string, string | number>,
     id?: string
   ) => void;
-  isSocketLoading?:boolean
+  isSocketLoading?: boolean
 }
 
 export const ChatbotScrollableArea = ({
@@ -80,65 +49,74 @@ export const ChatbotScrollableArea = ({
 
   if (!messages) return;
 
-  const getContent = (content: string) => markdownToJson(content);
-  
+
+  const getStyles = (source: MessageSource, m_id: string, content?: string) => {
+    const container = `flex gap-3 ${source === "user" ? "flex-row-reverse" : "flex-row"
+      } transition-opacity duration-500 ease-in ${visibleMessages.has(m_id) ? "opacity-100" : "opacity-0"
+      }`
+    const containerAnimation = visibleMessages.has(m_id)
+      ? "fadeIn 0.5s ease-in forwards"
+      : "none"
+
+    const cardContainer = `flex flex-col ${source === "user" ? "items-end" : "items-start"
+      } flex-1 min-w-0`
+
+    const card = content ? `${isCardRecommendationResponse(content)
+      ? "p-0"
+      : "px-4 py-3 max-md:px-3"
+      } gap-0 max-w-[85%] max-md:max-w-[75%] break-words ${source === "user"
+        ? "bg-brown-sidebar text-gray-100 border-primary-orange/50"
+        : `bg-brown-sidebar text-gray-100 ${isCardRecommendationResponse(content)
+          ? "border-none bg-transparent"
+          : "border-brown-border"
+        }`
+      }` : ''
+
+    return {
+      container,
+      containerAnimation,
+      cardContainer,
+      card
+    }
+  }
+
   return (
-    <div className={`flex-1 overflow-hidden ${isSocketLoading?'opacity-0':'opacity-100'}`}>
+    <div className={`flex-1 overflow-hidden ${isSocketLoading ? 'opacity-0' : 'opacity-100'}`}>
       <ScrollArea className="h-full px-4 py-6 max-md:py-2">
         <div className="max-w-4xl mx-auto space-y-6 pb-4">
           {messages.map((message) => (
             <div
               key={message?.m_id}
-              className={`flex gap-3 ${
-                message.source === "user" ? "flex-row-reverse" : "flex-row"
-              } transition-opacity duration-500 ease-in ${
-                visibleMessages.has(message?.m_id) ? "opacity-100" : "opacity-0"
-              }`}
-              style={{
-                animation: visibleMessages.has(message?.m_id)
-                  ? "fadeIn 0.5s ease-in forwards"
-                  : "none",
-              }}
-            >
-              <div
-                className={`flex flex-col ${
-                  message.source === "user" ? "items-end" : "items-start"
-                } flex-1 min-w-0`}
-              >
-                <Card
-                  className={`${
-                    containsMarkdownTable(message?.content)
-                      ? "p-0"
-                      : "px-4 py-3 max-md:px-3"
-                  } gap-0 max-w-[85%] max-md:max-w-[75%] break-words ${
-                    message.source === "user"
-                      ? "bg-brown-sidebar text-gray-100 border-primary-orange/50"
-                      : `bg-brown-sidebar text-gray-100 ${
-                          containsMarkdownTable(message?.content)
-                            ? "border-none bg-transparent"
-                            : "border-brown-border"
-                        }`
-                  }`}
-                >
-                  {containsMarkdownTable(message?.content) ? (
+              className={getStyles(message?.source, message?.m_id)?.container}
+              style={{ animation: getStyles(message?.source, message?.m_id)?.containerAnimation }} >
+
+              <div className={getStyles(message?.source, message?.m_id)?.cardContainer}>
+                <Card className={getStyles(message?.source, message?.m_id, message?.content)?.card} >
+                  {isCardRecommendationResponse(message?.content) ? (
                     <>
-                      <p
+                      {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.startMessage && <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{
-                          __html: convertBoldMarkdownToHtml(
-                            getContent(message?.content)?.message
-                          ),
+                          __html: JSON.parse(convertBoldMarkdownToHtml(message?.content))?.startMessage
+                          ,
                         }}
-                      ></p>
-                      <div className="flex gap-6 mt-6">
-                        {getContent(message?.content)?.cards.map(
-                          (item, index) => {
+                      ></p>}
+                      <div className="flex gap-6 my-6">
+                        {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.cards.map(
+                          (item:BotRecommendationCreditCardProps, index:number) => {
                             return (
-                              <ChatCard key={index} {...item} pattern={index} />
+                              <ChatCard key={index} {...item}/>
                             );
                           }
                         )}
                       </div>
+                      {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.endMessage && <p
+                        className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
+                        dangerouslySetInnerHTML={{
+                          __html: JSON.parse(convertBoldMarkdownToHtml(message?.content))?.endMessage
+                          ,
+                        }}
+                      ></p>}
                     </>
                   ) : (
                     <>
@@ -162,7 +140,7 @@ export const ChatbotScrollableArea = ({
               </div>
             </div>
           ))}
-          {isTyping && <MultiStepChatLoader loadingStates={loadingStates} />}
+          {isTyping && <MultiStepChatLoader loadingStates={chatLoaderStates} />}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
