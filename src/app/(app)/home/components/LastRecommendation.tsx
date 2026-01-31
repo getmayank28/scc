@@ -10,7 +10,7 @@ const LastRecommendation = ()=>{
             variant="caption"
             className="font-bold opacity-100 text-secondary-gray"
           >
-            Last Recommendation
+            Last Card Recommendation
           </Typography>
           <Button
             variant="ghost"

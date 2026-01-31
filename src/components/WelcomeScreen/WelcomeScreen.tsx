@@ -23,12 +23,18 @@ const steps = [
     completed: false,
   },
 ];
-const WelcomeScreen = () => {
+
+interface WelcomeScreenProps {
+  showUserCard: boolean;
+  showRecommendationCard: boolean;
+  showOptimizerCard: boolean;
+}
+const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard }: WelcomeScreenProps) => {
   const { firstName, nameInitials, name } = useUserData();
 
   return (
-    <div className="flex flex-col justify-center max-w-6xl w-full px-6">
-      <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-brown-border p-4 rounded-md">
+    <div className="flex flex-col justify-center max-w-[1330px] w-full px-6">
+      {showUserCard && <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-brown-border p-4 rounded-md">
         <div className="flex gap-3 max-md:gap-2">
           <div className="flex justify-center items-center max-md:w-12 max-md:h-12 rounded-full p-4 border border-brown-border bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
             <Typography
@@ -53,9 +59,8 @@ const WelcomeScreen = () => {
         <Button className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
           Step into smart spending <p className="font-black">→</p>
         </Button>
-      </div>
-
-      <div className="border w-full bg-brown-sidebar overflow-hidden relative border-brown-border px-6 max-md:px-3 py-4 rounded-md mt-12 max-md:mt-6">
+      </div>}
+      {showRecommendationCard && <div className="border w-full bg-brown-sidebar overflow-hidden relative border-brown-border px-6 max-md:px-3 py-4 rounded-md max-md:mt-6">
         <div className="relative z-10">
           <Typography
             variant="body"
@@ -87,8 +92,8 @@ const WelcomeScreen = () => {
         <div className="absolute max-md:opacity-30 -right-28 -top-16 -rotate-24 bg-secondary-orange/30 p-12 rounded-md">
           <CreditCard forShow name={name} background="#111" />
         </div>
-      </div>
-      <div className="border w-full overflow-hidden relative bg-brown-sidebar  border-brown-border px-6 py-4 pb-7 rounded-md mt-12 max-md:px-3 max-md:mt-6">
+      </div>}
+      {showOptimizerCard && <div className="border w-full overflow-hidden relative bg-brown-sidebar  border-brown-border px-6 py-4 pb-7 mt-8 rounded-md max-md:px-3 max-md:mt-6">
         <div className="relative z-10">
           <Typography
             variant="body"
@@ -130,7 +135,7 @@ const WelcomeScreen = () => {
             className="max-md:w-[550px]"
           />
         </div>
-      </div>
+      </div>}
     </div>
   );
 };

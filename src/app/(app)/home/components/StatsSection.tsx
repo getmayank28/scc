@@ -1,5 +1,7 @@
 import Typography from "@/components/Typography/Typography";
+import { calculateRewardsSpendRatio, formatNumber } from "@/lib/utils/number";
 import { BanknoteArrowDown, BanknoteArrowUp, IndianRupee, ListTodo } from "lucide-react";
+import { useMemo } from "react";
 
 const StatsCard = ({
   amount,
@@ -27,27 +29,44 @@ const StatsCard = ({
   </div>
 );
 
-const StatsSection = () => {
+interface StatsProp {
+  totalAmountSpent: number;
+  totalRewardsEarned: number;
+  totalSpendOptimized: number;
+}
+
+const StatsSection = ({ spendAnalytics }: {
+  spendAnalytics: StatsProp
+}) => {
+  const rewardsSpendRatio = useMemo(
+    () =>
+      calculateRewardsSpendRatio(
+        spendAnalytics?.totalRewardsEarned,
+        spendAnalytics?.totalAmountSpent
+      ),
+    [spendAnalytics?.totalRewardsEarned, spendAnalytics?.totalAmountSpent]
+  );
+
   return (
     <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px]">
       <StatsCard
         title="Total amount spend"
-        amount="5K"
+        amount={formatNumber(spendAnalytics?.totalAmountSpent)}
         icon={<BanknoteArrowUp size={24} className="text-secondary-gray mt-2" />}
       />
-       <StatsCard
+      <StatsCard
         title="Total rewards earn"
-        amount="5K"
+        amount={formatNumber(spendAnalytics?.totalRewardsEarned)}
         icon={<BanknoteArrowDown size={24} className="text-secondary-gray mt-2" />}
       />
-       <StatsCard
+      <StatsCard
         title="Rewards/Spend (%)"
-        amount="5K"
+        amount={`${rewardsSpendRatio}%`}
         icon={<IndianRupee size={24} className="text-secondary-gray mt-2" />}
       />
-       <StatsCard
+      <StatsCard
         title="Total spend optimized"
-        amount="5K"
+        amount={formatNumber(spendAnalytics?.totalSpendOptimized)}
         icon={<ListTodo size={24} className="text-secondary-gray mt-2" />}
       />
     </div>

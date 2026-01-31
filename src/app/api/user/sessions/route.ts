@@ -26,12 +26,14 @@ export async function GET() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.ZIJUS_API_TOKEN}`,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_ZIJUS_API_TOKEN}`,
       },
       body: JSON.stringify(payload),
     });
 
     const data = await response.json();
+
+    console.log(data)
 
     return NextResponse.json(data, {
       status: response.status,
