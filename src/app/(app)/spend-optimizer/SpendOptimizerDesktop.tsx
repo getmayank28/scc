@@ -28,6 +28,7 @@ import SpendOptimizerResult from "./SpendOptimizerResult";
 import toast from "react-hot-toast";
 import Typography from "@/components/Typography/Typography";
 import { SpendOptimizerResponseCard } from "@/types/optimizer";
+import { formatCurrency } from "@/lib/utils/number";
 
 export default function SpendOptimizerDesktop({
   selectedCards,
@@ -120,11 +121,7 @@ export default function SpendOptimizerDesktop({
     onAddSpendTransaction?.(payload);
   };
 
-  const formatCurrency = (value: string): string => {
-    if (!value) return "";
-    const number = value.replace(/[^\d]/g, "");
-    return new Intl.NumberFormat("en-IN").format(Number(number));
-  };
+
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value.replace(/[^\d]/g, "");

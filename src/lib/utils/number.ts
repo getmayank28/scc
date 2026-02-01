@@ -14,6 +14,13 @@ export function formatNumber(val:number) {
   }
 
 
+  export const formatCurrency = (value: string): string => {
+    if (!value) return "";
+    const number = value.replace(/[^\d]/g, "");
+    return new Intl.NumberFormat("en-IN").format(Number(number));
+  };
+
+
   export function calculateRewardsSpendRatio(
     totalRewardsEarned?: number | null,
     totalAmountSpent?: number | null,
@@ -29,3 +36,25 @@ export function formatNumber(val:number) {
     return Math.round((earned / total) * factor) / factor;
   }
   
+
+  export function getRedemptionRatio(inrPerPoint:number) {
+    if (inrPerPoint <= 0) return null;
+  
+    if (Number.isInteger(1 / inrPerPoint)) {
+      return `${1 / inrPerPoint}:1`;
+    } else {
+      return `1:${inrPerPoint}`;
+    }
+  }
+
+  export function convertStringToNumber(value:string) {
+    return Number(value.replace(/,/g, ""));
+  }
+
+  export function formatToINR(amount:number) {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }

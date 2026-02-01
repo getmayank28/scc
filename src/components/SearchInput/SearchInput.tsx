@@ -19,6 +19,8 @@ export default function SearchSelect({
   setSelected,
   searchInputRef,
   onClearInput,
+  error,
+  disabled
 }: {
   selected: Card | null;
   setSelected: (card: Card | null) => void;
@@ -26,6 +28,8 @@ export default function SearchSelect({
   setQuery: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
   onClearInput?: () => void;
+  error?:boolean;
+  disabled?:boolean
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   
@@ -65,6 +69,7 @@ export default function SearchSelect({
   return (
     <div ref={wrapperRef} className="relative w-full max-w-md">
       <Input
+        disabled={disabled}
         ref={searchInputRef}
         placeholder="Enter card name..."
         value={selected ? selected.name : query}
@@ -73,7 +78,7 @@ export default function SearchSelect({
           setQuery(e.target.value);
         }}
         onFocus={() => data.length > 0 && setOpen(true)}
-        className="text-white text-lg h-12 border-primary-orange"
+        className={`text-white text-lg h-12  ${error ? "border-destructive" : "border-primary-orange"}`}
       />
 
       {/* Loader */}

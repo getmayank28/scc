@@ -4,7 +4,7 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { Brain, House, MessagesSquare, Search } from "lucide-react";
+import { BadgeIndianRupee, Brain, House, MessagesSquare, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";
@@ -25,6 +25,11 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       label: "Spend Optimizer",
       href: ROUTES.SPEND_OPTIMIZER,
       icon: <Brain className="h-5 w-5 shrink-0 text-neutral-200" />,
+    },
+    {
+      label: "Points Redemption",
+      href: ROUTES.POINTS_REDEMPTION,
+      icon: <BadgeIndianRupee className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
       label: "Explore Cards",

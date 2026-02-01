@@ -22,7 +22,7 @@ const StatsCard = ({
     </div>
     <Typography
       variant="caption"
-      className="text-[12px] capitalize opacity-100 text-secondary-gray font-semibold"
+      className="text-[12px] text-right capitalize opacity-100 text-secondary-gray font-semibold"
     >
       {title}
     </Typography>

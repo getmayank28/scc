@@ -19,7 +19,7 @@ const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommen
                 <Typography variant="h3" className="font-bold text-left my-2"><span className="text-primary-orange">{rest?.netAnnualRewardLoss}</span> annual potential loss</Typography>
             </div>
             <div className="flex gap-4 mt-4">
-                <div>
+                <div className="flex-1">
                     <div className="flex p-3 px-4 justify-start items-center gap-2 bg-brown-sidebar">
                         <BadgeCheck size={20} color="#22C55F" />
                         <Typography variant="caption" className="text-left opacity-100 font-semibold uppercase">why this card</Typography>
@@ -29,7 +29,7 @@ const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommen
                         </Typography>
                     </div>
                 </div>
-                <div>
+                <div className="flex-1">
                     <div className="flex p-3 px-4 justify-start items-center gap-2 bg-brown-sidebar">
                         <BadgeX size={20} color="#FF2C02" />
                         <Typography variant="caption" className="text-left opacity-100 font-semibold uppercase">not ideal for</Typography>
@@ -40,12 +40,11 @@ const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommen
                     </div>
                 </div>
             </div>
-            <div className="flex gap-6 mt-4">
-                <div className="bg-[#372921] max-w-full rounded-sm grow">
+            <div className="flex gap-6 mt-4 mb-10">
+                <div className="bg-[#372921]  max-w-full rounded-sm grow">
                     <div className="flex p-3 px-4 justify-start items-center gap-2 bg-brown-sidebar">
                         <BadgeIndianRupee size={20} color="#AD744A" />
                         <Typography variant="caption" className="text-left text-sm opacity-100 font-semibold uppercase">Category Wise Rewards
-
                         </Typography>
                     </div>
                     {
