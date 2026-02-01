@@ -6,6 +6,7 @@ import { CreditCard, Lightbulb, Target } from "lucide-react";
 import { FormData } from "./data";
 import { MultiStepChatLoader } from "@/components/MultiStepChatLoader/MultiStepChatLoader";
 import { getDashedFormattedValue } from "@/lib/utils/spendTransaction";
+import { SpendOptimizerResponseCard } from "@/types/optimizer";
 
 const loadingStates = [
   {
@@ -34,20 +35,14 @@ const loadingStates = [
   },
 ];
 
-interface PaymentCardBenefit {
-  card: string;
-  bestPaymentPath: string;
-  expectedBenefit: string;
-  howItWorks: string;
-}
 
 const Card = ({
   isActive,
   name,
-  expectedBenefit,
-  howItWorks,
+  benefitValue,
+  whyThisCard,
   benefitInPercentage,
-}: Partial<PaymentCardBenefit> & {
+}: Partial<SpendOptimizerResponseCard> & {
   name: string;
   isActive?: boolean;
   benefitInPercentage: number;
@@ -99,7 +94,7 @@ const Card = ({
             variant="h3"
             className={`font-semibold ${isActive ? "text-primary-orange" : "text-white/90"}`}
           >
-            {expectedBenefit?.toString()?.split(" ")?.at(0)}
+            {benefitValue?.toString()?.split(" ")?.at(0)}
           </Typography>
           <Typography
             variant="caption"
@@ -128,7 +123,7 @@ const Card = ({
             variant="caption"
             className="text-[12px] text-white/60 text-left opacity-100 font-semibold"
           >
-            {howItWorks}
+            {whyThisCard}
           </Typography>
         </div>
       </div>
@@ -165,15 +160,15 @@ const SpendOptimizerResult = ({
   winnerCard,
 }: {
   data: {
-    message: string;
-    cards: PaymentCardBenefit[];
+    startMessage: string;
+    cards: SpendOptimizerResponseCard[];
     endMessage: string;
   } | null;
   open: boolean;
   onChange: () => void;
   formData: FormData;
   isLoading?: boolean;
-  winnerCard?: CardBenefit | null;
+  winnerCard?: SpendOptimizerResponseCard | null;
 }) => {
   const getBenefitInPercentage = (expectedBenefit: string) => {
     const firstDigit = expectedBenefit?.slice(1)?.split(" ")?.at(0);
@@ -227,18 +222,15 @@ const SpendOptimizerResult = ({
               <Tag title={getDashedFormattedValue(formData?.emi)} />
             </div>
             <div className="flex gap-4 py-5 mt-5 overflow-x-auto">
-              {data?.cards?.map((card: PaymentCardBenefit) => (
+              {data?.cards?.map((card: SpendOptimizerResponseCard) => (
                 <Card
-                  key={card?.card}
-                  isActive={
-                    winnerCard?.card?.toLowerCase() ===
-                    card?.card?.toLowerCase()
-                  }
-                  name={card?.card}
-                  expectedBenefit={card?.expectedBenefit}
-                  howItWorks={card?.howItWorks}
+                  key={card?.cardName}
+                  isActive={card?.isBestOption}
+                  name={card?.cardName}
+                  benefitValue={card?.benefitValue}
+                  whyThisCard={card?.whyThisCard}
                   benefitInPercentage={getBenefitInPercentage(
-                    card?.expectedBenefit
+                    card?.benefitValue
                   )}
                 />
               ))}
@@ -262,7 +254,7 @@ const SpendOptimizerResult = ({
                     >
                       Use your{" "}
                       <span className="font-bold text-primary-orange !opacity-100">
-                        {winnerCard?.card}
+                        {winnerCard?.cardName}
                       </span>{" "}
                       for this transaction to maximize your returns
                     </Typography>
@@ -273,7 +265,7 @@ const SpendOptimizerResult = ({
                       Your will get{" "}
                       <span className="font-bold text-secondary-success !opacity-100">
                         {getBenefitInPercentage(
-                          winnerCard?.expectedBenefit as string
+                          winnerCard?.benefitValue as string
                         )}
                         %
                       </span>{" "}

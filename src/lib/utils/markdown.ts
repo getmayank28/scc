@@ -1,7 +1,7 @@
 import { BotRecommendationCreditCardProps } from "@/types/card";
 
 export type ParsedMessage = {
-  message: string;
+  startMessage: string;
   cards: Record<string, string>[];
   endMessage: string;
 };
@@ -76,13 +76,13 @@ export function markdownToJson(mdText: string): ParsedMessage {
   const splitIndex = mdText.indexOf("\n\n|");
   const endIndex = mdText.indexOf("|\n\n");
 
-  const message = splitIndex >= 0 ? mdText.slice(0, splitIndex).trim() : mdText;
+  const startMessage = splitIndex >= 0 ? mdText.slice(0, splitIndex).trim() : mdText;
   const tableMd =
     splitIndex >= 0 ? mdText.slice(splitIndex, endIndex).trim() : "";
   const endMessage = endIndex >= 0 ? mdText.slice(endIndex).trim() : "";
 
   const lines = tableMd.split("\n").filter(Boolean);
-  if (lines.length < 2) return { message, cards: [], endMessage };
+  if (lines.length < 2) return { startMessage, cards: [], endMessage };
 
   // Parse headers
   const headers = lines[0]
@@ -112,5 +112,5 @@ export function markdownToJson(mdText: string): ParsedMessage {
     cards.push(card);
   }
 
-  return { message, cards, endMessage };
+  return { startMessage, cards, endMessage };
 }

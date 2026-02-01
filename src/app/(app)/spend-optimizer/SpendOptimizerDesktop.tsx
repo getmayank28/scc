@@ -13,7 +13,7 @@ import {
 
 import { useChatCommunicationMutation } from "@/store/api";
 import { joinTextMessagesByMid } from "@/lib/utils/content";
-import { markdownToJson, ParsedMessage } from "@/lib/utils/markdown";
+import { convertBoldMarkdownToHtml, ParsedMessage } from "@/lib/utils/markdown";
 import {
   categories,
   emiOptions,
@@ -27,28 +27,7 @@ import useSocket from "@/lib/hooks/useSocket";
 import SpendOptimizerResult from "./SpendOptimizerResult";
 import toast from "react-hot-toast";
 import Typography from "@/components/Typography/Typography";
-
-interface CardBenefit {
-  card: string;
-  bestPaymentPath: string;
-  expectedBenefit: string; // e.g. "₹250"
-  howItWorks: string;
-}
-
-function parseBenefit(amount: string): number {
-  return Number(amount.replace(/[^\d.]/g, ""));
-}
-
-function getBestCard(cards: CardBenefit[]): CardBenefit | null {
-  if (cards?.length === 0) return null;
-
-  return cards?.reduce((maxCard, currentCard) => {
-    const maxBenefit = parseBenefit(maxCard.expectedBenefit);
-    const currentBenefit = parseBenefit(currentCard.expectedBenefit);
-
-    return currentBenefit > maxBenefit ? currentCard : maxCard;
-  });
-}
+import { SpendOptimizerResponseCard } from "@/types/optimizer";
 
 export default function SpendOptimizerDesktop({
   selectedCards,
@@ -82,8 +61,7 @@ export default function SpendOptimizerDesktop({
   const { createChatSessionToken } = useSocket();
 
   const winnerCard = useMemo(() => {
-    //@ts-expect-error some
-    return getBestCard(data?.cards);
+    return data?.cards?.find((card) => card?.isBestOption)
   }, [data?.cards]);
 
   const handleSubmit = async () => {
@@ -125,16 +103,17 @@ export default function SpendOptimizerDesktop({
 
     const content = joinTextMessagesByMid(data?.data?.messages);
 
-    const msg = content?.find(msg => msg?.m_id && msg?.content)?.content
+  
 
-    const finalData = markdownToJson(msg as string);
-    // @ts-expect-error some
-    const winnerCard = getBestCard(finalData?.cards);
+    const msg = content?.find(msg => msg?.m_id && msg?.content)?.content ||''
+    const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
+
+    const winnerCard = finalData?.cards?.find((card:SpendOptimizerResponseCard) => card?.isBestOption)
     const payload = {
       ...formData,
       cardIds: selectedCards?.map((card) => card?.cardId?._id),
-      cardName: winnerCard?.card,
-      expectedBenefit: winnerCard?.expectedBenefit,
+      cardName: winnerCard?.cardName,
+      expectedBenefit: winnerCard?.benefitValue,
     };
 
     setData(finalData);
@@ -407,8 +386,9 @@ export default function SpendOptimizerDesktop({
         isLoading={isLoading}
         formData={formData}
         open={openModal}
+       // @ts-expect-error this is expected
         winnerCard={winnerCard}
-        // @ts-expect-error this is expected
+       // @ts-expect-error this is expected
         data={data}
         onChange={() => setOpenModal(false)}
       />

@@ -5,6 +5,7 @@ import {
 } from "@/store/api";
 // import { getAnonymousId } from "../utils/ananymous";
 import { useMemo } from "react";
+import { CHANNEL } from "../constants/channel";
 
 const useSocket = () => {
   // const [createChatSessionMutation] = useCreateChatSessionMutation();
@@ -77,7 +78,7 @@ const useSocket = () => {
 
     const sessionIdString = sessionId ? `&session_id=${sessionId}` : "";
 
-    return `${prodUrl}?token=${token}${sessionIdString}&language=EN_US&is_audio=false`;
+    return `${prodUrl}?token=${token}${sessionIdString}&language=EN_US&channel=${CHANNEL.CARD_RECOMMENDATION}&is_audio=false`;
   };
 
   return { getSocketUrl, isLoading, error, createChatSessionToken };
