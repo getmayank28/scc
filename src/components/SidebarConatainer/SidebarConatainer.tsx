@@ -4,7 +4,7 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { BadgeIndianRupee, Brain, House, MessagesSquare, Search } from "lucide-react";
+import { BadgeIndianRupee, Brain, HeartHandshake, House, MessagesSquare, Search } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";
@@ -35,6 +35,11 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       label: "Explore Cards",
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
+    },
+    {
+      label: "Help & Support",
+      href: ROUTES.SUPPORT,
+      icon: <HeartHandshake className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
   ];
   const [open, setOpen] = useState(false);

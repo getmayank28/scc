@@ -21,6 +21,7 @@ export const ROUTES = {
   CARD_INDO: "/card-info",
   SPEND_OPTIMIZER: "/spend-optimizer",
   POINTS_REDEMPTION: "/redemption",
+  SUPPORT:'support'
 };
 
 export const PUBLIC_ROUTES = [

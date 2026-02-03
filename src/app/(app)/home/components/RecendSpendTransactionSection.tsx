@@ -96,12 +96,12 @@ const RecendSpendTransactionSection = ({spendTransaction}:{spendTransaction:Spen
         >
           Recent Spend Transaction
         </Typography>
-        <Button
+        {/* <Button
           variant="ghost"
           className="cursor-pointer hover:bg-transparent hover:text-white p-0 text-primary-orange opacity-100 font-bold"
         >
           See All
-        </Button>
+        </Button> */}
       </div>
 
       <div className=" flex flex-col gap-4">

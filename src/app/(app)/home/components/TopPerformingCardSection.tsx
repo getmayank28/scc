@@ -20,12 +20,12 @@ const TopPerformingCardSection = ({ topCards }: { topCards: TopCard[] }) => {
         >
           Top Performing Card
         </Typography>
-        <Button
+        {/* <Button
           variant="ghost"
           className="cursor-pointer hover:bg-transparent hover:text-white p-0 text-primary-orange opacity-100 font-bold"
         >
           Manage Cards
-        </Button>
+        </Button> */}
       </div>
       <div className="flex flex-col gap-2 justify-between">
         {

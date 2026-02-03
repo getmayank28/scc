@@ -1,4 +1,5 @@
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import { CHANNEL } from "@/lib/constants/channel";
 import { ZIJUS_BOT_ID, ZIJUS_SESSION_API_URL } from "@/lib/constants/zijus";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -6,6 +7,7 @@ import { NextResponse } from "next/server";
 interface PayloadProps {
   bot_id: string;
   user_id: string | undefined;
+  channel: 'recommendation'
 }
 
 export async function GET() {
@@ -18,6 +20,7 @@ export async function GET() {
     const payload: PayloadProps = {
       bot_id: ZIJUS_BOT_ID,
       user_id: session?.user?._id,
+      channel:CHANNEL.CARD_RECOMMENDATION as 'recommendation'
     };
 
     const response = await fetch(

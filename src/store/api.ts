@@ -128,10 +128,20 @@ export const api = createApi({
         body,
       }),
     }),
+
+    submitFeedback: builder.mutation({
+      query: (feedback:string) => ({
+        url: `feedback`,
+        method: "POST",
+        body:{feedback},
+      }),
+      invalidatesTags: ["UserCards"],
+    }),
   }),
 });
 
 export const {
+  useSubmitFeedbackMutation,
   useGetUserBotChatSessionsDetailsQuery,
   useGetUserBotChatSessionsQuery,
   useGetUserChatSessionQuery,
