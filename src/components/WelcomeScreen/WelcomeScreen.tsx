@@ -33,7 +33,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
   const { firstName, nameInitials, name } = useUserData();
 
   return (
-    <div className="flex flex-col justify-center max-w-[1330px] w-full px-6">
+    <div className="flex flex-col justify-center max-w-[1330px] w-full px-6 max-md:px-0">
       {showUserCard && <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-brown-border p-4 rounded-md">
         <div className="flex gap-3 max-md:gap-2">
           <div className="flex justify-center items-center max-md:w-12 max-md:h-12 rounded-full p-4 border border-brown-border bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
