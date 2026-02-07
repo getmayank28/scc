@@ -4,7 +4,6 @@ import TopPerformingCardSection from "./components/TopPerformingCardSection";
 import RecendSpendTransactionSection from "./components/RecendSpendTransactionSection";
 import StatsSection from "./components/StatsSection";
 import { useGetTransactionAnalyticsQuery, useGetUserSpendTransactionQuery } from "@/store/spendTransaction";
-import { LoaderThree } from "@/components/ui/loader";
 import Typography from "@/components/Typography/Typography";
 import { Button } from "@/components/ui/stateful-button";
 import { useGetUserBotChatSessionsDetailsQuery, useGetUserBotChatSessionsQuery } from "@/store/api";
@@ -62,16 +61,8 @@ const Home = () => {
     return ''
   }, [userLastSessionDetail])
 
-  const isLoading = isFetching && isAnalyticsLoading && userSessionsLoading && userSessionDetailsLoading
-  const isError = isSpendError && isAnalyticsError && userSessionsError && userSessionDetailsError
-
-  if (isLoading) {
-    return (
-      <div className="w-full flex justify-center items-center  bg-brown-background  min-h-screen">
-        <LoaderThree />
-      </div>
-    )
-  }
+  const isLoading = isFetching || isAnalyticsLoading || userSessionsLoading || userSessionDetailsLoading
+  const isError = isSpendError || isAnalyticsError || userSessionsError || userSessionDetailsError
 
   if (isError) {
     return (
@@ -91,15 +82,15 @@ const Home = () => {
 
   return (
     <div className="w-full grow bg-brown-background text-white min-h-screen pt-30 pb-10 max-md:px-5 max-md:py-20 max-md:pb-10 flex flex-col justify-start gap-8 items-center">
-      {haveSpendData ?
+      {haveSpendData || isFetching ?
         <div className="flex gap-8 justify-center mx-auto max-md:w-full max-md:flex-col max-md:gap-4">
-          <TopPerformingCardSection topCards={data?.topCards} />
-          <StatsSection spendAnalytics={data?.spendAnalytics} />
-          <RecendSpendTransactionSection spendTransaction={spendTransaction} />
+          <TopPerformingCardSection isLoading={isFetching} topCards={data?.topCards} />
+          <StatsSection isLoading={isFetching} spendAnalytics={data?.spendAnalytics} />
+          <RecendSpendTransactionSection isLoading={isFetching} spendTransaction={spendTransaction} />
         </div>:<></>
       }
       {
-        (!haveSpendData || !lastRecommendationCards) ? (
+        (!haveSpendData || !lastRecommendationCards) && !isLoading? (
           <WelcomeScreen
             showUserCard={!haveSpendData}
             showRecommendationCard={!lastRecommendationCards || !lastRecommendationCards?.length}
@@ -109,7 +100,7 @@ const Home = () => {
         )
       }
       {
-        lastRecommendationCards?.length ? <LastRecommendation cards={lastRecommendationCards} />:<></>
+        lastRecommendationCards?.length || userSessionsLoading || userSessionDetailsLoading ? <LastRecommendation isLoading={userSessionsLoading || userSessionDetailsLoading} cards={lastRecommendationCards} />:<></>
       }
 
       {/* <Divider className="mt-28 mb-10 max-md:w-[300px] max-md:mt-16"/> */}

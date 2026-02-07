@@ -12,10 +12,11 @@ import { signOut } from "next-auth/react";
 import { ROUTES } from "@/lib/constants/routes";
 import useUserData from "@/lib/hooks/useUserData";
 import Typography from "../Typography/Typography";
+import { Skeleton } from "../ui/skeleton";
 
 export default function ProfileDropdown() {
   const router = useRouter();
-  const { nameInitials } = useUserData();
+  const { nameInitials, isUserDataLoading } = useUserData();
 
   const handleLogout = () => {
     if (typeof window === "undefined") return null;
@@ -26,14 +27,21 @@ export default function ProfileDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex justify-center items-center max-md:w-10 max-md:h-10 rounded-full p-2 border border-[#452D1C] bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
-          <Typography
-            variant="body"
-            className="text-left opacity-100 font-bold text-[#C7C4C6]"
-          >
-            {nameInitials || "UN"}
-          </Typography>
-        </div>
+        {
+          isUserDataLoading || !nameInitials ? (
+            <Skeleton className="w-12 h-12 max-md:w-10 max-md:h-10  rounded-full text-brown-background bg-[#AD744A]" />
+          ) : (
+            <div className="flex justify-center w-12 h-12 items-center max-md:w-10 max-md:h-10 rounded-full p-2 border border-[#452D1C] bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
+              <Typography
+                variant="body"
+                className="text-left opacity-100 font-bold text-[#C7C4C6]"
+              >
+                {nameInitials || "UN"}
+              </Typography>
+            </div>
+          )
+        }
+
         {/* <Avatar className="cursor-pointer bg-secondary-orange">
           <AvatarImage src="/avatar.png" alt="User avatar" />
           <AvatarFallback className="bg-secondary-orange p-2 text-white">{nameInitials}</AvatarFallback>

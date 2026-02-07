@@ -1,3 +1,4 @@
+import { RecentSpendTransactionSectionSkeleton } from "@/components/Loader/Loader";
 import Typography from "@/components/Typography/Typography"
 import dayjs from "dayjs";
 
@@ -83,7 +84,12 @@ interface SpendProps {
 }
 
 
-const RecendSpendTransactionSection = ({spendTransaction}:{spendTransaction:SpendProps[]}) => {
+const RecendSpendTransactionSection = ({spendTransaction,isLoading}:{spendTransaction:SpendProps[];isLoading:boolean}) => {
+
+  if(isLoading){
+    return <RecentSpendTransactionSectionSkeleton/>
+  }
+ 
 
   return (
     <div className="w-md bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:w-full max-md:min-h-fit max-md:p-4">

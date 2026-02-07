@@ -1,3 +1,4 @@
+import { StatsSectionSkeleton } from "@/components/Loader/Loader";
 import Typography from "@/components/Typography/Typography";
 import { calculateRewardsSpendRatio, formatNumber } from "@/lib/utils/number";
 import { BanknoteArrowDown, BanknoteArrowUp, IndianRupee, ListTodo } from "lucide-react";
@@ -35,8 +36,9 @@ interface StatsProp {
   totalSpendOptimized: number;
 }
 
-const StatsSection = ({ spendAnalytics }: {
-  spendAnalytics: StatsProp
+const StatsSection = ({ spendAnalytics,isLoading }: {
+  spendAnalytics: StatsProp;
+  isLoading:boolean
 }) => {
   const rewardsSpendRatio = useMemo(
     () =>
@@ -46,6 +48,12 @@ const StatsSection = ({ spendAnalytics }: {
       ),
     [spendAnalytics?.totalRewardsEarned, spendAnalytics?.totalAmountSpent]
   );
+
+  if(isLoading){
+    return <StatsSectionSkeleton/>
+  }
+
+  
 
   return (
     <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px] max-md:gap-2 max-md:p-4">

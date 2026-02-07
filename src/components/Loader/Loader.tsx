@@ -157,3 +157,156 @@ export const ChatSideBarSkeleton = () => {
     </div>
   );
 };
+
+export const TopPerformingCardSectionSkeleton = () => {
+  return (
+    <div className="w-sm bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:p-4 max-md:w-full max-md:min-h-fit">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
+        <Skeleton className="h-4 w-40 bg-[#AD744A]" />
+      </div>
+
+      {/* Cards */}
+      <div className="flex flex-col gap-2">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center justify-between rounded-lg bg-brown-background p-3"
+          >
+            {/* Card name */}
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-4 w-32 bg-[#AD744A]" />
+              <Skeleton className="h-3 w-24 bg-[#AD744A]" />
+            </div>
+
+            {/* Spend / Reward */}
+            <div className="flex flex-col items-end gap-2">
+              <Skeleton className="h-4 w-16 bg-[#AD744A]" />
+              <Skeleton className="h-3 w-12 bg-[#AD744A]" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export const StatsSectionSkeleton = () => {
+  return (
+    <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px] max-md:gap-2 max-md:p-4">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="w-40 h-30 max-md:w-full border-b-6 border-brown-border flex flex-col justify-between bg-brown-background p-3 rounded-lg"
+        >
+          {/* Top row: icon + amount */}
+          <div className="flex justify-between items-start">
+            {/* Icon placeholder */}
+            <Skeleton className="h-6 w-6 rounded-full bg-[#AD744A]" />
+
+            {/* Amount */}
+            <Skeleton className="h-6 w-20 bg-[#AD744A]" />
+          </div>
+
+          {/* Title */}
+          <Skeleton className="h-3 w-28 self-end bg-[#AD744A]" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
+const TransactionRowSkeleton = () => {
+  return (
+    <div className="flex justify-between items-center">
+      {/* Left side */}
+      <div className="flex items-center gap-2">
+        {/* Avatar */}
+        <Skeleton className="h-10 w-10 rounded-full bg-[#AD744A]" />
+
+        {/* Merchant + date */}
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-36 bg-[#AD744A]" />
+          <Skeleton className="h-3 w-24 bg-[#AD744A]" />
+        </div>
+      </div>
+
+      {/* Right side */}
+      <div className="flex flex-col items-end gap-2">
+        <Skeleton className="h-4 w-16 bg-[#AD744A]" />
+        <Skeleton className="h-3 w-20 bg-[#AD744A]" />
+      </div>
+    </div>
+  )
+}
+
+export const RecentSpendTransactionSectionSkeleton = () => {
+  return (
+    <div className="w-md bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:w-full max-md:min-h-fit max-md:p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
+        <Skeleton className="h-4 w-48 bg-[#AD744A]" />
+      </div>
+
+      {/* Transactions */}
+      <div className="flex flex-col gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <TransactionRowSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export const CreditCardSkeleton = () => {
+  return (
+    <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px] mb-8 lg:mb-0">
+      <div className="absolute inset-0 rounded-lg bg-brown-background border border-secondary-orange overflow-hidden p-4">
+        {/* Top row (chip + card name) */}
+        <div className="flex items-start gap-2 mb-6">
+          <Skeleton className="h-6 w-10 rounded-sm bg-[#AD744A]" />
+          <Skeleton className="h-4 w-40 bg-[#AD744A]" />
+        </div>
+
+        {/* Card number */}
+        <div className="mt-12">
+          <Skeleton className="h-4 w-48 bg-[#AD744A]" />
+        </div>
+
+        {/* Card holder */}
+        <div className="absolute bottom-6 left-4">
+          <Skeleton className="h-4 w-32 bg-[#AD744A]" />
+        </div>
+
+        {/* Visa logo */}
+        <div className="absolute bottom-6 right-4">
+          <Skeleton className="h-8 w-12 bg-[#AD744A]" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export const LastRecommendationSkeleton = () => {
+  return (
+    <div className="bg-brown-sidebar max-w-[1270px] rounded-xl w-full p-4 px-6 max-md:p-4 mx-auto max-md:w-full max-md:max-w-[448px]">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <Skeleton className="h-4 w-80 bg-[#AD744A]" />
+      </div>
+
+      {/* Cards */}
+      <div className="flex justify-between gap-4 max-md:overflow-x-auto max-md:gap-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <CreditCardSkeleton key={index} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
+
+
+
