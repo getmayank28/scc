@@ -65,7 +65,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
         </Sidebar>
       )}
       {!isBlockedRoute && !isAuthBlockedRoute && <LoggedInHeader />}
-      {showHeaderWhileLoggedIn && <LoggedInHeader showBack />}
+      {showHeaderWhileLoggedIn && <LoggedInHeader />}
 
       <div
         className={`w-full ${isBlockedRoute ? "pl-0" : "max-md:pl-0 pl-[28px]"}`}
