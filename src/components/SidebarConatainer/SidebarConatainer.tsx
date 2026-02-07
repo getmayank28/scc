@@ -35,12 +35,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       label: "Explore Cards",
       href: ROUTES.CARD_INDO,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
-    {
-      label: "Help & Support",
-      href: ROUTES.SUPPORT,
-      icon: <HeartHandshake className="h-5 w-5 shrink-0 text-neutral-200" />,
-    },
+    }
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();

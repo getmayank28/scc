@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, User } from "lucide-react";
+import { HeartHandshake, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { ROUTES } from "@/lib/constants/routes";
@@ -42,7 +42,7 @@ export default function ProfileDropdown() {
 
       <DropdownMenuContent
         align="end"
-        className="w-44 bg-background-primary border-primary-orange"
+        className="w-44 border-2 bg-brown-sidebar border-brown-border"
       >
         <DropdownMenuItem
           onClick={() => router.push(ROUTES.PROFILE)}
@@ -50,6 +50,13 @@ export default function ProfileDropdown() {
         >
           <User className="mr-2 h-4 w-4 hover:bg-black" />
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => router.push(ROUTES.SUPPORT)}
+          className="cursor-pointer"
+        >
+          <HeartHandshake className="mr-2 h-4 w-4 hover:bg-black" />
+          Help & Support
         </DropdownMenuItem>
 
         <DropdownMenuItem

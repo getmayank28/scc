@@ -78,8 +78,8 @@ export default function ChatbotUI() {
   return (
     <div className="flex">
       <ChatSidebar />
-
-      <div className="flex w-full mx-auto flex-col pl-[180px] pt-16 h-screen bg-brown-background">
+      
+      <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background">
         <CardSelectorSkeleton
           className={`${isSocketLoading ? "inline" : "hidden"}`}
         />

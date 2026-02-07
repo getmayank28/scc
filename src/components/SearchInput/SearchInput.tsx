@@ -78,7 +78,7 @@ export default function SearchSelect({
           setQuery(e.target.value);
         }}
         onFocus={() => data.length > 0 && setOpen(true)}
-        className={`text-white text-lg h-12  ${error ? "border-destructive" : "border-primary-orange"}`}
+        className={`text-white text-lg h-12 max-md:text-xs  ${error ? "border-destructive" : "border-primary-orange"}`}
       />
 
       {/* Loader */}
@@ -96,8 +96,8 @@ export default function SearchSelect({
 
       {/* Results */}
       {open && data.length > 0 && !selected && (
-        <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-background-primary">
-          <CardContent className="p-1">
+        <UiCard className="absolute z-50 mt-1 w-full max-md:py-2 max-md:px-0 rounded-lg border-secondary-orange bg-background-primary">
+          <CardContent className="p-1 max-md:px-0">
             {data.map((card: Card) => (
               <button
                 key={card._id}
@@ -106,12 +106,12 @@ export default function SearchSelect({
                   setSelected(card);
                   setOpen(false);
                 }}
-                className="flex w-full justify-between rounded-xl px-3 py-2 text-left text-sm group"
+                className="flex w-full justify-between max-md:items-center rounded-xl px-3 py-2 text-left text-sm group"
               >
-                <span className="font-medium text-white group-hover:text-primary-orange">
+                <span className="font-medium max-md:text-[12px] text-white group-hover:text-primary-orange">
                   {card.name}
                 </span>
-                <span className="text-xs font-bold text-primary-orange">
+                <span className="text-xs max-md:text-[8px] font-bold text-primary-orange">
                   {card.bankName}
                 </span>
               </button>

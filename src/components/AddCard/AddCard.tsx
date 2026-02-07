@@ -91,7 +91,7 @@ const AddCards = () => {
         />
         <Button
           disabled={!selected?.name || isAddingCard}
-          className="rounded-full h-12 px-8"
+          className="rounded-full h-12 px-8 max-md:px-4"
           onClick={handleSubmit}
         >
           {isAddingCard && (
@@ -112,9 +112,10 @@ const AddCards = () => {
           userCards?.map(
             (card: { _id: string; cardId: { name: string; _id: string } }) => (
               <CreditCard
+              removeImage
+                background="linear-gradient(135deg,#30251E 60%,#6F4D34 100%,#AD744A 100%)"
                 key={card?._id}
                 isCardSpotlightActive={false}
-                background={"#111"}
                 cardName={card?.cardId?.name}
                 name={name || ""}
                 onRemove={() => handleCardRemove(card?.cardId?._id)}

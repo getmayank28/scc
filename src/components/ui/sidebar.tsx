@@ -79,7 +79,6 @@ export const SidebarBody = (props: React.ComponentProps<typeof motion.div>&{
   return (
     <>
       <DesktopSidebar {...props} />
-      <MobileSidebar {...(props as React.ComponentProps<"div">)} />
     </>
   );
 };
@@ -116,14 +115,21 @@ export const DesktopSidebar = ({
 export const MobileSidebar = ({
   className,
   children,
+  open,
+  setOpen,
   ...props
-}: React.ComponentProps<"div">) => {
-  const { open, setOpen } = useSidebar();
+}:{
+  className?:string;
+  children:React.ReactNode;
+  open?:boolean,
+  setOpen:(open:boolean) => void,
+}) => {
+  // const { open, setOpen } = useSidebar();
   return (
     <>
       <div
         className={cn(
-          "h-10 max-md:hidden px-2 py-4 flex flex-row md:hidden  items-center justify-between bg-background-primary w-full"
+          "h-10 px-2 py-4 flex flex-row md:hidden items-center justify-between bg-background-primary w-full",className
         )}
         {...props}
       >
@@ -144,16 +150,10 @@ export const MobileSidebar = ({
                 ease: "easeInOut",
               }}
               className={cn(
-                "fixed h-full w-full inset-0 bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
+                "fixed h-full w-full border-r-2 border-brown-border inset-0 bg-neutral-900 p-10 z-[100] flex flex-col justify-between",
                 className
               )}
             >
-              <div
-                className="absolute right-10 top-10 z-50text-neutral-200"
-                onClick={() => setOpen(!open)}
-              >
-                <IconX />
-              </div>
               {children}
             </motion.div>
           )}

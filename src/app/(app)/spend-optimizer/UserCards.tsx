@@ -50,7 +50,7 @@ const UserCards = ({
                 return (
                   <div
                     key={card?._id}
-                    className={`shrink-0  flex flex-col cursor-pointer p-3 px-4 max-md:px-2 gap-1 rounded-sm items-start justify-between h-[160px] w-[260px] max-md:w-[300px] border ${userCards?.includes(card?._id) ? "border-primary-orange bg-[linear-gradient(70deg,#30251E_80%,#6F4D34_100%,#AD744A_100%)]" : "bg-secondary-gray/30 border-white/30"}`}
+                    className={`shrink-0  flex flex-col cursor-pointer p-3 px-4 max-md:px-2 gap-1 rounded-sm items-start justify-between h-[160px] w-[260px] max-md:w-[260px] border ${userCards?.includes(card?._id) ? "border-primary-orange bg-[linear-gradient(70deg,#30251E_80%,#6F4D34_100%,#AD744A_100%)]" : "bg-secondary-gray/30 border-white/30"}`}
                     onClick={() => {
                       const isSelected = userCards?.includes(card?._id);
                       if (isSelected) {
@@ -109,7 +109,7 @@ const UserCards = ({
               }
             )}
             <div
-              className="border cursor-pointer px-3 flex flex-col items-center justify-center gap-2 border-dashed border-white/60 rounded-lg h-[160px] w-[260px]"
+              className="border cursor-pointer px-3 flex flex-col items-center justify-center gap-2 border-dashed border-white/60 rounded-lg h-[160px] !w-[260px] max-md:!w-[260px]"
               onClick={navigateToProfile}
             >
               <CirclePlus className="text-white/60" size={60} />

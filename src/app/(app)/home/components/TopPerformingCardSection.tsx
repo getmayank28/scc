@@ -1,5 +1,4 @@
 import Typography from "@/components/Typography/Typography"
-import { Button } from "@/components/ui/button"
 import TopPerformingCard from "./TopPerformingCard"
 import { calculateRewardsSpendRatio, formatNumber } from "@/lib/utils/number";
 
@@ -12,7 +11,7 @@ export interface TopCard {
 
 const TopPerformingCardSection = ({ topCards }: { topCards: TopCard[] }) => {
   return (
-    <div className="w-sm bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px]">
+    <div className="w-sm bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:p-4 max-md:w-full max-md:min-h-fit">
       <div className="flex justify-between items-center mb-2">
         <Typography
           variant="caption"

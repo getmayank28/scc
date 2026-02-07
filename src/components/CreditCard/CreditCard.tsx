@@ -237,14 +237,14 @@ const CreditCard = ({
           )}
 
           {/* Card Number */}
-          <div className="absolute top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 text-lg">
+          <div className="absolute max-md:text-sm top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 text-lg">
             {number || "XXXX XXXX XXXX XXXX"}
           </div>
 
           {/* Card Details */}
           <div className="absolute top-[61%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
             <div className="flex flex-col w-[150px]">
-              <span className="text-[16px] font-medium capitalize">
+              <span className="text-[16px] max-md:text-xs font-medium capitalize">
                 {name || "Jhon Doe"}
               </span>
             </div>

@@ -1,45 +1,56 @@
 import { useState } from "react";
-import { Brain, CreditCard, Home, MessagesSquare, User } from "lucide-react";
+import { BadgeIndianRupee, Brain, Home, MessagesSquare, Search } from "lucide-react";
+import { ROUTES } from "@/lib/constants/routes";
+import { usePathname, useRouter } from "next/navigation";
 
 
 const navs = [
-    {
-      id:'home', 
-      icon:Home
-    }, 
-    {
-      id:'chat', 
-      icon:MessagesSquare
-    }, 
-    {
-      id:'Spend Optimizer', 
-      icon:Brain
-    }, 
-    {
-      id:'cards', 
-      icon:CreditCard
-    },
-    {
-      id:'profile', 
-      icon:User
-    }
-  ]
-  
-  const BottomBar = () => {
-    const [selected, setSelected] = useState('chat')
-    
-    return (
-      <div className="bg-black shadow-2xl hidden z-[9999] p-4 max-md:flex justify-between fixed bottom-0 left-0 right-0">
-        {
-          navs?.map(ele => (
-            <button key={ele?.id} className={`h-16 w-16 ${selected === ele?.id?'bg-secondary-orange':'bg-background-primary'}  rounded-full flex justify-center items-center`}
-            onClick={() => setSelected(ele?.id)}>
-            <ele.icon color="#fff" />
-          </button>
-          ))
-        }
-      </div>
-    );
-  };
+  {
+    id: 'info',
+    icon: Search,
+    href: ROUTES.CARD_INDO,
+  },
+  {
+    id: 'optimizer',
+    icon: Brain,
+    href: ROUTES.SPEND_OPTIMIZER,
+  },
+  {
+    id: 'home',
+    icon: Home,
+    href: ROUTES.DASHBOARD,
+  },
+  {
+    id: 'chat',
+    icon: MessagesSquare,
+    href: ROUTES.CHAT + "/new",
+  },
+  {
+    id: 'redemption',
+    icon: BadgeIndianRupee,
+    href: ROUTES.POINTS_REDEMPTION,
+  }
+]
 
-  export default BottomBar
+const BottomBar = () => {
+  const [selected, setSelected] = useState('home')
+  const router = useRouter()
+
+  return (
+    <div className="bg-brown-sidebar shadow-2xl hidden z-[9999] p-4 max-md:flex justify-between fixed -bottom-[2px] left-0 right-0">
+      {
+        navs?.map(ele => (
+            <button key={ele?.id} className={`h-14 w-14 ${selected === ele?.id ? 'bg-[#AD744A]' : 'bg-brown-background'}  rounded-full flex justify-center items-center`}
+              onClick={() => {
+                setSelected(ele?.id)
+                router.push(ele?.href)
+              }}>
+              <ele.icon color="#fff" size={28} />
+            </button>
+        ))
+      }
+    </div>
+  );
+};
+
+export default BottomBar

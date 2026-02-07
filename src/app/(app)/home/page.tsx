@@ -90,9 +90,9 @@ const Home = () => {
   const haveSpendData = spendTransaction?.length
 
   return (
-    <div className="w-full grow bg-brown-background text-white min-h-screen pt-30 pb-10 flex flex-col justify-start gap-8 items-center">
+    <div className="w-full grow bg-brown-background text-white min-h-screen pt-30 pb-10 max-md:px-5 max-md:py-20 max-md:pb-10 flex flex-col justify-start gap-8 items-center">
       {haveSpendData &&
-        <div className="flex gap-8 justify-center mx-auto">
+        <div className="flex gap-8 justify-center mx-auto max-md:w-full max-md:flex-col max-md:gap-4">
           <TopPerformingCardSection topCards={data?.topCards} />
           <StatsSection spendAnalytics={data?.spendAnalytics} />
           <RecendSpendTransactionSection spendTransaction={spendTransaction} />

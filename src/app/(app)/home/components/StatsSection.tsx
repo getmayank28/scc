@@ -12,7 +12,7 @@ const StatsCard = ({
   title: string;
   icon: React.ReactNode;
 }) => (
-  <div className="w-40 h-30 border-b-6 border-brown-border flex flex-col justify-between bg-brown-background p-3 rounded-lg">
+  <div className="w-40 h-30 max-md:w-full border-b-6 border-brown-border flex flex-col justify-between bg-brown-background p-3 rounded-lg">
     <div className="flex justify-between items-start">
       {icon}
 
@@ -48,7 +48,7 @@ const StatsSection = ({ spendAnalytics }: {
   );
 
   return (
-    <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px]">
+    <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px] max-md:gap-2 max-md:p-4">
       <StatsCard
         title="Total amount spend"
         amount={formatNumber(spendAnalytics?.totalAmountSpent)}

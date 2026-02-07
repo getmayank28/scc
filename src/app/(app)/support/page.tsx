@@ -28,15 +28,15 @@ export default function FeedbackForm() {
   }
 
   return (
-    <div className="flex flex-col p-20 h-screen bg-brown-background">
+    <div className="flex flex-col p-20 max-md:p-4 max-md:pt-20 h-screen bg-brown-background">
       <HeaderText
         containerClassName="items-start"
         title="Help & Support"
         titleVariant="h3"
         titleClassName="font-bold"
       />
-      <div className="grid grid-cols-2 mt-10">
-        <form onSubmit={handleSubmit} className="space-y-4 flex flex-col gap-4 max-w-xl bg-brown-sidebar border border-brown-border rounded-md p-10 py-8">
+      <div className="grid grid-cols-2 mt-10 max-md:mt-2 max-md:grid-cols-1 max-md:gap-10">
+        <form onSubmit={handleSubmit} className="space-y-4 flex flex-col gap-4 max-w-xl max-md:p-4 max-md:space-y-0 bg-brown-sidebar border border-brown-border rounded-md p-10 py-8">
           <div className="space-y-2">
             <Label htmlFor="feedback" className="text-white text-lg">Feedback / Query</Label>
             <Textarea
@@ -45,7 +45,7 @@ export default function FeedbackForm() {
               placeholder="Tell us what you think..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              className="min-h-[140px] text-white"
+              className="min-h-[140px] max-md:min-h-[100px] text-white"
             />
           </div>
 

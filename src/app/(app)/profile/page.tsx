@@ -78,7 +78,7 @@ const Profile = () => {
   };
 
   return (
-    <div className="flex flex-col p-20 h-screen bg-brown-background">
+    <div className="flex flex-col p-20 max-md:p-4 h-screen bg-brown-background max-md:h-fit">
       <HeaderText
         containerClassName="items-start"
         title="Profile"
@@ -89,7 +89,7 @@ const Profile = () => {
         <Typography variant="body" className="text-left font-bold opacity-100">
           Basic info
         </Typography>
-        <div className="grid grid-cols-[3fr_3fr_1fr] gap-5 mt-2">
+        <div className="grid grid-cols-[3fr_3fr_1fr] max-md:grid-cols-1 max-md:gap-3 gap-5 mt-2">
           <div className="space-y-2">
             <Label
               htmlFor="name"
@@ -189,7 +189,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-6 max-md:mt-10">
         <Typography variant="body" className="text-left font-bold opacity-100">
           Cards
         </Typography>

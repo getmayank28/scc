@@ -10,8 +10,14 @@ import { FeatureFlagProvider } from "@/contexts/FeatureContext";
 import { featureFlags } from "@/lib/constants/featureFlags";
 import { ChatContextProvider } from "@/contexts/ChatContext";
 import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
+import BottomBar from "../BottomBar/BottomBar";
+import { usePathname } from "next/navigation";
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
+
+  const pathname = usePathname()
+  const isHiddenRoute = pathname?.includes('/chat') || ['/profile', '/support']?.includes(pathname)
+
   return (
     <SessionProvider>
       <FeatureFlagProvider flags={featureFlags}>
@@ -22,7 +28,10 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
               <StateProviders>
                 <WebSocketConnectionProvider>
                   <SignInModal />
+                 { isHiddenRoute?<></>:<BottomBar/>}
+                  <div className={`${isHiddenRoute?'max-md:pb-0':'max-md:pb-22'}`}>
                   <SidebarContainer>{children}</SidebarContainer>
+                  </div>
                 </WebSocketConnectionProvider>
               </StateProviders>
             </WaitlistProvider>

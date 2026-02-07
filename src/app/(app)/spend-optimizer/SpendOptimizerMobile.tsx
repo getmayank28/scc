@@ -1,10 +1,18 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { X, ChevronDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { categories, emiOptions, paymentMethods } from "./data";
+import { categories, emiOptions, paymentMethods, SpendTransaction } from "./data";
+import toast from "react-hot-toast";
+import { CreditCard } from "@/types/card";
+import { joinTextMessagesByMid } from "@/lib/utils/content";
+import { convertBoldMarkdownToHtml, ParsedMessage } from "@/lib/utils/markdown";
+import { SpendOptimizerResponseCard } from "@/types/optimizer";
+import useSocket from "@/lib/hooks/useSocket";
+import { useChatCommunicationMutation } from "@/store/api";
+import SpendOptimizerResult from "./SpendOptimizerResult";
 
 interface FormData {
   category: string;
@@ -76,8 +84,8 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
         className="fixed inset-0 bg-black/60 z-40 transition-opacity duration-300"
         onClick={onClose}
       />
-      <div className="fixed inset-x-0 bottom-0 z-50 animate-slide-up">
-        <div className="bg-background-primary min-h-[350px] border-t border-primary-orange rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <div className="fixed inset-x-0 bottom-0 z-[9999] animate-slide-up">
+        <div className="bg-brown-background min-h-[350px] border-t border-primary-orange rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <h3 className="text-lg font-bold text-white">{title}</h3>
             <button
@@ -93,7 +101,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
               <Button
                 variant="outline"
                 onClick={onSecondaryClick}
-                className="flex-1 h-12 border-white/20 text-white hover:bg-white/5"
+                className="flex-1 h-12 border-brown-border text-white hover:bg-white/5"
               >
                 {secondaryLabel}
               </Button>
@@ -102,7 +110,7 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
               <Button
                 onClick={onPrimaryClick}
                 disabled={disabledPrimary}
-                className="flex-1 h-12 bg-secondary-orange hover:bg-secondary-orange/90 disabled:bg-secondary-orange/50 text-white flex items-center justify-center gap-2"
+                className="flex-1 h-12 bg-primary-orange hover:bg-secondary-orange/90 disabled:bg-secondary-orange/50 text-white flex items-center justify-center gap-2"
               >
                 {primaryLabel}
               </Button>
@@ -114,7 +122,14 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
   );
 };
 
-export default function SpendOptimizerMobile() {
+export default function SpendOptimizerMobile({
+  selectedCards,
+  isCardsLoading,
+  onAddSpendTransaction }: {
+    selectedCards: CreditCard[];
+    isCardsLoading: boolean;
+    onAddSpendTransaction: (payload: SpendTransaction) => void;
+  }) {
   const [formData, setFormData] = useState<FormData>({
     category: "",
     categoryLabel: "",
@@ -130,15 +145,16 @@ export default function SpendOptimizerMobile() {
     amount: "",
     merchant: "",
   });
-
+  const [data, setData] = useState<ParsedMessage | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
   const [currentField, setCurrentField] = useState<FieldName | null>(null);
   const [stepContent, setStepContent] = useState<FieldName | null>(null);
-
+  const [openModal, setOpenModal] = useState(false);
   // Refs for auto-focus
   const amountInputRef = React.useRef<HTMLInputElement>(null);
   const merchantInputRef = React.useRef<HTMLInputElement>(null);
-
+  const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
+  const { createChatSessionToken } = useSocket();
   const fieldOrder: FieldName[] = [
     "category",
     "amount",
@@ -149,7 +165,7 @@ export default function SpendOptimizerMobile() {
 
   const getNextUnfilledField = (startField: FieldName): FieldName | null => {
     const startIndex = fieldOrder.indexOf(startField);
-    
+
     for (let i = startIndex + 1; i < fieldOrder.length; i++) {
       const field = fieldOrder[i];
       if (!formData[field]) {
@@ -220,13 +236,13 @@ export default function SpendOptimizerMobile() {
 
     // Check if there are any unfilled fields after this one
     const nextUnfilled = getNextUnfilledField(fieldName);
-    
+
     if (nextUnfilled) {
       setStepContent(null);
       setTimeout(() => {
         setStepContent(nextUnfilled);
         setCurrentField(nextUnfilled);
-        
+
         // Auto-focus the next input field after animation
         setTimeout(() => {
           if (nextUnfilled === "amount" && amountInputRef.current) {
@@ -244,7 +260,11 @@ export default function SpendOptimizerMobile() {
     }
   };
 
-  const handleSubmit = (): void => {
+  const winnerCard = useMemo(() => {
+    return data?.cards?.find((card) => card?.isBestOption)
+  }, [data?.cards]);
+
+  const handleSubmit = async () => {
     const newErrors: FormErrors = {
       category: !formData.category,
       amount: !formData.amount || formData.amount === "0",
@@ -256,10 +276,44 @@ export default function SpendOptimizerMobile() {
     setErrors(newErrors);
 
     const hasErrors = Object.values(newErrors).some((error) => error);
-    if (!hasErrors) {
-      alert("Form submitted! Check console for data.");
+    if (hasErrors) {
       console.log("Form Data:", formData);
+      return
     }
+
+    if (!selectedCards?.length) {
+      toast.error("Please add your cards to start optimizing your spend");
+      return;
+    }
+    const token = await createChatSessionToken();
+    let cardNames = "";
+    selectedCards?.forEach((card) => {
+      cardNames = cardNames + card?.cardId?.name + " ,";
+    });
+    const emiOption =
+      formData?.emi === "no-emi" ? "" : `my emi method is ${formData?.emi}`;
+
+    const message = `<I have ${selectedCards?.length} ${cardNames},  my spend category is ${formData?.category}, my spend amount is ${formData?.amount}, platform/app I am going to use ${formData?.merchant} , I a paying by ${formData?.paymentMethod}, ${emiOption}, which credit card I should use for maximum benefits only for this transaction>`;
+    setOpenModal(true);
+    const data = await communicateToBot({ message, token });
+
+    const content = joinTextMessagesByMid(data?.data?.messages);
+
+
+
+    const msg = content?.find(msg => msg?.m_id && msg?.content)?.content || ''
+    const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
+
+    const winnerCard = finalData?.cards?.find((card: SpendOptimizerResponseCard) => card?.isBestOption)
+    const payload = {
+      ...formData,
+      cardIds: selectedCards?.map((card) => card?.cardId?._id),
+      cardName: winnerCard?.cardName,
+      expectedBenefit: winnerCard?.benefitValue,
+    };
+
+    setData(finalData);
+    onAddSpendTransaction?.(payload);
   };
 
   const formatCurrency = (value: string): string => {
@@ -323,12 +377,14 @@ export default function SpendOptimizerMobile() {
             title: "",
           };
       }
+
+      
     },
     [currentField, tempFormData.amount, tempFormData.merchant]
   );
-
+console.log(formData, data, winnerCard, "fjbvfhbhvbhfbhvbfh")
   return (
-    <div className="bg-background-primary py-6 pt-8 hidden max-md:flex flex-col">
+    <div className="bg-brown-background py-6 pt-8 hidden max-md:flex max-md:pb-0 flex-col">
       <style>{`
         @keyframes slide-up {
           from {
@@ -343,7 +399,7 @@ export default function SpendOptimizerMobile() {
         }
       `}</style>
 
-      <div className="w-full flex-1 overflow-auto pb-20">
+      <div className="w-full flex-1 overflow-auto pb-0">
         <div className="flex flex-col gap-3 mb-6">
           {/* Category Selection */}
           <div className="space-y-2">
@@ -355,11 +411,10 @@ export default function SpendOptimizerMobile() {
             </Label>
             <button
               onClick={() => openField("category")}
-              className={`w-full h-12 px-4 rounded-lg border ${
-                errors.category
+              className={`w-full h-12 px-4 rounded-lg border ${errors.category
                   ? "border-destructive"
                   : "border-secondary-orange"
-              } bg-background-primary text-white text-left flex items-center justify-between transition-all`}
+                } text-white text-left flex items-center justify-between transition-all`}
             >
               <span
                 className={
@@ -387,9 +442,8 @@ export default function SpendOptimizerMobile() {
             </Label>
             <button
               onClick={() => openField("amount")}
-              className={`w-full h-12 px-4 rounded-lg border ${
-                errors.amount ? "border-destructive" : "border-secondary-orange"
-              } bg-background-primary text-white text-left flex items-center justify-between transition-all`}
+              className={`w-full h-12 px-4 rounded-lg border ${errors.amount ? "border-destructive" : "border-secondary-orange"
+                } text-white text-left flex items-center justify-between transition-all`}
             >
               <span
                 className={formData.amount ? "text-white" : "text-white/40"}
@@ -416,11 +470,10 @@ export default function SpendOptimizerMobile() {
             </Label>
             <button
               onClick={() => openField("merchant")}
-              className={`w-full h-12 px-4 rounded-lg border ${
-                errors.merchant
+              className={`w-full h-12 px-4 rounded-lg border ${errors.merchant
                   ? "border-destructive"
                   : "border-secondary-orange"
-              } bg-background-primary text-white text-left flex items-center justify-between transition-all`}
+                } text-white text-left flex items-center justify-between transition-all`}
             >
               <span
                 className={formData.merchant ? "text-white" : "text-white/40"}
@@ -446,11 +499,10 @@ export default function SpendOptimizerMobile() {
             </Label>
             <button
               onClick={() => openField("paymentMethod")}
-              className={`w-full h-12 px-4 rounded-lg border ${
-                errors.paymentMethod
+              className={`w-full h-12 px-4 rounded-lg border ${errors.paymentMethod
                   ? "border-destructive"
                   : "border-secondary-orange"
-              } bg-background-primary text-white text-left flex items-center justify-between transition-all`}
+                } text-white text-left flex items-center justify-between transition-all`}
             >
               <span
                 className={
@@ -479,9 +531,8 @@ export default function SpendOptimizerMobile() {
             </Label>
             <button
               onClick={() => openField("emi")}
-              className={`w-full h-12 px-4 rounded-lg border ${
-                errors.emi ? "border-destructive" : "border-secondary-orange"
-              } bg-background-primary text-white text-left flex items-center justify-between transition-all`}
+              className={`w-full h-12 px-4 rounded-lg border ${errors.emi ? "border-destructive" : "border-secondary-orange"
+                } text-white text-left flex items-center justify-between transition-all`}
             >
               <span
                 className={formData.emiLabel ? "text-white" : "text-white/40"}
@@ -499,12 +550,12 @@ export default function SpendOptimizerMobile() {
         </div>
 
         {/* Fixed Bottom Button */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background-primary border-t border-white/10">
+        <div className="py-4 border-t border-white/10 mt-10">
           <Button
             onClick={handleSubmit}
             className="w-full h-12 text-base text-white font-semibold"
           >
-            Find Best Card
+            Optimize spend
           </Button>
         </div>
       </div>
@@ -529,7 +580,7 @@ export default function SpendOptimizerMobile() {
                   onClick={() =>
                     handleFieldSubmit("category", cat.value, cat.label)
                   }
-                  className="w-full text-sm py-3 px-3 rounded-lg border border-white/20 hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
+                  className="w-full bg-brown-sidebar text-sm py-3 px-3 rounded-lg border border-brown-border hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
                 >
                   <Icon className="w-5 h-5 text-primary-orange" />
                   <span className="text-white font-medium">{cat.label}</span>
@@ -557,7 +608,7 @@ export default function SpendOptimizerMobile() {
                   const value = e.target.value.replace(/[^\d]/g, "");
                   setTempFormData({ ...tempFormData, amount: value });
                 }}
-                className="h-13 pl-10 pr-4 border-secondary-orange bg-background-primary text-white text-lg focus:ring-2 focus:ring-secondary-orange"
+                className="h-13 pl-10 pr-4 border-secondary-orange text-white text-lg focus:ring-2 focus:ring-secondary-orange"
               />
             </div>
 
@@ -572,7 +623,7 @@ export default function SpendOptimizerMobile() {
                       amount: preset.toString(),
                     })
                   }
-                  className="flex-1 h-9  border-white/20 text-white text-xs hover:border-secondary-orange hover:bg-secondary-orange/10"
+                  className="flex-1 h-9  border-brown-border text-white text-xs hover:border-secondary-orange hover:bg-secondary-orange/10"
                 >
                   ₹{formatCurrency(preset.toString())}
                 </Button>
@@ -593,7 +644,7 @@ export default function SpendOptimizerMobile() {
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                 setTempFormData({ ...tempFormData, merchant: e.target.value })
               }
-              className="h-14 px-4 border-secondary-orange bg-background-primary text-white focus:ring-2 focus:ring-secondary-orange"
+              className="h-14 px-4 border-secondary-orange text-white focus:ring-2 focus:ring-secondary-orange"
             />
           </div>
         )}
@@ -607,7 +658,7 @@ export default function SpendOptimizerMobile() {
                 onClick={() =>
                   handleFieldSubmit("paymentMethod", method.value, method.label)
                 }
-                className="w-full text-sm py-3 px-3 rounded-lg border border-white/20 hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
+                className="w-full bg-brown-sidebar text-sm py-3 px-3 rounded-lg border border-brown-border hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
               >
                 <span className="text-white font-medium">{method.label}</span>
               </button>
@@ -624,7 +675,7 @@ export default function SpendOptimizerMobile() {
                 onClick={() =>
                   handleFieldSubmit("emi", option.value, option.label)
                 }
-                className="w-full text-sm py-3 px-3 rounded-lg border border-white/20 hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
+                className="w-full text-sm py-3 px-3 rounded-lg border bg-brown-sidebar border-brown-border hover:border-secondary-orange hover:bg-secondary-orange/10 transition-all flex items-center gap-3 text-left"
               >
                 <span className="text-white font-medium">{option.label}</span>
               </button>
@@ -632,6 +683,16 @@ export default function SpendOptimizerMobile() {
           </div>
         )}
       </BottomSheet>
+      <SpendOptimizerResult
+        isLoading={isLoading}
+        formData={formData}
+        open={openModal}
+        // @ts-expect-error this is expected
+        winnerCard={winnerCard}
+        // @ts-expect-error this is expected
+        data={data}
+        onChange={() => setOpenModal(false)}
+      />
     </div>
   );
 }

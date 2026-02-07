@@ -20,7 +20,7 @@ const MultiSelectInput = ({
   const [selectedOptions, setSelectedOptions] = useState([]);
   return (
     <div>
-      <div className="grid grid-cols-3 gap-4 mt-3">
+      <div className="grid grid-cols-3 max-md:grid-cols-2 max-md:gap-2 gap-4 mt-3">
         {options?.map((ele) => (
           <div key={ele.value} className="flex gap-2 items-center">
             <Checkbox
@@ -48,7 +48,7 @@ const MultiSelectInput = ({
                   setSelectedOptions((prev) => [...prev, ele.value]);
                 }
               }}
-              className="w-6 h-6 data-[state=checked]:border-primary-orange border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
+              className="w-6 h-6 max-md:w-5 max-md:h-5 data-[state=checked]:border-primary-orange border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
             />
             <Typography variant="caption" className="text-left">
               {ele?.label}
@@ -60,7 +60,7 @@ const MultiSelectInput = ({
      <Button
         onClick={() => onSubmit?.(selectedOptions)}
         disabled={!selectedOptions?.length || disabled}
-        className="ml-auto mt-4 px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-primary-orange cursor-pointer"
+        className="ml-auto max-md:w-full mt-4 px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-primary-orange cursor-pointer"
       >
         Submit
       </Button>

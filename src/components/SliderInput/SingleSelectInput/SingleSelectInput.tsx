@@ -28,7 +28,7 @@ export default function SingleSelectInput({
 
   return (
     <div className="w-full max-w-4xl mx-auto p-0 mt-4 max-md:h-auto max-md:mt-2">
-      <div className="flex flex-wrap gap-4">
+      <div className="flex flex-wrap gap-4 max-md:gap-2">
         {options.map((platform) => (
           <Button
             key={platform?.value}

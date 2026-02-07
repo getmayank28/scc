@@ -14,7 +14,16 @@ const useNav = () => {
 
   const goBack = () => router.back();
 
-  return { goToChat, goBack, goToSignIn, goToCardCategory, navigateToProfile };
+  const goToHome = () => router.push(ROUTES.LOGGED_IN_HOME);
+
+  return {
+    goToChat,
+    goBack,
+    goToSignIn,
+    goToCardCategory,
+    navigateToProfile,
+    goToHome,
+  };
 };
 
 export default useNav;

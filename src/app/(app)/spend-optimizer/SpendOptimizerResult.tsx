@@ -49,18 +49,19 @@ const Card = ({
 }) => {
   return (
     <div
-      className={`border min-w-[400px] flex-shrink-0 relative ${isActive ? "border-primary-orange" : "border-brown-border"} bg-brown-sidebar p-5 rounded-lg max-w-md`}
+      className={`border min-w-[400px] max-md:flex max-md:flex-col max-md:justify-between max-md:min-w-[280px] max-md:max-w-[290px] max-md:p-3 flex-shrink-0 relative ${isActive ? "border-primary-orange" : "border-brown-border"} bg-brown-sidebar p-5 rounded-lg max-w-md`}
     >
       {isActive && (
         <div className="absolute -top-[12px] bg-primary-orange rounded-full w-[90px] py-1 px-2 flex justify-center items-center">
           <Typography
             variant="caption"
-            className="text-[10px] text-left opacity-100 uppercase font-black"
+            className="text-[10px] max-md:text-[9px] text-left opacity-100 uppercase font-black"
           >
             best choice
           </Typography>
         </div>
       )}
+      <>
       <div className="flex justify-between items-center">
         <div>
           <Typography
@@ -76,13 +77,13 @@ const Card = ({
             Cashback specialist
           </Typography> */}
         </div>
-        <div className="bg-white/10 rounded-md p-2 px-4">
+        <div className="bg-white/10 rounded-md p-2 px-4 max-md:hidden">
           <CreditCard
             className={`${isActive ? "text-primary-orange" : "text-white/70"}`}
           />
         </div>
       </div>
-      <div className="my-5">
+      <div className="my-5 max-md:my-3">
         <Typography
           variant="caption"
           className="text-[12px] text-left opacity-100 text-[#617087] uppercase font-bold tracking-[1px]"
@@ -104,9 +105,10 @@ const Card = ({
           </Typography>
         </div>
       </div>
+      </>
 
       <div
-        className={`p-3 flex gap-1 border ${isActive ? "border-secondary-orange/70 bg-secondary-orange/20" : "border-white/20 bg-white/5"}    rounded-md mt-5`}
+        className={`p-3 flex gap-1 border ${isActive ? "border-secondary-orange/70 bg-secondary-orange/20" : "border-white/20 bg-white/5"}    rounded-md mt-5 max-md:mt-0`}
       >
         <Target
           size={16}
@@ -115,13 +117,13 @@ const Card = ({
         <div>
           <Typography
             variant="caption"
-            className="text-[10px] text-left opacity-100 uppercase font-bold tracking-[1px]"
+            className="text-[10px] max-md:text-[9px] text-left opacity-100 uppercase font-bold tracking-[1px]"
           >
             How It Works
           </Typography>
           <Typography
             variant="caption"
-            className="text-[12px] text-white/60 text-left opacity-100 font-semibold"
+            className="text-[12px] max-md:text-[10px] text-white/60 text-left opacity-100 font-semibold"
           >
             {whyThisCard}
           </Typography>
@@ -133,23 +135,16 @@ const Card = ({
 
 const Tag = ({ title }: { title: string }) => {
   return (
-    <div className="bg-brown-sidebar p-2 px-3 border border-white/10 rounded-md">
+    <div className="bg-brown-sidebar p-2 px-3 max-md:py-1 max-md:px-2 border border-white/10 rounded-md">
       <Typography
         variant="caption"
-        className="text-[10px] text-left opacity-100 text-white/80 capitalize font-bold tracking-[1px]"
+        className="text-[10px] max-md:text-[8px] text-left opacity-100 text-white/80 capitalize font-bold tracking-[1px]"
       >
         {title}
       </Typography>
     </div>
   );
 };
-
-interface CardBenefit {
-  card: string;
-  bestPaymentPath: string;
-  expectedBenefit: string; // e.g. "₹250"
-  howItWorks: string;
-}
 
 const SpendOptimizerResult = ({
   data,
@@ -188,7 +183,7 @@ const SpendOptimizerResult = ({
       onClose={onChange}
       removeCloseButton
       allowOutsideClickClose={false}
-      className="m-10 p-10 h-fit min-h-[70vh] border-2 border-brown-border  bg-brown-background w-[900px] min-w-[950px] max-w-[80vw]"
+      className="m-10 p-10 h-fit min-h-[70vh] max-md:min-h-[100vh] max-md:!rounded-[0px] max-md:border-3 max-md:p-4 max-md:w-full max-md:min-w-full border-2 border-brown-border  bg-brown-background w-[900px] min-w-[950px] max-w-[80vw]"
     >
       {/* 996 758 */}
       <div className="flex flex-col justify-between">
@@ -199,10 +194,10 @@ const SpendOptimizerResult = ({
         ) : (
           <div>
             <div className="flex justify-between items-center">
-              <div className="bg-primary-orange/30 border border-primary-orange rounded-full w-[140px] py-2 px-2 flex justify-center items-center">
+              <div className="bg-primary-orange/30 border border-primary-orange rounded-full w-[140px] max-md:w-fit max-md:py-1 py-2 px-2 flex justify-center items-center">
                 <Typography
                   variant="caption"
-                  className="text-[12px] text-left opacity-100 uppercase font-black"
+                  className="text-[12px] max-md:text-[8px] text-left opacity-100 uppercase font-black"
                 >
                   current spend
                 </Typography>
@@ -211,7 +206,7 @@ const SpendOptimizerResult = ({
                 Got it
               </Button>
             </div>
-            <Typography variant="h3" className="text-left font-bold my-3">
+            <Typography variant="h3" className="text-left font-bold max-md:text-xl my-3 max-md:mt-10">
               Optimizing rewards for{" "}
               <span className="text-primary-orange">₹{formData?.amount}</span>
             </Typography>
@@ -235,34 +230,28 @@ const SpendOptimizerResult = ({
                 />
               ))}
             </div>
-            <div className="w-full flex gap-2 justify-start items-center rounded-lg border p-4 py-3 border-brown-border">
-              <div className="flex gap-4 justify-start items-center">
-                <div className="bg-primary-orange rounded-full p-3">
-                  <Lightbulb size={30} className="text-white" />
+            <div className="w-full flex gap-2 max-md:p-3 max-md:mt-3 justify-start items-center rounded-lg border p-4 py-3 border-brown-border">
+              <div className="flex gap-4 justify-start items-center max-md:items-start max-md:gap-2">
+                <div className="bg-primary-orange rounded-full p-3 max-md:w-10 max-md:h-10 max-md:flex max-md:justify-center max-md:items-center">
+                  <Lightbulb size={30} className="text-white max-md:w-[20px]" />
                 </div>
                 <div>
                   <Typography
                     variant="body"
-                    className="text-left text-[20px] opacity-100 font-semibold text-white"
+                    className="text-left text-[20px] max-md:text-sm opacity-100 font-semibold text-white"
                   >
                     Recommendation
                   </Typography>
                   <div>
                     <Typography
                       variant="caption"
-                      className="text-[14px] text-left font-semibold opacity-100"
+                      className="text-[14px] max-md:text-[12px] text-left font-semibold opacity-100"
                     >
                       Use your{" "}
                       <span className="font-bold text-primary-orange !opacity-100">
                         {winnerCard?.cardName}
                       </span>{" "}
-                      for this transaction to maximize your returns
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      className="text-[14px] text-left font-semibold opacity-100"
-                    >
-                      Your will get{" "}
+                      for this transaction to maximize your returns.  Your will get{" "}
                       <span className="font-bold text-secondary-success !opacity-100">
                         {getBenefitInPercentage(
                           winnerCard?.benefitValue as string

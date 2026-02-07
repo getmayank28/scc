@@ -26,7 +26,6 @@ const PointRedemption = () => {
   const { handleRedemptionSubmit, isRedemptionLoading, redemptionOptionsData, redemptionRawData: redemptionData } = useRedemptionData()
 
 
-
   const handleSubmit = async () => {
     if (!points && !selected) {
       setErrors({ points: true, card: true })
@@ -46,7 +45,7 @@ const PointRedemption = () => {
 
 
   return (
-    <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-24 p-20 min-h-screen">
+    <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 min-h-screen">
       <HeaderText
         containerClassName="items-start"
         title="Points Redemption"
@@ -76,12 +75,12 @@ const PointRedemption = () => {
           placeholder="Enter points..."
           value={points}
           onChange={(e) => setPoints(e.target.value)}
-          className={`h-12 max-w-md text-lg text-white ${errors.points ? "border-destructive" : "border-primary-orange"
+          className={`h-12 max-md:text-xs max-w-md text-lg text-white ${errors.points ? "border-destructive" : "border-primary-orange"
             }`}
         />
         <Button
           disabled={isRedemptionLoading}
-          className="rounded-lg h-12 w-xl px-8 bg-primary-orange/70"
+          className="rounded-lg h-12 w-xl max-md:w-full px-8 bg-primary-orange/70"
           onClick={handleSubmit}
         >
         Check My Points Value
@@ -95,11 +94,11 @@ const PointRedemption = () => {
            {
              redemptionOptionsData?.length ? (
               <>
-                <div className="pt-10 pb-1">
+                <div className="pt-10 pb-1 max-md:hidden">
                   <Typography variant="body" className="text-left opacity-100 font-bold uppercase tracking-wider">Best Options</Typography>
                   <Typography variant="caption" className="text-left opacity-90 font-medium">{redemptionData?.startMessage}</Typography>
                 </div>
-                <div className="grid grid-cols-3 gap-4 py-4">
+                <div className="grid grid-cols-3 gap-4 py-4 max-md:gap-54 max-md:overflow-x-auto max-md:hidden">
                   {
                     redemptionOptionsData?.slice(0, 3)?.map((ele) => (
                       <RedemptionCard
@@ -127,11 +126,11 @@ const PointRedemption = () => {
            }
             {
               (redemptionData?.recommendationForMaxBenefits || redemptionData?.endMessage) ? (
-                <div className="p-6 pl-4 mt-6 flex gap-2 bg-secondary-orange/30 border-l-4 border-primary-orange">
+                <div className="p-6 pl-4 mt-6 max-md:p-2 max-md:py-4 flex gap-2 bg-secondary-orange/30 border-l-4 border-primary-orange">
                   <div className="h-8 w-8">
                     <IconBulb size={40} color="#F35A13" className="!w-8 !h-8" />
                   </div>
-                  <Typography variant="caption" className="text-left opacity-100 font-bold">{redemptionData?.recommendationForMaxBenefits} {redemptionData?.endMessage}</Typography>
+                  <Typography variant="caption" className="text-left opacity-100 font-bold max-md:font-medium">{redemptionData?.recommendationForMaxBenefits} {redemptionData?.endMessage}</Typography>
                 </div>
               ) : <></>
             }

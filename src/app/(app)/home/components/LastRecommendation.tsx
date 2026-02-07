@@ -6,7 +6,7 @@ import { BotRecommendationCreditCardProps } from "@/types/card"
 const LastRecommendation = ({ cards }: { cards: BotRecommendationCreditCardProps[] }) => {
   const { name } = useUserData()
   return (
-    <div className="bg-brown-sidebar max-w-[1270px] rounded-xl w-full p-4 px-6 mx-auto">
+    <div className="bg-brown-sidebar max-w-[1270px] rounded-xl w-full p-4 px-6 max-md:p-4 mx-auto max-md:w-full max-md:max-w-[448px]">
       <div className="flex justify-between items-center mb-4">
         <Typography
           variant="caption"
@@ -21,7 +21,7 @@ const LastRecommendation = ({ cards }: { cards: BotRecommendationCreditCardProps
             Manage Cards
           </Button> */}
       </div>
-      <div className="flex justify-between gap-4">
+      <div className="flex justify-between gap-4 max-md:overflow-x-auto max-md:gap-74">
         {
           cards?.map(card => (
             <CreditCard

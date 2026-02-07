@@ -44,13 +44,13 @@ export const RedemptionSkeleton = () => {
   return (
     <>
       {/* Header */}
-      <div className="pt-10 pb-1 space-y-2">
+      <div className="pt-10 pb-1 space-y-2  max-md:hidden">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-4 w-64" />
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-3 gap-4 py-4">
+      <div className="grid grid-cols-3 gap-4 py-4 max-md:hidden">
         {[...Array(3)].map((_, i) => (
           <RedemptionCardSkeleton key={i} />
         ))}

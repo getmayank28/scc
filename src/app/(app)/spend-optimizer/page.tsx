@@ -38,11 +38,11 @@ const SpendOptimizer = () => {
   };
 
   return (
-    <div className="flex bg-brown-background flex-col p-20 h-screen max-md:p-6 max-md:h-auto">
-      <div className="flex justify-between items-center">
+    <div className="flex bg-brown-background flex-col p-20 h-screen max-md:p-6 max-md:pt-20 max-md:h-auto">
+      <div className="flex justify-between items-center max-md:flex-col max-md:items-start max-md:gap-4">
         <HeaderText
           containerClassName="items-start"
-          title={`Spend ${tab === "optimizers"?'Optimizer':'History'}`}
+          title={`Spend ${tab === "optimizers" ? 'Optimizer' : 'History'}`}
           titleVariant="h3"
           titleClassName="font-bold"
           contentVariant="caption"
@@ -70,7 +70,10 @@ const SpendOptimizer = () => {
             isCardsLoading={isCardsLoading}
             onAddSpendTransaction={handleAddSpendTransaction}
           />
-          <SpendOptimizerMobile />
+          <SpendOptimizerMobile
+            selectedCards={selectedCards}
+            isCardsLoading={isCardsLoading}
+            onAddSpendTransaction={handleAddSpendTransaction} />
         </>
       ) : (
         <SpendTransactionHistory />

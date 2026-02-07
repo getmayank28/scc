@@ -9,16 +9,16 @@ export default function NoCardData() {
       <main className="flex flex-col items-center justify-center px-8 py-20">
         <div className="relative">
           <div className="absolute inset-0 bg-primary-orange rounded-full blur-3xl opacity-30 animate-pulse"></div>
-          <div className="relative w-48 h-48 bg-white/10 rounded-full flex items-center justify-center border-4 border-secondary-orange">
+          <div className="relative w-48 h-48 max-md:w-28 max-md:h-28 bg-white/10 rounded-full flex items-center justify-center border-4 border-secondary-orange">
             <Search
-              className="w-20 h-20 text-primary-orange"
+              className="w-20 h-20 text-primary-orange max-md:w-10 max-md:h-10"
               strokeWidth={2.5}
             />
           </div>
         </div>
-        <p className="text-lg opacity-60 text-white font-semibold text-center mt-10">
+        <p className="text-lg max-md:text-sm opacity-60 text-white font-semibold text-center mt-10">
           Enter the card name to get the annual fee, welcome benefits, reward
-          points, <br /> insurance coverage, and redemption options of a
+          points, <br className="max-md:hidden" /> insurance coverage, and redemption options of a
           card{" "}
         </p>
       </main>

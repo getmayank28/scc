@@ -4,7 +4,7 @@ import SearchSelect from "@/components/SearchInput/SearchInput";
 import { Button } from "@/components/ui/button";
 import { joinTextMessagesByMid } from "@/lib/utils/content";
 import { useChatCommunicationMutation } from "@/store/api";
-import { BaseMessage } from "@/types/chatMessages";
+import { BaseMessage, MESSAGE_TYPE } from "@/types/chatMessages";
 import { useRef, useState } from "react";
 import ContentRenderer from "./ContentRender";
 import { MultiStepChatLoader } from "@/components/MultiStepChatLoader/MultiStepChatLoader";
@@ -60,12 +60,14 @@ const CardInfo = () => {
       token: token,
     });
     const content = joinTextMessagesByMid(data?.data?.messages);
-    setCardDetails(content?.at(0) as BaseMessage);
+    // @ts-expect-error this is ok
+    const selectedMessage = content?.find((msg) => msg?.type === MESSAGE_TYPE.TEXT)
+    setCardDetails(selectedMessage as BaseMessage);
     setCardName(selected?.name as string);
   };
 
   return (
-    <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-24 p-20 min-h-screen">
+    <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 max-md:pb-0 min-h-screen">
       <HeaderText
         containerClassName="items-start"
         title="Start your search"
@@ -74,7 +76,7 @@ const CardInfo = () => {
         titleVariant="h3"
         titleClassName="font-bold"
       />
-      <div className="flex gap-2 mt-4 mb-2 max-md:flex-col">
+      <div className="flex gap-2 mt-4 mb-2">
         <SearchSelect
           searchInputRef={searchInputRef}
           query={query}
@@ -88,7 +90,7 @@ const CardInfo = () => {
         />
         <Button
           disabled={!selected?.name || isLoading}
-          className="rounded-lg h-12 px-8 bg-primary-orange/70"
+          className="rounded-lg h-12 px-8 bg-primary-orange/70 max-md:px-4"
           onClick={handleSubmit}
         >
           Search

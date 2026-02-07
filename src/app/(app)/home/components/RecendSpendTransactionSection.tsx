@@ -1,6 +1,4 @@
 import Typography from "@/components/Typography/Typography"
-import { Button } from "@/components/ui/button";
-import { useGetUserSpendTransactionQuery } from "@/store/spendTransaction";
 import dayjs from "dayjs";
 
 type TransactionCardProps = {
@@ -88,7 +86,7 @@ interface SpendProps {
 const RecendSpendTransactionSection = ({spendTransaction}:{spendTransaction:SpendProps[]}) => {
 
   return (
-    <div className="w-md bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px]">
+    <div className="w-md bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:w-full max-md:min-h-fit max-md:p-4">
       <div className="flex justify-between items-center mb-2">
         <Typography
           variant="caption"

@@ -51,7 +51,7 @@ export const ChatbotScrollableArea = ({
 
 
   const getStyles = (source: MessageSource, m_id: string, content?: string) => {
-    const container = `flex gap-3 ${source === "user" ? "flex-row-reverse" : "flex-row"
+    const container = `flex max-md:w-full w-full gap-3 ${source === "user" ? "flex-row-reverse" : "flex-row"
       } transition-opacity duration-500 ease-in ${visibleMessages.has(m_id) ? "opacity-100" : "opacity-0"
       }`
     const containerAnimation = visibleMessages.has(m_id)
@@ -59,7 +59,7 @@ export const ChatbotScrollableArea = ({
       : "none"
 
     const cardContainer = `flex flex-col ${source === "user" ? "items-end" : "items-start"
-      } flex-1 min-w-0`
+      } flex-1 min-w-0 max-md:max-w-full max-md:w-full`
 
     const card = content ? `${isCardRecommendationResponse(content)
       ? "p-0"
@@ -83,7 +83,7 @@ export const ChatbotScrollableArea = ({
   return (
     <div className={`flex-1 overflow-hidden ${isSocketLoading ? 'opacity-0' : 'opacity-100'}`}>
       <ScrollArea className="h-full px-4 py-6 max-md:py-2">
-        <div className="max-w-4xl mx-auto space-y-6 pb-4">
+        <div className="max-w-4xl mx-auto space-y-6 pb-4 max-md:w-[91vw]">
           {messages.map((message) => (
             <div
               key={message?.m_id}
@@ -101,7 +101,7 @@ export const ChatbotScrollableArea = ({
                           ,
                         }}
                       ></p>}
-                      <div className="flex gap-6 my-6">
+                      <div className="flex gap-6 my-6 max-md:flex-col">
                         {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.cards.map(
                           (item:BotRecommendationCreditCardProps, index:number) => {
                             return (
@@ -123,7 +123,7 @@ export const ChatbotScrollableArea = ({
                       <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{
-                          __html: convertBoldMarkdownToHtml(message.content),
+                          __html: convertBoldMarkdownToHtml(message?.content),
                         }}
                       ></p>
                       <div>

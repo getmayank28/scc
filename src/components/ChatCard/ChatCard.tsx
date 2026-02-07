@@ -15,7 +15,7 @@ function ChatCard(props: BotRecommendationCreditCardProps
 
 
   return (
-    <div className="w-[230px]  h-[350px] shadow-sm overflow-visible border border-primary-orange bg-[linear-gradient(135deg,#30251E_60%,#6F4D34_100%,#AD744A_100%)] rounded-lg relative">
+    <div className="w-[230px]  h-[350px] max-md:h-[280px] shadow-sm overflow-visible border border-primary-orange bg-[linear-gradient(135deg,#30251E_60%,#6F4D34_100%,#AD744A_100%)] rounded-lg relative">
       <div className="absolute w-full top-0 left-0 h-full p-3 py-3 flex flex-col justify-between">
         <div className="flex gap-1 items-center">
           {/* {bankIcon && <p>{bankIcon}</p>} */}

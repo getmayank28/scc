@@ -98,23 +98,23 @@ export function TransactionHistorySkeleton() {
 
 export function CardSelectorSkeleton({ className }: { className?: string }) {
   return (
-    <div className={cn("w-4xl mx-auto flex flex-col gap-6", className)}>
+    <div className={cn("w-4xl mx-auto flex flex-col gap-6 max-md:w-full max-md:p-4", className)}>
       {/* Question Block 1 */}
       <QuestionSkeleton pills={4} />
-      <div className="p-4 bg-brown-sidebar ml-auto w-xs rounded-2xl border border-brown-border">
-        <Skeleton className="h-5 w-full" />
+      <div className="p-4 bg-brown-sidebar ml-auto w-xs max-md:my-4 max-md:w-[200px] rounded-2xl border border-brown-border">
+        <Skeleton className="h-5 w-full max-md:h-3" />
       </div>
 
       {/* Question Block 2 */}
       <QuestionSkeleton pills={4} />
-      <div className="p-4 bg-brown-sidebar  ml-auto w-xs rounded-2xl border border-brown-border">
-        <Skeleton className="h-5 w-full" />
+      <div className="p-4 bg-brown-sidebar  ml-auto w-xs max-md:my-4 max-md:w-[200px] rounded-2xl border border-brown-border">
+        <Skeleton className="h-5 w-full max-md:h-3" />
       </div>
 
       {/* Question Block 3 */}
       <QuestionSkeleton pills={4} />
-      <div className="p-4 bg-brown-sidebar  ml-auto w-xs rounded-2xl border border-brown-border">
-        <Skeleton className="h-5 w-full" />
+      <div className="p-4 bg-brown-sidebar  ml-auto w-xs max-md:my-4 max-md:w-[200px] rounded-2xl border border-brown-border">
+        <Skeleton className="h-5 w-full max-md:h-3" />
       </div>
     </div>
   );
@@ -122,14 +122,14 @@ export function CardSelectorSkeleton({ className }: { className?: string }) {
 
 function QuestionSkeleton({ pills }: { pills: number }) {
   return (
-    <div className="rounded-2xl border border-brown-border bg-brown-sidebar p-6 space-y-5 max-w-md">
+    <div className="rounded-2xl max-md:p-3 max-md:max-md:w-[250px] border border-brown-border bg-brown-sidebar p-6 space-y-5 max-w-md">
       {/* Question text */}
-      <Skeleton className="h-5 w-2/3 " />
+      <Skeleton className="h-5 w-2/3 max-md:h-3" />
 
       {/* Pills */}
       <div className="flex flex-wrap gap-3">
         {Array.from({ length: pills }).map((_, i) => (
-          <Skeleton key={i} className="h-6 w-[90px] rounded-full" />
+          <Skeleton key={i} className={`${i===0||i===1?'hidden':'inline'} h-6 max-md:h-3 w-[90px] rounded-full`} />
         ))}
       </div>
     </div>
