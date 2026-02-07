@@ -16,7 +16,7 @@ import { usePathname } from "next/navigation";
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
 
   const pathname = usePathname()
-  const isHiddenRoute = pathname?.includes('/chat') || ['/profile', '/support']?.includes(pathname)
+  const isHiddenRoute = pathname?.includes('/chat') || ['/profile',"/", '/support','/about', '/sign-up', '/sign-in', '/verify', "/tools/saving-calculator", "/change-password", "/privacy-policy", "/legal-compliance", "/terms"]?.includes(pathname)
 
   return (
     <SessionProvider>
