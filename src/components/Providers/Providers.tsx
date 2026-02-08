@@ -1,6 +1,6 @@
 "use client";
 import { StateProviders } from "@/contexts/StateProvider";
-import { SessionProvider } from "next-auth/react";
+import { SessionProvider} from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer";
 import SignInModal from "../SignInModal/SignInModal";
@@ -14,9 +14,24 @@ import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const isHiddenRoute =
+    pathname?.includes("/chat") ||
+    [
+      "/profile",
+      "/",
+      "/support",
+      "/about",
+      "/sign-up",
+      "/sign-in",
+      "/verify",
+      "/tools/saving-calculator",
+      "/change-password",
+      "/privacy-policy",
+      "/legal-compliance",
+      "/terms",
+    ]?.includes(pathname);
 
-  const pathname = usePathname()
-  const isHiddenRoute = pathname?.includes('/chat') || ['/profile',"/", '/support','/about', '/sign-up', '/sign-in', '/verify', "/tools/saving-calculator", "/change-password", "/privacy-policy", "/legal-compliance", "/terms"]?.includes(pathname)
 
   return (
     <SessionProvider>
@@ -28,9 +43,11 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
               <StateProviders>
                 <WebSocketConnectionProvider>
                   <SignInModal />
-                 { isHiddenRoute?<></>:<BottomBar/>}
-                  <div className={`${isHiddenRoute?'max-md:pb-0':'max-md:pb-22'}`}>
-                  <SidebarContainer>{children}</SidebarContainer>
+                  {isHiddenRoute ? <></> : <BottomBar />}
+                  <div
+                    className={`${isHiddenRoute ? "max-md:pb-0" : "max-md:pb-22"}`}
+                  >
+                    <SidebarContainer>{children}</SidebarContainer>
                   </div>
                 </WebSocketConnectionProvider>
               </StateProviders>

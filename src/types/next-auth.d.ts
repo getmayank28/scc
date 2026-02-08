@@ -10,6 +10,7 @@ declare module "next-auth" {
   }
 
   interface Session {
+    error?: "RefreshAccessTokenError";
     user: {
       _id?: string;
       isVerified?: boolean;
@@ -23,5 +24,6 @@ declare module "next-auth/jwt" {
     _id?: string;
     isVerified?: boolean;
     username?: string;
+    error?: "RefreshAccessTokenError";
   }
 }

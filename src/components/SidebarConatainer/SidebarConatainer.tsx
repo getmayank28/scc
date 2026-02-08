@@ -39,14 +39,13 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
   ];
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const isVerifyRoute = pathname?.includes("/verify");
+  const isVerifyRoute = pathname?.includes("/verify") || pathname?.includes("/admin");
   const isBlockedRoute =
     PUBLIC_ROUTES?.includes(pathname) ||
     isVerifyRoute ||
     pathname.includes("/chat");
   const isAuthBlockedRoute = pathname.includes("/chat");
 
-  const showHeaderWhileLoggedIn = ["/choose-card"]?.includes(pathname);
 
   return (
     <div className={"flex w-full rounded-md min-h-screen"}>
@@ -65,7 +64,6 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
         </Sidebar>
       )}
       {!isBlockedRoute && !isAuthBlockedRoute && <LoggedInHeader />}
-      {showHeaderWhileLoggedIn && <LoggedInHeader />}
 
       <div
         className={`w-full ${isBlockedRoute ? "pl-0" : "max-md:pl-0 pl-[28px]"}`}

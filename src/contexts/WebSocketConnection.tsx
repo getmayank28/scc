@@ -8,6 +8,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { useChatContext } from "./ChatContext";
 import { useDelayed } from "@/lib/hooks/useDelay";
+import { signOut, useSession } from "next-auth/react";
 
 type WebSocketContextType = {
   lastMessage: MessageEvent<string> | null;
@@ -37,6 +38,14 @@ export function WebSocketConnectionProvider({
   const pathname = usePathname();
   const { isUserDataLoading } = useUserData();
   const {shouldConvertNewPathToSessionId} = useChatContext()
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session?.error === "RefreshAccessTokenError" && typeof window !== 'undefined') {
+      localStorage.clear()
+      signOut({ callbackUrl: "/login" });
+    }
+  }, [session]);
   
 
   useEffect(() => {
