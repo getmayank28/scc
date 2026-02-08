@@ -1,6 +1,6 @@
 "use client";
 
-import { ROUTES } from "@/lib/constants/routes";
+import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
 import useSocket from "@/lib/hooks/useSocket";
 import useUserData from "@/lib/hooks/useUserData";
 import { usePathname } from "next/navigation";
@@ -9,6 +9,7 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 import { useChatContext } from "./ChatContext";
 import { useDelayed } from "@/lib/hooks/useDelay";
 import { signOut, useSession } from "next-auth/react";
+import { AUTH_STATE } from "@/lib/constants/auth";
 
 type WebSocketContextType = {
   lastMessage: MessageEvent<string> | null;
@@ -38,12 +39,12 @@ export function WebSocketConnectionProvider({
   const pathname = usePathname();
   const { isUserDataLoading } = useUserData();
   const {shouldConvertNewPathToSessionId} = useChatContext()
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   useEffect(() => {
-    if (session?.error === "RefreshAccessTokenError" && typeof window !== 'undefined') {
+    if (!session && typeof window !== 'undefined' && !PUBLIC_ROUTES?.includes(pathname) && status === AUTH_STATE.UNAUTHENTICATED) {
       localStorage.clear()
-      signOut({ callbackUrl: "/login" });
+      signOut({ callbackUrl: "/sign-in" });
     }
   }, [session]);
   

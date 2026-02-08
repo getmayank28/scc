@@ -75,15 +75,15 @@ const PointRedemption = () => {
           placeholder="Enter points..."
           value={points}
           onChange={(e) => setPoints(e.target.value)}
-          className={`h-12 max-md:text-xs max-w-md text-lg text-white ${errors.points ? "border-destructive" : "border-primary-orange"
+          className={`h-12 max-md:text-xs max-w-md text-lg max-md:mr-auto text-white ${errors.points ? "border-destructive" : "border-primary-orange"
             }`}
         />
         <Button
           disabled={isRedemptionLoading}
-          className="rounded-lg h-12 w-xl max-md:w-full px-8 bg-primary-orange/70"
+          className="rounded-lg h-12 w-xl max-md:w-full px-8 bg-primary-orange/70 max-md:max-w-md"
           onClick={handleSubmit}
         >
-        Check My Points Value
+          Check My Points Value
         </Button>
       </div>
       {
@@ -91,39 +91,39 @@ const PointRedemption = () => {
           <RedemptionSkeleton />
         ) : (
           <>
-           {
-             redemptionOptionsData?.length ? (
-              <>
-                <div className="pt-10 pb-1 max-md:hidden">
-                  <Typography variant="body" className="text-left opacity-100 font-bold uppercase tracking-wider">Best Options</Typography>
-                  <Typography variant="caption" className="text-left opacity-90 font-medium">{redemptionData?.startMessage}</Typography>
-                </div>
-                <div className="grid grid-cols-3 gap-4 py-4 max-md:gap-54 max-md:overflow-x-auto max-md:hidden">
-                  {
-                    redemptionOptionsData?.slice(0, 3)?.map((ele) => (
-                      <RedemptionCard
-                        key={ele?.category}
-                        isBestOption={Number(ele?.points) * ele?.pointConversionRatioInInr === ele?.highestReturn}
-                        tag={ele?.category}
-                        title={ele?.redemptionOptionTitle}
-                        points={ele?.points}
-                        conversionRate={`1:${ele?.pointConversionRatioInInr}`}
-                        conversionValue=""
-                        totalValue={Number(ele?.points) * ele?.pointConversionRatioInInr}
-                        infoText={ele?.note?.slice(0, 90)}
-                        buttonText="Redeem now"
-                        applyLink={ele?.portalLink}
-                      />
-                    ))
-                  }
-                </div>
-                <Typography variant="body" className="mt-10 text-left opacity-100 font-bold uppercase tracking-wider">value breakdown</Typography>
-                <RedemptionTable
-                  data={redemptionOptionsData}
-                />
-              </>
-              ):<></>
-           }
+            {
+              redemptionOptionsData?.length ? (
+                <>
+                  <div className="pt-10 pb-1 max-md:hidden">
+                    <Typography variant="body" className="text-left opacity-100 font-bold uppercase tracking-wider">Best Options</Typography>
+                    <Typography variant="caption" className="text-left opacity-90 font-medium">{redemptionData?.startMessage}</Typography>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 py-4 max-md:gap-54 max-md:overflow-x-auto max-md:hidden">
+                    {
+                      redemptionOptionsData?.slice(0, 3)?.map((ele) => (
+                        <RedemptionCard
+                          key={ele?.category}
+                          isBestOption={Number(ele?.points) * ele?.pointConversionRatioInInr === ele?.highestReturn}
+                          tag={ele?.category}
+                          title={ele?.redemptionOptionTitle}
+                          points={ele?.points}
+                          conversionRate={`1:${ele?.pointConversionRatioInInr}`}
+                          conversionValue=""
+                          totalValue={Number(ele?.points) * ele?.pointConversionRatioInInr}
+                          infoText={ele?.note?.slice(0, 90)}
+                          buttonText="Redeem now"
+                          applyLink={ele?.portalLink}
+                        />
+                      ))
+                    }
+                  </div>
+                  <Typography variant="body" className="mt-10 text-left opacity-100 font-bold uppercase tracking-wider">value breakdown</Typography>
+                  <RedemptionTable
+                    data={redemptionOptionsData}
+                  />
+                </>
+              ) : <></>
+            }
             {
               (redemptionData?.recommendationForMaxBenefits || redemptionData?.endMessage) ? (
                 <div className="p-6 pl-4 mt-6 max-md:p-2 max-md:py-4 flex gap-2 bg-secondary-orange/30 border-l-4 border-primary-orange">
