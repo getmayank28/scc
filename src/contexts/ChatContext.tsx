@@ -102,10 +102,10 @@ export function ChatContextProvider({
   const shouldConvertNewPathToSessionId = useMemo(() => {
     if (typeof window === "undefined") return undefined;
     const sessionId = pathname?.split("/")?.at(-1)?.toLowerCase() === "new";
-    const isSessionCreated = localStorage.getItem("is_chat_session_id_valid");
+    // const isSessionCreated = localStorage.getItem("is_chat_session_id_valid");
     const creatededSessionId = localStorage.getItem("chat_session_id");
 
-    if (sessionId && isSessionCreated && creatededSessionId) {
+    if (sessionId  && creatededSessionId) {
       return creatededSessionId;
     }
     return null;

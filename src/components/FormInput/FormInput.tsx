@@ -52,7 +52,7 @@ const FormInput = ({
       </div>
       <Button
         disabled={disabled || disableButton}
-        className="px-8 h-10 bg-primary-orange/70 ml-auto -mt-11"
+        className="px-8 h-10 bg-primary-orange ml-auto -mt-11 max-md:mt-4 max-md:w-full"
         onClick={handleSubmit}
       >
         Submit

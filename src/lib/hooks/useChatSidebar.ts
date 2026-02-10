@@ -41,13 +41,24 @@ const useChatSidebar = () => {
 
   const handleNewChat = () => {
     if (typeof window === "undefined") return null;
+    const isSessionCreated = localStorage.getItem("is_chat_session_id_valid");
     disableTypingLoader?.();
     setMessages([]);
     setCurrentMessageId("card-category-fs");
-    localStorage.removeItem("chat_session_id");
-    localStorage.removeItem("is_chat_session_id_valid");
     setShowContinueJourneyMessage(false);
-    router.push("/chat/new");
+
+    if (isSessionCreated) {
+      localStorage.removeItem("chat_session_id");
+      localStorage.removeItem("is_chat_session_id_valid");
+      router.push("/chat/new");
+    } else {
+      const getSessionId = localStorage.getItem("chat_session_id");
+      if (getSessionId) {
+        router.push(`/chat/${getSessionId}`);
+      } else {
+        router.push("/chat/new");
+      }
+    }
   };
 
   return {
