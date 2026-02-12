@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
 import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
+import { BotRecommendationCreditCardProps } from "@/types/card";
 
 
 interface UserChatSession {
@@ -57,13 +58,13 @@ const Home = () => {
           msg.content?.includes("```json")
       )
       ?.sort(
-        (a, b) =>
+        (a:{ts:string}, b:{ts:string}) =>
           new Date(b.ts).getTime() - new Date(a.ts).getTime()
       )[0]?.content;
   
     if (!content) return [];
   
-    const parsed = safeParseJson<{ cards: any[] }>(content);
+    const parsed = safeParseJson<{ cards: BotRecommendationCreditCardProps[] }>(content);
     return parsed?.cards ?? [];
   }, [userLastSessionDetail]);
 
