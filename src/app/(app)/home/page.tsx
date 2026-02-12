@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/stateful-button";
 import { useGetUserBotChatSessionsDetailsQuery, useGetUserBotChatSessionsQuery } from "@/store/api";
 import { useMemo } from "react";
 import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
-import { convertBoldMarkdownToHtml } from "@/lib/utils/markdown";
+import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
 
 
@@ -50,16 +50,22 @@ const Home = () => {
   })
 
   const lastRecommendationCards = useMemo(() => {
-    const content = userLastSessionDetail?.messages?.filter((msg: BaseMessage) => msg?.source === MESSAGE_SOURCE.ASSISTANT && msg?.content?.includes("```json")).sort(
-      (a: { ts: string }, b: { ts: string }) =>
-        new Date(b.ts).getTime() - new Date(a.ts).getTime()
-    )[0]?.content
-
-    if (content) {
-      return JSON.parse(convertBoldMarkdownToHtml(content))?.cards
-    }
-    return ''
-  }, [userLastSessionDetail])
+    const content = userLastSessionDetail?.messages
+      ?.filter(
+        (msg: BaseMessage) =>
+          msg.source === MESSAGE_SOURCE.ASSISTANT &&
+          msg.content?.includes("```json")
+      )
+      ?.sort(
+        (a, b) =>
+          new Date(b.ts).getTime() - new Date(a.ts).getTime()
+      )[0]?.content;
+  
+    if (!content) return [];
+  
+    const parsed = safeParseJson<{ cards: any[] }>(content);
+    return parsed?.cards ?? [];
+  }, [userLastSessionDetail]);
 
   const isLoading = isFetching || isAnalyticsLoading || userSessionsLoading || userSessionDetailsLoading
   const isError = isSpendError || isAnalyticsError || userSessionsError || userSessionDetailsError

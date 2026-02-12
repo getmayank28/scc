@@ -4,12 +4,19 @@ import { ChatMessage, MESSAGE_TYPE, MessageSource } from "@/types/chatMessages";
 import {
   convertBoldMarkdownToHtml,
   isCardRecommendationResponse,
+  safeParseJson,
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
 import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader";
 import { renderInput } from "@/lib/utils/renderInput";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 import { chatLoaderStates } from "@/lib/constants/loader";
+
+type RecommendationPayload = {
+  startMessage: string;
+  cards: BotRecommendationCreditCardProps[];
+  endMessage: string;
+};
 
 interface ChatbotScrollableAreaProps {
   currentMessageId?: string;
@@ -105,15 +112,15 @@ export const ChatbotScrollableArea = ({
                 <div className={getStyles(message?.source, message?.m_id, message?.content, message?.type)?.card} >
                   {isCardRecommendationResponse(message?.content) ? (
                     <>
-                      {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.startMessage && <p
+                      {(safeParseJson<RecommendationPayload>(message?.content || ""))?.startMessage && <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{
-                          __html: JSON.parse(convertBoldMarkdownToHtml(message?.content))?.startMessage
+                          __html: (safeParseJson<RecommendationPayload>(message?.content || ""))?.startMessage || ""
                           ,
                         }}
                       ></p>}
                       <div className="flex gap-6 my-6 max-md:flex-col">
-                        {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.cards.map(
+                        {(safeParseJson<RecommendationPayload>(message?.content || ""))?.cards.map(
                           (item: BotRecommendationCreditCardProps, index: number) => {
                             return (
                               <ChatCard key={index} {...item} />
@@ -121,10 +128,10 @@ export const ChatbotScrollableArea = ({
                           }
                         )}
                       </div>
-                      {JSON.parse(convertBoldMarkdownToHtml(message?.content))?.endMessage && <p
+                      {(safeParseJson<RecommendationPayload>(message?.content || ""))?.endMessage && <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{
-                          __html: JSON.parse(convertBoldMarkdownToHtml(message?.content))?.endMessage
+                          __html: (safeParseJson<RecommendationPayload>(message?.content || ""))?.endMessage || ""
                           ,
                         }}
                       ></p>}

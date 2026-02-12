@@ -4,6 +4,21 @@ import { BadgeCheck, BadgeIndianRupee, BadgeX, Squircle, X } from "lucide-react"
 import { BotRecommendationCreditCardProps } from "@/types/card"
 import { Button } from "../ui/stateful-button"
 
+
+const renderCategoryWiseReward = (categoryWiseReward: string | Record<string, string> | null) => {
+    if (typeof categoryWiseReward === 'string') {
+        return categoryWiseReward.split(", ")
+    }
+
+    if (categoryWiseReward !== null && typeof categoryWiseReward === 'object') {
+        return Object.entries(categoryWiseReward).map(
+            ([key, value]) => `${key} ${value}`
+        );
+    }
+
+    return []
+}
+
 const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommendationCreditCardProps & { open?: boolean, onClose: () => void }) => {
     return (
         <Modal
@@ -48,7 +63,7 @@ const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommen
                         </Typography>
                     </div>
                     {
-                        rest?.categoryWiseReward.split(", ")?.map((bullet: string) => (
+                        renderCategoryWiseReward(rest?.categoryWiseReward)?.map((bullet: string) => (
                             <div key={bullet} className="flex max-w-sm p-2 px-4 justify-start items-center gap-2 ">
                                 <Squircle size={20} color="#AD744A" />
                                 <Typography variant="caption" className="text-left opacity-100 text-white/80 font-semibold text-sm">{bullet}

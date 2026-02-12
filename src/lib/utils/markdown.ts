@@ -14,10 +14,8 @@ export function containsMarkdownTable(message: string): boolean {
   return tableHeaderPattern.test(message);
 }
 
-
-
-export function isCardRecommendationResponse(txt:string) {
-  const text = convertBoldMarkdownToHtml(txt)
+export function isCardRecommendationResponse(txt: string) {
+  const text = safeParseJson(txt);
   let data;
 
   try {
@@ -28,31 +26,69 @@ export function isCardRecommendationResponse(txt:string) {
 
   if (!data || typeof data !== "object") return false;
 
-
-  return data.cards.every((card:BotRecommendationCreditCardProps) =>
-    card &&
-    typeof card === "object" &&
-    typeof card.cardName === "string" &&
-    typeof card.returnOnSpend === "string" &&
-    typeof card.applyLink === "string"
+  return data.cards.every(
+    (card: BotRecommendationCreditCardProps) =>
+      card &&
+      typeof card === "object" &&
+      typeof card.cardName === "string" &&
+      typeof card.returnOnSpend === "string" &&
+      typeof card.applyLink === "string",
   );
 }
 
+function extractJsonFromLLM(text: string): string {
+  if (!text) throw new Error("Empty response");
 
+  // Prefer ```json blocks
+  const fencedMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
+  if (fencedMatch) {
+    return fencedMatch[1];
+  }
 
+  // Fallback: first {...} block
+  const objectMatch = text.match(/\{[\s\S]*\}/);
+  if (objectMatch) {
+    return objectMatch[0];
+  }
 
-export function convertBoldMarkdownToHtml(text:string) {
-  if (!text) return "";
-
-  return text
-    // remove ```json or ``` (opening fence)
-    .replace(/^```[\w]*\n?/, "")
-    // remove closing ```
-    .replace(/\n?```$/, "")
-    // convert **bold** to <b>
-    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+  throw new Error("No JSON found in response");
 }
 
+function sanitizeJsonString(json: string): string {
+  return (
+    json
+      // remove markdown bold
+      .replace(/\*\*(.*?)\*\*/g, "$1")
+      // remove trailing commas (LLM classic bug)
+      .replace(/,\s*}/g, "}")
+      .replace(/,\s*]/g, "]")
+  );
+}
+
+export function safeParseJson<T>(text: string): T | null {
+  try {
+    const extracted = extractJsonFromLLM(text);
+    const sanitized = sanitizeJsonString(extracted);
+    return JSON.parse(sanitized);
+  } catch (err) {
+    console.error("JSON parse failed:", err);
+    return null;
+  }
+}
+
+export function convertBoldMarkdownToHtml(text: string) {
+  if (!text) return "";
+
+  return (
+    text
+      // remove ```json or ``` (opening fence)
+      .replace(/^```[\w]*\n?/, "")
+      // remove closing ```
+      .replace(/\n?```$/, "")
+      // convert **bold** to <b>
+      .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+  );
+}
 
 /**
  * Convert markdown table to JSON
@@ -76,7 +112,8 @@ export function markdownToJson(mdText: string): ParsedMessage {
   const splitIndex = mdText.indexOf("\n\n|");
   const endIndex = mdText.indexOf("|\n\n");
 
-  const startMessage = splitIndex >= 0 ? mdText.slice(0, splitIndex).trim() : mdText;
+  const startMessage =
+    splitIndex >= 0 ? mdText.slice(0, splitIndex).trim() : mdText;
   const tableMd =
     splitIndex >= 0 ? mdText.slice(splitIndex, endIndex).trim() : "";
   const endMessage = endIndex >= 0 ? mdText.slice(endIndex).trim() : "";
