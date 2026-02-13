@@ -1,33 +1,36 @@
 "use client"
 import HeaderText from "@/components/HeaderText/HeaderText";
-import SearchSelect from "@/components/SearchInput/SearchInput";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/stateful-button";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import RedemptionTable from "./RedemptionTable";
 import Typography from "@/components/Typography/Typography";
 import useRedemptionData from "@/lib/hooks/useRedemptionData";
 import RedemptionCard from "./RedemptionCard";
 import { IconBulb } from "@tabler/icons-react";
 import { RedemptionSkeleton } from "./Loader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useGetUserCardsQuery } from "@/store/api";
+import useUserData from "@/lib/hooks/useUserData";
 
 
 const PointRedemption = () => {
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<{
-    _id: string;
-    name: string;
-    bankName: string;
-  } | null>(null);
   const [points, setPoints] = useState('')
   const [errors, setErrors] = useState({ points: false, card: false })
+  const { userId } = useUserData();
 
+  const { data: userCards } = useGetUserCardsQuery(
+    { userId },
+    {
+      skip: !userId,
+    },
+  );
   const { handleRedemptionSubmit, isRedemptionLoading, redemptionOptionsData, redemptionRawData: redemptionData } = useRedemptionData()
 
 
   const handleSubmit = async () => {
-    if (!points && !selected) {
+    if (!points && !query) {
       setErrors({ points: true, card: true })
       return
     }
@@ -35,14 +38,13 @@ const PointRedemption = () => {
       setErrors((prev) => ({ ...prev, points: true }))
       return
     }
-    if (!selected) {
+    if (!query) {
       setErrors((prev) => ({ ...prev, card: true }))
       return
     }
 
-    handleRedemptionSubmit(selected?.name, points)
+    handleRedemptionSubmit(query, points)
   }
-
 
   return (
     <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 min-h-screen">
@@ -55,19 +57,35 @@ const PointRedemption = () => {
         titleClassName="font-bold"
       />
       <div className="flex rounded-md border border-brown-border max-w-6xl bg-brown-sidebar p-5 gap-4 mt-4 mb-2 max-md:flex-col">
-        <SearchSelect
+        <div className="w-full">
+          <Select
           disabled={isRedemptionLoading}
-          searchInputRef={searchInputRef}
-          query={query}
-          setQuery={setQuery}
-          selected={selected}
-          setSelected={setSelected}
-          error={errors?.card}
-          onClearInput={() => {
-            setQuery("");
-            setSelected(null);
-          }}
-        />
+            value={query}
+            onValueChange={(value) => setQuery(value)}
+          >
+            <SelectTrigger
+              id="paymentMethod"
+              className={`!h-12 w-full border-primary-orange text-white`}
+            >
+              <SelectValue placeholder="Select card" />
+            </SelectTrigger>
+            <SelectContent
+              className="!max-h-[300px] !max-w-[430px]"
+              position="popper"
+              sideOffset={4}
+            >
+              {userCards?.map((card:{cardId:{name:string}}) => {
+                return (
+                  <SelectItem key={card.cardId?.name} value={card.cardId?.name}>
+                    <div className="flex items-center gap-2">
+                      <span>{card.cardId?.name}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
         <Input
           disabled={isRedemptionLoading}
           id="amount"

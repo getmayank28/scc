@@ -188,9 +188,6 @@ export default function SpendOptimizerMobile({
   };
 
   const openField = (fieldName: FieldName): void => {
-    if (areAllFieldsFilled()) {
-      return;
-    }
 
     if (fieldName === "amount") {
       setTempFormData({ ...tempFormData, amount: formData.amount });
@@ -382,7 +379,7 @@ export default function SpendOptimizerMobile({
     },
     [currentField, tempFormData.amount, tempFormData.merchant]
   );
-console.log(formData, data, winnerCard, "fjbvfhbhvbhfbhvbfh")
+  
   return (
     <div className="bg-brown-background py-6 pt-8 hidden max-md:flex max-md:pb-0 flex-col">
       <style>{`
