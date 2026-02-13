@@ -12,16 +12,16 @@ export async function GET() {
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  
-  const userId =  session?.user?._id
+
+  const userId = session?.user?._id;
   const uid = new Types.ObjectId(userId);
 
   const topCards = await SpendTransaction.aggregate([
     // 1️⃣ Match user
     {
-      $match: { userId: uid }
+      $match: { userId: uid },
     },
-  
+
     // 2️⃣ Extract rewardValue (₹ only)
     {
       $addFields: {
@@ -30,30 +30,40 @@ export async function GET() {
             {
               $regexMatch: {
                 input: { $ifNull: ["$expectedBenefit", ""] },
-                regex: /^₹/
-              }
+                regex: /(\d+(\.\d+)?)/, // contains a number
+              },
             },
             {
               $toDouble: {
-                $replaceAll: {
+                $trim: {
                   input: {
-                    $replaceOne: {
-                      input: "$expectedBenefit",
-                      find: "₹",
-                      replacement: ""
-                    }
+                    $replaceAll: {
+                      input: {
+                        $replaceAll: {
+                          input: {
+                            $replaceAll: {
+                              input: "$expectedBenefit",
+                              find: "₹",
+                              replacement: "",
+                            },
+                          },
+                          find: "INR",
+                          replacement: "",
+                        },
+                      },
+                      find: ",",
+                      replacement: "",
+                    },
                   },
-                  find: ",",
-                  replacement: ""
-                }
-              }
+                },
+              },
             },
-            0
-          ]
-        }
-      }
+            0,
+          ],
+        },
+      },
     },
-  
+
     // 3️⃣ Normalize card name (remove **, lowercase, trim)
     {
       $addFields: {
@@ -66,33 +76,33 @@ export async function GET() {
                     $replaceAll: {
                       input: "$cardName",
                       find: "*",
-                      replacement: ""
-                    }
+                      replacement: "",
+                    },
                   },
                   find: "  ",
-                  replacement: " "
-                }
-              }
-            }
-          }
-        }
-      }
+                  replacement: " ",
+                },
+              },
+            },
+          },
+        },
+      },
     },
-  
+
     // 4️⃣ Group by normalized card name
     {
       $group: {
         _id: "$normalizedCardName",
         cardName: { $first: "$cardName" }, // display name
         cardSpend: { $sum: "$amount" },
-        cardRewards: { $sum: "$rewardValue" }
-      }
+        cardRewards: { $sum: "$rewardValue" },
+      },
     },
-  
+
     // 6️⃣ Top 2 cards
     { $sort: { spendRewardRatio: -1 } },
     { $limit: 2 },
-  
+
     // 7️⃣ Clean response
     {
       $project: {
@@ -101,16 +111,14 @@ export async function GET() {
         cardName: 1,
         cardSpend: 1,
         cardRewards: 1,
-        spendRewardRatio: 1
-      }
-    }
+        spendRewardRatio: 1,
+      },
+    },
   ]);
-  
-  
 
   const [spendAnalytics] = await SpendTransaction.aggregate([
     {
-      $match: { userId: uid }
+      $match: { userId: uid },
     },
     {
       $addFields: {
@@ -119,41 +127,48 @@ export async function GET() {
             {
               $regexMatch: {
                 input: { $ifNull: ["$expectedBenefit", ""] },
-                regex: /^₹/
-              }
+                regex: /(\d+(\.\d+)?)/, // contains a number
+              },
             },
             {
               $toDouble: {
-                $replaceAll: {
+                $trim: {
                   input: {
-                    $replaceOne: {
-                      input: "$expectedBenefit",
-                      find: "₹",
-                      replacement: ""
-                    }
+                    $replaceAll: {
+                      input: {
+                        $replaceAll: {
+                          input: {
+                            $replaceAll: {
+                              input: "$expectedBenefit",
+                              find: "₹",
+                              replacement: "",
+                            },
+                          },
+                          find: "INR",
+                          replacement: "",
+                        },
+                      },
+                      find: ",",
+                      replacement: "",
+                    },
                   },
-                  find: ",",
-                  replacement: ""
-                }
-              }
+                },
+              },
             },
-            0
-          ]
-        }
-      }
+            0,
+          ],
+        },
+      },
     },
     {
       $group: {
         _id: null,
         totalAmountSpent: { $sum: "$amount" },
         totalRewardsEarned: { $sum: "$rewardValue" },
-        totalSpendOptimized: { $sum: 1 }   // ✅ COUNT
-      }
-    }
+        totalSpendOptimized: { $sum: 1 }, // ✅ COUNT
+      },
+    },
   ]);
-  
-  
-  
 
   return NextResponse.json({
     topCards,

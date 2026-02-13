@@ -5,6 +5,7 @@ import { AnimatedTooltip } from "../ui/animated-tooltip";
 import Image from "next/image";
 import { normalizeString } from "@/lib/utils";
 import { useRef, useState } from "react";
+import { Button } from "../ui/button";
 // import { Input } from "../ui/input";
 // import { useState } from "react";
 // import { creditCardSchema } from "@/schemas/creditCard";
@@ -19,6 +20,9 @@ const CreditCard = ({
   onRemove,
   removeImage,
   forShow,
+  annualFee,
+  applyLink,
+  bankLogo
 }: {
   background?: string;
   isCardSpotlightActive?: boolean;
@@ -29,6 +33,9 @@ const CreditCard = ({
   onRemove?: () => void;
   forShow?: boolean;
   removeImage?: boolean;
+  annualFee?: string;
+  applyLink?: string;
+  bankLogo?:string
 }) => {
   // const [error, setError] = useState(false);
   // const [cardNumber, setCardNumber] = useState("");
@@ -72,7 +79,7 @@ const CreditCard = ({
       icon: <X color="#FFF" size={16} />,
     },
   ];
-
+console.log(bankLogo, "cjfhvfvjnejdnejbcjebjdnej")
   return (
     <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
       {/* Card Bottom Shadow */}
@@ -206,17 +213,17 @@ const CreditCard = ({
             </svg>
           </div>
           <div className={`absolute top-6 left-4 flex items-start gap-1`}>
-            {!forShow && (
-              <Image
-                width={20}
-                height={15}
-                src="/logos/hdfc.png"
+            {!forShow && bankLogo && (
+                <Image
+                width={25}
+                height={25}
+                src={`/icons/banks/${bankLogo}`}
                 alt="bank-logo"
-                className="w-[20px] h-[20px] mt-[5px]"
+                className="w-[25px] h-[25px]"
               />
             )}
             <Typography
-              variant="body"
+              variant="caption"
               className="text-left font-bold opacity-100 max-w-[320px]"
             >
               {normalizeString(cardName as string)}
@@ -248,6 +255,27 @@ const CreditCard = ({
                 {name || "Jhon Doe"}
               </span>
             </div>
+          </div>
+
+          <div className="absolute bottom-[0%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
+            {annualFee && (
+              <div className="flex w-[240px] items-center gap-1">
+                <span className="text-[12px] opacity-80 font-medium capitalize tracking-wider">
+                  annual fee:
+                </span>
+                <span className="text-[12px] opacity-80 font-semibold uppercase tracking-wider">
+                  {annualFee}
+                </span>
+              </div>
+            )}
+            {applyLink && (
+              <Button
+                className="text-[10px] h-7"
+                onClick={() => window.open(applyLink, "_blank")}
+              >
+                Apply for this card
+              </Button>
+            )}
           </div>
         </Comp>
       </div>

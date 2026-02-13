@@ -1,0 +1,30 @@
+export const banks = {
+  HDFC: "HDFC Bank",
+  ICICI: "ICICI Bank",
+  AXIS: "Axis Bank",
+  SBI: "SBI Card",
+  INDUSIND: "IndusInd Bank",
+  IDFC: "IDFC FIRST Bank",
+  KOTAK: "Kotak Mahindra Bank",
+  RBL: "RBL Bank",
+  AMX: "American Express",
+  YES_BANK: "YES Bank",
+  BOB: "Bank of Baroda",
+  AU_BANK: "AU Bank",
+};
+
+export const bankIcon = {
+  [banks.HDFC]: "hdfc.svg",
+  [banks.ICICI]: "icici.svg",
+  [banks.AXIS]: "axis.svg",
+  [banks.SBI]: "sbi.svg",
+  [banks.INDUSIND]: "indusind.svg",
+  [banks.IDFC]: "idfc.svg",
+  [banks.KOTAK]: "kotak.svg",
+  [banks.RBL]: "rbl.svg",
+  [banks.AMX]: "amx.svg",
+  [banks.YES_BANK]: "yes.svg",
+  [banks.BOB]: "bob.svg",
+  [banks.AU_BANK]: "au.svg",
+  default: "bank.png",
+};

@@ -23,7 +23,7 @@ const TopPerformingCardSection = ({ topCards, isLoading }: { topCards: TopCard[]
           variant="caption"
           className="font-bold opacity-100 text-secondary-gray"
         >
-          Top Performing Card
+          Your Top Performing Card
         </Typography>
       </div>
       <div className="flex flex-col gap-2 justify-between">

@@ -5,6 +5,7 @@ import SearchSelect from "@/components/SearchInput/SearchInput";
 import CreditCardSkeleton from "@/components/SkeletonLoader/CreditCardSkeletonLoader";
 import Typography from "@/components/Typography/Typography";
 import { Button } from "@/components/ui/button";
+import { bankIcon } from "@/lib/data/banks";
 import useUserData from "@/lib/hooks/useUserData";
 import {
   useAddCardMutation,
@@ -43,7 +44,7 @@ const AddCards = () => {
     { userId },
     {
       skip: !userId,
-    }
+    },
   );
 
   const [removeUserCard] = useRemoveUserCardMutation();
@@ -84,9 +85,9 @@ const AddCards = () => {
           setQuery={setQuery}
           selected={selected}
           setSelected={setSelected}
-          onClearInput={()=> {
-            setQuery('')
-            setSelected(null)
+          onClearInput={() => {
+            setQuery("");
+            setSelected(null);
           }}
         />
         <Button
@@ -110,17 +111,23 @@ const AddCards = () => {
           </>
         ) : (
           userCards?.map(
-            (card: { _id: string; cardId: { name: string; _id: string } }) => (
+            (card: {
+              _id: string;
+              cardId: { name: string; _id: string; bankName: string };
+            }) => (
               <CreditCard
-              removeImage
+                removeImage
                 background="linear-gradient(135deg,#30251E 60%,#6F4D34 100%,#AD744A 100%)"
                 key={card?._id}
                 isCardSpotlightActive={false}
                 cardName={card?.cardId?.name}
+                bankLogo={
+                  bankIcon?.[card?.cardId?.bankName] ?? bankIcon?.default
+                }
                 name={name || ""}
                 onRemove={() => handleCardRemove(card?.cardId?._id)}
               />
-            )
+            ),
           )
         )}
       </div>

@@ -1,6 +1,7 @@
 import { SpendOptimizerCreditCardSkeleton } from "@/components/Loader/Loader";
 import Typography from "@/components/Typography/Typography";
 import { Checkbox } from "@/components/ui/checkbox";
+import { bankIcon } from "@/lib/data/banks";
 import useNav from "@/lib/hooks/useNav";
 import { CreditCard } from "@/types/card";
 import { CirclePlus } from "lucide-react";
@@ -65,20 +66,16 @@ const UserCards = ({
                     }}
                   >
                     <div className="flex flex-col items-start gap-2">
-                      <div
-                        className={`${userCards?.includes(card?._id) ? "bg-primary-orange/15" : "bg-white/20"} rounded-sm p-2 max-md:py-2 max-md:px-3`}
-                      >
-                        <Image
+                    <Image
                           width={20}
                           height={20}
-                          src="/logos/hdfc.png"
+                          src={`/icons/banks/${bankIcon?.[card?.cardId?.bankName] ?? bankIcon?.default}`}
                           alt="bank-logo"
                         />
-                      </div>
                       <div className="flex flex-col gap-1 items-start">
                         <Typography
                           variant="caption"
-                          className="text-sm opacity-100 font-semibold"
+                          className="text-sm text-left opacity-100 font-semibold whitespace-normal"
                         >
                           {card?.cardId?.name}
                         </Typography>

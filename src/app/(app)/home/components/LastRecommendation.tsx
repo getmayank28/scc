@@ -10,7 +10,6 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
   if(isLoading){
     return <LastRecommendationSkeleton/>
   }
-  
   return (
     <div className="bg-brown-sidebar max-w-[1270px] rounded-xl w-full p-4 px-6 max-md:p-4 mx-auto max-md:w-full max-md:max-w-[448px]">
       <div className="flex justify-between items-center mb-4">
@@ -38,6 +37,8 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
               removeImage
               number={card?.cardName}
               name={name}
+              annualFee={card?.annualFee}
+              applyLink={card?.applyLink}
             />
           ))
         }
