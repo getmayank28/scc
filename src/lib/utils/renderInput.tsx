@@ -22,7 +22,7 @@ export const renderInput = ({
   handleSend,
   enableInputs,
 }: RenderInputProps) => {
-  if (!message.type) return null;
+  if (!message || !message.type) return null;
   switch (message.type) {
     case MESSAGE_TYPE.SLIDER:
       return (

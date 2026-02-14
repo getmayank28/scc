@@ -75,7 +75,7 @@ const CardRecommendationModal = ({ open = false, onClose, ...rest }: BotRecommen
             </div>
             <div className="bg-[#372921] flex justify-between p-4 max-md:gap-2 absolute max-md:fixed bottom-0 left-0 w-full">
                 <div className="bg-brown-sidebar text-[12px] p-2 px-4 rounded-full text-white/80 font-bold uppercase max-md:text-[10px] max-md:h-fit max-md:text-center">Annual Fee: {rest?.annualFee}</div>
-                <Button className="font-bold" onClick={()=>window.open(rest?.applyLink, '_blank')}>Apply</Button>
+                {rest?.applyLink&& <Button className="font-bold" onClick={()=>window.open(rest?.applyLink, '_blank')}>Apply</Button>}
             </div>
         </Modal>
     )

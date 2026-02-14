@@ -15,7 +15,7 @@ export function containsMarkdownTable(message: string): boolean {
 }
 
 export function isCardRecommendationResponse(txt: string) {
-  if (!txt.startsWith("```json")) {
+  if (!txt || !txt.startsWith("```json")) {
     return false;
   }
   const text = safeParseJson(txt);
@@ -36,7 +36,7 @@ export function isCardRecommendationResponse(txt: string) {
 }
 
 function extractJsonFromLLM(text: string): string {
-  if (!text) throw new Error("Empty response");
+  if (!text) return "";
 
   // Prefer ```json blocks
   const fencedMatch = text.match(/```json\s*([\s\S]*?)\s*```/i);
@@ -65,6 +65,8 @@ function sanitizeJsonString(json: string): string {
 }
 
 export function safeParseJson<T>(text: string): T | null {
+  if (!text) return null;
+
   try {
     const extracted = extractJsonFromLLM(text);
     const sanitized = sanitizeJsonString(extracted);
