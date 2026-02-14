@@ -11,6 +11,8 @@ import { CardsType } from "@/types/card";
 import { continueJourney } from "@/lib/constants/questions/common";
 import { HISTORY_ACTIONS } from "@/lib/constants/actions";
 import { CARD_CATEGORY } from "@/lib/data/cards";
+import { useAddAssistantMessage } from "@/lib/hooks/useAddAssistantMessage";
+import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 
 export function useChatState() {
   const {
@@ -18,8 +20,44 @@ export function useChatState() {
     setCurrentMessageId,
     setSelectedCardCategory,
     enableChatInput,
+    disableTypingLoader,
     shouldConvertNewPathToSessionId,
+    showContinueJourneyMessage,
+    startFollowUp,
+    setShowContinueJourneyMessage,
   } = useChatContext();
+  const { sendMessageToSocket } = useAppWebSocketConnection();
+
+  const { handleAssistantSocketMessage } = useAddAssistantMessage(setMessages, {
+    onMessageComplete: (m_id: string) => {
+      disableTypingLoader?.();
+      if (showContinueJourneyMessage) {
+        addUserMessage(continueJourney as BaseMessage);
+        setCurrentMessageId(continueJourney?.m_id);
+        setShowContinueJourneyMessage(false);
+      } else if (startFollowUp.current) {
+        setTimeout(() => {
+          enableChatInput?.();
+          setCurrentMessageId("");
+          sendMessageToSocket(
+            JSON.stringify({
+              source: "user",
+              content: "Start the follow up",
+              m_id: "start-follow-up",
+              ts: new Date().toISOString(),
+              type: "TextMessage",
+              custom_metadata: [],
+            }),
+          );
+        }, 2000);
+        startFollowUp.current = false;
+        enableChatInput();
+      } else {
+        setCurrentMessageId(m_id);
+        enableChatInput();
+      }
+    },
+  });
 
   // Track processed message chunks to avoid duplicates
   const processedChunks = useRef(new Set<string>());
@@ -35,35 +73,9 @@ export function useChatState() {
     });
   }, []);
 
-  const messgaeTypes = ["SlotMessage", "SliderMessage"];
-
-  const addAssistantMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) => {
-      // Find if this assistant message already exists
-      const existingIndex = prev.findIndex(
-        (m) => m.m_id === msg.m_id && m.source === "assistant"
-      );
-
-      if (
-        existingIndex === -1 &&
-        (messgaeTypes?.includes(msg.type) || msg?.content)
-      ) {
-        return [...prev, msg];
-      }
-
-      // Message exists, append the chunk
-      return prev.map((m, index) => {
-        if (index === existingIndex) {
-          return {
-            ...msg,
-            content: m.content + (msg?.content ? msg.content : ""),
-            ts: msg.ts,
-          };
-        }
-        return m;
-      });
-    });
-  }, []);
+  const addAssistantMessage = (msg: ChatMessage) => {
+    handleAssistantSocketMessage(msg);
+  };
 
   const loadHistory = useCallback((history: ChatMessage[]) => {
     if (shouldConvertNewPathToSessionId) return;
@@ -97,23 +109,23 @@ export function useChatState() {
 
     // Sort by timestamp
     const sorted = Array.from(messageMap.values()).sort(
-      (a, b) => new Date(a.ts ?? 0).getTime() - new Date(b.ts ?? 0).getTime()
+      (a, b) => new Date(a.ts ?? 0).getTime() - new Date(b.ts ?? 0).getTime(),
     );
 
     const selectedCategory = sorted
       ?.find(
         (message: BaseMessage) =>
           message?.source === MESSAGE_SOURCE.USER &&
-          message?.custom_metadata?.length
+          message?.custom_metadata?.length,
       )
       ?.custom_metadata?.find(
         (message: Record<string, string>) =>
-          Object.keys(message)?.at(0) === "card-category-fs"
+          Object.keys(message)?.at(0) === "card-category-fs",
       )?.["card-category-fs"];
 
     const handleMessageMetadata = (
       metadata: Record<string, string>[],
-      category: CardsType
+      category: CardsType,
     ) => {
       const selectedCategoryData =
         cardCategoryJourneyData?.[category as CardsType];
@@ -122,7 +134,7 @@ export function useChatState() {
         ?.filter((ele) => Object.keys(ele)?.at(0) !== "action")
         ?.map((ele: Record<string, string>) => {
           const currentQuestion = selectedCategoryData?.find(
-            (question) => question?.m_id === Object.keys(ele)?.at(0)
+            (question) => question?.m_id === Object.keys(ele)?.at(0),
           );
 
           const userMessage = {
@@ -149,7 +161,7 @@ export function useChatState() {
         if (metadata?.length) {
           const formattedMessage = handleMessageMetadata(
             metadata,
-            selectedCategory as CardsType
+            selectedCategory as CardsType,
           );
           return formattedMessage?.flat();
         }
@@ -162,11 +174,11 @@ export function useChatState() {
       ?.filter(
         (message) =>
           message?.source === MESSAGE_SOURCE.USER &&
-          message?.custom_metadata?.length
+          message?.custom_metadata?.length,
       )
       ?.at(-1)
       ?.custom_metadata?.find(
-        (ele) => Object.keys(ele)?.at(0) === "action"
+        (ele) => Object.keys(ele)?.at(0) === "action",
       )?.action;
 
     let finalHistory = historyBuildUp?.flat();
@@ -176,7 +188,7 @@ export function useChatState() {
       enableChatInput();
     } else if (lastAction === HISTORY_ACTIONS.EARLY_RECOMMENDATION) {
       const isFollowUp = finalHistory?.findIndex(
-        (message) => message?.m_id === "start-follow-up"
+        (message) => message?.m_id === "start-follow-up",
       );
 
       if (isFollowUp !== -1) {
@@ -193,7 +205,7 @@ export function useChatState() {
       }
     }
     setSelectedCardCategory(
-      selectedCategory || (CARD_CATEGORY.TRAVEL as CardsType)
+      selectedCategory || (CARD_CATEGORY.TRAVEL as CardsType),
     );
     setMessages(finalHistory as BaseMessage[]);
   }, []);
@@ -207,7 +219,7 @@ export function useChatState() {
     if (typeof window === "undefined") return null;
     localStorage.setItem(
       "is_chat_session_id_valid",
-      JSON.stringify(validation)
+      JSON.stringify(validation),
     );
   }, []);
 

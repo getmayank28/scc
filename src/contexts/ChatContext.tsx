@@ -14,9 +14,11 @@ import { usePathname } from "next/navigation";
 import React, {
   createContext,
   Dispatch,
+  RefObject,
   SetStateAction,
   useContext,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -41,6 +43,7 @@ export type ChatsTypes = {
   showContinueJourneyMessage: boolean;
   setShowContinueJourneyMessage: Dispatch<SetStateAction<boolean>>;
   shouldConvertNewPathToSessionId: string | null|undefined;
+  startFollowUp:RefObject<boolean>
 };
 const ChatContext = createContext<ChatsTypes | null>(null);
 
@@ -69,6 +72,7 @@ export function ChatContextProvider({
 
   const [showContinueJourneyMessage, setShowContinueJourneyMessage] =
     useState(false);
+  const startFollowUp = useRef(false);
   const pathname = usePathname();
 
   const enableTypingLoader = () => setShowTypingLoader(true);
@@ -134,6 +138,7 @@ export function ChatContextProvider({
         showContinueJourneyMessage,
         setShowContinueJourneyMessage,
         shouldConvertNewPathToSessionId,
+        startFollowUp
       }}
     >
       {children}

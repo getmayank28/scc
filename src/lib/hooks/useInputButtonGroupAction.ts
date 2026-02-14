@@ -35,6 +35,7 @@ const useInputButtonGroupAction = () => {
     setSelectedCardCategory,
     enableChatInput,
     messages,
+    startFollowUp,
   } = useChatContext();
 
   const { sendMessageToSocket } = useAppWebSocketConnection();
@@ -43,10 +44,10 @@ const useInputButtonGroupAction = () => {
 
   const continueJourney = () => {
     const currentMessageIndex = selectedCardCategoryJourney?.findIndex(
-      (msg) => msg.submit
+      (msg) => msg.submit,
     );
     const currentQuestion: BaseMessage = selectedCardCategoryJourney?.at(
-      currentMessageIndex
+      currentMessageIndex,
     ) || {
       m_id: "",
       content: "",
@@ -69,7 +70,7 @@ const useInputButtonGroupAction = () => {
 
     if (currentMessageIndex + 1 < selectedCardCategoryJourney.length) {
       const nextQuestion = selectedCardCategoryJourney?.at(
-        currentMessageIndex + 1
+        currentMessageIndex + 1,
       )
         ? selectedCardCategoryJourney?.at(currentMessageIndex + 1)
         : { m_id: "" };
@@ -96,14 +97,14 @@ const useInputButtonGroupAction = () => {
     const botMessage = createBotRecommendationContent(
       filterUserMessage(args?.updatedMessageState || messages),
       selectedCardCategory as CardsType,
-      args?.action
+      args?.action,
     );
 
     sendMessageToSocket(JSON.stringify(botMessage));
     setSessionIdValidation(true);
 
     if (args?.action === HISTORY_ACTIONS.END_RECOMMENDATION) {
-      handleEndJourney?.();
+      startFollowUp.current = true;
     }
   };
 
@@ -115,7 +116,7 @@ const useInputButtonGroupAction = () => {
     saveToSessionStorage(CARD_CATEGORY_KEY, switchTo);
     setSelectedCardCategory(switchTo);
     const question = cardCategoryJourneyData?.[switchTo as CardsType]?.at(
-      category ? 1 : 0
+      category ? 1 : 0,
     );
 
     addUserMessage(question);
@@ -134,7 +135,7 @@ const useInputButtonGroupAction = () => {
         ts: new Date().toISOString(),
         type: "TextMessage",
         custom_metadata: [],
-      })
+      }),
     );
   };
 

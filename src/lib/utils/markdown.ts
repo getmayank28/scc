@@ -26,17 +26,13 @@ export function isCardRecommendationResponse(txt: string) {
   } catch {
     return false;
   }
-
   if (!data || typeof data !== "object") return false;
 
-  return data.cards.every(
+  const result = data.cards.every(
     (card: BotRecommendationCreditCardProps) =>
-      card &&
-      typeof card === "object" &&
-      typeof card.cardName === "string" &&
-      typeof card.returnOnSpend === "string" &&
-      typeof card.applyLink === "string",
+      card && typeof card === "object" && typeof card.cardName === "string",
   );
+  return result;
 }
 
 function extractJsonFromLLM(text: string): string {

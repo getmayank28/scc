@@ -24,7 +24,8 @@ export type MessageType =
   | "HISTORY"
   | "MultiSelect"
   | "ButtonGroup"
-  | "form";
+  | "form"
+  | "FinalMessage";
 
 interface Slots {
   label: string;
@@ -47,7 +48,7 @@ export interface BaseMessage {
   botContent?: string;
   source: MessageSource;
   type: MessageType;
-  ts?: string;
+  ts?: string | undefined;
   search?: boolean;
   slots?: Slots[];
   slider?: Slider;

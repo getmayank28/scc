@@ -51,15 +51,6 @@ const useChatActions = () => {
       message.source === "assistant"
     ) {
       addAssistantMessage(message);
-      disableTypingLoader?.();
-      enableChatInput();
-      if (showContinueJourneyMessage) {
-        addUserMessage(continueJourneyMessage as BaseMessage);
-        setCurrentMessageId(continueJourneyMessage?.m_id);
-      } else {
-        setCurrentMessageId(message?.m_id);
-      }
-
       return;
     }
     if (message.type === "session") {
