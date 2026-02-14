@@ -96,7 +96,7 @@ export default function SearchSelect({
 
       {/* Results */}
       {open && data.length > 0 && !selected && (
-        <UiCard className="absolute z-50 mt-1 w-full max-md:py-2 max-md:px-0 rounded-lg border-secondary-orange bg-background-primary">
+        <UiCard className="absolute z-50 mt-1 w-full max-md:py-2 max-md:px-0 rounded-lg border-2 border-secondary-orange bg-brown-sidebar">
           <CardContent className="p-1 max-md:px-0">
             {data.map((card: Card) => (
               <button

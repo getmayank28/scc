@@ -15,23 +15,23 @@ export const shoppingCard = [
     slots: [
       {
         label: "Less than ₹25,000",
-        value: "Less than ₹25,000",
+        value: 25000,
       },
       {
         label: "₹25,000 – ₹50,000",
-        value: "₹25,000 – ₹50,000",
+        value: 50000,
       },
       {
         label: "₹50,000 – ₹75,000",
-        value: "₹50,000 – ₹75,000",
+        value: 75000,
       },
       {
         label: "₹75,000 – ₹ 1 Lakhs",
-        value: "₹75,000 – ₹ 1 Lakhs",
+        value: 100000,
       },
       {
         label: "More than ₹ 1 Lakhs",
-        value: "More than ₹ 1 Lakhs",
+        value: 300000,
       },
     ],
   },
@@ -88,18 +88,7 @@ export const shoppingCard = [
       },
     ],
   },
-  {
-    m_id: "online-shopping-percentage",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content: "What percentage of your total shopping is online?",
-    botContent: " total spending on online shopping is ",
-    order: 5,
-    type: MESSAGE_TYPE.SLIDER,
-    default: 10000,
-    min: 0,
-    max: 100000,
-    step: 100,
-  },
+
   {
     m_id: "utility-bill-payments-spend",
     source: MESSAGE_SOURCE.ASSISTANT,
@@ -134,6 +123,29 @@ export const shoppingCard = [
     default: 10000,
     min: 0,
     max: 100000,
-    step: 100,
+    step: 500,
+  },
+  {
+    m_id: "online-shopping-percentage",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "What percentage of your total shopping is online?",
+    botContent: " total spending on online shopping is ",
+    order: 5,
+    type: MESSAGE_TYPE.SLIDER,
+    dynamicFileds: ["default", "max"],
+    default: (answers: BaseMessage[]) => {
+      const requiredQuestion = answers?.find(
+        (item: BaseMessage) => item?.questionId === "average-shopping-spend"
+      );
+      return Number(requiredQuestion?.content) * 0.6;
+    },
+    min: 0,
+    max: (answers: BaseMessage[]) => {
+      const requiredQuestion = answers?.find(
+        (item: BaseMessage) => item?.questionId === "average-shopping-spend"
+      );
+      return Number(requiredQuestion?.content);
+    },
+    step: 500,
   },
 ];

@@ -15,6 +15,9 @@ export function containsMarkdownTable(message: string): boolean {
 }
 
 export function isCardRecommendationResponse(txt: string) {
+  if (!txt.startsWith("```json")) {
+    return false;
+  }
   const text = safeParseJson(txt);
   let data;
 

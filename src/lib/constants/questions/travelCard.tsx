@@ -95,6 +95,36 @@ export const travelCard: BaseMessage[] = [
     ],
   },
   {
+    m_id: "travel-priority",
+    source: MESSAGE_SOURCE.ASSISTANT,
+    content: "What’s your priority?",
+    botContent: " my travel priority is ",
+    order: 8,
+    type: MESSAGE_TYPE.MULTI_SELECT,
+    slots: [
+      {
+        label: "Lounge",
+        value: "Lounge",
+      },
+      {
+        label: "Miles",
+        value: "Miles",
+      },
+      {
+        label: "Insurance",
+        value: "Insurance",
+      },
+      {
+        label: "Low Forex",
+        value: "Low Forex",
+      },
+      {
+        label: "Max savings",
+        value: "Max savings",
+      },
+    ],
+  },
+  {
     m_id: "international-holiday-trip",
     source: MESSAGE_SOURCE.ASSISTANT,
     content: "No. of international holiday trip each Year?",
@@ -105,6 +135,15 @@ export const travelCard: BaseMessage[] = [
     min: 0,
     max: 10,
     step: 1,
+    conditionalRender: true,
+    condition: (answers: BaseMessage[]) => {
+      const travelSpendCategory =
+        answers?.find(
+          (item) => item.questionId === "total-travel-spend"
+        )?.content || "";
+      const isOnlyDomestic = ["Only domestic"]?.includes(travelSpendCategory)
+      return !isOnlyDomestic
+    },
   },
   {
     m_id: "per-international-trip-spend",
@@ -113,6 +152,15 @@ export const travelCard: BaseMessage[] = [
     botContent: " my spend on each international trip is ",
     order: 6,
     type: MESSAGE_TYPE.SELECT,
+    conditionalRender: true,
+    condition: (answers: BaseMessage[]) => {
+      const travelSpendCategory =
+        answers?.find(
+          (item) => item.questionId === "total-travel-spend"
+        )?.content || "";
+      const isOnlyDomestic = ["Only domestic"]?.includes(travelSpendCategory)
+      return !isOnlyDomestic
+    },
     slots: [
       {
         label: "Less than ₹1 lakh",
@@ -162,34 +210,5 @@ export const travelCard: BaseMessage[] = [
       },
     ],
   },
-  {
-    m_id: "travel-priority",
-    source: MESSAGE_SOURCE.ASSISTANT,
-    content: "What’s your priority?",
-    botContent: " my travel priority is ",
-    order: 8,
-    type: MESSAGE_TYPE.MULTI_SELECT,
-    slots: [
-      {
-        label: "Lounge",
-        value: "Lounge",
-      },
-      {
-        label: "Miles",
-        value: "Miles",
-      },
-      {
-        label: "Insurance",
-        value: "Insurance",
-      },
-      {
-        label: "Low Forex",
-        value: "Low Forex",
-      },
-      {
-        label: "Max savings",
-        value: "Max savings",
-      },
-    ],
-  },
+
 ];

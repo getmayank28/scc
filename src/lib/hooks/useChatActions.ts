@@ -43,7 +43,7 @@ const useChatActions = () => {
   const { sendMessageToSocket } = useAppWebSocketConnection();
 
   const handleMessageFormatting = (
-    message: BaseMessage | HistoryMessage | SessionMessage
+    message: BaseMessage | HistoryMessage | SessionMessage,
   ) => {
     if (
       message.type !== "history" &&
@@ -74,7 +74,7 @@ const useChatActions = () => {
   };
 
   const handleButtonGroupInput = (
-    value: string | Record<string, string | number>
+    value: string | Record<string, string | number>,
   ) => {
     const isButtonGroupAction =
       typeof value === "string" && value?.includes("action-");
@@ -102,7 +102,7 @@ const useChatActions = () => {
       if (potentialNextQuestion?.conditionalRender) {
         // Check if condition is met
         const shouldRender = potentialNextQuestion.condition?.(
-          filterUserMessage([...messages, userMsg] as BaseMessage[])
+          filterUserMessage([...messages, userMsg] as BaseMessage[]),
         );
 
         if (shouldRender) {
@@ -126,7 +126,7 @@ const useChatActions = () => {
 
   const resolveDynamicFields = (
     question: BaseMessage,
-    answers: BaseMessage[]
+    answers: BaseMessage[],
   ): BaseMessage => {
     if (!question.dynamicFileds?.length) return question;
 
@@ -146,7 +146,7 @@ const useChatActions = () => {
 
   const handleSendMessage = async (
     value: string | Record<string, string | number>,
-    messageSource?: MessageSourceType
+    messageSource?: MessageSourceType,
   ) => {
     if (typeof value === "string" && !value.trim()) return;
 
@@ -209,12 +209,12 @@ const useChatActions = () => {
     }
 
     const { nextQuestion, nextIndex } = getNextJourneyQuestion(
-      userMsg as BaseMessage
+      userMsg as BaseMessage,
     );
     if (nextQuestion) {
       const resolvedQuestion = resolveDynamicFields(
         nextQuestion,
-        filterUserMessage([...messages, userMsg] as BaseMessage[])
+        filterUserMessage([...messages, userMsg] as BaseMessage[]),
       );
       addUserMessage(resolvedQuestion as BaseMessage);
       setCurrentMessageId(resolvedQuestion?.m_id);
@@ -235,7 +235,7 @@ const useChatActions = () => {
   };
 
   const handleKeyPressSendMessage = (
-    e: React.KeyboardEvent<HTMLInputElement>
+    e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();

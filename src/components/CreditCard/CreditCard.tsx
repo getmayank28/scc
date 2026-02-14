@@ -233,7 +233,7 @@ console.log(bankLogo, "cjfhvfvjnejdnejbcjebjdnej")
             <div
               className={`absolute top-0 -right-14 group-hover:right-0 transition-all duration-500 rounded-lg`}
             >
-              <div className="h-[247px] flex flex-col p-4 px-3 bg-background-primary border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
+              <div className="h-[247px] flex flex-col p-4 px-3 bg-brown-sidebar border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
                 <AnimatedTooltip
                   iconClassName="w-8 h-8"
                   onClick={onRemove}
@@ -257,13 +257,13 @@ console.log(bankLogo, "cjfhvfvjnejdnejbcjebjdnej")
             </div>
           </div>
 
-          <div className="absolute bottom-[0%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
+          <div className="absolute bottom-[0%] h-7 -translate-y-1/2 left-4 gap-2 flex justify-between items-center text-white opacity-75">
             {annualFee && (
-              <div className="flex w-[240px] items-center gap-1">
-                <span className="text-[12px] opacity-80 font-medium capitalize tracking-wider">
+              <div className={`flex ${applyLink?'w-[295px] items-start':'w-[360px] items-center'}  gap-1`}>
+                <span className="text-[10px] whitespace-nowrap opacity-80 font-semibold capitalize tracking-wider">
                   annual fee:
                 </span>
-                <span className="text-[12px] opacity-80 font-semibold uppercase tracking-wider">
+                <span className="text-[10px] opacity-90 font-semibold tracking-wider">
                   {annualFee}
                 </span>
               </div>
@@ -273,7 +273,7 @@ console.log(bankLogo, "cjfhvfvjnejdnejbcjebjdnej")
                 className="text-[10px] h-7"
                 onClick={() => window.open(applyLink, "_blank")}
               >
-                Apply for this card
+                Apply
               </Button>
             )}
           </div>
