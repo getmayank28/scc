@@ -67,6 +67,7 @@ export interface BaseMessage {
   submit?: boolean | string;
   custom_metadata?: Record<string, string>[];
   thread?: number;
+  selectedValue?: string | number;
 }
 
 export interface SessionMessage {

@@ -147,7 +147,10 @@ export function useChatState() {
             questionType: currentQuestion?.type,
             botContent: currentQuestion?.botContent,
           };
-          return [currentQuestion, userMessage];
+          return [
+            { ...currentQuestion, selectedValue: Object.values(ele)?.at(0) },
+            userMessage,
+          ];
         });
 
       return formattedMessage;

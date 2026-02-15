@@ -71,7 +71,7 @@ export const foodCard = [
     condition: (answers: BaseMessage[]) => {
       const onlineOrderFrequency =
         answers?.find(
-          (item) => item.questionId === "online-food-order-frequency"
+          (item) => item.questionId === "online-food-order-frequency",
         )?.content || "";
 
       const dineOutFrequency =
@@ -79,11 +79,11 @@ export const foodCard = [
           ?.content || "";
 
       const onlineFood = ["1–2 times a week", "Rarely or never"]?.includes(
-        onlineOrderFrequency
+        onlineOrderFrequency,
       );
 
       const dineOut = ["1–2 times a month", "Rarely or never"]?.includes(
-        dineOutFrequency
+        dineOutFrequency,
       );
 
       return onlineFood && dineOut;

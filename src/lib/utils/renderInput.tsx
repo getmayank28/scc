@@ -13,6 +13,8 @@ interface RenderInputProps {
     id?: string
   ) => void;
   enableInputs?: boolean;
+  showSubmit?: boolean;
+  selectedValue?:number|string
 }
 
 export const renderInput = ({
@@ -21,12 +23,16 @@ export const renderInput = ({
   isTyping,
   handleSend,
   enableInputs,
+  showSubmit,
+  selectedValue
 }: RenderInputProps) => {
   if (!message || !message.type) return null;
   switch (message.type) {
     case MESSAGE_TYPE.SLIDER:
       return (
         <SliderInput
+          selectedValue={(message?.selectedValue ?? selectedValue) as number}
+          showSubmit={showSubmit}
           disabled={
             enableInputs
               ? !enableInputs
@@ -44,6 +50,8 @@ export const renderInput = ({
     case MESSAGE_TYPE.SELECT:
       return (
         <SingleSelectInput
+          selectedValue={(message?.selectedValue ?? selectedValue) as string}
+          showSubmit={showSubmit}
           disabled={
             enableInputs
               ? !enableInputs
@@ -57,6 +65,8 @@ export const renderInput = ({
     case MESSAGE_TYPE.BUTTON_GROUP:
       return (
         <SingleSelectInput
+          isButtonGroup={true}
+          selectedValue={(message?.selectedValue??selectedValue) as string}
           disabled={message.m_id !== currentMessageId || !!isTyping}
           onSelectionSubmit
           options={message?.slots ?? []}
@@ -66,6 +76,7 @@ export const renderInput = ({
     case MESSAGE_TYPE.MULTI_SELECT:
       return (
         <MultiSelectInput
+          selectedValue={(message?.selectedValue??selectedValue) as string}
           maxSelect={message?.maxSelect}
           disabled={message.m_id !== currentMessageId || !!isTyping}
           options={message?.slots ?? []}
@@ -75,6 +86,7 @@ export const renderInput = ({
     case MESSAGE_TYPE.FORM:
       return (
         <FormInput
+          selectedValue={message?.selectedValue as string}
           currentMessageId={currentMessageId}
           disabled={message.m_id !== currentMessageId || !!isTyping}
           inputs={message?.inputs ?? []}

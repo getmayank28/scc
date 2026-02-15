@@ -9,15 +9,18 @@ interface MultiSelectInputProps {
   disabled: boolean;
   onSubmit: (selected: Array<string>) => void;
   maxSelect?:number
+  selectedValue?:string
 }
 
 const MultiSelectInput = ({
   options,
   disabled,
   onSubmit,
-  maxSelect
+  maxSelect,
+  selectedValue
 }: MultiSelectInputProps) => {
-  const [selectedOptions, setSelectedOptions] = useState([]);
+  const [selectedOptions, setSelectedOptions] = useState(() => selectedValue?.split(",")??[]);
+
   return (
     <div>
       <div className="grid grid-cols-3 max-md:grid-cols-2 max-md:gap-2 gap-4 mt-3">
@@ -27,11 +30,9 @@ const MultiSelectInput = ({
               id="toggle-2"
               disabled={disabled}
               defaultChecked={Math.random() < 0.5}
-              // @ts-expect-error some
               checked={selectedOptions?.includes(ele.value)}
               onClick={() => {
 
-                 // @ts-expect-error some
                 const isSelected = selectedOptions?.includes(ele.value);
                 if (isSelected) {
                   const filteredOptions = selectedOptions?.filter(
@@ -44,7 +45,6 @@ const MultiSelectInput = ({
                   toast(`You can max select ${maxSelect} options`)
                   return 
                 }
-                   // @ts-expect-error some
                   setSelectedOptions((prev) => [...prev, ele.value]);
                 }
               }}

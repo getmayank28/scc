@@ -86,9 +86,20 @@ export const shoppingCard = [
         label: "Nyka",
         value: "Nyka",
       },
+      {
+        label: "Tata Cliq",
+        value: "Tata Cliq",
+      },
+      {
+        label: "Mix of all",
+        value: "Mix of all",
+      },
+      {
+        label: "Others",
+        value: "Others",
+      },
     ],
   },
-
   {
     m_id: "utility-bill-payments-spend",
     source: MESSAGE_SOURCE.ASSISTANT,
@@ -120,7 +131,7 @@ export const shoppingCard = [
     },
     order: 7,
     type: MESSAGE_TYPE.SLIDER,
-    default: 10000,
+    default: 5000,
     min: 0,
     max: 100000,
     step: 500,

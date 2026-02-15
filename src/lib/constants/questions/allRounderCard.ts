@@ -31,14 +31,14 @@ export const allRounderCard = [
     dynamicFileds: ["default", "max"],
     default: (answers: BaseMessage[]) => {
       const requiredQuestion = answers?.find(
-        (item: BaseMessage) => item?.questionId === "monthly-spend"
+        (item: BaseMessage) => item?.questionId === "monthly-spend",
       );
       return Number(requiredQuestion?.content) * 0.6;
     },
     min: 1000,
     max: (answers: BaseMessage[]) => {
       const requiredQuestion = answers?.find(
-        (item: BaseMessage) => item?.questionId === "monthly-spend"
+        (item: BaseMessage) => item?.questionId === "monthly-spend",
       );
       return Number(requiredQuestion?.content);
     },

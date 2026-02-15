@@ -19,6 +19,8 @@ interface SliderInputProps {
   onSelectionSubmit?: boolean;
   sliderStep?: number;
   enableInputs?: boolean;
+  showSubmit?:boolean
+  selectedValue?:number
 }
 
 export default function SliderInput({
@@ -35,8 +37,10 @@ export default function SliderInput({
   value,
   onSelectionSubmit = false,
   enableInputs,
+  showSubmit=true,
+  selectedValue
 }: SliderInputProps) {
-  const [selecteValue, setSelectedValue] = useState(() => value ?? 100000);
+  const [selecteValue, setSelectedValue] = useState(() => selectedValue ?? value ?? 100000);
 
   const inputValue = useMemo(() => {
     if (isOutsideControl) return value;
@@ -140,7 +144,7 @@ export default function SliderInput({
                 +
               </Button>
             </div>
-            {!enableInputs && (
+            {!enableInputs && showSubmit && (
               <Button
                 onClick={handleSubmit}
                 disabled={!inputValue || disabled}
