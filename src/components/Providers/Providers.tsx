@@ -18,9 +18,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
   const isHiddenRoute =
     pathname?.includes("/chat") ||
     [
-      "/profile",
       "/",
-      "/support",
       "/about",
       "/sign-up",
       "/sign-in",

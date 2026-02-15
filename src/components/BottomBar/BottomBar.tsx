@@ -1,7 +1,6 @@
-import { useState } from "react";
 import { BadgeIndianRupee, Brain, Home, MessagesSquare, Search } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import useChatSidebar from "@/lib/hooks/useChatSidebar";
 
 
@@ -34,7 +33,7 @@ const navs = [
 ]
 
 const BottomBar = () => {
-  const [selected, setSelected] = useState('home')
+  const pathname = usePathname()
   const router = useRouter()
   const { handleNewChat } = useChatSidebar()
 
@@ -42,11 +41,9 @@ const BottomBar = () => {
     <div className="bg-brown-sidebar shadow-2xl hidden z-[9999] p-4 max-md:flex justify-between fixed -bottom-[2px] left-0 right-0">
       {
         navs?.map(ele => (
-            <button key={ele?.id} className={`h-14 w-14 ${selected === ele?.id ? 'bg-[#AD744A]' : 'bg-brown-background'}  rounded-full flex justify-center items-center`}
+            <button key={ele?.id} className={`h-14 w-14 ${pathname === ele?.href ? 'bg-[#AD744A]' : 'bg-brown-background'}  rounded-full flex justify-center items-center`}
               onClick={() => {
-                setSelected(ele?.id)
                 if(ele.id === 'chat'){
-                  setSelected(ele?.id)
                   handleNewChat?.()
                 }else{
                   router.push(ele?.href)
