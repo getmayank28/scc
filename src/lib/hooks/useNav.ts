@@ -4,7 +4,7 @@ import { ROUTES } from "../constants/routes";
 const useNav = () => {
   const router = useRouter();
 
-  const goToChat = () => router.push(ROUTES.CHAT);
+  const goToChat = () => router.push(`${ROUTES.CHAT}/new`);
 
   const goToSignIn = () => router.replace(ROUTES.SIGN_IN);
 
@@ -16,6 +16,8 @@ const useNav = () => {
 
   const goToHome = () => router.push(ROUTES.LOGGED_IN_HOME);
 
+  const goToSpendOptimizer = () => router.push(ROUTES.SPEND_OPTIMIZER);
+
   return {
     goToChat,
     goBack,
@@ -23,6 +25,7 @@ const useNav = () => {
     goToCardCategory,
     navigateToProfile,
     goToHome,
+    goToSpendOptimizer,
   };
 };
 

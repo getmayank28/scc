@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import useUserData from "@/lib/hooks/useUserData";
 import { CreditCard } from "../CreditCard";
 import Image from "next/image";
+import useNav from "@/lib/hooks/useNav";
 
 const steps = [
   {
@@ -31,6 +32,7 @@ interface WelcomeScreenProps {
 }
 const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard }: WelcomeScreenProps) => {
   const { firstName, nameInitials, name } = useUserData();
+  const {goToChat, goToSpendOptimizer} = useNav()
 
   return (
     <div className="flex flex-col justify-center max-w-[1330px] w-full px-6 max-md:px-0">
@@ -56,7 +58,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
             </Typography>
           </div>
         </div>
-        <Button className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+        <Button onClick={goToChat} className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
           Step into smart spending <p className="font-black">→</p>
         </Button>
       </div>}
@@ -84,7 +86,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
                 </Typography>
               </div>
             ))}
-            <Button className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
+            <Button onClick={goToChat} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
               Get your personalised card <p className="font-black">→</p>
             </Button>
           </div>
@@ -122,7 +124,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
               transaction?
             </Typography>
           </div>
-          <Button className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+          <Button onClick={goToSpendOptimizer} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
             Check best card for a spend <p className="font-black">→</p>
           </Button>
         </div>

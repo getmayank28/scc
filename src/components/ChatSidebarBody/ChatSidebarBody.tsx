@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { SquarePen, X } from "lucide-react";
+import { Home, SquarePen, X } from "lucide-react";
 import Typography from "../Typography/Typography";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { ChatSideBarSkeleton } from "../Loader/Loader";
 import useChatSidebar from "@/lib/hooks/useChatSidebar";
 import useIsMobile from "@/lib/hooks/useIsMobile";
+import useNav from "@/lib/hooks/useNav";
 
 dayjs.extend(utc);
 
@@ -52,6 +53,8 @@ export const LogoIcon = () => {
 const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
   const { isMobile } = useIsMobile()
   const { handleNewChat, handleSessionClick, currentSessionId, data, isFetching } = useChatSidebar()
+
+  const {goToHome} = useNav()
 
   return (
     <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
@@ -127,6 +130,23 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
               )
             )
         )}
+      </div>
+      <div className="mt-8 flex flex-col gap-2">
+      <Typography
+        variant="body"
+        className="text-md text-primary-orange opacity-100 text-left font-semibold"
+      >
+        Navigation
+      </Typography>
+        <div
+          className="flex gap-2 items-center cursor-pointer"
+          onClick={goToHome}
+        >
+          <Home className="h-5 w-5 shrink-0 text-neutral-200" />
+          <Typography variant="body" className="text-md opacity-100">
+            Go to home
+          </Typography>
+        </div>
       </div>
     </div>
   );
