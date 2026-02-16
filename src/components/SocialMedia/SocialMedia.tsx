@@ -8,19 +8,19 @@ import Divider from '../ui/divider'
 const socialLinks = [
   {
     icon: Linkedin,
-    href: '#',
+    href: 'https://www.linkedin.com/company/gofisense/',
     color: 'bg-[#0077b5]',
     label: 'LinkedIn',
   },
   {
     icon: Instagram,
-    href: '#',
+    href: 'https://www.instagram.com/gofisense?igsh=MWlnOHhnMWtpZTh6NQ==',
     color: 'bg-[#3b5999]',
     label: 'Facebook',
   },
   {
     icon: Facebook,
-    href: '#',
+    href: 'https://www.facebook.com/share/1LJ2DZFGro/',
     color: 'bg-[#55acee]',
     label: 'Twitter',
   }
