@@ -18,6 +18,8 @@ const useNav = () => {
 
   const goToSpendOptimizer = () => router.push(ROUTES.SPEND_OPTIMIZER);
 
+  const goToProfile = () => router.push(ROUTES.PROFILE);
+
   return {
     goToChat,
     goBack,
@@ -26,6 +28,7 @@ const useNav = () => {
     navigateToProfile,
     goToHome,
     goToSpendOptimizer,
+    goToProfile,
   };
 };
 

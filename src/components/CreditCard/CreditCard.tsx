@@ -79,7 +79,6 @@ const CreditCard = ({
       icon: <X color="#FFF" size={16} />,
     },
   ];
-console.log(bankLogo, "cjfhvfvjnejdnejbcjebjdnej")
   return (
     <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
       {/* Card Bottom Shadow */}

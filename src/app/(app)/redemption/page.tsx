@@ -12,6 +12,7 @@ import { RedemptionSkeleton } from "./Loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetUserCardsQuery } from "@/store/api";
 import useUserData from "@/lib/hooks/useUserData";
+import useNav from "@/lib/hooks/useNav";
 
 
 const PointRedemption = () => {
@@ -19,6 +20,7 @@ const PointRedemption = () => {
   const [points, setPoints] = useState('')
   const [errors, setErrors] = useState({ points: false, card: false })
   const { userId } = useUserData();
+  const { goToProfile } = useNav()
 
   const { data: userCards } = useGetUserCardsQuery(
     { userId },
@@ -59,7 +61,7 @@ const PointRedemption = () => {
       <div className="flex rounded-md border border-brown-border max-w-6xl bg-brown-sidebar p-5 gap-4 mt-4 mb-2 max-md:flex-col">
         <div className="w-full">
           <Select
-          disabled={isRedemptionLoading}
+            disabled={isRedemptionLoading}
             value={query}
             onValueChange={(value) => setQuery(value)}
           >
@@ -74,7 +76,7 @@ const PointRedemption = () => {
               position="popper"
               sideOffset={4}
             >
-              {userCards?.map((card:{cardId:{name:string}}) => {
+              {userCards?.map((card: { cardId: { name: string } }) => {
                 return (
                   <SelectItem key={card.cardId?.name} value={card.cardId?.name}>
                     <div className="flex items-center gap-2">
@@ -83,6 +85,11 @@ const PointRedemption = () => {
                   </SelectItem>
                 );
               })}
+              {!userCards?.length &&
+                <div className="flex items-center gap-2 p-2 justify-between">
+                  <span>No cards added</span>
+                  <Button onClick={goToProfile} className="h-8 px-3">Add card</Button>
+                </div>}
             </SelectContent>
           </Select>
         </div>
