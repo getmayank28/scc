@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { joinTextMessagesByMid } from "@/lib/utils/content";
 import { useChatCommunicationMutation } from "@/store/api";
 import { BaseMessage, MESSAGE_TYPE } from "@/types/chatMessages";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ContentRenderer from "./ContentRender";
 import { MultiStepChatLoader } from "@/components/MultiStepChatLoader/MultiStepChatLoader";
 import useSocket from "@/lib/hooks/useSocket";
 import NoCardData from "./NoDataAnim";
+import Typography from "@/components/Typography/Typography";
+import useNav from "@/lib/hooks/useNav";
 
 const loadingStates = [
   {
@@ -49,8 +51,26 @@ const CardInfo = () => {
   const [cardDetails, setCardDetails] = useState<BaseMessage | null>(null);
   const [cardName, setCardName] = useState("");
   const { createChatSessionToken } = useSocket();
+  const [showAdvisorPopUp, setShowAdvisorPopUp] = useState(false)
+  const { goToChat } = useNav()
 
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
+  const hasShownRef = useRef(false);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+  
+    if (cardName && !isLoading && !hasShownRef.current) {
+      timer = setTimeout(() => {
+        setShowAdvisorPopUp(true);
+        hasShownRef.current = true;
+      }, 3000);
+    }
+  
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [cardName, isLoading]);
 
   const handleSubmit = async () => {
     setCardDetails(null);
@@ -76,6 +96,24 @@ const CardInfo = () => {
         titleVariant="h3"
         titleClassName="font-bold"
       />
+      {showAdvisorPopUp && <div className="shadow-xl flex flex-col gap-4 absolute top-5 max-md:w-[300px] max-md:p-3 max-md:gap-3 right-5 z-100 border-2 bg-brown-sidebar border-secondary-orange p-5 rounded-md w-sm max-w-md">
+        <Typography variant="caption" className="text-left text-sm opacity-100 font-semibold">Looking for your card? Get your match with Advisor!</Typography>
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant={'outline'}
+            className="rounded-lg max-md:text-sm h-10 px-8 max-md:px-4 border-primary-orange"
+            onClick={() => setShowAdvisorPopUp(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            className="rounded-lg max-md:text-sm h-10 px-8 bg-primary-orange/70 max-md:px-4"
+            onClick={goToChat}
+          >
+            Find out
+          </Button>
+        </div>
+      </div>}
       <div className="flex gap-2 mt-4 mb-2">
         <SearchSelect
           searchInputRef={searchInputRef}

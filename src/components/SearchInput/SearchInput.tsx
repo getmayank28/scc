@@ -4,7 +4,10 @@ import { RefObject, useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Card as UiCard, CardContent } from "@/components/ui/card";
 import { BadgeX, Loader2 } from "lucide-react";
-import { useLazyGetCardBySearchQuery } from "@/store/api";
+import { useLazyGetCardBySearchQuery, useSubmitFeedbackMutation } from "@/store/api";
+import toast from "react-hot-toast";
+import { Button } from "../ui/button";
+import Typography from "../Typography/Typography";
 
 interface Card {
   _id: string;
@@ -28,12 +31,29 @@ export default function SearchSelect({
   setQuery: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
   onClearInput?: () => void;
-  error?:boolean;
-  disabled?:boolean
+  error?: boolean;
+  disabled?: boolean
 }) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  
+  const [newCardName, setNewCardName] = useState("")
+  const [submitFeedback, { isLoading }] = useSubmitFeedbackMutation()
   const [open, setOpen] = useState(false);
+
+
+  const handleNewCardRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!newCardName.trim()) return
+
+    try {
+      await submitFeedback(newCardName).unwrap()
+      toast.success('Request submitted successfully')
+    } catch {
+      toast.success('Failed to record, please try again later')
+    }
+    setNewCardName("")
+  }
+
 
   const [triggerSearch, { data = [], isFetching }] =
     useLazyGetCardBySearchQuery();
@@ -122,9 +142,27 @@ export default function SearchSelect({
 
       {/* No results */}
       {open && !isFetching && data.length === 0 && query && !selected && (
-        <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-background-primary">
-          <CardContent className="p-4 text-center text-sm text-gray-400">
-            No cards found as per your query
+        <UiCard className="absolute z-50 mt-1 w-full rounded-lg border-secondary-orange bg-brown-sidebar">
+          <CardContent className="px-4 text-center text-sm text-gray-400">
+            <Typography variant="caption" className="text-left mb-4">Don’t see your card? Let us know and we’ll add it for you.</Typography>
+            <form onSubmit={handleNewCardRequestSubmit} className="flex gap-4">
+              <Input
+                disabled={disabled}
+                ref={searchInputRef}
+                placeholder="Enter card name..."
+                value={newCardName}
+                onChange={(e) => {
+                  setNewCardName(e.target.value);
+                }}
+                className={`text-white text-lg h-12 max-md:text-xs border-primary-orange`}
+              />
+              <Button type="submit" className={`w-[120px] h-12`} disabled={!newCardName || isLoading}>
+                {isLoading && (
+                  <Loader2 className="h-6 w-6 animate-spin text-white" />
+                )}
+                Submit
+              </Button>
+            </form>
           </CardContent>
         </UiCard>
       )}
