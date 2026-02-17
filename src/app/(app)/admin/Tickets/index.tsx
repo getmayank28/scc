@@ -2,15 +2,23 @@ import Typography from "@/components/Typography/Typography"
 import { useGetAllTicketsQuery } from "@/store/admin"
 import dayjs from "dayjs"
 
+interface TicketProps {
+  _id:string;
+  email:string;
+  feedback:string;
+  updatedAt:string;
+  createdAt:string;
+  status:string;
+}
 const RaisedTickets = () => {
   const {data} = useGetAllTicketsQuery({})
-  console.log(data, "fhbvhfbhvbfhbvfhb")
+
   return (
     <div className="flex flex-col justify-start gap-4 p-10">
       <Typography variant="h4" className="text-left">Raised Tickets</Typography>
       <div>
         {
-          data?.map(ele => (
+          data?.map((ele:TicketProps) => (
             <div key={ele?._id} className="bg-brown-sidebar max-w-sm p-2 border-2 border-brown-border">
              <div className="flex gap-2 justify-between">
               <Typography variant="caption" className="opacity-100 text-sm">{ele?.email}</Typography>
