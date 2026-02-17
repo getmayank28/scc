@@ -10,7 +10,6 @@ import {
   SessionMessage,
 } from "@/types/chatMessages";
 import { useChatState } from "@/hooks/useChatState";
-import { continueJourney as continueJourneyMessage } from "@/lib/constants/questions/common";
 import { CHAT_ACTIONS, HISTORY_ACTIONS } from "../constants/actions";
 import { MessageSourceType } from "@/types/card";
 import { INPUT_MESSAGE_SOURCE } from "../constants/chatJourney";
@@ -26,12 +25,9 @@ const useChatActions = () => {
     disableChatInput,
     setInputValue,
     inputValue,
-    disableTypingLoader,
     messages,
     enableTypingLoader,
-    enableChatInput,
     setShowContinueJourneyMessage,
-    showContinueJourneyMessage,
   } = useChatContext();
   const {
     addUserMessage,

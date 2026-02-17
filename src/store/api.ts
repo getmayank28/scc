@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // adjust backend URL
-  tagTypes: ["UserCards"],
+  tagTypes: ["UserCards", "Cards"],
   endpoints: (builder) => ({
     getQuestions: builder.query({
       query: () => "/questions",
@@ -130,10 +130,10 @@ export const api = createApi({
     }),
 
     submitFeedback: builder.mutation({
-      query: (feedback:string) => ({
+      query: (feedback: string) => ({
         url: `feedback`,
         method: "POST",
-        body:{feedback},
+        body: { feedback },
       }),
       invalidatesTags: ["UserCards"],
     }),

@@ -1,5 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -31,7 +32,7 @@ export default function Modal({
   return createPortal(
     <div
       className="fixed bg-black/50  inset-0 z-[99999] flex items-center justify-center"
-      style={{ zIndex: 2147483647 }}
+      style={{ zIndex: 2147483640 }}
     >
       {/* Backdrop */}
       <div
@@ -51,7 +52,7 @@ export default function Modal({
             onClick={onClose}
             className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
           >
-            ✕
+            <X color="#ffffff"/>
           </button>
         )}
         {children}

@@ -6,9 +6,6 @@ import Image from "next/image";
 import { normalizeString } from "@/lib/utils";
 import { useRef, useState } from "react";
 import { Button } from "../ui/button";
-// import { Input } from "../ui/input";
-// import { useState } from "react";
-// import { creditCardSchema } from "@/schemas/creditCard";
 
 const CreditCard = ({
   cardName,
@@ -16,7 +13,6 @@ const CreditCard = ({
   name,
   background = "linear-gradient(90deg, #454893 10%, #15162D 100%)",
   isCardSpotlightActive = true,
-  // onCardNumberUpdate,
   onRemove,
   removeImage,
   forShow,
@@ -37,9 +33,6 @@ const CreditCard = ({
   applyLink?: string;
   bankLogo?:string
 }) => {
-  // const [error, setError] = useState(false);
-  // const [cardNumber, setCardNumber] = useState("");
-  // const [showNumberForm, setShowNumberForm] = useState(false);
   const Comp = isCardSpotlightActive ? CardSpotlight : "div";
   const [hovered, setHovered] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,22 +47,6 @@ const CreditCard = ({
     if (timerRef.current) clearTimeout(timerRef.current);
     setHovered(false);
   };
-
-  // const handleSubmit = () => {
-  //   const result = creditCardSchema.safeParse(cardNumber);
-  //   if (!result.success) {
-  //     setError(true);
-  //   } else {
-  //     onCardNumberUpdate?.(cardNumber);
-  //     setError(false);
-  //   }
-  // };
-
-  // const handleCancel = () => {
-  //   setShowNumberForm(false);
-  //   setCardNumber("");
-  //   setError(false);
-  // };
 
   const goBack = [
     {

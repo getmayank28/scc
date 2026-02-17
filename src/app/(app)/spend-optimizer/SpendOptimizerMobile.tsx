@@ -175,17 +175,7 @@ export default function SpendOptimizerMobile({
     return null;
   };
 
-  // Check if all fields are filled
-  const areAllFieldsFilled = (): boolean => {
-    return (
-      !!formData.category &&
-      !!formData.amount &&
-      formData.amount !== "0" &&
-      !!formData.merchant.trim() &&
-      !!formData.paymentMethod &&
-      !!formData.emi
-    );
-  };
+
 
   const openField = (fieldName: FieldName): void => {
 

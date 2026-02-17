@@ -49,9 +49,7 @@ export function TableHeader<T>({ columns, sortConfig, onSortChange, hasActions =
     return <ChevronsUpDown className="h-4 w-4 opacity-50" />;
   };
 
-  const getFilterValue = (columnKey: string) => {
-    return localFilters[columnKey] as string | string[] | undefined;
-  };
+
 
   const updateLocalFilter = (columnKey: string, value: unknown) => {
     setLocalFilters((prev) => ({

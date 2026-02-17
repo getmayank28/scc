@@ -16,8 +16,14 @@ const FeedbackSchema = new Schema(
       type: String,
       required: true,
     },
+    status: {
+      type: String,
+      enum: ["open", "progress", "resolved", "closed"],
+      default: "open",
+      index: true,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default models.Feedback || model("Feedback", FeedbackSchema);

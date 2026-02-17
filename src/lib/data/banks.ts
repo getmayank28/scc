@@ -11,6 +11,11 @@ export const banks = {
   YES_BANK: "YES Bank",
   BOB: "Bank of Baroda",
   AU_BANK: "AU Bank",
+  MULTIPLE_ISSUER: "Multiple Issuers",
+  NESF_BANK: "North East Small Finance Bank",
+  FEDERAL_BANK: "Federal Bank",
+  SBM_BANK: "SBM Bank India",
+  CSB_BANK: "CSB Bank",
 };
 
 export const bankIcon = {
