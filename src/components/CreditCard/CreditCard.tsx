@@ -234,16 +234,16 @@ const CreditCard = ({
           </div>
 
           <div className="absolute bottom-[0%] h-7 -translate-y-1/2 left-4 gap-2 flex justify-between items-center text-white opacity-75">
-            {annualFee && (
+            {annualFee? (
               <div className={`flex ${applyLink?'w-[295px] items-start':'w-[360px] items-center'}  gap-1`}>
                 <span className="text-[10px] whitespace-nowrap opacity-80 font-semibold capitalize tracking-wider">
-                  annual fee:
+                  annual fee(₹):
                 </span>
                 <span className="text-[10px] opacity-90 font-semibold tracking-wider">
                   {annualFee}
                 </span>
               </div>
-            )}
+            ):<></>}
             {applyLink && (
               <Button
                 className="text-[10px] h-7"

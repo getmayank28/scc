@@ -26,7 +26,7 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
             Manage Cards
           </Button> */}
       </div>
-      <div className="flex justify-between gap-4 max-md:overflow-x-auto max-md:gap-74">
+      <div className="flex justify-start gap-6 max-md:overflow-x-auto max-md:gap-74">
         {
           cards?.map(card => (
             <CreditCard

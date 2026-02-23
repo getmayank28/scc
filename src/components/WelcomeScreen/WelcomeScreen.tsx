@@ -36,7 +36,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
 
   return (
     <div className="flex flex-col justify-center max-w-[1330px] w-full px-6 max-md:px-0">
-      {showUserCard && <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-brown-border p-4 rounded-md">
+      {showUserCard && <div className="flex max-md:flex-col  justify-between items-center bg-brown-sidebar border border-b-0 border-brown-border p-4 rounded-md  rounded-b-none">
         <div className="flex gap-3 max-md:gap-2">
           <div className="flex justify-center items-center max-md:w-12 max-md:h-12 rounded-full p-4 border border-brown-border bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
             <Typography
@@ -62,7 +62,7 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
           Step into smart spending <p className="font-black">→</p>
         </Button>
       </div>}
-      {showRecommendationCard && <div className="border w-full bg-brown-sidebar overflow-hidden relative border-brown-border px-6 max-md:px-3 py-4 rounded-md max-md:mt-6">
+      {showRecommendationCard && <div className="border w-full bg-brown-sidebar overflow-hidden relative border-brown-border px-6 max-md:px-3 py-4 rounded-md max-md:mt-6 border-t-0 rounded-t-none">
         <div className="relative z-10">
           <Typography
             variant="body"

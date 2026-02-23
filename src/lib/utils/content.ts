@@ -17,19 +17,19 @@ const startingMessage = {
 
 export const filterUserMessage = (messages: BaseMessage[]) => {
   const userMessage = messages?.filter(
-    (msg) => msg.source === MESSAGE_SOURCE.USER
+    (msg) => msg.source === MESSAGE_SOURCE.USER,
   );
   return userMessage;
 };
 export const createBotRecommendationContent = (
   messages: BaseMessage[],
   cardType: CardsType,
-  action?: HistoryActions
+  action?: HistoryActions,
 ) => {
   let data = messages;
   if (action === HISTORY_ACTIONS.END_RECOMMENDATION) {
     const startingPoint = messages?.findIndex(
-      (message: BaseMessage) => message?.thread && message?.thread === 2
+      (message: BaseMessage) => message?.thread && message?.thread === 2,
     );
 
     data = messages?.slice(startingPoint + 1);
@@ -62,7 +62,9 @@ export const createBotRecommendationContent = (
 
   return {
     source: "user",
-    content: finalMessage,
+    content:
+      finalMessage +
+      ", note: assumed required value from spend_estimation_model.docx",
     m_id: crypto.randomUUID(),
     ts: new Date().toISOString(),
     type: "TextMessage",
@@ -122,7 +124,7 @@ export function joinTextMessagesByMid(messages: Message[]): JoinedMessage[] {
 
   for (const [, group] of grouped) {
     const sorted = group.sort(
-      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime()
+      (a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime(),
     );
 
     const joinedContent = sorted.map((m) => m.content).join("");

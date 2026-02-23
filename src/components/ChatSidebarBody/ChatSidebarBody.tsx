@@ -54,7 +54,7 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
   const { isMobile } = useIsMobile()
   const { handleNewChat, handleSessionClick, currentSessionId, data, isFetching } = useChatSidebar()
 
-  const {goToHome} = useNav()
+  const { goToHome } = useNav()
 
   return (
     <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
@@ -81,12 +81,12 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
           </Typography>
         </div>
       </div>
-      <Typography
+      {data?.sessions?.length && !isFetching ? <Typography
         variant="body"
         className="text-md text-primary-orange opacity-100 text-left mt-4 font-semibold"
       >
         Last 5 Matches
-      </Typography>
+      </Typography> : <></>}
 
       <div className="mt-2 flex flex-col gap-2">
         {isFetching ? (
@@ -132,12 +132,12 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
         )}
       </div>
       <div className="mt-8 flex flex-col gap-2">
-      <Typography
-        variant="body"
-        className="text-md text-primary-orange opacity-100 text-left font-semibold"
-      >
-        Navigation
-      </Typography>
+        <Typography
+          variant="body"
+          className="text-md text-primary-orange opacity-100 text-left font-semibold"
+        >
+          Navigation
+        </Typography>
         <div
           className="flex gap-2 items-center cursor-pointer"
           onClick={goToHome}

@@ -8,8 +8,7 @@ import CardRecommendationModal from "../CardRecommendationModal/CardRecommendati
 
 function ChatCard(props: BotRecommendationCreditCardProps
 ) {
-
-  const isWavedText = props?.annualFee?.toLowerCase()?.includes("waiv");
+  const isWavedText = props?.annualFee?.toString()?.toLowerCase()?.includes("waiv");
   const [open, setOpen] = useState(false)
 
 
@@ -40,23 +39,21 @@ function ChatCard(props: BotRecommendationCreditCardProps
               variant="p"
               className="text-left pl-10 opacity-70"
             >
-              Annual Loss
+              Annual Loss(₹)
             </Typography>
           </div>
 
-          {props?.annualFee && (
-            <div className="w-full">
+          <div className="w-full">
               <Typography variant="h4" className="text-left opacity-70">
-                {props?.annualFee?.split(" ")?.at(0)}
+                {props?.annualFee?.toString()?.split(" ")?.at(0)??0}
               </Typography>
               <Typography
                 variant="p"
                 className="text-left pl-10 opacity-90"
               >
-                Annual Fee {isWavedText && "(waived)"}
+                Annual Fee {isWavedText? "₹(waived)":"(₹)"}
               </Typography>
             </div>
-          )}
 
           <div className="w-full">
             <Typography variant="h4" className="text-left opacity-70">
@@ -66,7 +63,7 @@ function ChatCard(props: BotRecommendationCreditCardProps
               variant="p"
               className="text-left pl-10 opacity-90"
             >
-              Return on Annual Spend
+              Return on Annual Spend(%)
             </Typography>
           </div>
         </div>

@@ -23,7 +23,7 @@ export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
 
   return jwt.sign(payload, PRIVATE_KEY, {
     algorithm: "RS256",
-    expiresIn: "4h",
+    expiresIn: "2d",
     issuer: "gofisense",
     audience: "partner-chat",
     keyid: "chat-key-2026",
