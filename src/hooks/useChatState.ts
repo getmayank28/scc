@@ -21,7 +21,6 @@ export function useChatState() {
     setSelectedCardCategory,
     enableChatInput,
     disableTypingLoader,
-    shouldConvertNewPathToSessionId,
     showContinueJourneyMessage,
     startFollowUp,
     setShowContinueJourneyMessage,
@@ -78,8 +77,6 @@ export function useChatState() {
   };
 
   const loadHistory = useCallback((history: ChatMessage[]) => {
-    if (shouldConvertNewPathToSessionId) return;
-
     if (!history || !history.length) {
       setMessages([]);
       setCurrentMessageId("card-category-fs");
@@ -213,11 +210,6 @@ export function useChatState() {
     setMessages(finalHistory as BaseMessage[]);
   }, []);
 
-  const setSessionId = useCallback((session: SessionMessage) => {
-    if (typeof window === "undefined") return null;
-    localStorage.setItem("chat_session_id", session?.session_id);
-  }, []);
-
   const setSessionIdValidation = useCallback((validation: boolean) => {
     if (typeof window === "undefined") return null;
     localStorage.setItem(
@@ -234,7 +226,6 @@ export function useChatState() {
     addUserMessage,
     addAssistantMessage,
     loadHistory,
-    setSessionId,
     clearProcessedChunks,
     setSessionIdValidation,
   };

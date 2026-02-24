@@ -39,6 +39,7 @@ const SignInSection = ({
   });
 
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+    localStorage.clear()
     setIsLoading(true);
     try {
       const result = await signIn("credentials", {

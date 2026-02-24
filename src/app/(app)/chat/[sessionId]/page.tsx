@@ -23,9 +23,7 @@ export default function ChatbotUI() {
     chatInputDisabled,
     setInputValue,
     messages,
-    shouldConvertNewPathToSessionId,
   } = useChatContext();
-  const router = useRouter();
 
   const { addUserMessage } = useChatState();
   const messagesEndRef = useChatScroll(messages);
@@ -57,14 +55,7 @@ export default function ChatbotUI() {
     }
   }, [isSocketLoading, messages?.length]);
 
-  useEffect(() => {
-    const sessionId = shouldConvertNewPathToSessionId;
-    if (sessionId) {
-      router.replace(`/chat/${sessionId}`);
-    }
-  }, [messages?.length]);
 
-  // Wrapper function to match ChatbotScrollableArea's expected handleSend signature
   const handleSendWrapper = (
     value: string | Record<string, string | number>,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

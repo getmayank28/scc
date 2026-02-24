@@ -33,7 +33,6 @@ const useChatActions = () => {
     addUserMessage,
     addAssistantMessage,
     loadHistory,
-    setSessionId,
     setSessionIdValidation,
   } = useChatState();
   const { sendMessageToSocket } = useAppWebSocketConnection();
@@ -47,10 +46,6 @@ const useChatActions = () => {
       message.source === "assistant"
     ) {
       addAssistantMessage(message);
-      return;
-    }
-    if (message.type === "session") {
-      setSessionId(message as SessionMessage);
       return;
     }
 

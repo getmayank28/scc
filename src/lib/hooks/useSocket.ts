@@ -1,15 +1,8 @@
-import {
-  useChatSessionTokenMutation,
-  // useCreateChatSessionMutation,
-  // useUserChatSessionsMutation,
-} from "@/store/api";
-// import { getAnonymousId } from "../utils/ananymous";
+import { useChatSessionTokenMutation } from "@/store/api";
 import { useMemo } from "react";
 import { CHANNEL } from "../constants/channel";
 
 const useSocket = () => {
-  // const [createChatSessionMutation] = useCreateChatSessionMutation();
-
   const [
     chatSessionTokenMutation,
     {
@@ -17,8 +10,6 @@ const useSocket = () => {
       error: creatingChatSessionTokenError,
     },
   ] = useChatSessionTokenMutation();
-
-  // const [getUserSession] = useUserChatSessionsMutation();
 
   const isLoading = useMemo(
     () => isCreatingChatSessionToken,

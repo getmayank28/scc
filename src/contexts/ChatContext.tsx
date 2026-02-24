@@ -42,7 +42,6 @@ export type ChatsTypes = {
   setMessages: Dispatch<SetStateAction<ChatMessage[]>>;
   showContinueJourneyMessage: boolean;
   setShowContinueJourneyMessage: Dispatch<SetStateAction<boolean>>;
-  shouldConvertNewPathToSessionId: string | null|undefined;
   startFollowUp:RefObject<boolean>
 };
 const ChatContext = createContext<ChatsTypes | null>(null);
@@ -103,17 +102,7 @@ export function ChatContextProvider({
     return currentQuestion;
   }, [currentMessageIndex]);
 
-  const shouldConvertNewPathToSessionId = useMemo(() => {
-    if (typeof window === "undefined") return undefined;
-    const sessionId = pathname?.split("/")?.at(-1)?.toLowerCase() === "new";
-    // const isSessionCreated = localStorage.getItem("is_chat_session_id_valid");
-    const creatededSessionId = localStorage.getItem("chat_session_id");
 
-    if (sessionId  && creatededSessionId) {
-      return creatededSessionId;
-    }
-    return null;
-  }, [messages?.length]);
 
   return (
     <ChatContext.Provider
@@ -137,7 +126,6 @@ export function ChatContextProvider({
         setMessages,
         showContinueJourneyMessage,
         setShowContinueJourneyMessage,
-        shouldConvertNewPathToSessionId,
         startFollowUp
       }}
     >

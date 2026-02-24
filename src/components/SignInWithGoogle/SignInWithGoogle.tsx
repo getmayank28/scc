@@ -11,6 +11,7 @@ const SignInWithGoogle = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleSignIn =  () => {
+    localStorage.clear()
     setIsLoading(true)
     signIn("google")
   }
