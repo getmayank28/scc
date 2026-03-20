@@ -156,7 +156,7 @@ const TheWrongCard = () => {
               There&apos;s no <br className="hidden max-md:inline"/>right
               <br className="max-md:hidden" /> <span className="max-md:hidden">credit</span> card.
             </Typography>
-            <Typography variant="body" className="text-left opacity-90">
+            <Typography variant="body" className="text-left opacity-90 max-md:text-center">
               It depends on where you spend. That’s what <br className="hidden max-md:inline"/>we do: we <br className="max-md:hidden" />{" "}
               analyse your spending and <br className="hidden max-md:inline"/> recommend the best for you.
             </Typography>

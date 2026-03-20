@@ -259,7 +259,7 @@ const HeroSection = () => {
               <ColourfulText text="benefits" />
             </span>
           </Typography>
-          <Typography variant="body" className="text-left opacity-90">
+          <Typography variant="body" className="text-left opacity-90 max-md:text-center">
             Discover the card tailored for your spending
             <br /> to maximize every swipe effortlessly
           </Typography>

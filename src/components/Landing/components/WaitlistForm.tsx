@@ -52,6 +52,7 @@ const WaitlistForm = () => {
       await addToWaitlist(data).unwrap();
       toast.success("You're on the waitlist 🎉");
       form.reset();
+      closeWaitlistModal?.()
     } catch (error: unknown) {
       if (error && typeof error === "object" && "data" in error) {
         const fetchError = error as FetchBaseQueryError;

@@ -4,20 +4,24 @@ import { GlareCard } from '@/components/ui/glare-card';
 
 const features = [
   {
-    title: "Share how you spend",
-    description: "Answer a few quick questions about your shopping, travel, and everyday expenses. No exact numbers. No bank jargon."
+    title: "Tell Us How You Spend",
+    description: "Answer a few quick questions about your shopping, travel, and everyday expenses. No exact numbers needed."
   },
   {
-    title: "We analyse your spending",
-    description: "FiSense uses intelligent analysis to match credit cards to your lifestyle and spending habits, so you earn more from the same spending."
+    title: "We Analyze Your Credit Card Spending",
+    description: "FiSense analyzes your spending patterns to identify where you earn and where you miss rewards."
   },
   {
-    title: "Get personalised card matches",
-    description: "We recommend credit cards and smart 2-card combinations when useful based on your lifestyle, not generic lists."
+    title: "Find the Best Credit Cards for Your Spending",
+    description: "We recommend the best credit cards and smart combinations based on your lifestyle, not generic lists."
   },
   {
-    title: "Decide when it feels right",
-    description: "Compare with your current card, see potential savings, and apply only if and when you’re comfortable."
+    title: "Use the Best Credit Card for Every Spend",
+    description: "FiSense Spend Optimizer tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.."
+  },
+  {
+    title: "Redeem Credit Card Points for Maximum Value",
+    description: "FiSense shows you the best way to redeem your points across flights, hotels, and vouchers. so, you get the highest value."
   }
 ];
 

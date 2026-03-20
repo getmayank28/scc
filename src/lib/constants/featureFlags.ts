@@ -5,5 +5,5 @@ export const FeatureFlagsConfig = {
 } as const;
 
 export const featureFlags: FeatureFlagsTypes = {
-  [FeatureFlagsConfig.WAITLIST]: false,
+  [FeatureFlagsConfig.WAITLIST]: true,
 };

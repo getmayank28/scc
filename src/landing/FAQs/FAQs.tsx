@@ -9,20 +9,18 @@ const faqs = [
     answer: () => (
       <>
         <p>
-          FiSense is your smart financial guide. We start with Credit Card Rewards Optimization—helping you find which
-          card gives you the most value for how you spend.
+        FiSense is an AI-powered financial assistant that helps you choose the best credit cards, optimize your spending, and maximize rewards on every transaction.
         </p>
       </>
     ),
   },
   {
     id: "2",
-    question: "What does the Credit Card Optimizer do?",
+    question: "How does FiSense help me maximize credit card rewards?",
     answer: () => (
       <>
         <p>
-          It analyzes your spending across categories like fuel, dining, travel, e-commerce, and utilities, then identifies the
-          card(s) that maximize your rewards and savings.
+        FiSense analyzes your spending, recommends the best cards, tells you which card to use for each purchase, and guides you to redeem points for maximum value.
         </p>
       </>
     ),
@@ -33,9 +31,18 @@ const faqs = [
     answer: () => (
       <>
         <p>
-          Just enter your monthly spends or upload your latest card statement (coming soon)—FiSense instantly
-          calculates your benefits and shows your top card matches.
+        Simply share your spending details. FiSense analyzes your usage, recommends the best cards, and shows how to maximize rewards instantly.
         </p>
+      </>
+    ),
+  },
+    {
+    id: "7",
+    question: "Do I need to add my credit card details?",
+    answer: () => (
+      <>
+        <p>
+        No, FiSense does not require sensitive information like card numbers. You can simply select your cards or share basic inputs to get recommendations.        </p>
       </>
     ),
   },

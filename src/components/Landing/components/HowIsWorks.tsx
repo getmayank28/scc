@@ -6,10 +6,9 @@ import React from "react";
 
 const content = [
   {
-    title: "Share how you spend",
-    description:
-      "Answer a few quick questions about your shopping, travel, and everyday expenses. No exact numbers. No bank jargon.",
-    content: (
+    title: "Tell Us How You Spend",
+    description:"Answer a few quick questions about your shopping, travel, and everyday expenses. No exact numbers needed.",
+        content: (
       <div className="flex mt-10  w-[400px] h-[400px]  items-center justify-center text-white">
         <Image
           src="/images/your-spends.png"
@@ -21,9 +20,9 @@ const content = [
     ),
   },
   {
-    title: "We analyse your spending",
+    title: "We Analyze Your Credit Card Spending",
     description:
-      "FiSense uses intelligent analysis to match credit cards to your lifestyle and spending habits, so you earn more from the same spending.",
+      "FiSense analyzes your spending patterns to identify where you earn and where you miss rewards.",
     content: (
       <div className="flex -mt-0 w-[440px] h-[440px]  items-center justify-center text-white">
         <Image
@@ -36,9 +35,9 @@ const content = [
     ),
   },
   {
-    title: "Get personalised card matches",
+    title: "Find the Best Credit Cards for Your Spending",
     description:
-      "We recommend credit cards — and smart 2-card combinations when useful — based on your lifestyle, not generic lists.",
+     "We recommend the best credit cards and smart combinations based on your lifestyle, not generic lists.",
     content: (
       <div className="flex -mt-0 w-[440px] h-[440px]  items-center justify-center text-white">
         <Image
@@ -51,13 +50,28 @@ const content = [
     ),
   },
   {
-    title: "Decide when it feels right",
+    title: "Use the Best Credit Card for Every Spend",
     description:
-      "Compare with your current card, see potential savings, and apply only if and when you’re comfortable.",
+      "FiSense Spend Optimizer tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.",
     content: (
       <div className="flex -mt-0 w-[440px] h-[440px]  items-center justify-center text-white">
         <Image
           src="/images/compare.png"
+          width={400}
+          height={400}
+          alt="linear board demo"
+        />
+      </div>
+    ),
+  },
+  {
+    title: "Redeem Credit Card Points for Maximum Value",
+    description:
+      "FiSense shows you the best way to redeem your points across flights, hotels, and vouchers. so, you get the highest value.",
+    content: (
+      <div className="flex -mt-0 w-[440px] h-[440px]  items-center justify-center text-white">
+        <Image
+          src="/images/reedem-points.png"
           width={400}
           height={400}
           alt="linear board demo"
