@@ -7,6 +7,7 @@ import WaitlistModal from "./WaitlistModal";
 import { useWaitlistControl } from "@/contexts/WaitlistContext";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
+import SeeItInActionModal from "@/components/SeeItInActionModal/SeeItInActionModal";
 
 const Waitlist = () => {
   const { openWaitlistModal } = useWaitlistControl();
@@ -18,7 +19,7 @@ const Waitlist = () => {
         <Typography
           variant="h1"
           className="opacity-100 max-md:hidden"
-        >
+        >       
           We make your card
           <br />
           <ColourfulText text="spending shine" />
@@ -36,9 +37,7 @@ const Waitlist = () => {
           variant="body"
           className="text-[20px] max-md:text-[20px] mt-4 opacity-70"
         >
-          Personalized card recommendations based on your needs{" "}
-          <br className="max-md:hidden" />
-          because your spending deserves the right card.
+          We analyze your spending and recommend the best cards  <br className="max-md:hidden" /> so you earn more rewards, cashback, and benefits.
         </Typography>
         <div
           onClick={() => {
@@ -57,6 +56,7 @@ const Waitlist = () => {
             Get Early Access →
           </Button>
         </div>
+        <SeeItInActionModal/>
       </div>
       <WaitlistModal />
     </div>

@@ -19,6 +19,7 @@ import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
 import { useEffect } from "react";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
+import FiSenseIntroVideo from "./components/FiSenseIntroVideo";
 
 const Landing = () => {
   const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
@@ -69,6 +70,15 @@ const Landing = () => {
         </Typography>
       </div>
       <HowItWorks />
+      <div className="bg-black py-5">
+        <Typography
+          variant="h4"
+          className="text-white/70 uppercase tracking-[3px] text-center leading-24 max-md:text-sm max-md:leading-6 max-md:px-4"
+        >
+          We’ve analysed 500+ cards, so you don’t have to
+        </Typography>
+      </div>
+      <FiSenseIntroVideo/>
       <HowItWorksMobile />
       <div className="bg-black py-5">
         <Typography
