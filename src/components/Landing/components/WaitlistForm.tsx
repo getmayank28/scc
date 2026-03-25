@@ -17,6 +17,8 @@ import { useWaitlistMutation } from "@/store/api";
 import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { X } from "lucide-react";
 import { useWaitlistControl } from "@/contexts/WaitlistContext";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 
 export const waitlistSchema = z.object({
@@ -48,6 +50,10 @@ const WaitlistForm = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof waitlistSchema>) => {
+    trackEvent(EventName.BUTTON_CLICKED, {
+      buttonName: EventName.JOIN_WAITLIST_BTN,
+      location: EventName.LANDING_PAGE,
+    });
     try {
       await addToWaitlist(data).unwrap();
       toast.success("You're on the waitlist 🎉");

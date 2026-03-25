@@ -2,6 +2,8 @@ import Typography from "@/components/Typography/Typography";
 import CreditCardComparison from "./DrainCard";
 import { Button } from "@/components/ui/stateful-button";
 import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const CardDrainYou = () => {
   const landingCTA = useLandingCTAs()
@@ -23,7 +25,13 @@ FiSense helps<br className="max-md:hidden"/>  you unlock the maximum value acros
 
           <Button
             className="text-sm font-bold py-4 px-10 my-10"
-            onClick={landingCTA}
+            onClick={() => {
+              trackEvent(EventName.BUTTON_CLICKED, {
+                buttonName: EventName.ANALYSE_FOR_BEST_VALUE_BTN,
+                location: EventName.LANDING_PAGE,
+              });
+              landingCTA?.()
+            }}
           >
             Analyze my card spending
           </Button>

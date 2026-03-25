@@ -4,6 +4,8 @@ import AnimatedCircles from "./CircleAnimation";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/stateful-button";
 import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const YourSpendings = () => {
   const [isAnimated, setIsAnimated] = useState(false);
@@ -42,7 +44,13 @@ const YourSpendings = () => {
           <div>
             <Button
               className="text-sm font-bold py-4 px-10 my-10"
-              onClick={landingCTA}
+              onClick={() => {
+                trackEvent(EventName.BUTTON_CLICKED, {
+                  buttonName: EventName.CHECK_MY_CARD_NOW_BTN,
+                  location: EventName.LANDING_PAGE,
+                });
+                landingCTA?.()
+              }}
             >
               Check my card now
             </Button>

@@ -8,6 +8,8 @@ import Boy2 from "../../../../public/images/boy2.png";
 import Girl2 from "../../../../public/images/girl2.png";
 import { Button } from "@/components/ui/stateful-button";
 import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const TheWrongCardRightContent = ({
   message,
@@ -164,7 +166,13 @@ const TheWrongCard = () => {
 
           <Button
             className="text-sm font-bold py-4 px-10 my-10"
-            onClick={landingCTA}
+            onClick={() => {
+              trackEvent(EventName.BUTTON_CLICKED, {
+                buttonName: EventName.RECOMMEND_MY_BEST_CARD_BTN,
+                location: EventName.LANDING_PAGE,
+              });
+              landingCTA?.()
+            }}
           >
             Recommend my best card
           </Button>

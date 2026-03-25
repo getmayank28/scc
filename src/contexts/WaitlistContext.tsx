@@ -1,5 +1,7 @@
 "use client";
 
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 import {
   createContext,
   useContext,
@@ -18,8 +20,16 @@ const WaitlistContext = createContext<WaitlistContextValue | undefined>(undefine
 export const WaitlistProvider = ({ children }: PropsWithChildren) => {
   const [showModal, setShowModal] = useState<boolean>(false);
 
-  const openWaitlistModal = () => setShowModal(true);
-  const closeWaitlistModal = () => setShowModal(false);
+  const openWaitlistModal = () => {
+    setShowModal(true)
+  };
+  const closeWaitlistModal = () => {
+    trackEvent(EventName.BUTTON_CLICKED, {
+      buttonName: EventName.CLOSE_WAITLIST_MODEL_BTN,
+      location: EventName.LANDING_PAGE,
+    });
+    setShowModal(false);
+  }
 
   return (
     <WaitlistContext.Provider

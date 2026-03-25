@@ -12,6 +12,8 @@ import { ChatContextProvider } from "@/contexts/ChatContext";
 import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { initAmplitude } from "@/lib/analytics/amplitude";
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -29,6 +31,10 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
       "/legal-compliance",
       "/terms",
     ]?.includes(pathname);
+
+    useEffect(() => {
+      initAmplitude();
+    }, []);
 
 
   return (

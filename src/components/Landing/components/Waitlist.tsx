@@ -5,6 +5,8 @@ import { Spotlight } from "@/components/ui/spotlight-new";
 import { Button } from "@/components/ui/stateful-button";
 import WaitlistModal from "./WaitlistModal";
 import { useWaitlistControl } from "@/contexts/WaitlistContext";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const Waitlist = () => {
   const { openWaitlistModal } = useWaitlistControl();
@@ -39,7 +41,13 @@ const Waitlist = () => {
           because your spending deserves the right card.
         </Typography>
         <div
-          onClick={openWaitlistModal}
+          onClick={() => {
+            trackEvent(EventName.BUTTON_CLICKED, {
+              buttonName: EventName.WAITLIST_GET_EARLY_ACCESS_BTN,
+              location: EventName.LANDING_PAGE,
+            });
+            openWaitlistModal?.()
+          }}
           className="mx-auto max-md:w-[350px] mt-10 h-14 pr-2 pl-5 flex justify-between items-center max-w-md rounded-full border border-primary-orange"
         >
           <Typography variant="body" className="text-[16px] opacity-60">

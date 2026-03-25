@@ -14,6 +14,8 @@ import AMEX from "../../../../public/images/cardList/amex-dark.png";
 import Visa from "../../../../public/images/cardList/visa-white.png";
 import Rupay from "../../../../public/images/cardList/rupay-icon.png";
 import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const NotificationCard = ({
   message,
@@ -266,7 +268,13 @@ const HeroSection = () => {
         </div>
         <Button
           className="text-sm max-md:mt-6 font-bold py-4 px-10 my-10"
-          onClick={landingCTA}
+          onClick={() => {
+            trackEvent(EventName.BUTTON_CLICKED, {
+              buttonName: EventName.STEP_INTO_SMARTER_SPENDING_BTN,
+              location: EventName.LANDING_PAGE,
+            });
+            landingCTA?.()
+          }}
         >
           Step into smarter spending
         </Button>
