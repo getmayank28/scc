@@ -16,20 +16,11 @@ import Waitlist from "./components/Waitlist";
 import WeDonNotPromote from "./components/WeDonNotPromote";
 import { useFeatureFlag } from "@/contexts/FeatureContext";
 import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
-import { useEffect } from "react";
-import { trackEvent } from "@/lib/analytics/track";
-import { EventName } from "@/lib/analytics/types";
 import FiSenseIntroVideo from "./components/FiSenseIntroVideo";
 
 const Landing = () => {
   const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
 
-  useEffect(() => {
-    trackEvent(EventName.LANDING_PAGE, {
-      path: window.location.pathname,
-      referrer: document.referrer,
-    });
-  }, []);
 
   return (
     <div>
