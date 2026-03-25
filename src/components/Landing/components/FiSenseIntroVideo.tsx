@@ -20,7 +20,7 @@ const FiSenseIntroVideo = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background-primary p-6 shadow-2xl">
+    <div className="flex flex-col items-center justify-center min-h-screen max-md:min-h-fit max-md:py-20 bg-background-primary p-6 shadow-2xl">
       
       <div className="max-w-[984px] w-full text-center">
         <Typography className="text-center font-butlerpro font-medium leading-24 mb-6">

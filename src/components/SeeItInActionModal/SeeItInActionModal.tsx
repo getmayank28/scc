@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Button } from "../ui/stateful-button";
 import { Play } from "lucide-react";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
@@ -47,7 +46,7 @@ const SeeItInActionModal = () => {
         </button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-none w-[60vw] p-0 overflow-hidden border-black">
+      <DialogContent className="max-w-none w-[60vw] max-md:w-[90vw] p-0 overflow-hidden border-black">
         <video ref={videoRef} className="w-full h-auto" controls playsInline>
           <source src="/video/fisense-intro-video.mp4" type="video/mp4" />
         </video>
