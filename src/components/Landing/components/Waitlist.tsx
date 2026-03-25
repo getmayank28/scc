@@ -15,7 +15,7 @@ const Waitlist = () => {
   return (
     <div className="bg-black max-md:px-4 relative flex flex-col justify-center items-center  h-screen overflow-hidden">
       <Spotlight />
-      <div className="relative z-10 max-md:mb-10 max-md:h-auto  max-md:gap-10">
+      <div className="relative z-10 max-md:mb-10 max-md:h-auto max-md:pt-32 max-md:gap-10">
         <Typography
           variant="h1"
           className="opacity-100 max-md:hidden"
