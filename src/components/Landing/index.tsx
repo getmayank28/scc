@@ -75,7 +75,7 @@ const Landing = () => {
           variant="h4"
           className="text-white/70 uppercase tracking-[3px] text-center leading-24 max-md:text-sm max-md:leading-6 max-md:px-4"
         >
-          We’ve analysed 500+ cards, so you don’t have to
+         See the demo video below
         </Typography>
       </div>
       <FiSenseIntroVideo/>
