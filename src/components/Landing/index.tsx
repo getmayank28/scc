@@ -1,4 +1,3 @@
-"use client";
 
 import { Header } from "@/components/Header";
 import HeroSection from "./components/Hero";
@@ -12,25 +11,16 @@ import FAQSection from "@/landing/FAQs";
 import Tagline from "@/components/LandingAnimation/Tagline/Tagline";
 import { Footer } from "@/landing/Footer";
 import HowItWorksMobile from "@/landing/HowItWorks/HowItWorks";
-import Waitlist from "./components/Waitlist";
-import WeDonNotPromote from "./components/WeDonNotPromote";
-import { useFeatureFlag } from "@/contexts/FeatureContext";
-import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
 import FiSenseIntroVideo from "./components/FiSenseIntroVideo";
+import RenderWaitlist from "./components/RenderWaitlist";
 
 const Landing = () => {
-  const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
 
 
   return (
     <div>
       <Header />
-      {isWaitlistEnabled && (
-        <>
-          <Waitlist />
-          <WeDonNotPromote />
-        </>
-      )}
+      <RenderWaitlist />
       <HeroSection />
       <ChooseFromTheBest />
       <YourSpendings />
@@ -66,10 +56,10 @@ const Landing = () => {
           variant="h4"
           className="text-white/70 uppercase tracking-[3px] text-center leading-24 max-md:text-sm max-md:leading-6 max-md:px-4"
         >
-         See the demo video below
+          See the demo video below
         </Typography>
       </div>
-      <FiSenseIntroVideo/>
+      <FiSenseIntroVideo />
       <HowItWorksMobile />
       <div className="bg-black py-5">
         <Typography

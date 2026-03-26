@@ -1,3 +1,4 @@
+"use client"
 import Typography from "@/components/Typography/Typography";
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 import Image, { StaticImageData } from "next/image";

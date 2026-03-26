@@ -2,18 +2,19 @@
 import { StateProviders } from "@/contexts/StateProvider";
 import { SessionProvider} from "next-auth/react";
 import { Toaster } from "react-hot-toast";
-import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer";
-import SignInModal from "../SignInModal/SignInModal";
+// import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer";
+// import SignInModal from "../SignInModal/SignInModal";
 import { SignInProvider } from "@/contexts/SignInContext";
 import { WaitlistProvider } from "@/contexts/WaitlistContext";
 import { FeatureFlagProvider } from "@/contexts/FeatureContext";
 import { featureFlags } from "@/lib/constants/featureFlags";
-import { ChatContextProvider } from "@/contexts/ChatContext";
-import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
+// import { ChatContextProvider } from "@/contexts/ChatContext";
+// import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { initAmplitude } from "@/lib/analytics/amplitude";
+
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -33,7 +34,12 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
     ]?.includes(pathname);
 
     useEffect(() => {
-      initAmplitude();
+      // wait for browser idle, don't block rendering
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => initAmplitude());
+      } else {
+        setTimeout(() => initAmplitude(), 2000);
+      }
     }, []);
 
 
@@ -41,22 +47,24 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
     <SessionProvider>
       <FeatureFlagProvider flags={featureFlags}>
         <SignInProvider>
-          <ChatContextProvider>
+          {/* <ChatContextProvider> */}
             <WaitlistProvider>
               <Toaster position="top-right" />
               <StateProviders>
-                <WebSocketConnectionProvider>
-                  <SignInModal />
+                {/* <WebSocketConnectionProvider> */}
+                  {/* <SignInModal /> */}
                   {isHiddenRoute ? <></> : <BottomBar />}
                   <div
                     className={`${isHiddenRoute ? "max-md:pb-0" : "max-md:pb-22"}`}
                   >
-                    <SidebarContainer>{children}</SidebarContainer>
+                    {/* <SidebarContainer> */}
+                      {children}
+                      {/* </SidebarContainer> */}
                   </div>
-                </WebSocketConnectionProvider>
+                {/* </WebSocketConnectionProvider> */}
               </StateProviders>
             </WaitlistProvider>
-          </ChatContextProvider>
+          {/* </ChatContextProvider> */}
         </SignInProvider>
       </FeatureFlagProvider>
     </SessionProvider>

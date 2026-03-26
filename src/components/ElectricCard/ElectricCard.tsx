@@ -1,3 +1,4 @@
+"use client"
 import React, { useMemo, useState } from "react";
 import Typography from "../Typography/Typography";
 import { BadgePlus, Send } from "lucide-react";

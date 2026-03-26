@@ -1,7 +1,6 @@
 import ElectricBorderCard from "@/components/ElectricCard/ElectricCard";
 import Typography from "@/components/Typography/Typography";
 import ColourfulText from "@/components/ui/colourful-text";
-import { Button } from "@/components/ui/stateful-button";
 import { BadgeCheck, CircleCheck } from "lucide-react";
 import Boy from "../../../../public/images/boy.png";
 import Girl from "../../../../public/images/girl.png";
@@ -13,9 +12,8 @@ import MasterCard from "../../../../public/images/cardList/mastercard_icon.png";
 import AMEX from "../../../../public/images/cardList/amex-dark.png";
 import Visa from "../../../../public/images/cardList/visa-white.png";
 import Rupay from "../../../../public/images/cardList/rupay-icon.png";
-import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
-import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
+import LandingCTA from "./LandingCTA";
 
 const NotificationCard = ({
   message,
@@ -243,7 +241,6 @@ const rewardsReceived = [
 ];
 
 const HeroSection = () => {
-  const landingCTA = useLandingCTAs()
 
   return (
     <div className="flex max-md:px-4 max-md:pb-14 max-md:gap-0 max-md:flex-col-reverse max-md:pt-14 pt-16 h-screen max-md:h-auto bg-background-primary gap-30 overflow-hidden items-center justify-center  relative z-10">
@@ -266,18 +263,7 @@ const HeroSection = () => {
             <br /> to maximize every swipe effortlessly
           </Typography>
         </div>
-        <Button
-          className="text-sm max-md:mt-6 font-bold py-4 px-10 my-10"
-          onClick={() => {
-            trackEvent(EventName.BUTTON_CLICKED, {
-              buttonName: EventName.STEP_INTO_SMARTER_SPENDING_BTN,
-              location: EventName.LANDING_PAGE,
-            });
-            landingCTA?.()
-          }}
-        >
-          Step into smarter spending
-        </Button>
+        <LandingCTA title="Step into smarter spending" eventButtonName={EventName.STEP_INTO_SMARTER_SPENDING_BTN}/>
       </div>
       <div className="w-[450px]  relative flex flex-col justify-center items-center z-10">
         <div className="w-[390px] self-start h-[80px] relative -bottom-14 flex justify-center items-center">

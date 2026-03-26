@@ -1,3 +1,4 @@
+"use client";
 import { useFeatureFlag } from "@/contexts/FeatureContext";
 import { useSignInControl } from "@/contexts/SignInContext";
 import { useWaitlistControl } from "@/contexts/WaitlistContext";

@@ -1,15 +1,12 @@
-"use Cleint";
+"use client"
 import Typography from "@/components/Typography/Typography";
 import AnimatedCircles from "./CircleAnimation";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/stateful-button";
-import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
-import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
+import LandingCTA from "./LandingCTA";
 
 const YourSpendings = () => {
   const [isAnimated, setIsAnimated] = useState(false);
-  const landingCTA = useLandingCTAs()
   const ref = useRef(null);
 
   useEffect(() => {
@@ -42,18 +39,7 @@ const YourSpendings = () => {
           </div>
 
           <div>
-            <Button
-              className="text-sm font-bold py-4 px-10 my-10"
-              onClick={() => {
-                trackEvent(EventName.BUTTON_CLICKED, {
-                  buttonName: EventName.CHECK_MY_CARD_NOW_BTN,
-                  location: EventName.LANDING_PAGE,
-                });
-                landingCTA?.()
-              }}
-            >
-              Check my card now
-            </Button>
+            <LandingCTA title="Check my card now" eventButtonName={EventName.CHECK_MY_CARD_NOW_BTN}/>
           </div>
         </div>
 

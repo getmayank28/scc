@@ -1,17 +1,16 @@
-"use client";
 import Typography from "@/components/Typography/Typography";
 import ColourfulText from "@/components/ui/colourful-text";
 import { Spotlight } from "@/components/ui/spotlight-new";
-import { Button } from "@/components/ui/stateful-button";
 import WaitlistModal from "./WaitlistModal";
-import { useWaitlistControl } from "@/contexts/WaitlistContext";
-import { trackEvent } from "@/lib/analytics/track";
-import { EventName } from "@/lib/analytics/types";
-import SeeItInActionModal from "@/components/SeeItInActionModal/SeeItInActionModal";
+import dynamic from "next/dynamic";
+import EarlyAccessInput from "./EarlyAccessInput";
+
+const SeeItInActionModal = dynamic(() => import('@/components/SeeItInActionModal/SeeItInActionModal'), {
+  ssr: false, 
+  loading: () => <p>Loading...</p>,
+});
 
 const Waitlist = () => {
-  const { openWaitlistModal } = useWaitlistControl();
-
   return (
     <div className="bg-black max-md:px-4 relative flex flex-col justify-center items-center  h-screen overflow-hidden">
       <Spotlight />
@@ -39,23 +38,7 @@ const Waitlist = () => {
         >
           We analyze your spending and recommend the best cards  <br className="max-md:hidden" /> so you earn more rewards, cashback, and benefits.
         </Typography>
-        <div
-          onClick={() => {
-            trackEvent(EventName.BUTTON_CLICKED, {
-              buttonName: EventName.WAITLIST_GET_EARLY_ACCESS_BTN,
-              location: EventName.LANDING_PAGE,
-            });
-            openWaitlistModal?.()
-          }}
-          className="mx-auto max-md:w-[350px] mt-10 h-14 pr-2 pl-5 flex justify-between items-center max-w-md rounded-full border border-primary-orange"
-        >
-          <Typography variant="body" className="text-[16px] opacity-60">
-            Enter your email
-          </Typography>
-          <Button className="text-sm font-bold" onClick={openWaitlistModal}>
-            Get Early Access →
-          </Button>
-        </div>
+        <EarlyAccessInput/>
         <SeeItInActionModal/>
       </div>
       <WaitlistModal />

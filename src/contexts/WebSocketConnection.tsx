@@ -50,7 +50,7 @@ export function WebSocketInner({
   const { isUserDataLoading } = useUserData();
   const { data: session, status } = useSession();
   const shouldConnect = !!sessionId  && !isUserDataLoading 
-  const { refetch } = useGetUserBotChatSessionsQuery({});
+  const { refetch } = useGetUserBotChatSessionsQuery({}, {skip:true});
 
     const getUrl = useCallback(async () => {
       const url = await getSocketUrl(); // this reads fresh sessionId from localStorage each time

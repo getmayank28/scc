@@ -1,4 +1,3 @@
-"use client";
 import Typography from "@/components/Typography/Typography";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import Image from "next/image";
