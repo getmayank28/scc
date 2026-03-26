@@ -8,7 +8,7 @@ import { SignInProvider } from "@/contexts/SignInContext";
 import { WaitlistProvider } from "@/contexts/WaitlistContext";
 import { FeatureFlagProvider } from "@/contexts/FeatureContext";
 import { featureFlags } from "@/lib/constants/featureFlags";
-// import { ChatContextProvider } from "@/contexts/ChatContext";
+import { ChatContextProvider } from "@/contexts/ChatContext";
 // import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
@@ -47,7 +47,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
     <SessionProvider>
       <FeatureFlagProvider flags={featureFlags}>
         <SignInProvider>
-          {/* <ChatContextProvider> */}
+          <ChatContextProvider>
             <WaitlistProvider>
               <Toaster position="top-right" />
               <StateProviders>
@@ -64,7 +64,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
                 {/* </WebSocketConnectionProvider> */}
               </StateProviders>
             </WaitlistProvider>
-          {/* </ChatContextProvider> */}
+          </ChatContextProvider>
         </SignInProvider>
       </FeatureFlagProvider>
     </SessionProvider>
