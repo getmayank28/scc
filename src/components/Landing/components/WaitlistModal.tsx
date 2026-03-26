@@ -5,7 +5,7 @@ import { useWaitlistControl } from "@/contexts/WaitlistContext";
 const WaitlistModal = () => {
   const { showModal } = useWaitlistControl();
   return (
-    <Modal open={showModal} className="bg-transparent border-none max-md:p-0">
+    <Modal open={showModal} className="flex justify-center bg-transparent border-none max-md:p-0">
       <WaitlistForm />
     </Modal>
   );
