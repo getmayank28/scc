@@ -3,7 +3,7 @@ import { BadgeCheck } from "lucide-react";
 
 const WeDonNotPromote = ({ hideFlare }: { hideFlare?: boolean }) => {
   return (
-    <div className="pb-10 max-md:px-4 flex flex-col gap-4 bg-black">
+    <div className="pb-10 max-md:px-4 max-md:pb-30 flex flex-col gap-4 bg-black">
       {!hideFlare && (
         <div className="relative opacity-80 pb-10">
           <div className="absolute inset-x-40 max-md:inset-x-10 top-0 bg-gradient-to-r from-transparent via-indigo-500 to-transparent h-[3px] w-3/4 blur-sm" />

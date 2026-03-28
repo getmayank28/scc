@@ -34,7 +34,7 @@ const SeeItInActionModal = () => {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <button
-          className="rounded-full flex gap-2 cursor-pointer justify-center items-center border-2 border-[#6F4D34] text-white/80 text-sm max-md:mt-6 font-bold py-3 px-4 my-10 mx-auto"
+          className="rounded-full flex gap-2 cursor-pointer justify-center items-center border-2 border-[#6F4D34] text-white/80 text-sm max-md:mt-6 font-bold py-3 px-4 my-6"
           style={{
             background:
               "linear-gradient(135deg,#30251E 50%,#6F4D34 100%,#AD744A 100%)",
