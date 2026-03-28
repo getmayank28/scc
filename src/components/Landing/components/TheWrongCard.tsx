@@ -7,10 +7,8 @@ import Boy from "../../../../public/images/boy.png";
 import Girl from "../../../../public/images/girl.png";
 import Boy2 from "../../../../public/images/boy2.png";
 import Girl2 from "../../../../public/images/girl2.png";
-import { Button } from "@/components/ui/stateful-button";
-import useLandingCTAs from "@/lib/hooks/useLandingCTAs";
-import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
+import LandingCTA from "./LandingCTA";
 
 const TheWrongCardRightContent = ({
   message,
@@ -51,7 +49,6 @@ const TheWrongCardRightContent = ({
 };
 
 const TheWrongCard = () => {
-  const landingCTA = useLandingCTAs()
   const spendMessages = [
     // 1st cycle
     {
@@ -165,7 +162,7 @@ const TheWrongCard = () => {
             </Typography>
           </div>
 
-          <Button
+          {/* <Button
             className="text-sm font-bold py-4 px-10 my-10"
             onClick={() => {
               trackEvent(EventName.BUTTON_CLICKED, {
@@ -176,7 +173,9 @@ const TheWrongCard = () => {
             }}
           >
             Recommend my best card
-          </Button>
+          </Button> */}
+          <LandingCTA title="Get Early Access" eventButtonName={EventName.RECOMMEND_MY_BEST_CARD_BTN} />
+
         </div>
         <LayoutTextFlip words={rightContentList} />
       </div>

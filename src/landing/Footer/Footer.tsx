@@ -1,3 +1,4 @@
+import SocialMediaIcons from '@/components/SocialMedia/SocialMedia';
 import Link from 'next/link'
 
 
@@ -50,6 +51,7 @@ const Footer: React.FC = () => {
                   support@gofisense.com
                 </h3>
               </Link>
+              <SocialMediaIcons landing/>
             </div>
           </div>
         </div>
@@ -79,12 +81,13 @@ const Footer: React.FC = () => {
             <h3 className="text-[12px] text-[#828282]">
               Contact us
             </h3>
-            <div className="mt-2">
+            <div className="mt-2 flex flex-col items-center">
               <Link href='mailto:support@gofisense.com'>
                 <h3 className="text-[12px] text-[#fff]">
                   support@gofisense.com
                 </h3>
               </Link>
+              <SocialMediaIcons landing/>
             </div>
           </div>
           <div className='w-full text-center'>
