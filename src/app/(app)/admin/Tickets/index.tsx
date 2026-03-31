@@ -16,10 +16,10 @@ const RaisedTickets = () => {
   return (
     <div className="flex flex-col justify-start gap-4 p-10">
       <Typography variant="h4" className="text-left">Raised Tickets</Typography>
-      <div>
+      <div className="flex gap-4 flex-wrap">
         {
           data?.map((ele:TicketProps) => (
-            <div key={ele?._id} className="bg-brown-sidebar max-w-sm p-2 border-2 border-brown-border">
+            <div key={ele?._id} className="bg-brown-sidebar max-w-sm min-w-xs p-2 border-2 border-brown-border">
              <div className="flex gap-2 justify-between">
               <Typography variant="caption" className="opacity-100 text-sm">{ele?.email}</Typography>
               <Typography variant="caption" className="opacity-100 text-sm font-semibold bg-primary-orange p-1 rounded-md w-fit mt-0 pt-0">{ele?.status}</Typography>
