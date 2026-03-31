@@ -3,12 +3,12 @@ import { useFeatureFlag } from "@/contexts/FeatureContext";
 import Waitlist from "./Waitlist"
 import WeDonNotPromote from "./WeDonNotPromote"
 import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
 
 const RenderWaitlist = () => {
-    const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
+  const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
 
 
   useEffect(() => {
@@ -18,14 +18,16 @@ const RenderWaitlist = () => {
     });
   }, []);
 
-    if (!isWaitlistEnabled) return <></>
+  if (!isWaitlistEnabled) return <></>
 
-    return (
-        <>
-            <Waitlist />
-            <WeDonNotPromote />
-        </>
-    )
+  return (
+    <>
+      <Suspense fallback={null}>
+        <Waitlist />
+      </Suspense>
+      <WeDonNotPromote />
+    </>
+  )
 }
 
 export default RenderWaitlist
