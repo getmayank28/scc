@@ -3,6 +3,8 @@ import TabBar from "@/components/Tab/Tab";
 import AdminCardModule from "./cards";
 import { useState } from "react";
 import RaisedTickets from "./Tickets";
+import AdminLinks from "./Links";
+import Partners from "./Partners/page";
 
 const tabs = [
   {
@@ -12,6 +14,14 @@ const tabs = [
   {
     label: "Raised tickets",
     value: "raised-tickets",
+  },
+  {
+    label: "Partners",
+    value: "partners",
+  },
+  {
+    label: "Affiliate links",
+    value: "affiliate-links",
   },
 ];
 
@@ -30,6 +40,12 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "raised-tickets" && <RaisedTickets />
+      }
+      {
+        selectedValue === "partners" && <Partners />
+      }
+      {
+        selectedValue === "affiliate-links" && <AdminLinks />
       }
     </div>
   );

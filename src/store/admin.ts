@@ -1,3 +1,4 @@
+import { Partner } from "@/types/partner";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -36,6 +37,51 @@ export const admin = api.injectEndpoints({
       }),
       invalidatesTags: ["Cards"],
     }),
+
+    getAllLinks: builder.query({
+      query: (params) => ({
+        url: `admin/links`,
+        params,
+      }),
+    }),
+    // GET ALL
+    getPartners: builder.query<Partner[], void>({
+      query: () => "/admin/partners",
+      providesTags: ["Partner"],
+    }),
+
+    // GET ONE
+    getPartner: builder.query<Partner, string>({
+      query: (id) => `/admin/partners/${id}`,
+    }),
+
+    // CREATE
+    createPartner: builder.mutation<Partner, Partial<Partner>>({
+      query: (body) => ({
+        url: "/admin/partners",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Partner"],
+    }),
+    updatePartner: builder.mutation<
+      Partner,
+      { id: string; data: Partial<Partner> }
+    >({
+      query: ({ id, data }) => ({
+        url: `/admin/partners/${id}`,
+        method: "PATCH",
+        body: data,
+      }),
+      invalidatesTags: ["Partner"],
+    }),
+    deletePartner: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/admin/partners/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Partner"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -46,4 +92,9 @@ export const {
   useCreateCardMutation,
   useUpdateCardMutation,
   useDeleteCardMutation,
+  useGetAllLinksQuery,
+  useCreatePartnerMutation,
+  useGetPartnersQuery,
+  useUpdatePartnerMutation,
+  useDeletePartnerMutation,
 } = admin;
