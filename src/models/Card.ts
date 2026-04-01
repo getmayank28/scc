@@ -6,6 +6,7 @@ export interface Card extends Document {
   bankName: string;
   category?: string;
   bankId: Types.ObjectId;
+  slug: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -26,6 +27,11 @@ const CardSchema: Schema<Card> = new Schema(
     bankName: {
       type: String,
       required: [true, "Bank name is required"],
+      trim: true,
+    },
+    slug: {
+      type: String,
+      required: [true, "Slug is required"],
       trim: true,
     },
     category: {

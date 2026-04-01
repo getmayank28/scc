@@ -1,3 +1,4 @@
+"use client"
 import { useState } from "react";
 import AddedPartners from "./AddedPartners";
 import RemovePartner from "./RemovePartner";
@@ -21,6 +22,7 @@ const Partners = () => {
   return (
     <div>
       <AddedPartners
+      // @ts-expect-error some this
         onEditPartner={(partner: { id: string; name: string; }) => setShowEditModal(partner)}
         onRemovePartner={(partner: { id: string; name: string; }) => setShowRemoveModal(partner)}
       />

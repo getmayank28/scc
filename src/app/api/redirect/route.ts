@@ -1,24 +1,22 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import Card from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
 import { resolveLink } from "@/lib/utils/linkResolver";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse,
-) {
+export async function GET(req: NextRequest) {
   await dbConnect();
 
-  const { cardId } = req.query;
+  const { searchParams } = new URL(req.url);
+  const cardId = searchParams.get("cardId");
 
-  if (!cardId || typeof cardId !== "string") {
-    return res.status(400).json({ error: "Invalid cardId" });
+  if (!cardId) {
+    return NextResponse.json({ error: "Invalid cardId" }, { status: 400 });
   }
 
   const card = await Card.findById(cardId).lean();
 
   if (!card) {
-    return res.status(404).json({ error: "Card not found" });
+    return NextResponse.json({ error: "Card not found" }, { status: 404 });
   }
 
   const link = await resolveLink({
@@ -31,8 +29,8 @@ export default async function handler(
   });
 
   if (!link) {
-    return res.status(404).send("No link available");
+    return new NextResponse("No link available", { status: 404 });
   }
 
-  return res.redirect(302, link.url);
+  return NextResponse.redirect(link.url, 302);
 }

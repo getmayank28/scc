@@ -33,9 +33,7 @@ const AddPartner = ({
   onChange: () => void;
 }) => {
   const [name, setName] = useState("");
-  const [type, setType] = useState<
-    "affiliate_network" | "bank" | "direct" | ""
-  >("");
+  const [type, setType] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
 
   const [createPartner, { isLoading }] = useCreatePartnerMutation();
@@ -51,6 +49,7 @@ const AddPartner = ({
       await createPartner({
         name,
         slug,
+        // @ts-expect-error this will work
         type,
         baseUrl: baseUrl || undefined,
         active: true,
@@ -95,7 +94,7 @@ const AddPartner = ({
         />
 
         {/* TYPE */}
-        <Select value={type} onValueChange={(value) => setType(value as any)}>
+        <Select value={type} onValueChange={(value) => setType(value as string)}>
           <SelectTrigger className="!h-12 w-full border-primary-orange text-white">
             <SelectValue placeholder="Select partner type" />
           </SelectTrigger>

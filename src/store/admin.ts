@@ -43,11 +43,16 @@ export const admin = api.injectEndpoints({
         url: `admin/links`,
         params,
       }),
+      providesTags: ["Links"],
     }),
     // GET ALL
     getPartners: builder.query<Partner[], void>({
       query: () => "/admin/partners",
       providesTags: ["Partner"],
+    }),
+
+    getBanks: builder.query({
+      query: () => `/admin/banks/get-all`,
     }),
 
     // GET ONE
@@ -64,6 +69,7 @@ export const admin = api.injectEndpoints({
       }),
       invalidatesTags: ["Partner"],
     }),
+
     updatePartner: builder.mutation<
       Partner,
       { id: string; data: Partial<Partner> }
@@ -82,6 +88,24 @@ export const admin = api.injectEndpoints({
       }),
       invalidatesTags: ["Partner"],
     }),
+    deleteLink: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/admin/links`,
+        method: "DELETE",
+        params: {
+          id,
+        },
+      }),
+      invalidatesTags: ["Links"],
+    }),
+    createLink: builder.mutation<Partner, Partial<Partner>>({
+      query: (body) => ({
+        url: "/admin/links",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Links"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -97,4 +121,7 @@ export const {
   useGetPartnersQuery,
   useUpdatePartnerMutation,
   useDeletePartnerMutation,
+  useCreateLinkMutation,
+  useGetBanksQuery,
+  useDeleteLinkMutation,
 } = admin;

@@ -33,7 +33,7 @@ export async function createLink(req: NextRequest) {
       type,
       active,
     });
-    await invalidateCardCache(cardId.toString());
+    // await invalidateCardCache(cardId.toString());
   } else {
     link = await Link.create({
       bankId,
@@ -43,7 +43,7 @@ export async function createLink(req: NextRequest) {
       type,
       active,
     });
-    await invalidateBankCache(bankId.toString());
+    // await invalidateBankCache(bankId.toString());
   }
 
   return NextResponse.json(link, { status: 201 });
@@ -66,10 +66,10 @@ export async function updateLink(req: NextRequest) {
 
   const updated = await Link.findByIdAndUpdate(id, updateData, { new: true });
 
-  if (existingLink.cardId)
-    await invalidateCardCache(existingLink.cardId.toString());
-  if (existingLink.bankId)
-    await invalidateBankCache(existingLink.bankId.toString());
+  // if (existingLink.cardId)
+  //   await invalidateCardCache(existingLink.cardId.toString());
+  // if (existingLink.bankId)
+  //   await invalidateBankCache(existingLink.bankId.toString());
 
   return NextResponse.json(updated, { status: 200 });
 }
@@ -89,10 +89,10 @@ export async function deleteLink(req: NextRequest) {
 
   await Link.findByIdAndDelete(id);
 
-  if (existingLink.cardId)
-    await invalidateCardCache(existingLink.cardId.toString());
-  if (existingLink.bankId)
-    await invalidateBankCache(existingLink.bankId.toString());
+  // if (existingLink.cardId)
+  //   await invalidateCardCache(existingLink.cardId.toString());
+  // if (existingLink.bankId)
+  //   await invalidateBankCache(existingLink.bankId.toString());
 
   return NextResponse.json(
     { message: "Deleted successfully" },
@@ -100,27 +100,14 @@ export async function deleteLink(req: NextRequest) {
   );
 }
 
-export async function getLinks(req: NextRequest, res: NextResponse) {
+export async function getLinks(req: NextRequest) {
   const type = req.nextUrl.searchParams.get("type");
 
   try {
-    const filter: Partial<LinkProps> = {};
-    // 🔹 Type-based filtering
-    if (type === "card") {
-      // @ts-expect-error some check
-      filter.cardId = { $exists: true };
-      // @ts-expect-error some check
-      filter.bankId = { $exists: false };
-    }
-
-    if (type === "bank") {
-      // @ts-expect-error some check
-      filter.bankId = { $exists: true };
-      // @ts-expect-error some check
-      filter.cardId = { $exists: false };
-    }
-
-    const links = await Link.find(filter)
+    const links = await Link.find({})
+      .populate("cardId", "_id name")
+      .populate("bankId", "_id name")
+      .populate("partnerId", "_id name")
       .sort({ createdAt: -1 })
       .lean<LinkProps[]>();
 
