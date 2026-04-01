@@ -66,11 +66,13 @@ const EditPartner = ({
     try {
       await updatePartner({
         id: partner.id,
-        name,
-        slug: generateSlug(name),
-        type,
-        baseUrl: baseUrl || undefined,
-        active,
+        data: {
+          name,
+          slug: generateSlug(name),
+          type,
+          baseUrl: baseUrl || undefined,
+          active,
+        }
       }).unwrap();
 
       toast.success("Partner successfully updated");

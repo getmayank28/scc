@@ -54,10 +54,10 @@ export async function resolveLink(
   );
 
   // 1. Cache
-  const cached = await redis.get(cacheKey);
-  if (cached) {
-    return JSON.parse(cached) as LinkProps;
-  }
+  // const cached = await redis.get(cacheKey);
+  // if (cached) {
+  //   return JSON.parse(cached) as LinkProps;
+  // }
 
   const now = new Date();
 
@@ -134,7 +134,7 @@ async function cacheAndReturn(
   key: string,
   value: LinkProps,
 ): Promise<LinkProps> {
-  await redis.set(key, JSON.stringify(value), "EX", 600);
+  // await redis.set(key, JSON.stringify(value), "EX", 600);
   return value;
 }
 

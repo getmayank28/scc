@@ -66,12 +66,12 @@ const ShowCards = ({ onEditCard, onRemoveCard }: { onEditCard: (card: { id: stri
   return (
     <div className="flex flex-col justify-start gap-4 p-10">
       <div className="flex justify-between gap-2">
-        <Typography variant="h4" className="text-left">Added Cards</Typography>
+        <Typography variant="h4" className="text-left">Cards</Typography>
         <Button className="text-sm" onClick={() => setShowAddCardModal(true)}> Add new card</Button>
       </div>
       <TabBar value={selectedValue} tabs={tabs} onChange={(value) => setSelectedValue(value)} />
       <div className="grid grid-cols-5 gap-2 ">
-        {filterData?.map((card: { _id: string; name: string; bankName: string; }) => (
+        {filterData?.map((card: { _id: string; name: string; bankName: string; slug:string;}) => (
           <div
             key={card?._id}
             className="flex flex-col justify-center bg-brown-sidebar w-full p-2 border-2 border-brown-border"
@@ -80,6 +80,7 @@ const ShowCards = ({ onEditCard, onRemoveCard }: { onEditCard: (card: { id: stri
               {card?.name}
             </Typography>
             <Typography variant="caption" className="text-left">{card?.bankName}</Typography>
+            <Typography variant="caption" className="text-left">{card?.slug}</Typography>
             <div className="flex gap-2 justify-end py-1">
               <Button onClick={() => onEditCard({ name: card?.name, id: card?._id })}> <Edit /></Button>
               <Button onClick={() => onRemoveCard({ name: card?.name, id: card?._id })}> <X /></Button>

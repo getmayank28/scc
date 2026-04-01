@@ -53,7 +53,7 @@ const AddedPartners = ({
       {isLoading && <p className="text-white">Loading...</p>}
 
       {/* LIST */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="flex gap-4">
         {data?.map((partner: Partner) => (
           <div
             key={partner._id}

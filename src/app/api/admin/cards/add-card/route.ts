@@ -15,12 +15,14 @@ export async function POST(req: Request) {
     await dbConnect();
 
     const body = await req.json();
-    const { name, bankName, category } = body;
+    const { name, bankId, category, slug, bankName } = body;
 
     const newCard = await CardModel.create({
       name,
-      bankName,
+      bankId,
       category,
+      slug,
+      bankName,
     });
 
     return NextResponse.json(newCard, { status: 201 });
