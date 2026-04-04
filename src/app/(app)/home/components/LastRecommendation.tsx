@@ -11,7 +11,6 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
     return <LastRecommendationSkeleton/>
   }
 
-  console.log(cards, "gvgfvhfbhvbfhvbfh")
   return (
     <div className="bg-brown-sidebar max-w-[1270px] rounded-xl w-full p-4 px-6 max-md:p-4 mx-auto max-md:w-full max-md:max-w-[448px]">
       <div className="flex justify-between items-center mb-4">

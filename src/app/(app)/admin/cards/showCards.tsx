@@ -49,6 +49,14 @@ const tabs = [
   {
     label: 'American Express',
     value: 'American Express',
+  },
+  {
+    label: 'HSBC Bank',
+    value: 'HSBC Bank',
+  },
+  {
+    label: 'Standard Chartered Bank',
+    value: 'Standard Chartered Bank',
   }
 ]
 

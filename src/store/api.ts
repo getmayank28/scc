@@ -137,6 +137,12 @@ export const api = createApi({
       }),
       invalidatesTags: ["UserCards"],
     }),
+    getRedirectUrl: builder.query({
+      query: ({ cardId }) => ({
+        url: `redirect`,
+        params: { cardId },
+      }),
+    }),
   }),
 });
 
@@ -160,5 +166,6 @@ export const {
   useRemoveUserCardMutation,
   useChatCommunicationMutation,
   useWaitlistMutation,
+  useLazyGetRedirectUrlQuery,
 } = api;
 export default api;

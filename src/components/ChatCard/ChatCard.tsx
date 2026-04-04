@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Typography from "@/components/Typography/Typography";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 import CardRecommendationModal from "../CardRecommendationModal/CardRecommendationModal";
+import { useLazyGetRedirectUrlQuery } from "@/store/api";
+import { Spinner } from "../ui/spinner";
 
 
 function ChatCard(props: BotRecommendationCreditCardProps
@@ -11,6 +13,18 @@ function ChatCard(props: BotRecommendationCreditCardProps
   const isWavedText = props?.annualFee?.toString()?.toLowerCase()?.includes("waiv");
   const [open, setOpen] = useState(false)
 
+  const [getRedirectUrl, { data, isLoading }] =
+    useLazyGetRedirectUrlQuery();
+
+  useEffect(() => {
+    if (props?.id) {
+      getRedirectUrl({ cardId: props.id });
+    }
+  }, [props?.id]);
+
+  const applyLink = data?.data;
+
+  console.log(applyLink, data,"jbfhvbfbhvbhfbvhbfh")
 
 
   return (
@@ -44,16 +58,16 @@ function ChatCard(props: BotRecommendationCreditCardProps
           </div>
 
           <div className="w-full">
-              <Typography variant="h4" className="text-left opacity-70">
-                {props?.annualFee?.toString()?.split(" ")?.at(0)??0}
-              </Typography>
-              <Typography
-                variant="p"
-                className="text-left pl-10 opacity-90"
-              >
-                Annual Fee {isWavedText? "₹(waived)":"(₹)"}
-              </Typography>
-            </div>
+            <Typography variant="h4" className="text-left opacity-70">
+              {props?.annualFee?.toString()?.split(" ")?.at(0) ?? 0}
+            </Typography>
+            <Typography
+              variant="p"
+              className="text-left pl-10 opacity-90"
+            >
+              Annual Fee {isWavedText ? "₹(waived)" : "(₹)"}
+            </Typography>
+          </div>
 
           <div className="w-full">
             <Typography variant="h4" className="text-left opacity-70">
@@ -70,30 +84,23 @@ function ChatCard(props: BotRecommendationCreditCardProps
         <div className="flex gap-2">
           <button
             className="text-white w-full border border-primary-orange/70 rounded-full text-[12px] py-1 p-2 cursor-pointer"
-            onClick={()=>setOpen(true)}
+            onClick={() => setOpen(true)}
           >
             Why this?
           </button>
 
-          {props?.applyLink && (
+          {applyLink && (
             <a
-              href={props?.applyLink}
+
+              href={isLoading ? '' : applyLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white min-w-[80px] w-full font-bold bg-primary-orange/80 border border-secondary-orange rounded-full text-[12px] py-1 p-2 cursor-pointer text-center"
+              className={`"text-white min-w-[80px] w-full font-bold ${isLoading ? "bg-primary-orange/40" : "bg-primary-orange/80"} border border-secondary-orange rounded-full text-[12px] py-1 p-2 cursor-pointer text-center"`}
             >
-              Apply now
+              {isLoading ? <Spinner /> : 'Apply now'}
             </a>
           )}
         </div>
-        {/* <div className="flex pl-0 p-4 py-1 gap-8 justify-center">
-        <AnimatedTooltip onClick={handleFlip} items={whyThis} />
-        <AnimatedTooltip
-          onClick={() => window.open(apply, "_blank")}
-          items={applyNow}
-        />
-        <AnimatedTooltip onClick={() => handleAddToFav()} items={addToFav} />
-      </div> */}
       </div>
       <CardRecommendationModal {...props} open={open} onClose={() => setOpen(false)} />
     </div>

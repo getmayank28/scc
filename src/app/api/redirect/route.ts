@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid cardId" }, { status: 400 });
   }
 
-  const card = await Card.findById(cardId).lean();
+  const card = await Card.findOne({ slug: cardId }).lean();
 
   if (!card) {
     return NextResponse.json({ error: "Card not found" }, { status: 404 });
@@ -21,16 +21,11 @@ export async function GET(req: NextRequest) {
 
   const link = await resolveLink({
     cardId: card._id,
-    bankId: card.bankId,
-    context: {
-      geo: "IN",
-      device: "web",
-    },
+    bankId: card?.bankId,
   });
 
   if (!link) {
     return new NextResponse("No link available", { status: 404 });
   }
-
-  return NextResponse.redirect(link.url, 302);
+  return NextResponse.json({ success: true, data: link }, { status: 200 });
 }

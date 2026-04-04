@@ -1,6 +1,5 @@
 import Link from "@/models/Link";
 import { Types } from "mongoose";
-import { redis } from "@/lib/utils/redis";
 import { LinkProps, LinkType, ResolveContext } from "@/types/link";
 
 const TYPE_PRIORITY: Record<LinkType, number> = {
@@ -12,18 +11,22 @@ const TYPE_PRIORITY: Record<LinkType, number> = {
 interface ResolveInput {
   cardId: Types.ObjectId;
   bankId: Types.ObjectId;
-  context: ResolveContext;
 }
 
-export function pickBest(links: LinkProps[]): LinkProps | null {
-  if (!links.length) return null;
+const fallback =
+  "https://www.linkedin.com/company/gofisense/?viewAsMember=true";
 
-  return links.sort((a, b) => {
-    const typeDiff = TYPE_PRIORITY[a.type] - TYPE_PRIORITY[b.type];
-    if (typeDiff !== 0) return typeDiff;
+export function pickBest(links: LinkProps[]): string | null {
+  if (!links.length) return fallback;
 
-    return a.priority - b.priority;
-  })[0];
+  return (
+    links.sort((a, b) => {
+      const typeDiff = TYPE_PRIORITY[a.type] - TYPE_PRIORITY[b.type];
+      if (typeDiff !== 0) return typeDiff;
+
+      return a.priority - b.priority;
+    })[0]?.url ?? fallback
+  );
 }
 
 function buildCacheKey(
@@ -41,17 +44,15 @@ function buildCacheKey(
   return `aff:${idPart}:${geo ?? "all"}:${device ?? "all"}`;
 }
 
-export async function resolveLink(
-  input: ResolveInput,
-): Promise<LinkProps | null> {
-  const { cardId, bankId, context } = input;
+export async function resolveLink(input: ResolveInput): Promise<string | null> {
+  const { cardId, bankId } = input;
 
-  const cacheKey = buildCacheKey(
-    cardId?.toString(),
-    bankId?.toString(),
-    context.geo,
-    context.device,
-  );
+  // const cacheKey = buildCacheKey(
+  //   cardId?.toString(),
+  //   bankId?.toString(),
+  //   context.geo,
+  //   context.device,
+  // );
 
   // 1. Cache
   // const cached = await redis.get(cacheKey);
@@ -74,39 +75,50 @@ export async function resolveLink(
   };
 
   // 1️⃣ Card-level
-  let links = await Link.find({
+  let links;
+  console.log(cardId, "card link test 2");
+  if (!cardId) return fallback;
+
+  links = await Link.find({
     ...baseQuery,
     cardId,
   }).lean<LinkProps[]>();
-
+  console.log(links, "card link test 4");
   if (links.length) {
-    const best = pickBest(filterByContext(links, context));
-    if (best) return cacheAndReturn(cacheKey, best);
+    const best = pickBest(links);
+    if (best) return best;
+    // if (best) return cacheAndReturn(cacheKey, best);
   }
 
   // 2️⃣ Bank-level
-  links = await Link.find({
-    ...baseQuery,
-    bankId,
-    cardId: { $exists: false },
-  }).lean<LinkProps[]>();
-
-  if (links.length) {
-    const best = pickBest(filterByContext(links, context));
-    if (best) return cacheAndReturn(cacheKey, best);
+  console.log(bankId, "card link test 5");
+  if (bankId) {
+    links = await Link.find({
+      ...baseQuery,
+      bankId: bankId,
+      cardId: { $exists: false },
+    }).lean<LinkProps[]>();
+    console.log(links, "card link test 6");
+    if (links.length) {
+      const best = pickBest(links);
+      if (best) return best;
+      // if (best) return cacheAndReturn(cacheKey, best);
+    }
   }
 
-  // 3️⃣ Global
   links = await Link.find({
     ...baseQuery,
     cardId: { $exists: false },
     bankId: { $exists: false },
   }).lean<LinkProps[]>();
 
-  const best = pickBest(filterByContext(links, context));
-  if (best) return cacheAndReturn(cacheKey, best);
+  console.log(links, "card link test 7");
+  const best = pickBest(links);
+  console.log(best, "card link test 8");
+  // if (best) return cacheAndReturn(cacheKey, best);
+  if (best) return best;
 
-  return null;
+  return fallback;
 }
 
 // 🔍 Context filter (typed)
@@ -139,19 +151,17 @@ async function cacheAndReturn(
 }
 
 export async function invalidateCardCache(cardId: string) {
-  const pattern = `aff:card:${cardId}:*`;
-
-  const keys = await redis.keys(pattern); // OK if low scale
-  if (keys.length) {
-    await redis.del(keys);
-  }
+  // const pattern = `aff:card:${cardId}:*`;
+  // const keys = await redis.keys(pattern); // OK if low scale
+  // if (keys.length) {
+  //   await redis.del(keys);
+  // }
 }
 
 export async function invalidateBankCache(bankId: string) {
-  const pattern = `aff:bank:${bankId}:*`;
-
-  const keys = await redis.keys(pattern);
-  if (keys.length) {
-    await redis.del(keys);
-  }
+  // const pattern = `aff:bank:${bankId}:*`;
+  // const keys = await redis.keys(pattern);
+  // if (keys.length) {
+  //   await redis.del(keys);
+  // }
 }

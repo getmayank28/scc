@@ -7,7 +7,6 @@ export interface CreditCard {
 
 export type MessageSourceType = "DIRECT" | "JOURNEY";
 
-
 export interface BotRecommendationCreditCardProps {
   cardName: string;
   netAnnualRewardLoss: string;
@@ -17,4 +16,5 @@ export interface BotRecommendationCreditCardProps {
   annualFee: string;
   notIdealFor: string;
   applyLink: string;
+  id: string;
 }
