@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   useGetAllLinksQuery,
 } from "@/store/admin";
-import { Edit, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useState } from "react";
 import AddLink from "./AddLink";
 
@@ -49,7 +49,7 @@ const AddedLinks = ({
           Add new link
         </Button>
       </div>
-      <div className="flex gap-4">
+      <div className="flex gap-4 flex-wrap">
         {!data?.length &&(
            <Typography
            variant="caption"
