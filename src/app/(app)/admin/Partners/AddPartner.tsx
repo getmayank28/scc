@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react";
 import { useCreatePartnerMutation } from "@/store/admin";
 
 // helper: generate slug
-const generateSlug = (name: string) => {
+export const generateSlug = (name: string) => {
   return name
     .toLowerCase()
     .trim()

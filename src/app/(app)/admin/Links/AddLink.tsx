@@ -17,10 +17,6 @@ import {
 import { useCreateLinkMutation, useGetBanksQuery, useGetPartnersQuery } from "@/store/admin";
 import SearchSelect from "@/components/SearchInput/SearchInput";
 
-type Option = {
-  label: string;
-  value: string;
-};
 
 type CardType = {
   _id: string;

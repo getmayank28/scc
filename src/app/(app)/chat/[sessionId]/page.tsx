@@ -12,7 +12,6 @@ import { useChatContext } from "@/contexts/ChatContext";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { INPUT_MESSAGE_SOURCE } from "@/lib/constants/chatJourney";
 import { CardSelectorSkeleton } from "@/components/Loader/Loader";
-import { useRouter } from "next/navigation";
 
 export default function ChatbotUI() {
   const {

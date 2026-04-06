@@ -1,7 +1,3 @@
-import {
-  invalidateBankCache,
-  invalidateCardCache,
-} from "@/lib/utils/linkResolver";
 import Link from "@/models/Link";
 import { LinkProps } from "@/types/link";
 import mongoose from "mongoose";

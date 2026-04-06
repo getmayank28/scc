@@ -106,6 +106,77 @@ export const admin = api.injectEndpoints({
       }),
       invalidatesTags: ["Links"],
     }),
+    getGiftors: builder.query({
+      query: () => "/admin/giftors",
+      providesTags: ["Giftor"],
+    }),
+
+    // CREATE
+    createGiftor: builder.mutation({
+      query: (body) => ({
+        url: "/admin/giftors",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Giftor"],
+    }),
+
+    // UPDATE
+    updateGiftor: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/admin/giftors/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Giftor", id },
+        "Giftor",
+      ],
+    }),
+    // DELETE
+    deleteGiftor: builder.mutation({
+      query: (id: string) => ({
+        url: `admin/giftors/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Giftor"],
+    }),
+
+    getPortals: builder.query({
+      query: () => "admin/portals",
+      providesTags: ["Portal"],
+    }),
+    // CREATE
+    createPortal: builder.mutation({
+      query: (body) => ({
+        url: "admin/portals",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Portal"],
+    }),
+
+    // UPDATE
+    updatePortal: builder.mutation({
+      query: ({ id, ...body }) => ({
+        url: `admin/portals/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Portal", id },
+        "Portal",
+      ],
+    }),
+
+    // DELETE
+    deletePortal: builder.mutation({
+      query: (id: string) => ({
+        url: `admin/portals/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Portal"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -124,4 +195,10 @@ export const {
   useCreateLinkMutation,
   useGetBanksQuery,
   useDeleteLinkMutation,
+  useGetGiftorsQuery,
+  useCreateGiftorMutation,
+  useDeleteGiftorMutation,
+  useGetPortalsQuery,
+  useCreatePortalMutation,
+  useDeletePortalMutation,
 } = admin;

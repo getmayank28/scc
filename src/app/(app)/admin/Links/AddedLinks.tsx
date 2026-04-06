@@ -28,10 +28,8 @@ type LinkItem = {
 };
 
 const AddedLinks = ({
-  onEditCard,
   onRemoveCard,
 }: {
-  onEditCard: (card: { id: string; name: string }) => void;
   onRemoveCard: (card: { id: string; name: string }) => void;
 }) => {
   const [showAddCardModal, setShowAddCardModal] = useState(false);

@@ -5,6 +5,8 @@ import { useState } from "react";
 import RaisedTickets from "./Tickets";
 import AdminLinks from "./Links";
 import Partners from "./Partners/page";
+import Giftors from "./Giftors/page";
+import Portals from "./Portals/page";
 
 const tabs = [
   {
@@ -22,6 +24,14 @@ const tabs = [
   {
     label: "Affiliate links",
     value: "affiliate-links",
+  },
+  {
+    label: "Giftors",
+    value: "giftors",
+  },
+  {
+    label: "Portals",
+    value: "portals",
   },
 ];
 
@@ -46,6 +56,12 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "affiliate-links" && <AdminLinks />
+      }
+      {
+        selectedValue === "giftors"&& <Giftors/>
+      }
+      {
+        selectedValue === "portals"&& <Portals/>
       }
     </div>
   );

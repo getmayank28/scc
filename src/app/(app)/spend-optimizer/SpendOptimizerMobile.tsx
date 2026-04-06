@@ -124,7 +124,6 @@ const BottomSheet: React.FC<BottomSheetProps> = ({
 
 export default function SpendOptimizerMobile({
   selectedCards,
-  isCardsLoading,
   onAddSpendTransaction }: {
     selectedCards: CreditCard[];
     isCardsLoading: boolean;
