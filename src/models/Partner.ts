@@ -50,8 +50,6 @@ const PartnerSchema = new Schema<Partner>(
   },
 );
 
-// Indexes
-PartnerSchema.index({ slug: 1 });
 PartnerSchema.index({ type: 1, active: 1 });
 
 const PartnerModel: Model<Partner> =

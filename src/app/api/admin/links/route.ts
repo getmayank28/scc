@@ -13,21 +13,13 @@ async function getUserId() {
 
 export async function GET() {
   await dbConnect();
-  const userId = await getUserId();
 
+  const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  try {
-    return await getLinks();
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: "Internal server error" },
-      { status: 500 },
-    );
-  }
+  return getLinks();
 }
 
 export async function POST(req: NextRequest) {
