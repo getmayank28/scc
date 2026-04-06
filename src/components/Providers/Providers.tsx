@@ -14,6 +14,7 @@ import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { initAmplitude } from "@/lib/analytics/amplitude";
+import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer";
 
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
@@ -57,9 +58,9 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
                   <div
                     className={`${isHiddenRoute ? "max-md:pb-0" : "max-md:pb-22"}`}
                   >
-                    {/* <SidebarContainer> */}
+                    <SidebarContainer>
                       {children}
-                      {/* </SidebarContainer> */}
+                      </SidebarContainer>
                   </div>
                 {/* </WebSocketConnectionProvider> */}
               </StateProviders>
