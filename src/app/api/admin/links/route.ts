@@ -11,7 +11,7 @@ async function getUserId() {
   return session?.user?._id;
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   await dbConnect();
   const userId = await getUserId();
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    return await getLinks(req);
+    return await getLinks();
   } catch (error) {
     console.error(error);
     return NextResponse.json(

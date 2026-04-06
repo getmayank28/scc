@@ -6,7 +6,7 @@ import Link from "@/models/Link";
 import { LinkProps } from "@/types/link";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-
+import "@/models/Partner";
 // CREATE LINK
 export async function createLink(req: NextRequest) {
   const body = await req.json();
@@ -100,9 +100,7 @@ export async function deleteLink(req: NextRequest) {
   );
 }
 
-export async function getLinks(req: NextRequest) {
-  const type = req.nextUrl.searchParams.get("type");
-
+export async function getLinks() {
   try {
     const links = await Link.find({})
       .populate("cardId", "_id name")
