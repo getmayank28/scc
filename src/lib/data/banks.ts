@@ -2,7 +2,7 @@ export const banks = {
   HDFC: "HDFC Bank",
   ICICI: "ICICI Bank",
   AXIS: "Axis Bank",
-  SBI: "SBI Card",
+  SBI: "SBI",
   INDUSIND: "IndusInd Bank",
   IDFC: "IDFC FIRST Bank",
   KOTAK: "Kotak Mahindra Bank",

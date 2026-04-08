@@ -290,7 +290,7 @@ export default function SpendOptimizerMobile({
     const msg = content?.find(msg => msg?.m_id && msg?.content)?.content || ''
     const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
 
-    const winnerCard = finalData?.cards?.find((card: SpendOptimizerResponseCard) => card?.isBestOption)
+    const winnerCard = finalData?.cards?.find((card: SpendOptimizerResponseCard) => card?.isBestCard)
     const payload = {
       ...formData,
       cardIds: selectedCards?.map((card) => card?.cardId?._id),
@@ -671,6 +671,7 @@ export default function SpendOptimizerMobile({
       </BottomSheet>
       <SpendOptimizerResult
         isLoading={isLoading}
+         // @ts-expect-error this is expected
         formData={formData}
         open={openModal}
         // @ts-expect-error this is expected

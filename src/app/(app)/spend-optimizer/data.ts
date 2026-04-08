@@ -36,8 +36,6 @@ export interface SpendTransaction {
   category: string;
   amount: string;
   merchant: string;
-  paymentMethod: string;
-  emi: string;
   cardIds: string[];
   cardName: string | undefined;
   expectedBenefit: string | undefined;
@@ -47,16 +45,14 @@ export interface FormData {
   category: string;
   amount: string;
   merchant: string;
-  paymentMethod: string;
-  emi: string;
+  transactionMode: "online" | "offline";
 }
 
 export interface FormErrors {
   category: boolean;
   amount: boolean;
   merchant: boolean;
-  paymentMethod: boolean;
-  emi: boolean;
+  transactionMode: boolean;
 }
 
 export const categories: Category[] = [

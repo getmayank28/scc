@@ -76,14 +76,12 @@ export async function resolveLink(input: ResolveInput): Promise<string | null> {
 
   // 1️⃣ Card-level
   let links;
-  console.log(cardId, "card link test 2");
   if (!cardId) return fallback;
 
   links = await Link.find({
     ...baseQuery,
     cardId,
   }).lean<LinkProps[]>();
-  console.log(links, "card link test 4");
   if (links.length) {
     const best = pickBest(links);
     if (best) return best;
@@ -91,14 +89,12 @@ export async function resolveLink(input: ResolveInput): Promise<string | null> {
   }
 
   // 2️⃣ Bank-level
-  console.log(bankId, "card link test 5");
   if (bankId) {
     links = await Link.find({
       ...baseQuery,
       bankId: bankId,
       cardId: { $exists: false },
     }).lean<LinkProps[]>();
-    console.log(links, "card link test 6");
     if (links.length) {
       const best = pickBest(links);
       if (best) return best;
@@ -112,9 +108,7 @@ export async function resolveLink(input: ResolveInput): Promise<string | null> {
     bankId: { $exists: false },
   }).lean<LinkProps[]>();
 
-  console.log(links, "card link test 7");
   const best = pickBest(links);
-  console.log(best, "card link test 8");
   // if (best) return cacheAndReturn(cacheKey, best);
   if (best) return best;
 

@@ -26,7 +26,7 @@ export const spendOptimizerColumns: TableColumn<
       width: "25%",
       render: (_, record, index) => {
         const color = ICON_COLORS[index % ICON_COLORS.length];
-        const { merchant, category, paymentMethod } = record;
+        const { merchant, category } = record;
 
         return (
           <div className="flex items-center gap-3">
@@ -41,7 +41,7 @@ export const spendOptimizerColumns: TableColumn<
               </span>
               <span className="text-xs max-md:text-[10px] text-muted-foreground capitalize">
                 {getDashedFormattedValue(category)} •{" "}
-                {getDashedFormattedValue(paymentMethod)}
+                {/* {getDashedFormattedValue(paymentMethod)} */}
               </span>
             </div>
           </div>
@@ -103,7 +103,7 @@ export const spendOptimizerColumns: TableColumn<
     },
   ];
 
-const Card = ({merchant,category,paymentMethod,date,amount,emi,cardName,expectedBenefit,color}:Partial<SpendTransaction> & { date: string, color:string }) => {
+const Card = ({merchant,category,date,amount,cardName,expectedBenefit,color}:Partial<SpendTransaction> & { date: string, color:string }) => {
   return (
     <div className="bg-brown-sidebar border border-brown-border rounded-md">
       <div className="p-3">
@@ -120,7 +120,7 @@ const Card = ({merchant,category,paymentMethod,date,amount,emi,cardName,expected
               </span>
               <span className="text-xs text-muted-foreground capitalize">
               {getDashedFormattedValue(category??"")} •{" "}
-              {getDashedFormattedValue(paymentMethod??"")}
+              {/* {getDashedFormattedValue(paymentMethod??"")} */}
               </span>
             </div>
           </div>
@@ -131,7 +131,8 @@ const Card = ({merchant,category,paymentMethod,date,amount,emi,cardName,expected
         <div className="flex justify-between mt-4">
           <Typography variant="body" className="opacity-100 font-bold">₹{Number(amount).toLocaleString("en-IN")}</Typography>
           <div className="bg-brown-border p-2 py-1 rounded-full">
-            <Typography variant="caption" className="font-semibold">  {getDashedFormattedValue(emi as string)}</Typography>
+            {/* <Typography variant="caption" className="font-semibold"> 
+               {getDashedFormattedValue(emi as string)}</Typography> */}
           </div>
         </div>
       </div>
@@ -172,10 +173,10 @@ const SpendTransactionHistory = () => {
               color={ICON_COLORS[index % ICON_COLORS.length]}
               merchant={ele?.merchant}
               category={ele?.category}
-              paymentMethod={ele?.paymentMethod}
+              // paymentMethod={ele?.paymentMethod}
               date={ele?.createdAt}
               amount={ele?.amount}
-              emi={ele?.emi}
+              // emi={ele?.emi}
               cardName={ele?.cardName}
               expectedBenefit={ele?.expectedBenefit}
 

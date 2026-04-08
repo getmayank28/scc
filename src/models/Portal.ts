@@ -1,4 +1,32 @@
 import mongoose from "mongoose";
+export interface PortalProps {
+  _id?: string; // or mongoose.Types.ObjectId if you prefer
+
+  name: string;
+  websiteUrl: string;
+
+  portalType:
+    | "e-commerce"
+    | "food-and-delivery"
+    | "grocery"
+    | "travel"
+    | "fashion"
+    | "OTT/software"
+    | "education"
+    | "jewellery"
+    | "healthcare"
+    | "classifieds/auto"
+    | "others";
+
+  affiliateLink?: string | null;
+
+  status: "active" | "inactive";
+
+  slug: string;
+
+  createdAt?: Date;
+  updatedAt?: Date;
+}
 
 const PortalSchema = new mongoose.Schema(
   {

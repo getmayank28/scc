@@ -16,7 +16,8 @@ export function formatNumber(val: number) {
 export const formatCurrency = (value: string): string => {
   if (!value) return "";
   const number = value.replace(/[^\d]/g, "");
-  return new Intl.NumberFormat("en-IN").format(Number(number));
+  const formatted = new Intl.NumberFormat("en-IN").format(Number(number));
+  return `₹${formatted}`;
 };
 
 export function calculateRewardsSpendRatio(

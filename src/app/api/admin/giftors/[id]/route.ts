@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Giftor from "@/models/Giftor";
 import "@/models/Bank";
 import dbConnect from "@/lib/utils/dbConnet";
+import CardModel from "@/models/Card";
 
 // GET single giftor
 export async function GET(
@@ -12,7 +13,12 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    const giftor = await Giftor.findById(id).populate("bankId", "name");
+    const card = await CardModel.find({ slug: id }).lean();
+
+    const giftor = await Giftor.find({ bankId: card?.[0]?.bankId }).populate(
+      "bankId",
+      "name",
+    );
 
     if (!giftor) {
       return NextResponse.json(

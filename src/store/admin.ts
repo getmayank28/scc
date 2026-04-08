@@ -111,6 +111,11 @@ export const admin = api.injectEndpoints({
       providesTags: ["Giftor"],
     }),
 
+    getGiftorsByCardSlug: builder.query({
+      query: (slug: string) => `/admin/giftors/${slug}?id=${slug}`,
+      providesTags: ["Giftor"],
+    }),
+
     // CREATE
     createGiftor: builder.mutation({
       query: (body) => ({
@@ -201,4 +206,5 @@ export const {
   useGetPortalsQuery,
   useCreatePortalMutation,
   useDeletePortalMutation,
+  useLazyGetGiftorsByCardSlugQuery,
 } = admin;

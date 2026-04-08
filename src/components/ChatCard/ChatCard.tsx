@@ -24,7 +24,6 @@ function ChatCard(props: BotRecommendationCreditCardProps
 
   const applyLink = data?.data;
 
-  console.log(applyLink, data,"jbfhvbfbhvbhfbvhbfh")
 
 
   return (
