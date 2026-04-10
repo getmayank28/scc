@@ -3,8 +3,7 @@ import { TableColumn } from "@/types/table";
 import { RedemptionOption } from "@/types/redemption";
 import { redemptionsCategoryMap } from "@/lib/constants/redemption";
 import { formatToINR } from "@/lib/utils/number";
-
-export const spendOptimizerColumns: TableColumn<
+export const redemptionColumns: TableColumn<
     RedemptionOption & { points: number; highestReturn: number }
 >[] = [
         {
@@ -93,7 +92,8 @@ export const spendOptimizerColumns: TableColumn<
 const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number; highestReturn: number })[] }) => {
     return (
         <div className="flex flex-col gap-4 mt-4">
-            {
+           <div className="hidden max-md:flex flex-col  gap-4">
+           {
                 data?.map(ele => {
                     const Icon = redemptionsCategoryMap?.[ele?.category?.toLowerCase()] ?? redemptionsCategoryMap?.['default']
                     const isAirMiles = ele?.redemptionOptionTitle?.toLowerCase()?.includes('miles')
@@ -101,7 +101,7 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
                     const loss = ele?.highestReturn - currentValue
 
                     return (
-                        <div key={ele?.highestReturn} className={`relative bg-brown-sidebar flex flex-col justify-center items-center  border-2 ${loss === 0?'border-primary-orange':'border-brown-border'} rounded-md p-3`}>
+                        <div key={ele?.highestReturn+ele?.redemptionOptionTitle} className={`relative bg-brown-sidebar flex flex-col justify-center items-center  border-2 ${loss === 0?'border-primary-orange':'border-brown-border'} rounded-md p-3`}>
                             {loss === 0 && (
                                 <div className="absolute max-md:text-[8px] top-0 right-0 text-sm font-bold w-fit p-1 px-2 uppercase tracking-wider text-white bg-primary-orange">
                                     best value
@@ -146,14 +146,14 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
                     )
                 })
             }
-
+           </div>
 
             <div className="max-md:hidden">
                 <DataTable
                     data={data}
-                    columns={spendOptimizerColumns}
+                    columns={redemptionColumns}
                     loading={false}
-                    emptyText="No alerts found"
+                    emptyText="No data found"
                 />
             </div>
         </div>
