@@ -1,6 +1,9 @@
 import mongoose, { Document, Schema } from "mongoose";
+import { SalaryRangeValue } from "@/schemas/userInfoSchema";
 
 export type AuthProviderType = "credentials" | "google";
+export type SalaryRangeType = SalaryRangeValue;
+
 export interface User extends Document {
   email: string;
   password?: string;
@@ -11,6 +14,12 @@ export interface User extends Document {
   name?: string;
   failedLoginAttempts?: number;
   lastFailedLogin?: Date;
+  // User profile info
+  phoneNumber?: string;
+  isPhoneVerified: boolean;
+  salaryRange?: SalaryRangeType;
+  informationConsent: boolean;
+  promotionalConsent: boolean;
 }
 
 const UserSchema: Schema<User> = new Schema({
@@ -54,6 +63,28 @@ const UserSchema: Schema<User> = new Schema({
   lastFailedLogin: {
     type: Date,
     required: false,
+  },
+  phoneNumber: {
+    type: String,
+    required: false,
+    sparse: true,
+  },
+  isPhoneVerified: {
+    type: Boolean,
+    default: false,
+  },
+  salaryRange: {
+    type: String,
+    enum: ["below_5", "5_to_10", "10_to_20", "20_to_50", "above_50"],
+    required: false,
+  },
+  informationConsent: {
+    type: Boolean,
+    default: true,
+  },
+  promotionalConsent: {
+    type: Boolean,
+    default: true,
   },
 });
 

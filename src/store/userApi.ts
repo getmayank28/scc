@@ -1,4 +1,12 @@
 import api from "./api";
+import type { SalaryRangeValue } from "@/schemas/userInfoSchema";
+
+interface UpdateUserInfoPayload {
+  verificationToken: string;
+  salaryRange: SalaryRangeValue;
+  informationConsent: boolean;
+  promotionalConsent: boolean;
+}
 
 export const usersApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -12,8 +20,19 @@ export const usersApi = api.injectEndpoints({
         body,
       }),
     }),
+    updateUserInfo: builder.mutation<{ success: boolean }, UpdateUserInfoPayload>({
+      query: (body) => ({
+        url: `/user/update-info`,
+        method: "PATCH",
+        body,
+      }),
+    }),
   }),
-  overrideExisting: false, // safe default
+  overrideExisting: false,
 });
 
-export const { useGetUserByIdQuery, useUpdateUserByIdMutation } = usersApi;
+export const {
+  useGetUserByIdQuery,
+  useUpdateUserByIdMutation,
+  useUpdateUserInfoMutation,
+} = usersApi;

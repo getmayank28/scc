@@ -31,6 +31,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
       "/privacy-policy",
       "/legal-compliance",
       "/terms",
+      "/user-info",
     ]?.includes(pathname);
 
     useEffect(() => {

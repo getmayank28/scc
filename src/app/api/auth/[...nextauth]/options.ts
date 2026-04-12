@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
       }
       user._id = existingUser._id.toString();
       user.isVerified = existingUser.isVerified;
+      user.hasCompletedUserInfo = !!(existingUser.phoneNumber && existingUser.salaryRange);
       const existingUserWithCredentialsNowTryingGoogle =
         existingUser &&
         existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
@@ -66,10 +67,12 @@ export const authOptions: NextAuthOptions = {
         token.isVerified = user.isVerified;
         token.name = user.name;
         token.email = user.email;
+        token.hasCompletedUserInfo = user.hasCompletedUserInfo;
       } else {
         const dbUser = await UserModal.findById(token._id);
         if (dbUser) {
           token.isVerified = dbUser.isVerified;
+          token.hasCompletedUserInfo = !!(dbUser.phoneNumber && dbUser.salaryRange);
         }
       }
 
@@ -81,6 +84,7 @@ export const authOptions: NextAuthOptions = {
       session.user.isVerified = token.isVerified;
       session.user.name = token.name;
       session.user.email = token.email;
+      session.user.hasCompletedUserInfo = token.hasCompletedUserInfo;
 
       return session;
     },

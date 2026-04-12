@@ -47,6 +47,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(ROUTES.SIGN_IN, request.url));
   }
 
+  // Gate all app routes behind user-info completion
+  if (token && token.isVerified) {
+    if (!token.hasCompletedUserInfo && url.pathname !== ROUTES.USER_INFO) {
+      return NextResponse.redirect(new URL(ROUTES.USER_INFO, request.url));
+    }
+    if (token.hasCompletedUserInfo && url.pathname === ROUTES.USER_INFO) {
+      return NextResponse.redirect(new URL(ROUTES.LOGGED_IN_HOME, request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -62,6 +72,7 @@ export const config = {
     "/choose-card",
     "/spend-optimizer",
     "/card-info",
+    "/user-info",
     "/verify/:path*",
   ],
 };
