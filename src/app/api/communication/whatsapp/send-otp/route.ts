@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import OtpStore from "@/models/OtpStore";
+import WhatsAppMessage from "@/models/WhatsAppMessage";
 import { sendOtpSchema } from "@/schemas/userInfoSchema";
 
 const OTP_TTL_SECONDS = 300; // 5 minutes
@@ -14,16 +15,24 @@ function generateOtp(): string {
   return digits.join("");
 }
 
+type GupshupSendResult = {
+  messageId?: string;
+  destination: string;
+  source: string;
+  text: string;
+};
+
 async function sendWhatsAppOtp(
   phoneNumber: string,
   otp: string,
-): Promise<void> {
+): Promise<GupshupSendResult> {
   const destination = `91${phoneNumber}`; // India country code
+  const source = process.env.GUPSHUP_SOURCE_NUMBER!;
   const message = `Your FiSense verification code is *${otp}*. It is valid for 5 minutes. Do not share this with anyone.`;
 
   const params = new URLSearchParams({
     channel: "whatsapp",
-    source: process.env.GUPSHUP_SOURCE_NUMBER!,
+    source,
     destination,
     "src.name": process.env.GUPSHUP_APP_NAME!,
     message: JSON.stringify({
@@ -42,9 +51,19 @@ async function sendWhatsAppOtp(
 
   if (!res.ok) {
     const errorText = await res.text();
-    console.log(errorText, "fjhvbhfbhvbfhbvhf");
+    console.error("[send-otp] gupshup error:", errorText);
     throw new Error(`Gupshup API error: ${res.status} — ${errorText}`);
   }
+
+  let messageId: string | undefined;
+  try {
+    const data = (await res.json()) as { messageId?: string };
+    messageId = data.messageId;
+  } catch {
+    // Gupshup occasionally returns non-JSON on success — skip id capture.
+  }
+
+  return { messageId, destination, source, text: message };
 }
 
 export async function POST(req: NextRequest) {
@@ -93,7 +112,22 @@ export async function POST(req: NextRequest) {
 
     await OtpStore.create({ phoneNumber, otp, expiresAt });
 
-    await sendWhatsAppOtp(phoneNumber, otp);
+    const sendResult = await sendWhatsAppOtp(phoneNumber, otp);
+
+    if (sendResult.messageId) {
+      // Pre-insert so webhook `message-event` callbacks can upsert status
+      // transitions (sent → delivered → read / failed) against this row.
+      await WhatsAppMessage.create({
+        gsId: sendResult.messageId,
+        direction: "outbound",
+        status: "enqueued",
+        source: sendResult.source,
+        destination: sendResult.destination,
+        messageType: "text",
+        text: sendResult.text,
+        statusHistory: [{ status: "enqueued", at: new Date() }],
+      });
+    }
 
     return NextResponse.json(
       { success: true, retryAfter: RESEND_COOLDOWN_SECONDS },
