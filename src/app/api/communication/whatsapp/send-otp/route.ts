@@ -28,19 +28,20 @@ async function sendWhatsAppOtp(
 ): Promise<GupshupSendResult> {
   const destination = `91${phoneNumber}`; // India country code
   const source = process.env.GUPSHUP_SOURCE_NUMBER!;
-  const message = `Your FiSense verification code is *${otp}*. It is valid for 5 minutes. Do not share this with anyone.`;
+  const templateId = process.env.GUPSHUP_OTP_TEMPLATE_ID!;
+  const message = `Your FiSense verification code is ${otp}. It is valid for 5 minutes. Do not share this with anyone.`;
 
   const params = new URLSearchParams({
-    channel: "whatsapp",
     source,
     destination,
     "src.name": process.env.GUPSHUP_APP_NAME!,
-    message: JSON.stringify({
-      type: "text",
-      text: message,
+    template: JSON.stringify({
+      id: templateId,
+      params: [otp],
     }),
   });
-  const res = await fetch("https://api.gupshup.io/wa/api/v1/msg", {
+
+  const res = await fetch("https://api.gupshup.io/wa/api/v1/template/msg", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
         status: "enqueued",
         source: sendResult.source,
         destination: sendResult.destination,
-        messageType: "text",
+        messageType: "template",
         text: sendResult.text,
         statusHistory: [{ status: "enqueued", at: new Date() }],
       });
