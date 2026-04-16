@@ -26,12 +26,12 @@ export async function middleware(request: NextRequest) {
     } else {
       if (token?.picture) {
         return NextResponse.redirect(
-          new URL(`${ROUTES.DASHBOARD}`, request.url)
+          new URL(`${ROUTES.DASHBOARD}`, request.url),
         );
       } else {
         const email = encodeBase64(token?.email as string);
         return NextResponse.redirect(
-          new URL(`${ROUTES.VERIFY_EMAIL}/${email}`, request.url)
+          new URL(`${ROUTES.VERIFY_EMAIL}/${email}`, request.url),
         );
       }
     }

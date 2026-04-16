@@ -1,11 +1,18 @@
 import api from "./api";
-import type { SalaryRangeValue } from "@/schemas/userInfoSchema";
+import type { EmploymentTypeValue, IncomeRangeValue } from "@/schemas/userInfoSchema";
 
 interface UpdateUserInfoPayload {
   verificationToken: string;
-  salaryRange: SalaryRangeValue;
+  employmentType: EmploymentTypeValue;
+  salaryRange?: IncomeRangeValue;
   informationConsent: boolean;
   promotionalConsent: boolean;
+  phoneNumber?: string;
+}
+
+interface UpdateProfileInfoPayload {
+  employmentType: EmploymentTypeValue;
+  salaryRange?: IncomeRangeValue;
 }
 
 export const usersApi = api.injectEndpoints({
@@ -27,6 +34,13 @@ export const usersApi = api.injectEndpoints({
         body,
       }),
     }),
+    updateProfileInfo: builder.mutation<{ success: boolean }, { id: string; body: UpdateProfileInfoPayload }>({
+      query: ({ id, body }) => ({
+        url: `/user/update/${id}`,
+        method: "PATCH",
+        body,
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -35,4 +49,5 @@ export const {
   useGetUserByIdQuery,
   useUpdateUserByIdMutation,
   useUpdateUserInfoMutation,
+  useUpdateProfileInfoMutation,
 } = usersApi;

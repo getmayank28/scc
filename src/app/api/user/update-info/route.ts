@@ -40,45 +40,62 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const { verificationToken, salaryRange, informationConsent, promotionalConsent } =
+    const { verificationToken, employmentType, salaryRange, informationConsent, promotionalConsent } =
       parsed.data;
 
     // Verify the phone verification JWT issued by verify-otp
     let phonePayload: PhoneVerificationPayload;
-    try {
-      phonePayload = jwt.verify(
-        verificationToken,
-        process.env.NEXT_AUTH_SECRET!
-      ) as PhoneVerificationPayload;
-    } catch {
-      return NextResponse.json(
-        { message: "Phone verification token is invalid or expired. Please re-verify your number." },
-        { status: 401 }
-      );
-    }
 
-    if (!phonePayload.verified || !phonePayload.phoneNumber) {
-      return NextResponse.json(
-        { message: "Invalid verification token." },
-        { status: 401 }
-      );
+    // In development, accept the localhost dev token and extract phone from body
+    if (
+      process.env.NODE_ENV === "development" &&
+      verificationToken === "localhost-dev-token"
+    ) {
+      phonePayload = { phoneNumber: body.phoneNumber ?? "8859167328", verified: true };
+    } else {
+      try {
+        phonePayload = jwt.verify(
+          verificationToken,
+          process.env.NEXT_AUTH_SECRET!
+        ) as PhoneVerificationPayload;
+      } catch {
+        return NextResponse.json(
+          { message: "Phone verification token is invalid or expired. Please re-verify your number." },
+          { status: 401 }
+        );
+      }
+
+      if (!phonePayload.verified || !phonePayload.phoneNumber) {
+        return NextResponse.json(
+          { message: "Invalid verification token." },
+          { status: 401 }
+        );
+      }
     }
 
     await dbConnect();
 
+    const updateFields: Record<string, unknown> = {
+      phoneNumber: phonePayload.phoneNumber,
+      isPhoneVerified: true,
+      employmentType,
+      informationConsent,
+      promotionalConsent,
+    };
+
+    if (employmentType === "student_unemployed") {
+      updateFields.salaryRange = undefined;
+    } else {
+      updateFields.salaryRange = salaryRange;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       userId,
       {
-        $set: {
-          phoneNumber: phonePayload.phoneNumber,
-          isPhoneVerified: true,
-          salaryRange,
-          informationConsent,
-          promotionalConsent,
-        },
+        $set: updateFields,
       },
       { new: true, runValidators: true }
-    ).select("phoneNumber isPhoneVerified salaryRange informationConsent promotionalConsent");
+    ).select("phoneNumber isPhoneVerified employmentType salaryRange informationConsent promotionalConsent");
 
     if (!updatedUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });

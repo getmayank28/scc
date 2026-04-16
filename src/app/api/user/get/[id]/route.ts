@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
     }
 
-    const user = await User.findById(id).select("name email _id");
+    const user = await User.findById(id).select("name email _id employmentType salaryRange");
 
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -27,6 +27,8 @@ export async function GET(
         name: user.name,
         email: user.email,
         _id: user._id,
+        employmentType: user.employmentType,
+        salaryRange: user.salaryRange,
       },
       { status: 200 }
     );

@@ -17,7 +17,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils/index";
-import { indianPhoneRegex, SALARY_RANGES } from "@/schemas/userInfoSchema";
+import {
+  indianPhoneRegex,
+  EMPLOYMENT_TYPES,
+  getIncomeRangesForEmployment,
+  getIncomeLabel,
+  EmploymentTypeValue,
+  IncomeRangeValue,
+} from "@/schemas/userInfoSchema";
 import { useUpdateUserInfoMutation } from "@/store/userApi";
 
 type OtpState = "idle" | "sending" | "sent" | "verifying" | "verified";
@@ -25,6 +32,7 @@ type OtpState = "idle" | "sending" | "sent" | "verifying" | "verified";
 interface FormState {
   phoneNumber: string;
   otp: string;
+  employmentType: string;
   salaryRange: string;
   informationConsent: boolean;
   promotionalConsent: boolean;
@@ -33,6 +41,7 @@ interface FormState {
 interface FieldError {
   phoneNumber?: string;
   otp?: string;
+  employmentType?: string;
   salaryRange?: string;
 }
 
@@ -157,11 +166,17 @@ interface UserInfoModalProps {
   onSuccess?: () => void;
 }
 
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+
 export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
   const { update } = useSession();
   const [form, setForm] = useState<FormState>({
-    phoneNumber: "",
+    phoneNumber: isLocalhost ? "8859167328" : "",
     otp: "",
+    employmentType: "",
     salaryRange: "",
     informationConsent: true,
     promotionalConsent: true,
@@ -174,6 +189,15 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
   const [updateUserInfo, { isLoading: isSaving }] = useUpdateUserInfoMutation();
 
+  const incomeRanges = form.employmentType
+    ? getIncomeRangesForEmployment(form.employmentType as EmploymentTypeValue)
+    : [];
+
+  const incomeLabel = form.employmentType
+    ? getIncomeLabel(form.employmentType as EmploymentTypeValue)
+    : "";
+
+  const needsIncomeRange = form.employmentType && form.employmentType !== "student_unemployed";
 
   const setField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -194,6 +218,16 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
   const handleSendOtp = useCallback(async () => {
     if (!validatePhone()) return;
+
+    // Skip OTP on localhost — auto-verify with dummy token
+    if (isLocalhost) {
+      setField("otp", "123456");
+      setVerificationToken("localhost-dev-token");
+      setOtpState("verified");
+      toast.success("Auto-verified (localhost)");
+      return;
+    }
+
     setOtpState("sending");
     try {
       const res = await fetch("/api/communication/whatsapp/send-otp", {
@@ -266,8 +300,11 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
     if (otpState !== "verified" || !verificationToken) {
       newErrors.phoneNumber = "Please verify your WhatsApp number first";
     }
-    if (!form.salaryRange) {
-      newErrors.salaryRange = "Please select your salary range";
+    if (!form.employmentType) {
+      newErrors.employmentType = "Please select what describes you best";
+    }
+    if (needsIncomeRange && !form.salaryRange) {
+      newErrors.salaryRange = "Please select your income range";
     }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -277,12 +314,13 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
     try {
       await updateUserInfo({
         verificationToken: verificationToken!,
-        salaryRange: form.salaryRange as never,
+        employmentType: form.employmentType as EmploymentTypeValue,
+        salaryRange: needsIncomeRange ? (form.salaryRange as IncomeRangeValue) : undefined,
         informationConsent: form.informationConsent,
         promotionalConsent: form.promotionalConsent,
+        ...(isLocalhost && { phoneNumber: form.phoneNumber }),
       }).unwrap();
       toast.success("Profile updated successfully!");
-      // Refresh the JWT so middleware sees hasCompletedUserInfo = true
       await update();
       onSuccess?.();
     } catch {
@@ -407,36 +445,73 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
         </div>
       )}
 
-      {/* Salary Range */}
+      {/* Employment Type */}
       <div className="flex flex-col gap-2">
         <Label className="text-white/80 text-sm font-medium">
-          Annual Salary Range <span className="text-destructive">*</span>
+          What describes you best? <span className="text-destructive">*</span>
         </Label>
         <Select
-          value={form.salaryRange}
-          onValueChange={(v) => setField("salaryRange", v)}
+          value={form.employmentType}
+          onValueChange={(v) => {
+            setField("employmentType", v);
+            setField("salaryRange", "");
+          }}
         >
           <SelectTrigger
             className={cn(
               "w-full bg-brown-background text-white border-brown-border h-12!",
               "data-[placeholder]:text-white/30",
-              errors.salaryRange && "border-destructive"
+              errors.employmentType && "border-destructive"
             )}
           >
-            <SelectValue placeholder="Select your annual income" />
+            <SelectValue placeholder="Select your employment type" />
           </SelectTrigger>
           <SelectContent>
-            {SALARY_RANGES.map((range) => (
-              <SelectItem key={range.value} value={range.value}>
-                {range.label}
+            {EMPLOYMENT_TYPES.map((type) => (
+              <SelectItem key={type.value} value={type.value}>
+                {type.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {errors.salaryRange && (
-          <p className="text-destructive text-xs">{errors.salaryRange}</p>
+        {errors.employmentType && (
+          <p className="text-destructive text-xs">{errors.employmentType}</p>
         )}
       </div>
+
+      {/* Income Range (conditional) */}
+      {needsIncomeRange && (
+        <div className="flex flex-col gap-2">
+          <Label className="text-white/80 text-sm font-medium">
+            {incomeLabel} <span className="text-destructive">*</span>
+          </Label>
+          <p className="text-xs text-white/40">(Approximate range is fine)</p>
+          <Select
+            value={form.salaryRange}
+            onValueChange={(v) => setField("salaryRange", v)}
+          >
+            <SelectTrigger
+              className={cn(
+                "w-full bg-brown-background text-white border-brown-border h-12!",
+                "data-[placeholder]:text-white/30",
+                errors.salaryRange && "border-destructive"
+              )}
+            >
+              <SelectValue placeholder="Select your income range" />
+            </SelectTrigger>
+            <SelectContent>
+              {incomeRanges.map((range) => (
+                <SelectItem key={range.value} value={range.value}>
+                  {range.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.salaryRange && (
+            <p className="text-destructive text-xs">{errors.salaryRange}</p>
+          )}
+        </div>
+      )}
 
      <div>
      <div className="flex flex-col gap-3 p-4 px-0">
@@ -450,9 +525,6 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
             className="mt-0.5 border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
           />
           <div className="flex flex-col gap-0.5">
-            {/* <span className="text-sm text-white font-medium">
-              Card information updates
-            </span> */}
             <span className="text-xs text-white/90">
               Receive credit card tips, news, and benefit alerts via WhatsApp.
             </span>
@@ -469,9 +541,6 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
             className="mt-0.5 border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
           />
           <div className="flex flex-col gap-0.5">
-            {/* <span className="text-sm text-white font-medium">
-              Promotional messages
-            </span> */}
             <span className="text-xs text-white/90">
               Get exclusive offers, best deals, and limited-time promotions.
             </span>
@@ -490,7 +559,7 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
           <><Loader2 className="size-4 animate-spin" /> Saving…</>
         ) : (
           <>
-            Save 
+            Save
           </>
         )}
       </Button>

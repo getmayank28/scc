@@ -40,7 +40,7 @@ export const authOptions: NextAuthOptions = {
       }
       user._id = existingUser._id.toString();
       user.isVerified = existingUser.isVerified;
-      user.hasCompletedUserInfo = !!(existingUser.phoneNumber && existingUser.salaryRange);
+      user.hasCompletedUserInfo = !!(existingUser.phoneNumber && existingUser.employmentType);
       const existingUserWithCredentialsNowTryingGoogle =
         existingUser &&
         existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
@@ -72,7 +72,7 @@ export const authOptions: NextAuthOptions = {
         const dbUser = await UserModal.findById(token._id);
         if (dbUser) {
           token.isVerified = dbUser.isVerified;
-          token.hasCompletedUserInfo = !!(dbUser.phoneNumber && dbUser.salaryRange);
+          token.hasCompletedUserInfo = !!(dbUser.phoneNumber && dbUser.employmentType);
         }
       }
 

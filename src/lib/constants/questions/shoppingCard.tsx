@@ -14,23 +14,23 @@ export const shoppingCard = [
     type: MESSAGE_TYPE.SELECT,
     slots: [
       {
-        label: "Less than ₹25,000",
-        value: 25000,
+        label: "Less than ₹20,000",
+        value: 20000,
       },
       {
-        label: "₹25,000 – ₹50,000",
-        value: 50000,
+        label: "₹20,000 – ₹40,000",
+        value: 40000,
       },
       {
-        label: "₹50,000 – ₹75,000",
+        label: "₹40,000 – ₹75,000",
         value: 75000,
       },
       {
-        label: "₹75,000 – ₹ 1 Lakhs",
-        value: 100000,
+        label: "₹75,000 – ₹1.25 Lakhs",
+        value: 125000,
       },
       {
-        label: "More than ₹ 1 Lakhs",
+        label: "More than ₹ 1.25 Lakhs",
         value: 300000,
       },
     ],
@@ -87,12 +87,12 @@ export const shoppingCard = [
         value: "Nyka",
       },
       {
-        label: "Tata Cliq",
-        value: "Tata Cliq",
+        label: "Tata Neu/Tata CliQ",
+        value: "Tata Neu/Tata CliQ",
       },
       {
-        label: "Mix of all",
-        value: "Mix of all",
+        label: "I shop across many paltform",
+        value: "I shop across many paltform",
       },
       {
         label: "Others",

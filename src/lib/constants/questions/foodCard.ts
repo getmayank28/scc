@@ -43,10 +43,6 @@ export const foodCard = [
     type: MESSAGE_TYPE.SELECT,
     slots: [
       {
-        label: "Rarely or never",
-        value: "Rarely or never",
-      },
-      {
         label: "1–2 times a month",
         value: "1–2 times a month",
       },
@@ -55,8 +51,12 @@ export const foodCard = [
         value: "3–5 times a month",
       },
       {
-        label: "2-3 times Every week or more",
-        value: "2-3 times Every week or more",
+        label: "1-2 times Every week or more",
+        value: "1-2 times Every week or more",
+      },
+      {
+        label: "3+ times Every week or more",
+        value: "3+ times Every week or more",
       },
     ],
   },
@@ -104,7 +104,7 @@ export const foodCard = [
   {
     m_id: "food-dining-platform-fs",
     source: MESSAGE_SOURCE.ASSISTANT,
-    content: "Do you have a preferred platform for food & dining?",
+    content: "Where do you spend more on food delivery?",
     botContent: " preferred platform for food & dining is ",
     order: 3,
     type: MESSAGE_TYPE.SELECT,
@@ -119,12 +119,12 @@ export const foodCard = [
         value: "Swiggy",
       },
       {
-        label: "EazyDiner",
-        value: "EazyDiner",
+        label: "I use both equally",
+        value: "I use both equally",
       },
       {
-        label: "No preference",
-        value: "No preference",
+        label: "No strong preference",
+        value: "No strong preference",
       },
     ],
   },
@@ -135,9 +135,9 @@ export const foodCard = [
     botContent: " my average spend per online food order is ",
     order: 5,
     type: MESSAGE_TYPE.SLIDER,
-    default: 400,
-    min: 150,
-    max: 1500,
+    default: 700,
+    min: 200,
+    max: 2000,
     step: 50,
   },
   {

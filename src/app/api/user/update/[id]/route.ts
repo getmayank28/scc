@@ -17,10 +17,10 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { name, email } = body;
+    const { name, email, employmentType, salaryRange } = body;
 
     // Ensure at least one field is provided
-    if (!name && !email) {
+    if (!name && !email && !employmentType) {
       return NextResponse.json(
         { message: "Nothing to update" },
         { status: 400 }
@@ -28,10 +28,18 @@ export async function PATCH(
     }
 
     // Build update object safely
-    const updateData: { name?: string; email?: string } = {};
+    const updateData: Record<string, unknown> = {};
 
     if (name) updateData.name = name;
     if (email) updateData.email = email;
+    if (employmentType) {
+      updateData.employmentType = employmentType;
+      if (employmentType === "student_unemployed") {
+        updateData.salaryRange = undefined;
+      } else if (salaryRange) {
+        updateData.salaryRange = salaryRange;
+      }
+    }
 
     const updatedUser = await User.findByIdAndUpdate(
       id,
