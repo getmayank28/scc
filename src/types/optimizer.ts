@@ -2,6 +2,6 @@ export interface SpendOptimizerResponseCard {
   cardName: string;
   cardId: string;
   isBestCard: boolean;
-  voucherValueInInr: number;
-  directionSwipeValueInInr: number;
+  voucherSavingsInInr: number;
+  directSwipeSavingsInInr: number;
 }

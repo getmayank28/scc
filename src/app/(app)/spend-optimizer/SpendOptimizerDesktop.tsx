@@ -270,7 +270,7 @@ export default function SpendOptimizerDesktop({
       </div>
       <SpendOptimizerResult
         selectedCards={selectedCards}
-        isLoading={isLoading}x
+        isLoading={isLoading}
         formData={formData}
         open={openModal}
         selectedPortal={selectedMerchant}

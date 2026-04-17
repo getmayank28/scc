@@ -82,7 +82,7 @@ export const spendOptimizerColumns = ({
     },
   },
   {
-    key: "directionSwipeValueInInr",
+    key: "directSwipeSavingsInInr",
     title: "Direct Swipe",
     width: "25%",
     render: (value: number) => {
@@ -99,7 +99,7 @@ export const spendOptimizerColumns = ({
     },
   },
   {
-    key: "voucherValueInInr",
+    key: "voucherSavingsInInr",
     title: "Voucher Route",
     width: "25%",
     render: (value: number) => {
@@ -378,7 +378,7 @@ const SpendOptimizerResult = ({
                         variant="h4"
                         className="text-left  opacity-80 uppercase font-bold tracking-[1px]"
                       >
-                        {formatCurrency(String(winnerCard?.voucherValueInInr))}
+                        {formatCurrency(String(winnerCard?.voucherSavingsInInr))}
                       </Typography>
                       <div className="flex gap-2 items-center">
                         <TrendingUp className="w-4 text-secondary-success" />
@@ -387,7 +387,7 @@ const SpendOptimizerResult = ({
                           className="text-[12px] text-left  opacity-100 text-secondary-success  font-bold tracking-[1px]"
                         >
                           {(
-                            ((winnerCard?.voucherValueInInr ?? 0) /
+                            ((winnerCard?.voucherSavingsInInr ?? 0) /
                               Number(formData?.amount ?? 0)) *
                             100
                           )?.toFixed(2)}
@@ -416,7 +416,7 @@ const SpendOptimizerResult = ({
                         className="text-left  opacity-80 uppercase font-bold tracking-[1px]"
                       >
                         {formatCurrency(
-                          String(winnerCard?.directionSwipeValueInInr),
+                          String(winnerCard?.directSwipeSavingsInInr),
                         )}
                       </Typography>
                       <div className="flex gap-2 items-center">
@@ -426,7 +426,7 @@ const SpendOptimizerResult = ({
                           className="text-[12px] text-left  opacity-100 text-secondary-success  font-bold tracking-[1px]"
                         >
                           {(
-                            ((winnerCard?.directionSwipeValueInInr ?? 0) /
+                            ((winnerCard?.directSwipeSavingsInInr ?? 0) /
                               Number(formData?.amount ?? 0)) *
                             100
                           )?.toFixed(2)}
