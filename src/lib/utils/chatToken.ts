@@ -3,10 +3,11 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 export interface IssueChatTokenParams {
   userId?: string;
 }
+const tokenScope = ["chat:write", "bot:table:read"] as const;
 
 export interface ChatTokenPayload extends JwtPayload {
   userId: string; // userId OR anonymousId
-  scope: "chat:write";
+  scope: typeof tokenScope;
 }
 
 export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
@@ -18,7 +19,7 @@ export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
 
   const payload: ChatTokenPayload = {
     userId: userId,
-    scope: "chat:write",
+    scope: tokenScope,
   };
 
   return jwt.sign(payload, PRIVATE_KEY, {
@@ -38,7 +39,10 @@ export function verifyChatToken(token: string): ChatTokenPayload {
 
   const decoded = jwt.verify(token, secret) as ChatTokenPayload;
 
-  if (decoded.scope !== "chat:write") {
+  if (
+    !decoded.scope?.includes("chat:write") &&
+    !decoded.scope?.includes("bot:table:read")
+  ) {
     throw new Error("Invalid token scope");
   }
 

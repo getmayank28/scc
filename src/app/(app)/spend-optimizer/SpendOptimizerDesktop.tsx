@@ -94,13 +94,12 @@ export default function SpendOptimizerDesktop({
     }
 
     const token = await createChatSessionToken();
-
-    let cardNames = "";
+    let cardSlugs = "";
     selectedCards?.forEach((card) => {
-      cardNames = cardNames + card?.cardId?.name + " ,";
+      cardSlugs = cardSlugs + card?.cardId?.slug + " ,";
     });
 
-    const message = `<I have ${selectedCards?.length} cards, ${cardNames},  my spend category is ${formData?.category}, my spend amount is ${formData?.amount}, platform/app I am going to use ${formData?.merchant} , I am doing this transaction ${formData?.transactionMode}, which credit card I should use for maximum benefits only for this transaction`;
+    const message = `<I have ${selectedCards?.length} cards, use these card slug/id for identity ${cardSlugs}  my spend category is ${formData?.category}, my spend amount is ${formData?.amount}, platform/app I am going to use ${formData?.merchant} , I am doing this transaction ${formData?.transactionMode}, which credit card I should use for maximum benefits only for this transaction`;
     setOpenModal(true);
     const data = await communicateToBot({ message, token });
 
