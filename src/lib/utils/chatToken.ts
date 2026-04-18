@@ -7,7 +7,7 @@ const tokenScope = ["chat:write", "bot:table:read"] as const;
 
 export interface ChatTokenPayload extends JwtPayload {
   userId: string; // userId OR anonymousId
-  scope: typeof tokenScope;
+  scopes: typeof tokenScope;
 }
 
 export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
@@ -19,7 +19,7 @@ export function issueChatToken({ userId = "" }: IssueChatTokenParams): string {
 
   const payload: ChatTokenPayload = {
     userId: userId,
-    scope: tokenScope,
+    scopes: tokenScope,
   };
 
   return jwt.sign(payload, PRIVATE_KEY, {
