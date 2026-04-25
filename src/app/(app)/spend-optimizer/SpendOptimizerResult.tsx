@@ -188,9 +188,9 @@ const VoucherInstructionModal = ({
       isOpen={isOpen}
       onClose={onClose}
       allowOutsideClickClose
-      className="m-4 p-0 h-fit max-h-[85vh] max-md:max-h-[100vh] max-md:!rounded-[0px] max-md:border-3 max-md:w-full max-md:min-w-full border-2 border-brown-border bg-brown-background w-[700px] min-w-[700px] max-w-[90vw] max-md:min-w-0"
+      className="m-4 p-0 h-fit max-h-[85vh] max-md:max-h-[90vh] max-md:overflow-y-hidden max-md:!rounded-[0px] max-md:border-3 max-md:w-full max-md:min-w-full border-2 border-brown-border bg-brown-background w-[700px] min-w-[700px] max-w-[90vw] max-md:min-w-0"
     >
-      <div className="p-5 max-md:p-4 overflow-y-auto max-h-[85vh] max-md:max-h-[100vh]">
+      <div className="p-5 max-md:p-4 overflow-y-auto max-h-[85vh]  max-md:max-h-[90vh]">
         <div className="flex justify-between items-center mb-4">
           <Typography
             variant="h4"
@@ -307,6 +307,15 @@ const SpendOptimizerResult = ({
     () => selectedPortal?.affiliateLink ?? selectedPortal?.websiteUrl,
     [selectedPortal?.affiliateLink, selectedPortal?.websiteUrl],
   );
+
+  const sortedCards = useMemo(() => {
+    if (!data?.cards) return [];
+    return [...data.cards].sort((a, b) => {
+      const maxA = Math.max(a.voucherSavingsInInr ?? 0, a.directSwipeSavingsInInr ?? 0);
+      const maxB = Math.max(b.voucherSavingsInInr ?? 0, b.directSwipeSavingsInInr ?? 0);
+      return maxB - maxA;
+    });
+  }, [data?.cards]);
   const handleGetDirectLinkClick = () => {
     window.open(directSwipeLink, "_blank");
   };
@@ -317,10 +326,10 @@ const SpendOptimizerResult = ({
       onClose={onChange}
       removeCloseButton
       allowOutsideClickClose={false}
-      className="m-10 p-0 h-fit min-h-[70vh] max-md:min-h-[100vh] max-md:!rounded-[0px] max-md:border-3 max-md:p-4 max-md:w-full max-md:min-w-full border-2 border-brown-border  bg-brown-background w-[900px] min-w-[950px] max-w-[80vw]"
+      className="m-10 p-0 h-fit min-h-[70vh] max-md:min-h-[100vh] max-md:!rounded-[0px] max-md:border-3 max-md:py-4 max-md:w-full max-md:min-w-full border-2 border-brown-border  bg-brown-background w-[900px] min-w-[950px] max-w-[80vw]"
     >
-      <div className="flex h-[70vh]">
-        <div className="bg-brown-sidebar flex-1 h-full p-4">
+      <div className="flex h-[70vh]  max-md:h-[98vh]">
+        <div className="bg-brown-sidebar flex-1 h-full p-4 max-md:hidden">
           <div className="flex  justify-between items-center">
             <Typography variant="caption" className="opacity-100 font-bold">
               Input Summary
@@ -487,7 +496,7 @@ const SpendOptimizerResult = ({
                   <div className="flex gap-2 items-center">
                     <Typography
                       variant="body"
-                      className="text-[16px] opacity-100 font-semibold text-white"
+                      className="max-md:hidden text-[16px] opacity-100 font-semibold text-white"
                     >
                       {winnerCard?.cardName}
                     </Typography>
@@ -509,6 +518,14 @@ const SpendOptimizerResult = ({
                     </Button>
                   </div>
                 </div>
+                <div>
+                  <Typography
+                      variant="body"
+                      className="hidden max-md:flex max-md:text-[14px] max-md:text-left my-2 opacity-100 font-semibold text-white"
+                    >
+                      {winnerCard?.cardName}
+                    </Typography>
+                  </div>
                 <div className="flex gap-4">
                   <div className="flex-1 rounded-md pt-2">
                     <Typography
@@ -588,18 +605,121 @@ const SpendOptimizerResult = ({
                   </div>
                 </div>
               </div>
-              <DataTable
-                data={data?.cards}
-                // @ts-expect-error ignore this
-                columns={spendOptimizerColumns({
-                  amount: formData?.amount,
-                  directSwipeLink,
-                  handleGetVoucherLink,
-                  isGiftorLoading,
-                })}
-                loading={false}
-                emptyText="No alerts found"
-              />
+              {/* Desktop Table */}
+              <div className="max-md:hidden">
+                <DataTable
+                  data={sortedCards}
+                  // @ts-expect-error ignore this
+                  columns={spendOptimizerColumns({
+                    amount: formData?.amount,
+                    directSwipeLink,
+                    handleGetVoucherLink,
+                    isGiftorLoading,
+                  })}
+                  loading={false}
+                  emptyText="No alerts found"
+                />
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="hidden max-md:flex flex-col gap-3 mt-4">
+                {sortedCards?.length ? (
+                  sortedCards.map((card) => (
+                    <div
+                      key={card.cardId}
+                      className="rounded-lg border border-[#6F4D34] p-4"
+                      style={{
+                        background:"#30251E"
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Typography
+                            variant="caption"
+                            className="text-sm font-semibold text-white opacity-100 capitalize text-left"
+                          >
+                            {card.cardName}
+                          </Typography>
+                          {card.isBestCard && (
+                            <div className="border border-primary-orange p-1 bg-primary-orange rounded-full flex justify-center items-center">
+                              <Star className="w-3 h-3 text-white" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-4 mb-3">
+                        <div className="flex-1">
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-60 uppercase font-bold tracking-wider"
+                          >
+                            Direct Swipe
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-sm font-semibold text-white text-left opacity-100"
+                          >
+                            {formatCurrency(String(card.directSwipeSavingsInInr))}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-70"
+                          >
+                            {((card.directSwipeSavingsInInr / +formData?.amount) * 100)?.toFixed(2)}%
+                          </Typography>
+                        </div>
+                        <div className="flex-1">
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-60 uppercase font-bold tracking-wider"
+                          >
+                            Voucher Route
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-sm font-semibold text-white text-left opacity-100"
+                          >
+                            {formatCurrency(String(card.voucherSavingsInInr))}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-70"
+                          >
+                            {((card.voucherSavingsInInr / +formData?.amount) * 100)?.toFixed(2)}%
+                          </Typography>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button
+                          disabled={isGiftorLoading}
+                          onClick={() => handleGetVoucherLink(card.cardId)}
+                          className="flex-1 h-9 rounded-md text-xs"
+                        >
+                          <TicketPlus className="w-4 h-4 mr-1" />
+                          Voucher
+                        </Button>
+                        <Button
+                          disabled={!directSwipeLink}
+                          onClick={() => window.open(directSwipeLink!, "_blank")}
+                          className="flex-1 h-9 rounded-md text-xs bg-secondary-orange border border-primary-orange"
+                        >
+                          <CreditCard className="w-4 h-4 mr-1" />
+                          Direct Swipe
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <Typography
+                    variant="caption"
+                    className="text-center opacity-60 py-4"
+                  >
+                    No cards found
+                  </Typography>
+                )}
+              </div>
             </>
           )}
         </div>
