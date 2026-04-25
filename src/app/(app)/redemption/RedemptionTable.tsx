@@ -41,16 +41,6 @@ export const redemptionColumns: TableColumn<
             title: "Total Value",
             width: "12.5%",
             render: (value, record) => {
-                const isAirMiles = record?.redemptionOptionTitle?.toLowerCase()?.includes('miles')
-
-                if (isAirMiles) {
-                    return (
-                        <span className="text-sm font-semibold text-white capitalize">
-                            {Number(record?.points) * 1 + ' miles'}
-                        </span>
-                    )
-                }
-
                 const totalValue = Number(record?.points ?? 0) * Number(value)
                 return (
                     <span className="text-sm font-semibold text-white capitalize">
@@ -63,13 +53,11 @@ export const redemptionColumns: TableColumn<
             key: "pointConversionRatioInInr",
             title: "Ratio",
             width: "15%",
-            render: (value, record) => {
-                const isAirMiles = record?.redemptionOptionTitle?.toLowerCase()?.includes('miles')
-
+            render: (value) => {
 
                 return (
                     <div className="flex flex-col font-bold text-white">
-                        1 Reward point = {isAirMiles ? '1 mile' : '₹' + value}
+                        1 Reward point = {'₹' + value}
                     </div>
                 );
             },
@@ -96,9 +84,7 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
            {
                 data?.map(ele => {
                     const Icon = redemptionsCategoryMap?.[ele?.category?.toLowerCase()] ?? redemptionsCategoryMap?.['default']
-                    const isAirMiles = ele?.redemptionOptionTitle?.toLowerCase()?.includes('miles')
-                    const currentValue = Number(ele?.points) * Number(ele?.pointConversionRatioInInr)
-                    const loss = ele?.highestReturn - currentValue
+                    const loss = ele?.highestReturn - ele?.currentValue
 
                     return (
                         <div key={ele?.highestReturn+ele?.redemptionOptionTitle} className={`relative bg-brown-sidebar flex flex-col justify-center items-center  border-2 ${loss === 0?'border-primary-orange':'border-brown-border'} rounded-md p-3`}>
@@ -122,7 +108,7 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
                                         Total value
                                     </span>
                                     <span className="text-sm font-semibold text-white capitalize">
-                                        {isAirMiles ? `${Number(ele?.points) * 1} miles` : formatToINR(Number(ele?.points ?? 0) * Number(ele?.pointConversionRatioInInr))}
+                                        {formatToINR(Number(ele?.points ?? 0) * Number(ele?.pointConversionRatioInInr))}
                                     </span>
                                 </div>
                                 <div className="flex flex-col">
@@ -130,7 +116,7 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
                                         ratio
                                     </span>
                                     <span className="text-sm text-center font-semibold text-white capitalize">
-                                        {`1 Point = ${isAirMiles ? '1 mile' : '₹' + ele?.pointConversionRatioInInr}`}
+                                        {`1 Point = ${'₹' + ele?.pointConversionRatioInInr}`}
                                     </span>
                                 </div>
                                 <div className="flex flex-col">

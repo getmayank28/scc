@@ -110,7 +110,6 @@ export default function SpendOptimizerDesktop({
     const msg = content?.find(msg => msg?.m_id && msg?.content)?.content || ''
     const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
 
-    console.log(finalData, "spend-optimizer-final-data-from-chatbot")
 
     // const winnerCard = finalData?.cards?.find((card:SpendOptimizerResponseCard) => card?.isBestCard)
     // const payload = {

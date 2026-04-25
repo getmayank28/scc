@@ -33,8 +33,6 @@ export async function GET() {
 
     const data = await response.json();
 
-    console.log(data)
-
     return NextResponse.json(data, {
       status: response.status,
     });
@@ -43,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json(
       { error: "Failed to get the user session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

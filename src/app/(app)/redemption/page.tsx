@@ -9,6 +9,11 @@ import useRedemptionData from "@/lib/hooks/useRedemptionData";
 import RedemptionCard from "./RedemptionCard";
 import { IconBulb } from "@tabler/icons-react";
 import { RedemptionSkeleton } from "./Loader";
+import RedemptionInstructionsModal from "./RedemptionInstructionsModal";
+import {
+  redemptionInstructions,
+  supportedBankIds,
+} from "./redemptionInstructions";
 import {
   Select,
   SelectContent,
@@ -19,11 +24,13 @@ import {
 import { useGetUserCardsQuery } from "@/store/api";
 import useUserData from "@/lib/hooks/useUserData";
 import useNav from "@/lib/hooks/useNav";
+import { CircleQuestionMark } from "lucide-react";
 
 const PointRedemption = () => {
   const [query, setQuery] = useState("");
   const [points, setPoints] = useState("");
   const [errors, setErrors] = useState({ points: false, card: false });
+  const [showInstructions, setShowInstructions] = useState(false);
   const { userId } = useUserData();
   const { goToProfile } = useNav();
 
@@ -56,9 +63,23 @@ const PointRedemption = () => {
 
     handleRedemptionSubmit(query, points);
   };
-  const redemptionOptionsSortedData = redemptionOptionsData.sort((a, b) => b.highestReturn - a.highestReturn);
+  // Find the selected card's bankId and check if instructions exist
+  const selectedCard = userCards?.find(
+    (card: { cardId: { name: string } }) => card.cardId?.name === query,
+  );
+  const selectedBankId = selectedCard?.cardId?.bankId as string | undefined;
+  const hasInstructions = selectedBankId
+    ? supportedBankIds.has(selectedBankId)
+    : false;
+  const currentInstructions =
+    selectedBankId && hasInstructions
+      ? redemptionInstructions[selectedBankId]
+      : null;
+
+  const redemptionOptionsSortedData = redemptionOptionsData.sort((a, b) => b.currentValue - a.currentValue);
   return (
     <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 min-h-screen">
+      <div className="flex items-start justify-between">
       <HeaderText
         containerClassName="items-start"
         title="Points Redemption"
@@ -67,6 +88,13 @@ const PointRedemption = () => {
         titleVariant="h3"
         titleClassName="font-bold"
       />
+      {hasInstructions && redemptionOptionsSortedData?.length > 0 && (
+        <Button onClick={() => setShowInstructions(true)} className="max-md:hidden">How to Redeem?</Button>
+      )}
+        {hasInstructions && redemptionOptionsSortedData?.length > 0 && (
+        <div className="bg-primary-orange p-2 rounded-full hidden max-md:flex" onClick={() => setShowInstructions(true)}><CircleQuestionMark color="#fff"/></div>
+      )}
+      </div>
       <div className="flex rounded-md border border-brown-border max-w-6xl bg-brown-sidebar p-5 gap-4 mt-4 mb-2 max-md:flex-col">
         <div className="w-full">
           <Select
@@ -196,6 +224,11 @@ const PointRedemption = () => {
           )}
         </>
       )}
+      <RedemptionInstructionsModal
+        open={showInstructions}
+        onOpenChange={setShowInstructions}
+        instructions={currentInstructions}
+      />
     </div>
   );
 };

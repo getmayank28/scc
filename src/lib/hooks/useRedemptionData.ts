@@ -49,6 +49,7 @@ const useRedemptionData = () => {
       ...ele,
       highestReturn,
       points: pointsInNumber,
+      currentValue: pointsInNumber * Number(ele?.pointConversionRatioInInr),
     }));
 
     return newData;
