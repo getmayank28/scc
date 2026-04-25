@@ -26,6 +26,7 @@ import {
   IncomeRangeValue,
 } from "@/schemas/userInfoSchema";
 import { useUpdateUserInfoMutation } from "@/store/userApi";
+import Link from "next/link";
 
 type OtpState = "idle" | "sending" | "sent" | "verifying" | "verified";
 
@@ -515,34 +516,24 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
      <div>
      <div className="flex flex-col gap-3 p-4 px-0">
+     <span className="text-xs text-white/90">
+     {"Most people earn <1.5% rewards. Unlock up to 10% rewards!"}
+            </span>
         <label className="flex items-start gap-3 cursor-pointer">
           <Checkbox
             id="informationConsent"
             checked={form.informationConsent}
-            onCheckedChange={(checked) =>
+            onCheckedChange={(checked) =>{
               setField("informationConsent", checked === true)
-            }
-            className="mt-0.5 border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
-          />
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs text-white/90">
-              Receive credit card tips, news, and benefit alerts via WhatsApp.
-            </span>
-          </div>
-        </label>
-
-        <label className="flex items-start gap-3 cursor-pointer">
-          <Checkbox
-            id="promotionalConsent"
-            checked={form.promotionalConsent}
-            onCheckedChange={(checked) =>
               setField("promotionalConsent", checked === true)
             }
+            }
             className="mt-0.5 border-primary-orange data-[state=checked]:bg-primary-orange data-[state=checked]:text-white"
           />
           <div className="flex flex-col gap-0.5">
             <span className="text-xs text-white/90">
-              Get exclusive offers, best deals, and limited-time promotions.
+            I agree to receive credit card tips, reward alerts, offers, and promotions on WhatsApp.
+
             </span>
           </div>
         </label>
@@ -565,9 +556,12 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
       </Button>
      </div>
 
-      <p className="text-center text-xs text-white/40">
-        Your data is encrypted and never shared with third parties.
+      <div className="flex gap-1">
+      <p className="text-center text-xs text-white/70">
+      Your data is encrypted, secure, and private.
       </p>
+      <Link href="/privacy-policy" className="text-center text-xs text-primary-orange underline">Terms & Privacy Policy</Link>
+      </div>
 
       <p className="text-center text-xs text-white/40">
         Don&apos;t want to continue?{" "}
