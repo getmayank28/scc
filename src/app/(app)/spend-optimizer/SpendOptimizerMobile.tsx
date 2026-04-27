@@ -19,7 +19,6 @@ import useSocket from "@/lib/hooks/useSocket";
 import { useChatCommunicationMutation } from "@/store/api";
 import SpendOptimizerResult from "./SpendOptimizerResult";
 import Typography from "@/components/Typography/Typography";
-import { formatCurrency } from "@/lib/utils/number";
 import { RadioGroup } from "@radix-ui/react-radio-group";
 import { RadioGroupItem } from "@/components/ui/radio-group";
 import { useGetPortalsQuery } from "@/store/admin";

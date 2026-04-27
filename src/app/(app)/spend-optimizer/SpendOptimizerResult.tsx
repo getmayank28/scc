@@ -649,26 +649,7 @@ const SpendOptimizerResult = ({
                       </div>
 
                       <div className="flex gap-4 mb-3">
-                        <div className="flex-1">
-                          <Typography
-                            variant="caption"
-                            className="text-[10px] text-left opacity-60 uppercase font-bold tracking-wider"
-                          >
-                            Direct Swipe
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            className="text-sm font-semibold text-white text-left opacity-100"
-                          >
-                            {formatCurrency(String(card.directSwipeSavingsInInr))}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            className="text-[10px] text-left opacity-70"
-                          >
-                            {((card.directSwipeSavingsInInr / +formData?.amount) * 100)?.toFixed(2)}%
-                          </Typography>
-                        </div>
+                       
                         <div className="flex-1">
                           <Typography
                             variant="caption"
@@ -689,6 +670,26 @@ const SpendOptimizerResult = ({
                             {((card.voucherSavingsInInr / +formData?.amount) * 100)?.toFixed(2)}%
                           </Typography>
                         </div>
+                        <div className="flex-1">
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-60 uppercase font-bold tracking-wider"
+                          >
+                            Direct Swipe
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-sm font-semibold text-white text-left opacity-100"
+                          >
+                            {formatCurrency(String(card.directSwipeSavingsInInr))}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            className="text-[10px] text-left opacity-70"
+                          >
+                            {((card.directSwipeSavingsInInr / +formData?.amount) * 100)?.toFixed(2)}%
+                          </Typography>
+                        </div>
                       </div>
 
                       <div className="flex gap-2">
@@ -697,15 +698,15 @@ const SpendOptimizerResult = ({
                           onClick={() => handleGetVoucherLink(card.cardId)}
                           className="flex-1 h-9 rounded-md text-xs"
                         >
-                          <TicketPlus className="w-4 h-4 mr-1" />
-                          Voucher
+                          {/* <TicketPlus className="w-4 h-4 mr-1" /> */}
+                          Buy Voucher
                         </Button>
                         <Button
                           disabled={!directSwipeLink}
                           onClick={() => window.open(directSwipeLink!, "_blank")}
                           className="flex-1 h-9 rounded-md text-xs bg-secondary-orange border border-primary-orange"
                         >
-                          <CreditCard className="w-4 h-4 mr-1" />
+                          {/* <CreditCard className="w-4 h-4 mr-1" /> */}
                           Direct Swipe
                         </Button>
                       </div>

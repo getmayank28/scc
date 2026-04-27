@@ -48,14 +48,14 @@ const SpendOptimizer = () => {
           contentVariant="caption"
           content="Which of my cards should I use for this purchase?"
         />
-        <SpendOptimizerTabs
+        {/* <SpendOptimizerTabs
           value={tab}
           onChange={setTab}
           tabs={[
             { value: "optimizers", label: "Optimizers" },
             { value: "transactions", label: "Transactions" },
           ]}
-        />
+        /> */}
       </div>
       {tab === "optimizers" ? (
         <>
