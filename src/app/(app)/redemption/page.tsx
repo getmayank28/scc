@@ -13,6 +13,7 @@ import RedemptionInstructionsModal from "./RedemptionInstructionsModal";
 import {
   redemptionInstructions,
   supportedBankIds,
+  bankRedemptionPortals,
 } from "./redemptionInstructions";
 import {
   Select,
@@ -76,6 +77,7 @@ const PointRedemption = () => {
       ? redemptionInstructions[selectedBankId]
       : null;
 
+  const portalLink = selectedBankId ? bankRedemptionPortals[selectedBankId] ?? "" : "";
   const redemptionOptionsSortedData = redemptionOptionsData.sort((a, b) => b.currentValue - a.currentValue);
   return (
     <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 min-h-screen">
@@ -183,14 +185,14 @@ const PointRedemption = () => {
                     tag={ele?.category}
                     title={ele?.redemptionOptionTitle}
                     points={ele?.points}
-                    conversionRate={`1:${ele?.pointConversionRatioInInr}`}
+                    conversionRate={`1:${ele?.pointConversionRatioInInr?.toFixed(2)}`}
                     conversionValue=""
                     totalValue={
                       Number(ele?.points) * ele?.pointConversionRatioInInr
                     }
                     infoText={ele?.note?.slice(0, 90)}
                     buttonText="Redeem now"
-                    applyLink={ele?.portalLink}
+                    applyLink={portalLink}
                   />
                 ))}
               </div>

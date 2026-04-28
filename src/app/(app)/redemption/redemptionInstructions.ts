@@ -578,5 +578,22 @@ export const redemptionInstructions: Record<
   },
 };
 
+// Bank redemption portal URLs keyed by bankId
+export const bankRedemptionPortals: Record<string, string> = {
+  "69c9231d862c4fc3448d05ed": "https://offers.smartbuy.hdfc.bank.in", // HDFC Bank
+  "69c9231d862c4fc3448d05ee": "https://icicibank.com/ishoplogin", // ICICI Bank
+  "69c9231d862c4fc3448d05ef": "https://edgerewards.axis.bank.in", // Axis Bank
+  "69c9231d862c4fc3448d05f0": "https://sbicard.com/en/personal/rewards.page", // SBI Card
+  "69c9231d862c4fc3448d05f1": "https://indusmoments.com", // IndusInd Bank
+  "69c9231d862c4fc3448d05f2": "https://idfcfirst.bank.in/rewards", // IDFC FIRST Bank
+  "69c9231d862c4fc3448d05f3": "https://rewards.kotak.bank.in/", // Kotak Mahindra Bank
+  "69c9231d862c4fc3448d05f4": "https://rblrewards.rbl.bank.in", // RBL Bank
+  "69c9231d862c4fc3448d05f5": "https://www.americanexpress.com/en-in/account/login/", // American Express
+  "69c9231d862c4fc3448d05f6": "https://creditrewardz.yes.bank.in", // YES Bank
+  "69c9231d862c4fc3448d05f7": "https://myservices.bobcard.co.in/microsite/rewards", // Bank of Baroda
+  "69c9231d862c4fc3448d05f8": "https://rewardz.au.bank.in", // AU Bank
+  "69cffa6b862c4fc3448d0721": "https://sc.com/360rewards", // Standard Chartered Bank
+};
+
 // Set of bankIds that have redemption instructions available
 export const supportedBankIds = new Set(Object.keys(redemptionInstructions));

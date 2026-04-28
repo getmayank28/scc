@@ -92,7 +92,9 @@ const RedemptionCard = ({
         </Typography>
       </div> */}
 
-      <Button disabled={!applyLink} className="rounded-md mt-4 max-md:mt-0" onClick={() => window.open(applyLink,"_blank")}>{buttonText}</Button>
+      {applyLink && (
+        <Button className="rounded-md mt-4 max-md:mt-0" onClick={() => window.open(applyLink,"_blank")}>{buttonText}</Button>
+      )}
     </div>
   )
 }
