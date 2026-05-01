@@ -94,14 +94,14 @@ function ChatCard(props: BotRecommendationCreditCardProps
               href={isLoading ? '' : applyLink}
               target="_blank"
               rel="noopener noreferrer"
-              className={`"text-white min-w-[80px] w-full font-bold ${isLoading ? "bg-primary-orange/40" : "bg-primary-orange/80"} border border-secondary-orange rounded-full text-[12px] py-1 p-2 cursor-pointer text-center"`}
+              className={`"text-white text-center min-w-[80px] w-full font-bold ${isLoading ? "bg-primary-orange/40" : "bg-primary-orange/80"} border border-secondary-orange rounded-full text-[12px] py-1 p-2 cursor-pointer text-center"`}
             >
               {isLoading ? <Spinner /> : 'Apply now'}
             </a>
           )}
         </div>
       </div>
-      <CardRecommendationModal {...props} open={open} onClose={() => setOpen(false)} />
+      <CardRecommendationModal {...props} applyLink={applyLink} open={open} onClose={() => setOpen(false)} />
     </div>
   );
 }
