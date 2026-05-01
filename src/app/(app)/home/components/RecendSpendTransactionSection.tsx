@@ -59,7 +59,7 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
           variant="caption"
           className={`text-right font-bold text-secondary-success`}
         >
-          {amount.toLocaleString()}
+           ₹{amount.toLocaleString()}
         </Typography>
 
         <Typography
@@ -74,13 +74,20 @@ const TransactionCard: React.FC<TransactionCardProps> = ({
 };
 
 
+interface SpendCard {
+  isBestCard: boolean;
+  directSwipeSavingsInInr: number;
+  voucherSavingsInInr: number;
+}
+
 interface SpendProps {
   _id:string;
   merchant:string;
   category:string;
   createdAt:string;
   expectedBenefit:number;
-  amount:number
+  amount:number;
+  cards: SpendCard[];
 }
 
 
@@ -89,7 +96,6 @@ const RecendSpendTransactionSection = ({spendTransaction,isLoading}:{spendTransa
   if(isLoading){
     return <RecentSpendTransactionSectionSkeleton/>
   }
- 
 
   return (
     <div className="w-md bg-brown-sidebar p-4 px-6 rounded-xl min-h-[292px] max-md:w-full max-md:min-h-fit max-md:p-4">
@@ -100,28 +106,27 @@ const RecendSpendTransactionSection = ({spendTransaction,isLoading}:{spendTransa
         >
           Recent Spend Transaction
         </Typography>
-        {/* <Button
-          variant="ghost"
-          className="cursor-pointer hover:bg-transparent hover:text-white p-0 text-primary-orange opacity-100 font-bold"
-        >
-          See All
-        </Button> */}
       </div>
 
       <div className=" flex flex-col gap-4">
         {
-          spendTransaction?.slice(0,4)?.map((spend, index:number) => (
-            <TransactionCard
-              key={spend?._id}
-              merchantName={spend?.merchant}
-              category={spend?.category}
-              date={spend?.createdAt}
-              amount={spend?.expectedBenefit}
-              balance={spend?.amount}
-              avatarLetter={spend?.merchant?.slice(0, 1)}
-              avatarColor={ICON_COLORS[index % ICON_COLORS.length]}
-            />
-          ))
+          spendTransaction?.slice(0,4)?.map((spend, index:number) => {
+
+            const bestCard = spend?.cards?.find(card => card?.isBestCard)
+            const expectedBenefit = Math.max(bestCard?.directSwipeSavingsInInr ?? 0, bestCard?.voucherSavingsInInr ?? 0)
+            return (
+              <TransactionCard
+                key={spend?._id}
+                merchantName={spend?.merchant}
+                category={spend?.category}
+                date={spend?.createdAt}
+                amount={expectedBenefit}
+                balance={spend?.amount}
+                avatarLetter={spend?.merchant?.slice(0, 1)}
+                avatarColor={ICON_COLORS[index % ICON_COLORS.length]}
+              />
+            )
+          })
         }
       </div>
     </div>

@@ -30,7 +30,7 @@ const TopPerformingCard = ({ spend, reward, percentage, name }:TopPerformingCard
             variant="body"
             className="text-left opacity-100 font-semibold text-primary-orange"
           >
-           {reward}
+           ₹{String(reward)?.toLocaleString()}
           </Typography>
           <Typography
             variant="caption"

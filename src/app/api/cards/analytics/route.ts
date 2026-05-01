@@ -17,56 +17,23 @@ export async function GET() {
   const uid = new Types.ObjectId(userId);
 
   const topCards = await SpendTransaction.aggregate([
-    // 1️⃣ Match user
-    {
-      $match: { userId: uid },
-    },
+    { $match: { userId: uid } },
 
-    // 2️⃣ Extract rewardValue (₹ only)
+    // Unwind cards array to get one doc per card per transaction
+    { $unwind: "$cards" },
+
+    // Keep only the best card for each transaction
+    { $match: { "cards.isBestCard": true } },
+
+    // Compute reward as max of directSwipe and voucher savings
     {
       $addFields: {
         rewardValue: {
-          $cond: [
-            {
-              $regexMatch: {
-                input: { $ifNull: ["$expectedBenefit", ""] },
-                regex: /(\d+(\.\d+)?)/, // contains a number
-              },
-            },
-            {
-              $toDouble: {
-                $trim: {
-                  input: {
-                    $replaceAll: {
-                      input: {
-                        $replaceAll: {
-                          input: {
-                            $replaceAll: {
-                              input: "$expectedBenefit",
-                              find: "₹",
-                              replacement: "",
-                            },
-                          },
-                          find: "INR",
-                          replacement: "",
-                        },
-                      },
-                      find: ",",
-                      replacement: "",
-                    },
-                  },
-                },
-              },
-            },
-            0,
+          $max: [
+            { $ifNull: ["$cards.directSwipeSavingsInInr", 0] },
+            { $ifNull: ["$cards.voucherSavingsInInr", 0] },
           ],
         },
-      },
-    },
-
-    // 3️⃣ Normalize card name (remove **, lowercase, trim)
-    {
-      $addFields: {
         normalizedCardName: {
           $trim: {
             input: {
@@ -74,7 +41,7 @@ export async function GET() {
                 $replaceAll: {
                   input: {
                     $replaceAll: {
-                      input: "$cardName",
+                      input: "$cards.cardName",
                       find: "*",
                       replacement: "",
                     },
@@ -89,21 +56,35 @@ export async function GET() {
       },
     },
 
-    // 4️⃣ Group by normalized card name
+    // Filter out empty card names
+    { $match: { normalizedCardName: { $nin: [null, ""] } } },
+
+    // Group by card name
     {
       $group: {
         _id: "$normalizedCardName",
-        cardName: { $first: "$cardName" }, // display name
+        cardName: { $first: "$cards.cardName" },
         cardSpend: { $sum: "$amount" },
         cardRewards: { $sum: "$rewardValue" },
       },
     },
 
-    // 6️⃣ Top 2 cards
+    // Compute spend-reward ratio
+    {
+      $addFields: {
+        spendRewardRatio: {
+          $cond: [
+            { $gt: ["$cardSpend", 0] },
+            { $divide: ["$cardRewards", "$cardSpend"] },
+            0,
+          ],
+        },
+      },
+    },
+
     { $sort: { spendRewardRatio: -1 } },
     { $limit: 2 },
 
-    // 7️⃣ Clean response
     {
       $project: {
         _id: 0,
@@ -117,45 +98,15 @@ export async function GET() {
   ]);
 
   const [spendAnalytics] = await SpendTransaction.aggregate([
-    {
-      $match: { userId: uid },
-    },
+    { $match: { userId: uid } },
+    { $unwind: "$cards" },
+    { $match: { "cards.isBestCard": true } },
     {
       $addFields: {
         rewardValue: {
-          $cond: [
-            {
-              $regexMatch: {
-                input: { $ifNull: ["$expectedBenefit", ""] },
-                regex: /(\d+(\.\d+)?)/, // contains a number
-              },
-            },
-            {
-              $toDouble: {
-                $trim: {
-                  input: {
-                    $replaceAll: {
-                      input: {
-                        $replaceAll: {
-                          input: {
-                            $replaceAll: {
-                              input: "$expectedBenefit",
-                              find: "₹",
-                              replacement: "",
-                            },
-                          },
-                          find: "INR",
-                          replacement: "",
-                        },
-                      },
-                      find: ",",
-                      replacement: "",
-                    },
-                  },
-                },
-              },
-            },
-            0,
+          $max: [
+            { $ifNull: ["$cards.directSwipeSavingsInInr", 0] },
+            { $ifNull: ["$cards.voucherSavingsInInr", 0] },
           ],
         },
       },
@@ -165,7 +116,7 @@ export async function GET() {
         _id: null,
         totalAmountSpent: { $sum: "$amount" },
         totalRewardsEarned: { $sum: "$rewardValue" },
-        totalSpendOptimized: { $sum: 1 }, // ✅ COUNT
+        totalSpendOptimized: { $sum: 1 },
       },
     },
   ]);

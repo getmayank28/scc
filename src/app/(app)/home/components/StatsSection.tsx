@@ -54,17 +54,16 @@ const StatsSection = ({ spendAnalytics,isLoading }: {
   }
 
   
-
   return (
     <div className="bg-brown-sidebar p-4 px-6 rounded-xl grid grid-cols-2 gap-4 min-h-[292px] max-md:gap-2 max-md:p-4">
       <StatsCard
         title="Total amount spend"
-        amount={formatNumber(spendAnalytics?.totalAmountSpent)}
+        amount={`₹${formatNumber(spendAnalytics?.totalAmountSpent)}`}
         icon={<BanknoteArrowUp size={24} className="text-secondary-gray mt-2" />}
       />
       <StatsCard
         title="Total rewards earn"
-        amount={formatNumber(spendAnalytics?.totalRewardsEarned)}
+        amount={`₹${formatNumber(spendAnalytics?.totalRewardsEarned)}`}
         icon={<BanknoteArrowDown size={24} className="text-secondary-gray mt-2" />}
       />
       <StatsCard
