@@ -28,7 +28,7 @@ const tabs = [
   },
   {
     label: 'SBI Card',
-    value: 'SBI Card',
+    value: 'SBI',
   },
   {
     label: 'IndusInd Bank',
@@ -70,7 +70,6 @@ const ShowCards = ({ onEditCard, onRemoveCard }: { onEditCard: (card: { id: stri
     if (selectedValue === 'all') return data
     return data?.filter((card: { bankName: string }) => card?.bankName === selectedValue)
   }, [selectedValue, data])
-
   return (
     <div className="flex flex-col justify-start gap-4 p-10">
       <div className="flex justify-between gap-2">
