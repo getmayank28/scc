@@ -3,6 +3,7 @@ import { TableColumn } from "@/types/table";
 import { RedemptionOption } from "@/types/redemption";
 import { redemptionsCategoryMap } from "@/lib/constants/redemption";
 import { formatToINR } from "@/lib/utils/number";
+import { Button } from "@/components/ui/button";
 export const redemptionColumns: TableColumn<
     RedemptionOption & { points: number; highestReturn: number }
 >[] = [
@@ -77,7 +78,7 @@ export const redemptionColumns: TableColumn<
             },
         },
     ];
-const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number; highestReturn: number })[] }) => {
+const RedemptionTable = ({ data, portalLink }: { data: (RedemptionOption & { points: number; highestReturn: number })[]; portalLink?: string }) => {
     return (
         <div className="flex flex-col gap-4 mt-4">
            <div className="hidden max-md:flex flex-col  gap-4">
@@ -128,6 +129,11 @@ const RedemptionTable = ({ data }: { data: (RedemptionOption & { points: number;
                                     </span>
                                 </div>
                             </div>
+                            {portalLink && (
+                                <Button className="rounded-md w-full mt-3 bg-primary-orange" onClick={() => window.open(portalLink, "_blank")}>
+                                    Redeem now
+                                </Button>
+                            )}
                         </div>
                     )
                 })

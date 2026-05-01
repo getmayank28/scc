@@ -202,7 +202,7 @@ const PointRedemption = () => {
               >
                 value breakdown
               </Typography>
-              <RedemptionTable data={redemptionOptionsSortedData} />
+              <RedemptionTable data={redemptionOptionsSortedData} portalLink={portalLink} />
             </>
           ) : (
             <></>
