@@ -28,6 +28,7 @@ import { PortalProps } from "@/models/Portal";
 export default function SpendOptimizerMobile({
   selectedCards,
   isCardsLoading,
+  onAddSpendTransaction,
 }: {
   selectedCards: CreditCard[];
   isCardsLoading: boolean;
@@ -103,6 +104,13 @@ export default function SpendOptimizerMobile({
     const finalData = JSON.parse(convertBoldMarkdownToHtml(msg));
 
     setData(finalData);
+
+    if (finalData?.cards?.length) {
+      onAddSpendTransaction({
+        ...formData,
+        cards: finalData.cards,
+      });
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>): void => {

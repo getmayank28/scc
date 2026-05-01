@@ -5,17 +5,16 @@ export interface SpendTransaction extends Document {
   category: string;
   amount: number;
   merchant: string;
-  paymentMethod: string;
-  emi: string;
+  transactionMode: string;
   cards: {
-    cardId: Types.ObjectId;
-    name: string;
-    bankName: string;
+    cardId: string;
+    cardName: string;
+    directSwipePortalLink: string;
+    directSwipeSavingsInInr: number;
+    isBestCard: boolean;
+    isDirectSwipePortalSavings: boolean;
+    voucherSavingsInInr: number;
   }[];
-  recommendation?: string | undefined;
-  currency: string;
-  cardName: string | undefined;
-  expectedBenefit: string | undefined;
 }
 
 const SpendTransactionSchema = new Schema<SpendTransaction>(
@@ -33,17 +32,6 @@ const SpendTransactionSchema = new Schema<SpendTransaction>(
       trim: true,
     },
 
-    cardName: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    expectedBenefit: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-
     amount: {
       type: Number,
       required: true,
@@ -56,40 +44,26 @@ const SpendTransactionSchema = new Schema<SpendTransaction>(
       trim: true,
     },
 
-    paymentMethod: {
+    transactionMode: {
       type: String,
       required: true,
     },
 
-    emi: {
-      type: String,
-      default: "no-emi",
-    },
-
     cards: [
       {
-        cardId: {
-          type: Schema.Types.ObjectId,
-          ref: "Card",
-          required: true,
-        },
-        name: { type: String, required: true },
-        bankName: { type: String, required: true },
+        cardId: { type: String, required: true },
+        cardName: { type: String, required: true },
+        directSwipePortalLink: { type: String, default: "" },
+        directSwipeSavingsInInr: { type: Number, default: 0 },
+        isBestCard: { type: Boolean, default: false },
+        isDirectSwipePortalSavings: { type: Boolean, default: false },
+        voucherSavingsInInr: { type: Number, default: 0 },
       },
     ],
-
-    recommendation: {
-      type: String,
-    },
-
-    currency: {
-      type: String,
-      default: "INR",
-    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 SpendTransactionSchema.index({ userId: 1, createdAt: -1 });

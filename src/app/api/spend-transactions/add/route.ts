@@ -1,6 +1,5 @@
 // app/api/transactions/route.ts
 import { NextResponse } from "next/server";
-import Card from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
 import SpendTransactionModel from "@/models/SpendTransaction";
 import { getServerSession } from "next-auth";
@@ -16,38 +15,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const {
-      userId,
-      category,
-      amount,
-      merchant,
-      paymentMethod,
-      emi,
-      cardIds,
-      cardName,
-      expectedBenefit,
-    } = body;
+    const { userId, category, amount, merchant, transactionMode, cards } = body;
 
-    const cards = await Card.find({ _id: { $in: cardIds } });
-
-    if (!cards.length) {
-      return NextResponse.json({ error: "Invalid cards" }, { status: 400 });
-    }
-    const foundCards = cards.map((c) => ({
-      cardId: c._id,
-      name: c.name,
-      bankName: c.bankName,
-    }));
     const transaction = await SpendTransactionModel.create({
       userId,
       category,
       amount,
       merchant,
-      paymentMethod,
-      emi,
-      cards: foundCards,
-      cardName,
-      expectedBenefit,
+      transactionMode,
+      cards,
     });
 
     return NextResponse.json(transaction, { status: 201 });
@@ -55,7 +31,7 @@ export async function POST(req: Request) {
     console.error(err);
     return NextResponse.json(
       { error: "Failed to create transaction" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

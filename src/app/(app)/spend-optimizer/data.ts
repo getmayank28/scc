@@ -36,9 +36,16 @@ export interface SpendTransaction {
   category: string;
   amount: string;
   merchant: string;
-  cardIds: string[];
-  cardName: string | undefined;
-  expectedBenefit: string | undefined;
+  transactionMode: string;
+  cards: {
+    cardId: string;
+    cardName: string;
+    directSwipePortalLink: string;
+    directSwipeSavingsInInr: number;
+    isBestCard: boolean;
+    isDirectSwipePortalSavings: boolean;
+    voucherSavingsInInr: number;
+  }[];
 }
 
 export interface FormData {

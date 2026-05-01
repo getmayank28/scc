@@ -72,8 +72,8 @@ export const spendOptimizerColumns: TableColumn<
       ),
     },
     {
-      key: "emi",
-      title: "EMI",
+      key: "transactionMode",
+      title: "Mode",
       width: "15%",
       render: (value) => (
         <span className="text-sm font-semibold text-white capitalize max-md:text-[10px]">
@@ -86,16 +86,16 @@ export const spendOptimizerColumns: TableColumn<
       title: "Recommendation",
       width: "15%",
       render: (_, record) => {
-        const { cardName, expectedBenefit } = record || {};
+        const bestCard = record?.cards?.find((c) => c.isBestCard);
 
-        if (!cardName)
+        if (!bestCard)
           return <span className="text-sm text-muted-foreground">—</span>;
 
         return (
           <div className="flex flex-col">
-            <span className="text-sm text-white font-semibold max-md:text-[10px] ">{cardName}</span>
+            <span className="text-sm text-white font-semibold max-md:text-[10px] ">{bestCard.cardName}</span>
             <span className="text-sm font-bold text-orange-500 max-md:text-[10px] ">
-              ✨ {expectedBenefit} Reward Value
+              ✨ ₹{bestCard.directSwipeSavingsInInr + bestCard.voucherSavingsInInr} Savings
             </span>
           </div>
         );
@@ -103,7 +103,8 @@ export const spendOptimizerColumns: TableColumn<
     },
   ];
 
-const Card = ({merchant,category,date,amount,cardName,expectedBenefit,color}:Partial<SpendTransaction> & { date: string, color:string }) => {
+const Card = ({merchant,category,date,amount,cards,color}:Partial<SpendTransaction> & { date: string, color:string }) => {
+  const bestCard = cards?.find((c) => c.isBestCard);
   return (
     <div className="bg-brown-sidebar border border-brown-border rounded-md">
       <div className="p-3">
@@ -119,8 +120,7 @@ const Card = ({merchant,category,date,amount,cardName,expectedBenefit,color}:Par
                 {merchant}
               </span>
               <span className="text-xs text-muted-foreground capitalize">
-              {getDashedFormattedValue(category??"")} •{" "}
-              {/* {getDashedFormattedValue(paymentMethod??"")} */}
+              {getDashedFormattedValue(category??"")}
               </span>
             </div>
           </div>
@@ -130,18 +130,16 @@ const Card = ({merchant,category,date,amount,cardName,expectedBenefit,color}:Par
         </div>
         <div className="flex justify-between mt-4">
           <Typography variant="body" className="opacity-100 font-bold">₹{Number(amount).toLocaleString("en-IN")}</Typography>
-          <div className="bg-brown-border p-2 py-1 rounded-full">
-            {/* <Typography variant="caption" className="font-semibold"> 
-               {getDashedFormattedValue(emi as string)}</Typography> */}
+        </div>
+      </div>
+      {bestCard && (
+        <div className="flex flex-col justify-between bg-brown-border p-2 mt-3 rounded-b-md">
+          <Typography variant="caption" className="opacity-100 font-semibold">{bestCard.cardName}</Typography>
+          <div>
+            <Typography variant="caption" className="opacity-100 text-primary-orange font-semibold">✨ ₹{bestCard.directSwipeSavingsInInr + bestCard.voucherSavingsInInr} Savings</Typography>
           </div>
         </div>
-      </div>
-      <div className="flex flex-col justify-between bg-brown-border p-2 mt-3 rounded-b-md">
-        <Typography variant="caption" className="opacity-100 font-semibold">{cardName}</Typography>
-        <div>
-          <Typography variant="caption" className="opacity-100 text-primary-orange font-semibold">✨ {expectedBenefit} Reward Value</Typography>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -173,13 +171,9 @@ const SpendTransactionHistory = () => {
               color={ICON_COLORS[index % ICON_COLORS.length]}
               merchant={ele?.merchant}
               category={ele?.category}
-              // paymentMethod={ele?.paymentMethod}
               date={ele?.createdAt}
               amount={ele?.amount}
-              // emi={ele?.emi}
-              cardName={ele?.cardName}
-              expectedBenefit={ele?.expectedBenefit}
-
+              cards={ele?.cards}
             />
           ))
         }

@@ -33,8 +33,8 @@ const SpendOptimizer = () => {
     return cards?.filter((card: CreditCard) => userCards?.includes(card?._id));
   }, [cards, userCards]);
 
-  const handleAddSpendTransaction = async (payload: SpendTransaction) => {
-    await addSpendTransaction({ ...payload, userId });
+  const handleAddSpendTransaction = (payload: SpendTransaction) => {
+    addSpendTransaction({ ...payload, userId });
   };
 
   return (

@@ -106,16 +106,14 @@ export default function SpendOptimizerDesktop({
     const msg = content?.find(msg => msg?.m_id && msg?.content)?.content || ''
     const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
 
-    console.log(finalData, "fhvhfvhbfhbffhb 44")
-    // const winnerCard = finalData?.cards?.find((card:SpendOptimizerResponseCard) => card?.isBestCard)
-    // const payload = {
-    //   ...formData,
-    //   cardIds: selectedCards?.map((card) => card?.cardId?._id),
-    //   cardName: winnerCard?.cardName,
-    //   expectedBenefit: winnerCard?.benefitValue,
-    // };
-
     setData(finalData);
+
+    if (finalData?.cards?.length) {
+      onAddSpendTransaction({
+        ...formData,
+        cards: finalData.cards,
+      });
+    }
   };
 
 
