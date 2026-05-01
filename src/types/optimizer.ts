@@ -4,4 +4,6 @@ export interface SpendOptimizerResponseCard {
   isBestCard: boolean;
   voucherSavingsInInr: number;
   directSwipeSavingsInInr: number;
+  isDirectSwipePortalSavings?: boolean;
+  directSwipePortalLink?: string;
 }

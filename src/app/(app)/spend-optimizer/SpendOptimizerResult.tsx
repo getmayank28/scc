@@ -23,7 +23,7 @@ import {
   useLazyGetGiftorsByCardSlugQuery,
 } from "@/store/admin";
 import { PortalProps } from "@/models/Portal";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 const loadingStates = [
   {
@@ -56,11 +56,13 @@ export const spendOptimizerColumns = ({
   amount,
   directSwipeLink,
   handleGetVoucherLink,
+  handleDirectSwipeClick,
   isGiftorLoading,
 }: {
   amount: string;
   directSwipeLink: string | undefined;
   handleGetVoucherLink: (cardSlug: string) => void;
+  handleDirectSwipeClick: (card: SpendOptimizerResponseCard) => void;
   isGiftorLoading: boolean;
 }) => [
   {
@@ -121,12 +123,12 @@ export const spendOptimizerColumns = ({
     title: "Action",
     width: "15%",
     // @ts-expect-error ignore this
-    render: (_,record:{cardId:string}) => (
+    render: (_,record: SpendOptimizerResponseCard) => (
       <div className="flex gap-1">
         <Button disabled={isGiftorLoading} onClick={() => handleGetVoucherLink(record?.cardId)} className="rounded-[4px]">
           <TicketPlus />
         </Button>
-        <Button disabled={!directSwipeLink} onClick={() => window.open(directSwipeLink!, "_black")} className="rounded-[4px] bg-secondary-orange border border-primary-orange">
+        <Button disabled={!directSwipeLink} onClick={() => handleDirectSwipeClick(record)} className="rounded-[4px] bg-secondary-orange border border-primary-orange">
           <CreditCard />
         </Button>
       </div>
@@ -272,6 +274,76 @@ const VoucherInstructionModal = ({
   );
 };
 
+const PortalSavingsModal = ({
+  isOpen,
+  onClose,
+  merchantName,
+  merchantLink,
+  portalLink,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  merchantName: string;
+  merchantLink: string;
+  portalLink: string;
+}) => {
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      allowOutsideClickClose
+      className="m-4 p-0 h-fit max-md:!rounded-[0px] max-md:border-3 max-md:w-full max-md:min-w-full border-2 border-brown-border bg-brown-background w-[500px] min-w-[500px] max-w-[90vw] max-md:min-w-0"
+    >
+      <div className="p-6 max-md:p-4">
+        <div className="flex justify-between items-center mb-4">
+          <Typography
+            variant="h4"
+            className="text-left opacity-100 font-bold max-md:text-[16px]"
+          >
+            Better Savings Available
+          </Typography>
+          {/* <Button onClick={onClose} className="rounded-[4px] p-1">
+            <X size={16} />
+          </Button> */}
+        </div>
+        <Typography
+          variant="body"
+          className="text-left opacity-80 mb-6 max-md:text-sm"
+        >
+          You can get more benefits through your bank portal than on{" "}
+          <span className="font-semibold opacity-100 text-primary-orange capitalize">
+            {merchantName}
+          </span>
+          . Consider using the portal link for better savings.
+        </Typography>
+        <div className="flex gap-3 max-md:flex-col">
+          <Button
+            onClick={() => {
+              window.open(merchantLink, "_blank");
+              onClose();
+            }}
+            className="flex-1 h-11 rounded-md text-sm border border-primary-orange bg-secondary-orange"
+          >
+            Continue to Merchant
+          </Button>
+          <Button
+            onClick={() => {
+              window.open(
+                portalLink.startsWith("http") ? portalLink : `https://${portalLink}`,
+                "_blank"
+              );
+              onClose();
+            }}
+            className="flex-1 h-11 rounded-md text-sm"
+          >
+            Open Bank Portal
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
 const SpendOptimizerResult = ({
   data,
   open,
@@ -296,6 +368,10 @@ const SpendOptimizerResult = ({
   selectedPortal: PortalProps | null;
 }) => {
   const [showInstructions, setShowInstructions] = useState(false);
+  const [portalModalData, setPortalModalData] = useState<{
+    merchantLink: string;
+    portalLink: string;
+  } | null>(null);
   const [giftorsById, { isFetching: isGiftorLoading }] =
     useLazyGetGiftorsByCardSlugQuery();
 
@@ -316,9 +392,25 @@ const SpendOptimizerResult = ({
       return maxB - maxA;
     });
   }, [data?.cards]);
-  const handleGetDirectLinkClick = () => {
-    window.open(directSwipeLink, "_blank");
-  };
+
+  const handleDirectSwipeClick = useCallback(
+    (card?: SpendOptimizerResponseCard) => {
+      const targetCard = card || winnerCard;
+      if (
+        targetCard?.isDirectSwipePortalSavings &&
+        targetCard?.directSwipePortalLink &&
+        directSwipeLink
+      ) {
+        setPortalModalData({
+          merchantLink: directSwipeLink,
+          portalLink: targetCard.directSwipePortalLink,
+        });
+      } else if (directSwipeLink) {
+        window.open(directSwipeLink, "_blank");
+      }
+    },
+    [winnerCard, directSwipeLink]
+  );
 
   return (
     <Modal
@@ -596,7 +688,7 @@ const SpendOptimizerResult = ({
                       </div>
                       <Button
                         disabled={!directSwipeLink}
-                        onClick={handleGetDirectLinkClick}
+                        onClick={() => handleDirectSwipeClick()}
                         className="border border-primary-orange bg-secondary-orange rounded-md mt-2 text-sm"
                       >
                         Direct swipe
@@ -614,6 +706,7 @@ const SpendOptimizerResult = ({
                     amount: formData?.amount,
                     directSwipeLink,
                     handleGetVoucherLink,
+                    handleDirectSwipeClick,
                     isGiftorLoading,
                   })}
                   loading={false}
@@ -703,7 +796,7 @@ const SpendOptimizerResult = ({
                         </Button>
                         <Button
                           disabled={!directSwipeLink}
-                          onClick={() => window.open(directSwipeLink!, "_blank")}
+                          onClick={() => handleDirectSwipeClick(card)}
                           className="flex-1 h-9 rounded-md text-xs bg-secondary-orange border border-primary-orange"
                         >
                           {/* <CreditCard className="w-4 h-4 mr-1" /> */}
@@ -729,6 +822,15 @@ const SpendOptimizerResult = ({
         isOpen={showInstructions}
         onClose={() => setShowInstructions(false)}
       />
+      {portalModalData && (
+        <PortalSavingsModal
+          isOpen={!!portalModalData}
+          onClose={() => setPortalModalData(null)}
+          merchantName={formData?.merchant}
+          merchantLink={portalModalData.merchantLink}
+          portalLink={portalModalData.portalLink}
+        />
+      )}
     </Modal>
   );
 };
