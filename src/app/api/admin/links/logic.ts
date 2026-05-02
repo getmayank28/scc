@@ -3,6 +3,8 @@ import { LinkProps } from "@/types/link";
 import mongoose from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 import "@/models/Partner";
+import "@/models/Card";
+import "@/models/Bank";
 // CREATE LINK
 export async function createLink(req: NextRequest) {
   const body = await req.json();
