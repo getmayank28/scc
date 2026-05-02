@@ -9,6 +9,8 @@ import { ChatSideBarSkeleton } from "../Loader/Loader";
 import useChatSidebar from "@/lib/hooks/useChatSidebar";
 import useIsMobile from "@/lib/hooks/useIsMobile";
 import useNav from "@/lib/hooks/useNav";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 dayjs.extend(utc);
 
@@ -140,7 +142,10 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
         </Typography>
         <div
           className="flex gap-2 items-center cursor-pointer"
-          onClick={goToHome}
+          onClick={() => {
+            trackEvent(EventName.CHAT_SIDEBAR_HOME_CLICKED, {});
+            goToHome();
+          }}
         >
           <Home className="h-5 w-5 shrink-0 text-neutral-200" />
           <Typography variant="body" className="text-md opacity-100">

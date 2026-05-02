@@ -5,18 +5,19 @@ import { formatToINR } from "@/lib/utils/number"
 
 interface RedemptionCardProps {
     isBestOption?: boolean
-  
+
     tag: string
     title: string
-  
+
     points: number
     conversionRate: string
     conversionValue: string
     totalValue: number
-  
+
     infoText: string
     buttonText: string
     applyLink:string
+    onRedeemClick?: () => void
   }
 
 const RedemptionCard = ({
@@ -27,7 +28,8 @@ const RedemptionCard = ({
   conversionRate,
   totalValue,
   buttonText,
-  applyLink
+  applyLink,
+  onRedeemClick,
 }: RedemptionCardProps) => {
   return (
     <div
@@ -93,7 +95,10 @@ const RedemptionCard = ({
       </div> */}
 
       {applyLink && (
-        <Button className="rounded-md mt-4 max-md:mt-0" onClick={() => window.open(applyLink,"_blank")}>{buttonText}</Button>
+        <Button className="rounded-md mt-4 max-md:mt-0" onClick={() => {
+          onRedeemClick?.();
+          window.open(applyLink,"_blank");
+        }}>{buttonText}</Button>
       )}
     </div>
   )

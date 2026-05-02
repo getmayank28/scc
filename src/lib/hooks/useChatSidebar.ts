@@ -4,6 +4,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { usePathname, useRouter } from "next/navigation";
 import { useChatContext } from "@/contexts/ChatContext";
+import { trackEvent } from "../analytics/track";
+import { EventName } from "../analytics/types";
 
 dayjs.extend(utc);
 
@@ -23,6 +25,7 @@ const useChatSidebar = () => {
 
   const handleSessionClick = (session_id: string) => {
     if (typeof window === "undefined") return null;
+    trackEvent(EventName.CHAT_SIDEBAR_SESSION_CLICKED, { sessionId: session_id });
     disableTypingLoader?.();
     localStorage.setItem("chat_session_id", session_id);
     localStorage.setItem("is_chat_session_id_valid", "true");
@@ -32,6 +35,7 @@ const useChatSidebar = () => {
 
   const handleNewChat = () => {
     if (typeof window === "undefined") return null;
+    trackEvent(EventName.CHAT_SIDEBAR_NEW_CHAT_CLICKED, {});
     disableTypingLoader?.();
     setMessages([]);
     setCurrentMessageId("card-category-fs");

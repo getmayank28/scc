@@ -5,6 +5,7 @@ import useUserData from "@/lib/hooks/useUserData";
 import { CreditCard } from "../CreditCard";
 import Image from "next/image";
 import useNav from "@/lib/hooks/useNav";
+import { EventName, EventPropertiesMap } from "@/lib/analytics/types";
 
 const steps = [
   {
@@ -29,8 +30,9 @@ interface WelcomeScreenProps {
   showUserCard: boolean;
   showRecommendationCard: boolean;
   showOptimizerCard: boolean;
+  track: <T extends EventName>(eventName: T, properties: EventPropertiesMap[T]) => void;
 }
-const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard }: WelcomeScreenProps) => {
+const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard, track }: WelcomeScreenProps) => {
   const { firstName, nameInitials, name } = useUserData();
   const {goToChat, goToSpendOptimizer} = useNav()
 
@@ -58,7 +60,10 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
             </Typography>
           </div>
         </div>
-        <Button onClick={goToChat} className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+        <Button onClick={() => {
+          track(EventName.HOME_WELCOME_SMART_SPENDING_CLICKED, {});
+          goToChat();
+        }} className="h-12 max-md:mt-4 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
           Step into smart spending <p className="font-black">→</p>
         </Button>
       </div>}
@@ -86,7 +91,10 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
                 </Typography>
               </div>
             ))}
-            <Button onClick={goToChat} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
+            <Button onClick={() => {
+              track(EventName.HOME_WELCOME_GET_PERSONALIZED_CARD_CLICKED, {});
+              goToChat();
+            }} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs mt-4">
               Get your personalised card <p className="font-black">→</p>
             </Button>
           </div>
@@ -124,7 +132,10 @@ const WelcomeScreen = ({ showUserCard, showRecommendationCard, showOptimizerCard
               transaction?
             </Typography>
           </div>
-          <Button onClick={goToSpendOptimizer} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
+          <Button onClick={() => {
+            track(EventName.HOME_WELCOME_CHECK_BEST_CARD_CLICKED, {});
+            goToSpendOptimizer();
+          }} className="h-12 bg-primary-orange border border-primary-orange/70 rounded-0 max-w-[300px] rounded-xs">
             Check best card for a spend <p className="font-black">→</p>
           </Button>
         </div>

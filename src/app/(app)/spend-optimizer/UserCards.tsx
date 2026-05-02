@@ -6,12 +6,14 @@ import useNav from "@/lib/hooks/useNav";
 import { CreditCard } from "@/types/card";
 import { CirclePlus } from "lucide-react";
 import Image from "next/image";
+import { EventName, EventPropertiesMap } from "@/lib/analytics/types";
 
 interface UserCards {
   cards: CreditCard[];
   userCards: string[];
   isCardsLoading: boolean;
   setUserCards: (cards: string[]) => void;
+  track: <T extends EventName>(eventName: T, properties: EventPropertiesMap[T]) => void;
 }
 
 const UserCards = ({
@@ -19,6 +21,7 @@ const UserCards = ({
   userCards,
   isCardsLoading,
   setUserCards,
+  track,
 }: UserCards) => {
   const { navigateToProfile } = useNav();
 
@@ -59,9 +62,21 @@ const UserCards = ({
                           (option) => option !== card?._id
                         );
                         setUserCards(filteredOptions);
+                        track(EventName.SPEND_OPTIMIZER_CARD_DESELECTED, {
+                          cardId: card?._id,
+                          cardName: card?.cardId?.name,
+                          bankName: card?.cardId?.bankName,
+                          selectedCardCount: filteredOptions.length,
+                        });
                       } else {
                         // @ts-expect-error this is correct
                         setUserCards((prev) => [...prev, card?._id]);
+                        track(EventName.SPEND_OPTIMIZER_CARD_SELECTED, {
+                          cardId: card?._id,
+                          cardName: card?.cardId?.name,
+                          bankName: card?.cardId?.bankName,
+                          selectedCardCount: userCards.length + 1,
+                        });
                       }
                     }}
                   >
@@ -107,7 +122,10 @@ const UserCards = ({
             )}
             <div
               className="border cursor-pointer px-3 flex flex-col items-center justify-center gap-2 border-dashed border-white/60 rounded-lg h-[160px] !w-[260px] max-md:!w-[260px]"
-              onClick={navigateToProfile}
+              onClick={() => {
+                track(EventName.SPEND_OPTIMIZER_ADD_CARD_CLICKED, {});
+                navigateToProfile();
+              }}
             >
               <CirclePlus className="text-white/60" size={60} />
               <Typography

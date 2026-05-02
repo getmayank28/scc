@@ -2,7 +2,7 @@
 import HeaderText from "@/components/HeaderText/HeaderText";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/stateful-button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RedemptionTable from "./RedemptionTable";
 import Typography from "@/components/Typography/Typography";
 import useRedemptionData from "@/lib/hooks/useRedemptionData";
@@ -26,14 +26,21 @@ import { useGetUserCardsQuery } from "@/store/api";
 import useUserData from "@/lib/hooks/useUserData";
 import useNav from "@/lib/hooks/useNav";
 import { CircleQuestionMark } from "lucide-react";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 
 const PointRedemption = () => {
+  const { track } = useAnalytics();
   const [query, setQuery] = useState("");
   const [points, setPoints] = useState("");
   const [errors, setErrors] = useState({ points: false, card: false });
   const [showInstructions, setShowInstructions] = useState(false);
   const { userId } = useUserData();
   const { goToProfile } = useNav();
+
+  useEffect(() => {
+    track(EventName.REDEMPTION_VIEWED, {});
+  }, [track]);
 
   const { data: userCards } = useGetUserCardsQuery(
     { userId },
@@ -62,6 +69,10 @@ const PointRedemption = () => {
       return;
     }
 
+    track(EventName.REDEMPTION_POINTS_SUBMITTED, {
+      cardName: query,
+      points: Number(points),
+    });
     handleRedemptionSubmit(query, points);
   };
   // Find the selected card's bankId and check if instructions exist
@@ -79,6 +90,19 @@ const PointRedemption = () => {
 
   const portalLink = selectedBankId ? bankRedemptionPortals[selectedBankId] ?? "" : "";
   const redemptionOptionsSortedData = redemptionOptionsData.sort((a, b) => b.currentValue - a.currentValue);
+
+  useEffect(() => {
+    if (redemptionOptionsSortedData?.length && !isRedemptionLoading) {
+      const best = redemptionOptionsSortedData[0];
+      track(EventName.REDEMPTION_RESULT_VIEWED, {
+        cardName: query,
+        points: Number(points),
+        bestOption: best?.redemptionOptionTitle ?? null,
+        bestValue: best?.currentValue ?? null,
+        totalOptions: redemptionOptionsSortedData.length,
+      });
+    }
+  }, [redemptionOptionsSortedData?.length, isRedemptionLoading]);
   return (
     <div className="flex h-full bg-brown-background flex-col max-md:px-4 max-md:pt-20 p-20 min-h-screen">
       <div className="flex items-start justify-between">
@@ -91,10 +115,16 @@ const PointRedemption = () => {
         titleClassName="font-bold"
       />
       {hasInstructions && redemptionOptionsSortedData?.length > 0 && (
-        <Button onClick={() => setShowInstructions(true)} className="max-md:hidden">How to Redeem?</Button>
+        <Button onClick={() => {
+          track(EventName.REDEMPTION_HOW_TO_REDEEM_CLICKED, {});
+          setShowInstructions(true);
+        }} className="max-md:hidden">How to Redeem?</Button>
       )}
         {hasInstructions && redemptionOptionsSortedData?.length > 0 && (
-        <div className="bg-primary-orange p-2 rounded-full hidden max-md:flex" onClick={() => setShowInstructions(true)}><CircleQuestionMark color="#fff"/></div>
+        <div className="bg-primary-orange p-2 rounded-full hidden max-md:flex" onClick={() => {
+          track(EventName.REDEMPTION_HOW_TO_REDEEM_CLICKED, {});
+          setShowInstructions(true);
+        }}><CircleQuestionMark color="#fff"/></div>
       )}
       </div>
       <div className="flex rounded-md border border-brown-border max-w-6xl bg-brown-sidebar p-5 gap-4 mt-4 mb-2 max-md:flex-col">
@@ -102,7 +132,10 @@ const PointRedemption = () => {
           <Select
             disabled={isRedemptionLoading}
             value={query}
-            onValueChange={(value) => setQuery(value)}
+            onValueChange={(value) => {
+              track(EventName.REDEMPTION_CARD_SELECTED, { cardName: value });
+              setQuery(value);
+            }}
           >
             <SelectTrigger
               id="paymentMethod"
@@ -127,7 +160,10 @@ const PointRedemption = () => {
               {!userCards?.length && (
                 <div className="flex items-center gap-2 p-2 justify-between">
                   <span>No cards added</span>
-                  <Button onClick={goToProfile} className="h-8 px-3">
+                  <Button onClick={() => {
+                    track(EventName.REDEMPTION_ADD_CARD_CLICKED, {});
+                    goToProfile();
+                  }} className="h-8 px-3">
                     Add card
                   </Button>
                 </div>
@@ -193,6 +229,15 @@ const PointRedemption = () => {
                     infoText={ele?.note?.slice(0, 90)}
                     buttonText="Redeem now"
                     applyLink={portalLink}
+                    onRedeemClick={() =>
+                      track(EventName.REDEMPTION_REDEEM_NOW_CLICKED, {
+                        cardName: query,
+                        optionTitle: ele?.redemptionOptionTitle,
+                        category: ele?.category,
+                        totalValue: Number(ele?.points) * ele?.pointConversionRatioInInr,
+                        isBestOption: Number(ele?.points) * ele?.pointConversionRatioInInr === ele?.highestReturn,
+                      })
+                    }
                   />
                 ))}
               </div>
@@ -202,7 +247,19 @@ const PointRedemption = () => {
               >
                 value breakdown
               </Typography>
-              <RedemptionTable data={redemptionOptionsSortedData} portalLink={portalLink} />
+              <RedemptionTable
+                data={redemptionOptionsSortedData}
+                portalLink={portalLink}
+                onRedeemClick={(option) =>
+                  track(EventName.REDEMPTION_REDEEM_NOW_CLICKED, {
+                    cardName: query,
+                    optionTitle: option?.redemptionOptionTitle,
+                    category: option?.category,
+                    totalValue: option?.currentValue,
+                    isBestOption: option?.currentValue === option?.highestReturn,
+                  })
+                }
+              />
             </>
           ) : (
             <></>

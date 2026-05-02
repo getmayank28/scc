@@ -7,7 +7,9 @@ import { useGetTransactionAnalyticsQuery, useGetUserSpendTransactionQuery } from
 import Typography from "@/components/Typography/Typography";
 import { Button } from "@/components/ui/stateful-button";
 import { useGetUserBotChatSessionsDetailsQuery, useGetUserBotChatSessionsQuery } from "@/store/api";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
 import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
@@ -22,6 +24,7 @@ interface UserChatSession {
 }
 
 const Home = () => {
+  const { track } = useAnalytics();
   const { data, isFetching: isAnalyticsLoading, isError: isAnalyticsError, refetch: refetchAnalytics } = useGetTransactionAnalyticsQuery({})
 
   const {
@@ -68,8 +71,18 @@ const Home = () => {
     return parsed?.cards ?? [];
   }, [userLastSessionDetail]);
 
+  const haveSpendData = spendTransaction?.length;
   const isLoading = isFetching || isAnalyticsLoading || userSessionsLoading || userSessionDetailsLoading
   const isError = isSpendError || isAnalyticsError || userSessionsError || userSessionDetailsError
+
+  useEffect(() => {
+    if (!isLoading) {
+      track(EventName.HOME_VIEWED, {
+        hasSpendData: !!haveSpendData,
+        hasRecommendations: !!lastRecommendationCards?.length,
+      });
+    }
+  }, [isLoading]);
 
   if (isError) {
     return (
@@ -77,6 +90,7 @@ const Home = () => {
         <div className="flex flex-col justify-center items-center gap-4">
           <Typography variant="h3">Failed to get data</Typography>
           <Button onClick={() => {
+            track(EventName.HOME_ERROR_RETRY_CLICKED, {});
             refetchAnalytics?.()
             refetchSpendData?.()
           }}>Retry</Button>
@@ -84,8 +98,6 @@ const Home = () => {
       </div>
     )
   }
-
-  const haveSpendData = spendTransaction?.length
 
   return (
     <div className="w-full grow bg-brown-background text-white min-h-screen pt-20 pb-10 max-md:px-5 max-md:py-20 max-md:pb-10 flex flex-col justify-start gap-8 items-center">
@@ -101,7 +113,8 @@ const Home = () => {
           <WelcomeScreen
             showUserCard={!haveSpendData}
             showRecommendationCard={!lastRecommendationCards || !lastRecommendationCards?.length}
-            showOptimizerCard={!haveSpendData} />
+            showOptimizerCard={!haveSpendData}
+            track={track} />
         ) : (
           <></>
         )

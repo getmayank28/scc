@@ -18,6 +18,8 @@ import { CARD_CATEGORY } from "../data/cards";
 import { cardCategoryJourneyData } from "../constants/chatJourney";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { HistoryActions } from "@/types/actions";
+import { trackEvent } from "../analytics/track";
+import { EventName } from "../analytics/types";
 
 interface Args {
   content?: string;
@@ -43,6 +45,7 @@ const useInputButtonGroupAction = () => {
   const { addUserMessage, setSessionIdValidation } = useChatState();
 
   const continueJourney = () => {
+    trackEvent(EventName.CHAT_CONTINUE_JOURNEY_CLICKED, {});
     const currentMessageIndex = selectedCardCategoryJourney?.findIndex(
       (msg) => msg.submit,
     );
@@ -82,6 +85,10 @@ const useInputButtonGroupAction = () => {
   };
 
   const evaluateEarly = (args: Args | undefined) => {
+    trackEvent(EventName.CHAT_RECOMMENDATION_REQUESTED, {
+      category: (selectedCardCategory as string) ?? "",
+      action: args?.action ?? "early",
+    });
     enableTypingLoader();
 
     if (args?.content) {
@@ -109,6 +116,9 @@ const useInputButtonGroupAction = () => {
   };
 
   const switchToAllRounder = (args?: Args) => {
+    trackEvent(EventName.CHAT_SWITCH_CATEGORY_CLICKED, {
+      category: args?.selectedValue ?? CARD_CATEGORY.ALL_ROUNDER,
+    });
     const category = args?.selectedValue ?? null;
     const switchTo = category?.trim().includes(" ")
       ? CARD_CATEGORY.ALL_ROUNDER
@@ -124,6 +134,7 @@ const useInputButtonGroupAction = () => {
   };
 
   const handleEndJourney = () => {
+    trackEvent(EventName.CHAT_END_JOURNEY, {});
     enableTypingLoader?.();
     enableChatInput?.();
     setCurrentMessageId("");
@@ -140,6 +151,9 @@ const useInputButtonGroupAction = () => {
   };
 
   const selectCardCategory = (args?: Args) => {
+    trackEvent(EventName.CHAT_CATEGORY_SELECTED, {
+      category: args?.selectedValue ?? "",
+    });
     switchToAllRounder(args);
   };
 

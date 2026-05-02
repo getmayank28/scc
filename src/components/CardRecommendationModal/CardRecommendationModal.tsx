@@ -3,6 +3,8 @@ import Typography from "../Typography/Typography"
 import { BadgeCheck, BadgeIndianRupee, BadgeX, Squircle, X } from "lucide-react"
 import { BotRecommendationCreditCardProps } from "@/types/card"
 import { Button } from "../ui/stateful-button"
+import { trackEvent } from "@/lib/analytics/track"
+import { EventName } from "@/lib/analytics/types"
 
 
 const renderCategoryWiseReward = (categoryWiseReward: string | Record<string, string> | null) => {
@@ -75,7 +77,10 @@ const CardRecommendationModal = ({ open = false, applyLink,onClose, ...rest }: B
             </div>
             <div className="bg-[#372921] flex justify-between p-4 max-md:gap-2 absolute max-md:fixed bottom-0 left-0 w-full">
                 <div className="bg-brown-sidebar text-[12px] p-2 px-4 rounded-full text-white/80 font-bold uppercase max-md:text-[10px] max-md:h-fit max-md:text-center">Annual Fee: {rest?.annualFee}</div>
-                {applyLink && <Button className="font-bold" onClick={()=>window.open(applyLink, '_blank')}>Apply</Button>}
+                {applyLink && <Button className="font-bold" onClick={() => {
+                    trackEvent(EventName.CHAT_CARD_DETAIL_APPLY_CLICKED, { cardName: rest?.cardName ?? "" });
+                    window.open(applyLink, '_blank');
+                }}>Apply</Button>}
             </div>
         </Modal>
     )

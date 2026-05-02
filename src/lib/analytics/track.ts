@@ -1,17 +1,14 @@
 import { track } from "@amplitude/analytics-browser";
-import { EventName } from "./types";
+import { EventName, EventPropertiesMap } from "./types";
 
-interface EventPropertiesProps {
-  name?: string;
-  buttonName?: string;
-  location?: string;
-  path?: string;
-  referrer?: string;
-}
-
+/**
+ * Type-safe event tracker. The properties argument is enforced
+ * by the EventPropertiesMap — passing wrong properties for an
+ * event name is a compile-time error.
+ */
 export function trackEvent<T extends EventName>(
   eventName: T,
-  properties: EventPropertiesProps,
+  properties: EventPropertiesMap[T],
 ) {
   try {
     track(eventName, {

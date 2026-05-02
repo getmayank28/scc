@@ -3,9 +3,12 @@ import { LastRecommendationSkeleton } from "@/components/Loader/Loader"
 import Typography from "@/components/Typography/Typography"
 import useUserData from "@/lib/hooks/useUserData"
 import { BotRecommendationCreditCardProps } from "@/types/card"
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics"
+import { EventName } from "@/lib/analytics/types"
 
 const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCreditCardProps[];isLoading:boolean }) => {
   const { name } = useUserData()
+  const { track } = useAnalytics()
 
   if(isLoading){
     return <LastRecommendationSkeleton/>
@@ -40,6 +43,12 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
               name={name}
               annualFee={card?.annualFee}
               applyLink={card?.applyLink}
+              onApplyClick={() =>
+                track(EventName.HOME_RECOMMENDATION_CARD_APPLY_CLICKED, {
+                  cardName: card?.cardName,
+                  bankName: card?.cardName,
+                })
+              }
             />
           ))
         }

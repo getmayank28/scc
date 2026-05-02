@@ -18,7 +18,8 @@ const CreditCard = ({
   forShow,
   annualFee,
   applyLink,
-  bankLogo
+  bankLogo,
+  onApplyClick,
 }: {
   background?: string;
   isCardSpotlightActive?: boolean;
@@ -31,7 +32,8 @@ const CreditCard = ({
   removeImage?: boolean;
   annualFee?: string;
   applyLink?: string;
-  bankLogo?:string
+  bankLogo?:string;
+  onApplyClick?: () => void;
 }) => {
   const Comp = isCardSpotlightActive ? CardSpotlight : "div";
   const [hovered, setHovered] = useState(false);
@@ -247,7 +249,10 @@ const CreditCard = ({
             {applyLink && (
               <Button
                 className="text-[10px] h-7"
-                onClick={() => window.open(applyLink, "_blank")}
+                onClick={() => {
+                  onApplyClick?.();
+                  window.open(applyLink, "_blank");
+                }}
               >
                 Apply
               </Button>

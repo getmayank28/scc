@@ -31,6 +31,8 @@ import { RadioGroupItem } from "@/components/ui/radio-group";
 import { useGetPortalsQuery } from "@/store/admin";
 import { SearchboxInput } from "@/components/SearchBoxInput";
 import { PortalProps } from "@/models/Portal";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 
 export default function SpendOptimizerDesktop({
   selectedCards,
@@ -41,6 +43,7 @@ export default function SpendOptimizerDesktop({
   isCardsLoading: boolean;
   onAddSpendTransaction: (payload: SpendTransaction) => void;
 }) {
+  const { track } = useAnalytics();
   const [selectedMerchant, setSelectedMerchant] = useState<PortalProps|null>(null)
   const [formData, setFormData] = useState<FormData>({
     category: "online-shopping",
@@ -93,6 +96,14 @@ export default function SpendOptimizerDesktop({
       return;
     }
 
+    track(EventName.SPEND_OPTIMIZER_FORM_SUBMITTED, {
+      category: formData.category,
+      amount: Number(formData.amount),
+      merchant: formData.merchant,
+      transactionMode: formData.transactionMode,
+      selectedCardCount: selectedCards.length,
+    });
+
     const token = await createChatSessionToken();
     let cardSlugs = "";
     selectedCards?.forEach((card) => {
@@ -128,6 +139,10 @@ export default function SpendOptimizerDesktop({
   };
 
   const handleCategoryChange = (value: string): void => {
+    track(EventName.SPEND_OPTIMIZER_CATEGORY_CHANGED, {
+      category: value,
+      previousCategory: formData.category,
+    });
     setFormData({ ...formData, category: value });
     setErrors({ ...errors, category: false });
   };
@@ -223,7 +238,10 @@ export default function SpendOptimizerDesktop({
               disabled={isPortalFetching}
               options={portals}
               value={formData.merchant}
-              onChange={(val) => setFormData((prev) => ({ ...prev, merchant: val }))}
+              onChange={(val) => {
+                if (val) track(EventName.SPEND_OPTIMIZER_MERCHANT_SELECTED, { merchant: val });
+                setFormData((prev) => ({ ...prev, merchant: val }));
+              }}
               error={errors.merchant?'Please enter a valid input':''}
               label="Portal/Merchant/App/Website"
               placeholder="Search portals..."
@@ -236,9 +254,10 @@ export default function SpendOptimizerDesktop({
           <Label className="text-base text-white/80 font-semibold">Transaction Mode</Label>
           <RadioGroup
             value={formData.transactionMode}
-            onValueChange={(value: "online" | "offline") =>
-              setFormData({ ...formData, transactionMode: value })
-            }
+            onValueChange={(value: "online" | "offline") => {
+              track(EventName.SPEND_OPTIMIZER_MODE_CHANGED, { transactionMode: value });
+              setFormData({ ...formData, transactionMode: value });
+            }}
             className="flex gap-6"
           >
             <div className="flex items-center space-x-2">

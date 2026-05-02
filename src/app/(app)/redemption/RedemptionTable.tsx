@@ -78,7 +78,7 @@ export const redemptionColumns: TableColumn<
             },
         },
     ];
-const RedemptionTable = ({ data, portalLink }: { data: (RedemptionOption & { points: number; highestReturn: number })[]; portalLink?: string }) => {
+const RedemptionTable = ({ data, portalLink, onRedeemClick }: { data: (RedemptionOption & { points: number; highestReturn: number })[]; portalLink?: string; onRedeemClick?: (option: RedemptionOption & { points: number; highestReturn: number }) => void }) => {
     return (
         <div className="flex flex-col gap-4 mt-4">
            <div className="hidden max-md:flex flex-col  gap-4">
@@ -130,7 +130,10 @@ const RedemptionTable = ({ data, portalLink }: { data: (RedemptionOption & { poi
                                 </div>
                             </div>
                             {portalLink && (
-                                <Button className="rounded-md w-full mt-3 bg-primary-orange" onClick={() => window.open(portalLink, "_blank")}>
+                                <Button className="rounded-md w-full mt-3 bg-primary-orange" onClick={() => {
+                                    onRedeemClick?.(ele);
+                                    window.open(portalLink, "_blank");
+                                }}>
                                     Redeem now
                                 </Button>
                             )}

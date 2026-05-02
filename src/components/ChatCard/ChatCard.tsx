@@ -6,6 +6,8 @@ import { BotRecommendationCreditCardProps } from "@/types/card";
 import CardRecommendationModal from "../CardRecommendationModal/CardRecommendationModal";
 import { useLazyGetRedirectUrlQuery } from "@/store/api";
 import { Spinner } from "../ui/spinner";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 
 function ChatCard(props: BotRecommendationCreditCardProps
@@ -83,17 +85,20 @@ function ChatCard(props: BotRecommendationCreditCardProps
         <div className="flex gap-2">
           <button
             className="text-white w-full border border-primary-orange/70 rounded-full text-[12px] py-1 p-2 cursor-pointer"
-            onClick={() => setOpen(true)}
+            onClick={() => {
+              trackEvent(EventName.CHAT_CARD_WHY_THIS_CLICKED, { cardName: props?.cardName ?? "" });
+              setOpen(true);
+            }}
           >
             Why this?
           </button>
 
           {applyLink && (
             <a
-
               href={isLoading ? '' : applyLink}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => trackEvent(EventName.CHAT_CARD_APPLY_CLICKED, { cardName: props?.cardName ?? "" })}
               className={`"text-white text-center min-w-[80px] w-full font-bold ${isLoading ? "bg-primary-orange/40" : "bg-primary-orange/80"} border border-secondary-orange rounded-full text-[12px] py-1 p-2 cursor-pointer text-center"`}
             >
               {isLoading ? <Spinner /> : 'Apply now'}

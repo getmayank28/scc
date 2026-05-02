@@ -23,7 +23,9 @@ import {
   useLazyGetGiftorsByCardSlugQuery,
 } from "@/store/admin";
 import { PortalProps } from "@/models/Portal";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 
 const loadingStates = [
   {
@@ -280,12 +282,16 @@ const PortalSavingsModal = ({
   merchantName,
   merchantLink,
   portalLink,
+  onContinueMerchant,
+  onOpenBankPortal,
 }: {
   isOpen: boolean;
   onClose: () => void;
   merchantName: string;
   merchantLink: string;
   portalLink: string;
+  onContinueMerchant?: () => void;
+  onOpenBankPortal?: () => void;
 }) => {
   return (
     <Modal
@@ -319,6 +325,7 @@ const PortalSavingsModal = ({
         <div className="flex gap-3 max-md:flex-col">
           <Button
             onClick={() => {
+              onContinueMerchant?.();
               window.open(merchantLink, "_blank");
               onClose();
             }}
@@ -328,6 +335,7 @@ const PortalSavingsModal = ({
           </Button>
           <Button
             onClick={() => {
+              onOpenBankPortal?.();
               window.open(
                 portalLink.startsWith("http") ? portalLink : `https://${portalLink}`,
                 "_blank"
@@ -367,6 +375,7 @@ const SpendOptimizerResult = ({
   selectedCards: CreditCardProps[];
   selectedPortal: PortalProps | null;
 }) => {
+  const { track } = useAnalytics();
   const [showInstructions, setShowInstructions] = useState(false);
   const [portalModalData, setPortalModalData] = useState<{
     merchantLink: string;
@@ -375,7 +384,37 @@ const SpendOptimizerResult = ({
   const [giftorsById, { isFetching: isGiftorLoading }] =
     useLazyGetGiftorsByCardSlugQuery();
 
+  // Track result viewed when data loads
+  useEffect(() => {
+    if (data?.cards?.length && !isLoading) {
+      const best = data.cards.find((c) => c.isBestCard);
+      track(EventName.SPEND_OPTIMIZER_RESULT_VIEWED, {
+        category: formData.category,
+        amount: Number(formData.amount),
+        merchant: formData.merchant,
+        transactionMode: formData.transactionMode,
+        bestCardName: best?.cardName ?? null,
+        bestCardSavings: best
+          ? Math.max(best.voucherSavingsInInr ?? 0, best.directSwipeSavingsInInr ?? 0)
+          : null,
+        totalCardsCompared: data.cards.length,
+      });
+    }
+  }, [data?.cards, isLoading]);
+
   const handleGetVoucherLink = async (cardSlug: string) => {
+    const card = data?.cards?.find((c) => c.cardId === cardSlug);
+    if (card) {
+      track(EventName.SPEND_OPTIMIZER_BUY_VOUCHER_CLICKED, {
+        cardId: card.cardId,
+        cardName: card.cardName,
+        isBestCard: card.isBestCard,
+        savingsAmount: card.voucherSavingsInInr,
+        category: formData.category,
+        amount: Number(formData.amount),
+        merchant: formData.merchant,
+      });
+    }
     const res = await giftorsById(cardSlug).unwrap();
     window.open(res?.[0]?.url, "_blank");
   };
@@ -396,11 +435,26 @@ const SpendOptimizerResult = ({
   const handleDirectSwipeClick = useCallback(
     (card?: SpendOptimizerResponseCard) => {
       const targetCard = card || winnerCard;
+      if (targetCard) {
+        track(EventName.SPEND_OPTIMIZER_DIRECT_SWIPE_CLICKED, {
+          cardId: targetCard.cardId,
+          cardName: targetCard.cardName,
+          isBestCard: targetCard.isBestCard,
+          savingsAmount: targetCard.directSwipeSavingsInInr,
+          category: formData.category,
+          amount: Number(formData.amount),
+          merchant: formData.merchant,
+        });
+      }
       if (
         targetCard?.isDirectSwipePortalSavings &&
         targetCard?.directSwipePortalLink &&
         directSwipeLink
       ) {
+        track(EventName.SPEND_OPTIMIZER_PORTAL_MODAL_SHOWN, {
+          merchant: formData.merchant,
+          action: "continue_merchant",
+        });
         setPortalModalData({
           merchantLink: directSwipeLink,
           portalLink: targetCard.directSwipePortalLink,
@@ -409,7 +463,7 @@ const SpendOptimizerResult = ({
         window.open(directSwipeLink, "_blank");
       }
     },
-    [winnerCard, directSwipeLink]
+    [winnerCard, directSwipeLink, track, formData]
   );
 
   return (
@@ -426,7 +480,10 @@ const SpendOptimizerResult = ({
             <Typography variant="caption" className="opacity-100 font-bold">
               Input Summary
             </Typography>
-            <Button disabled={isLoading} onClick={onChange}>
+            <Button disabled={isLoading} onClick={() => {
+              track(EventName.SPEND_OPTIMIZER_EDIT_INPUT_CLICKED, {});
+              onChange();
+            }}>
               <Pencil />
             </Button>
           </div>
@@ -602,10 +659,16 @@ const SpendOptimizerResult = ({
                     </div>
                   </div>
                   <div className="flex gap-1 items-center">
-                  <Button onClick={() => setShowInstructions(true)} className="rounded-[4px] p-1">
+                  <Button onClick={() => {
+                    track(EventName.SPEND_OPTIMIZER_VOUCHER_INSTRUCTIONS_VIEWED, {});
+                    setShowInstructions(true);
+                  }} className="rounded-[4px] p-1">
                     <CircleQuestionMark size={16}/>
                     </Button>
-                    <Button onClick={onChange} className="rounded-[4px] p-1">
+                    <Button onClick={() => {
+                      track(EventName.SPEND_OPTIMIZER_RESULT_CLOSED, {});
+                      onChange();
+                    }} className="rounded-[4px] p-1">
                       <X />
                     </Button>
                   </div>
@@ -829,6 +892,18 @@ const SpendOptimizerResult = ({
           merchantName={formData?.merchant}
           merchantLink={portalModalData.merchantLink}
           portalLink={portalModalData.portalLink}
+          onContinueMerchant={() =>
+            track(EventName.SPEND_OPTIMIZER_PORTAL_CONTINUE_MERCHANT, {
+              merchant: formData.merchant,
+              action: "continue_merchant",
+            })
+          }
+          onOpenBankPortal={() =>
+            track(EventName.SPEND_OPTIMIZER_PORTAL_OPEN_BANK, {
+              merchant: formData.merchant,
+              action: "open_bank_portal",
+            })
+          }
         />
       )}
     </Modal>

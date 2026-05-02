@@ -12,6 +12,8 @@ import useSocket from "@/lib/hooks/useSocket";
 import NoCardData from "./NoDataAnim";
 import Typography from "@/components/Typography/Typography";
 import useNav from "@/lib/hooks/useNav";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 
 const loadingStates = [
   {
@@ -41,6 +43,7 @@ const loadingStates = [
 ];
 
 const CardInfo = () => {
+  const { track } = useAnalytics();
   const [selected, setSelected] = useState<{
     _id: string;
     name: string;
@@ -58,21 +61,30 @@ const CardInfo = () => {
   const hasShownRef = useRef(false);
 
   useEffect(() => {
+    track(EventName.CARD_INFO_VIEWED, {});
+  }, [track]);
+
+  useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
-  
+
     if (cardName && !isLoading && !hasShownRef.current) {
       timer = setTimeout(() => {
+        track(EventName.CARD_INFO_ADVISOR_POPUP_SHOWN, {});
         setShowAdvisorPopUp(true);
         hasShownRef.current = true;
       }, 3000);
     }
-  
+
     return () => {
       if (timer) clearTimeout(timer);
     };
   }, [cardName, isLoading]);
 
   const handleSubmit = async () => {
+    track(EventName.CARD_INFO_SEARCH_SUBMITTED, {
+      cardName: selected?.name ?? "",
+      bankName: selected?.bankName ?? "",
+    });
     setCardDetails(null);
     const token = await createChatSessionToken();
     const data = await communicateToBot({
@@ -84,6 +96,12 @@ const CardInfo = () => {
     const selectedMessage = content?.find((msg) => msg?.type === MESSAGE_TYPE.TEXT)
     setCardDetails(selectedMessage as BaseMessage);
     setCardName(selected?.name as string);
+    if (selectedMessage?.content) {
+      track(EventName.CARD_INFO_RESULT_VIEWED, {
+        cardName: selected?.name ?? "",
+        bankName: selected?.bankName ?? "",
+      });
+    }
   };
 
   return (
@@ -102,13 +120,19 @@ const CardInfo = () => {
           <Button
             variant={'outline'}
             className="rounded-lg max-md:text-sm h-10 px-8 max-md:px-4 border-primary-orange"
-            onClick={() => setShowAdvisorPopUp(false)}
+            onClick={() => {
+              track(EventName.CARD_INFO_ADVISOR_DISMISSED, {});
+              setShowAdvisorPopUp(false);
+            }}
           >
             Cancel
           </Button>
           <Button
             className="rounded-lg max-md:text-sm h-10 px-8 bg-primary-orange/70 max-md:px-4"
-            onClick={goToChat}
+            onClick={() => {
+              track(EventName.CARD_INFO_ADVISOR_FIND_OUT_CLICKED, {});
+              goToChat();
+            }}
           >
             Find out
           </Button>
@@ -120,7 +144,15 @@ const CardInfo = () => {
           query={query}
           setQuery={setQuery}
           selected={selected}
-          setSelected={setSelected}
+          setSelected={(card) => {
+            if (card) {
+              track(EventName.CARD_INFO_CARD_SELECTED, {
+                cardName: card.name,
+                bankName: card.bankName,
+              });
+            }
+            setSelected(card);
+          }}
           onClearInput={() => {
             setQuery("");
             setSelected(null);

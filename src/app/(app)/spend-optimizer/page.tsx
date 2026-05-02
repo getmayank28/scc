@@ -9,11 +9,14 @@ import { useGetUserCardsQuery } from "@/store/api";
 import { CreditCard } from "@/types/card";
 import { useAddSpendTransactionMutation } from "@/store/spendTransaction";
 import { SpendTransaction } from "./data";
-import SpendOptimizerTabs from "./Tabs";
+// import SpendOptimizerTabs from "./Tabs";
 import SpendTransactionHistory from "./SpendTransaction";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 
 const SpendOptimizer = () => {
   const [tab, setTab] = useState("optimizers");
+  const { track } = useAnalytics();
   const [userCards, setUserCards] = useState<Array<string>>([]);
   const { userId } = useUserData();
   const { data: cards, isFetching: isCardsLoading } = useGetUserCardsQuery({
@@ -21,6 +24,10 @@ const SpendOptimizer = () => {
   });
 
   const [addSpendTransaction] = useAddSpendTransactionMutation();
+
+  useEffect(() => {
+    track(EventName.SPEND_OPTIMIZER_VIEWED, {});
+  }, [track]);
 
   useEffect(() => {
     if (cards?.length) {
@@ -64,6 +71,7 @@ const SpendOptimizer = () => {
             userCards={userCards}
             isCardsLoading={isCardsLoading}
             setUserCards={setUserCards}
+            track={track}
           />
           <SpendOptimizerDesktop
             selectedCards={selectedCards}

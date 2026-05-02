@@ -12,8 +12,15 @@ import { useChatContext } from "@/contexts/ChatContext";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { INPUT_MESSAGE_SOURCE } from "@/lib/constants/chatJourney";
 import { CardSelectorSkeleton } from "@/components/Loader/Loader";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
+import { usePathname } from "next/navigation";
 
 export default function ChatbotUI() {
+  const { track } = useAnalytics();
+  const pathname = usePathname();
+  const sessionId = pathname?.split("/")?.at(-1) ?? "";
+
   const {
     selectedCardCategoryJourney,
     currentMessageId,
@@ -33,6 +40,13 @@ export default function ChatbotUI() {
   } = useChatActions();
 
   const { lastMessage, isSocketLoading } = useAppWebSocketConnection();
+
+  useEffect(() => {
+    track(EventName.CHAT_SESSION_VIEWED, {
+      sessionId,
+      isNewSession: sessionId === "new",
+    });
+  }, [sessionId]);
 
   useEffect(() => {
     if (!lastMessage) return;

@@ -14,6 +14,8 @@ import { CHAT_ACTIONS, HISTORY_ACTIONS } from "../constants/actions";
 import { MessageSourceType } from "@/types/card";
 import { INPUT_MESSAGE_SOURCE } from "../constants/chatJourney";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
+import { trackEvent } from "../analytics/track";
+import { EventName } from "../analytics/types";
 
 const useChatActions = () => {
   const buttonGroupInputActions = useInputButtonGroupAction();
@@ -21,6 +23,7 @@ const useChatActions = () => {
     journeyCurrentQuestion,
     currentMessageIndex,
     selectedCardCategoryJourney,
+    selectedCardCategory,
     setCurrentMessageId,
     disableChatInput,
     setInputValue,
@@ -133,6 +136,10 @@ const useChatActions = () => {
     if (typeof value === "string" && !value.trim()) return;
 
     if (messageSource === INPUT_MESSAGE_SOURCE.DIRECT) {
+      trackEvent(EventName.CHAT_MESSAGE_SENT, {
+        messageSource: "direct",
+        messageLength: typeof value === "string" ? value.length : 0,
+      });
       const userMsg = {
         content: value,
         m_id: crypto.randomUUID(),
@@ -163,6 +170,12 @@ const useChatActions = () => {
       messageType: journeyCurrentQuestion.type,
       inputValue: value,
       questions: journeyCurrentQuestion.inputs,
+    });
+
+    trackEvent(EventName.CHAT_JOURNEY_ANSWER_SUBMITTED, {
+      questionId: journeyCurrentQuestion?.m_id ?? "",
+      questionType: journeyCurrentQuestion?.type ?? "",
+      category: selectedCardCategory ?? "",
     });
 
     const userMsg = {
