@@ -44,15 +44,15 @@ export const shoppingCard = [
     type: MESSAGE_TYPE.SELECT,
     slots: [
       {
-        label: "Mostly online (more than 70% online)",
+        label: "Mostly online (>70% online)",
         value: "Mostly online (more than 70% online)",
       },
       {
-        label: "Mix of online and offline ( Approx. 50-50)",
+        label: "Mix of online & offline (50-50)",
         value: "Mix of online and offline ( Approx. 50-50)",
       },
       {
-        label: "Mostly offline ( more than 70% offline)",
+        label: "Mostly offline (>70% offline)",
         value: "Mostly offline ( more than 70% offline)",
       },
     ],

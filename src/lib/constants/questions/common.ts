@@ -5,7 +5,7 @@ import { CARD_CATEGORY } from "@/lib/data/cards";
 export const continueJourney = {
   m_id: "continueJourney",
   source: MESSAGE_SOURCE.ASSISTANT,
-  content: "Should be move forward for the perfect card?",
+  content: "We’ve got a strong match- want to fine-tune it further?",
   order: 4,
   type: MESSAGE_TYPE.BUTTON_GROUP,
   slots: [
@@ -15,7 +15,7 @@ export const continueJourney = {
       variant: "outline",
     },
     {
-      label: "I want the perfect card",
+      label: "Yes, fine-tune it",
       value: CHAT_ACTIONS.CONTINUE_JOURNEY,
       variant: "primary",
     },
