@@ -37,7 +37,6 @@ export default function SpendOptimizerMobile({
   onAddSpendTransaction: (payload: SpendTransaction) => void;
 }) {
   const { track } = useAnalytics();
-  const [selectedMerchant, setSelectedMerchant] = useState<PortalProps | null>(null);
   const [formData, setFormData] = useState<FormData>({
     category: "online-shopping",
     amount: "5000",
@@ -59,6 +58,10 @@ export default function SpendOptimizerMobile({
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
   const { createChatSessionToken } = useSocket();
 
+  const selectedMerchant = useMemo(() => {
+    return portals?.find((portal: PortalProps) => portal?.name?.toLowerCase() === formData?.merchant?.toLowerCase()) ?? null;
+  }, [portals, formData.merchant]);
+
   const winnerCard = useMemo(() => {
     return data?.cards?.find((card) => card?.isBestCard);
   }, [data?.cards]);
@@ -71,11 +74,6 @@ export default function SpendOptimizerMobile({
       transactionMode: !formData.transactionMode,
     };
 
-    const selectedPortal = portals?.find(
-      (portal: PortalProps) =>
-        portal?.name?.toLowerCase() === formData?.merchant?.toLowerCase()
-    );
-    setSelectedMerchant(selectedPortal);
     setErrors(newErrors);
 
     const hasErrors = Object.values(newErrors).some((error) => error);

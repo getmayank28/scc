@@ -428,10 +428,10 @@ const SpendOptimizerResult = ({
     window.open(res?.[0]?.url, "_blank");
   };
   const directSwipeLink = useMemo(
-    () => selectedPortal?.affiliateLink ?? selectedPortal?.websiteUrl,
+    () => selectedPortal?.affiliateLink || selectedPortal?.websiteUrl,
     [selectedPortal?.affiliateLink, selectedPortal?.websiteUrl],
   );
-
+  console.log(directSwipeLink,selectedPortal, "cjhfbhvbhfbvhbfhbvh 44")
   const sortedCards = useMemo(() => {
     if (!data?.cards) return [];
     return [...data.cards].sort((a, b) => {
@@ -443,8 +443,10 @@ const SpendOptimizerResult = ({
 
   const getBankTravelPortal = useCallback(
     (cardSlug: string) => {
+
       const matched = selectedCards?.find((c) => c.cardId?.slug === cardSlug);
       const bankName = matched?.cardId?.bankName;
+      console.log(selectedCards, matched, cardSlug, "cjhfbhvbhfbvhbfhbvh")
       return bankName ? bankTravelPortals[bankName] : undefined;
     },
     [selectedCards]
@@ -465,6 +467,8 @@ const SpendOptimizerResult = ({
         });
       }
       const travelPortal = targetCard ? getBankTravelPortal(targetCard.cardId) : undefined;
+
+      console.log(travelPortal, targetCard,"cjhfbhvbhfbvhbfhbvh 222")
       if (
         targetCard?.isDirectSwipePortalSavings &&
         travelPortal &&

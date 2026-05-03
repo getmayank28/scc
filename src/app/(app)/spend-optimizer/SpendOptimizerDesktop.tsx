@@ -44,7 +44,6 @@ export default function SpendOptimizerDesktop({
   onAddSpendTransaction: (payload: SpendTransaction) => void;
 }) {
   const { track } = useAnalytics();
-  const [selectedMerchant, setSelectedMerchant] = useState<PortalProps|null>(null)
   const [formData, setFormData] = useState<FormData>({
     category: "online-shopping",
     amount: "5000",
@@ -66,6 +65,10 @@ export default function SpendOptimizerDesktop({
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
   const { createChatSessionToken } = useSocket();
 
+  const selectedMerchant = useMemo(() => {
+    return portals?.find((portal: PortalProps) => portal?.name?.toLowerCase() === formData?.merchant?.toLowerCase()) ?? null;
+  }, [portals, formData.merchant]);
+
 
 
   const winnerCard = useMemo(() => {
@@ -80,8 +83,6 @@ export default function SpendOptimizerDesktop({
       transactionMode: !formData.transactionMode,
     };
 
-    const selectedPortal = portals?.find((portal:PortalProps) => portal?.name?.toLowerCase()=== formData?.merchant?.toLowerCase())
-    setSelectedMerchant(selectedPortal)
     setErrors(newErrors);
 
     const hasErrors = Object.values(newErrors).some((error) => error);

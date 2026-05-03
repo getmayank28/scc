@@ -201,7 +201,7 @@ export function SearchboxInput({
 
         {/* Dropdown — only when typing + matches exist */}
         {shouldShowDropdown && (
-          <div className="absolute z-50 mt-1 w-full rounded-md border border-primary-orange/40 bg-[#1a1a1a] shadow-xl overflow-hidden">
+          <div className="absolute z-[99999] mt-1 w-full rounded-md border border-primary-orange/40 bg-[#1a1a1a] shadow-xl overflow-hidden">
             {/* Free-text hint when no exact match */}
             {!isExactMatch && (
               <div className="px-3 py-2 text-xs text-white/40 border-b border-white/10 flex items-center gap-1.5">
@@ -216,7 +216,7 @@ export function SearchboxInput({
             <ul
               ref={listRef}
               className="overflow-y-auto divide-y divide-white/5"
-              style={{ maxHeight: "calc(5 * 52px)" }}
+              style={{ maxHeight: "calc(5 * 40px)" }}
               role="listbox"
             >
               {filtered.map((option, idx) => {
