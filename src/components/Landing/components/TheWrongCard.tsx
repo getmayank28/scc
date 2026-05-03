@@ -161,20 +161,7 @@ const TheWrongCard = () => {
               analyse your spending and <br className="hidden max-md:inline"/> recommend the best for you.
             </Typography>
           </div>
-
-          {/* <Button
-            className="text-sm font-bold py-4 px-10 my-10"
-            onClick={() => {
-              trackEvent(EventName.BUTTON_CLICKED, {
-                buttonName: EventName.RECOMMEND_MY_BEST_CARD_BTN,
-                location: EventName.LANDING_PAGE,
-              });
-              landingCTA?.()
-            }}
-          >
-            Recommend my best card
-          </Button> */}
-          <LandingCTA title="Get Early Access" eventButtonName={EventName.RECOMMEND_MY_BEST_CARD_BTN} />
+          <LandingCTA title="Recommend my best card" eventButtonName={EventName.RECOMMEND_MY_BEST_CARD_BTN} />
 
         </div>
         <LayoutTextFlip words={rightContentList} />

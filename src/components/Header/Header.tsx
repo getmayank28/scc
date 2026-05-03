@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { HoveredLink, Menu, MenuItem } from "@/components/ui/navbar-menu";
+import { HoveredLink, Menu } from "@/components/ui/navbar-menu";
 import { ROUTES } from "@/lib/constants/routes";
 import { useState } from "react";
 import Image from "next/image";
@@ -47,13 +47,13 @@ const Header = ({ className }: { className?: string }) => {
               <></>
             ) : (
               <>
-                <HoveredLink
+                {/* <HoveredLink
                   href={ROUTES.CHOOSE_CARD}
                   className="max-md:text-[14px] max-md:font-semibold"
                 >
                   Card
-                </HoveredLink>
-                <MenuItem setActive={setActive} active={active} item="Tools">
+                </HoveredLink> */}
+                {/* <MenuItem setActive={setActive} active={active} item="Tools">
                   <div className="flex flex-col space-y-4 text-sm bg-background-primary">
                     <HoveredLink
                       href={ROUTES.SAVING_CALCULATOR}
@@ -62,7 +62,7 @@ const Header = ({ className }: { className?: string }) => {
                       Saving calculator
                     </HoveredLink>
                   </div>
-                </MenuItem>
+                </MenuItem> */}
                 <HoveredLink
                   href={ROUTES.SIGN_IN}
                   className="border max-md:text-[14px] border-primary-orange text-white font-semibold rounded-full px-3 py-1 hover:bg-secondary-orange hover:text-white"

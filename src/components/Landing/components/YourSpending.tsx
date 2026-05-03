@@ -39,8 +39,7 @@ const YourSpendings = () => {
           </div>
 
           <div>
-            {/* <LandingCTA title="Check my card now" eventButtonName={EventName.CHECK_MY_CARD_NOW_BTN}/> */}
-            <LandingCTA title="Get Early Access" eventButtonName={EventName.CHECK_MY_CARD_NOW_BTN}/>
+            <LandingCTA title="Check my card now" eventButtonName={EventName.CHECK_MY_CARD_NOW_BTN}/>
           </div>
         </div>
 

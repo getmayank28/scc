@@ -263,8 +263,7 @@ const HeroSection = () => {
             <br /> to maximize every swipe effortlessly
           </Typography>
         </div>
-        {/* <LandingCTA title="Step into smarter spending" eventButtonName={EventName.STEP_INTO_SMARTER_SPENDING_BTN}/> */}
-        <LandingCTA title="Get Early Access" eventButtonName={EventName.STEP_INTO_SMARTER_SPENDING_BTN}/>
+        <LandingCTA title="Step into smarter spending" eventButtonName={EventName.STEP_INTO_SMARTER_SPENDING_BTN}/>
 
       </div>
       <div className="w-[450px]  relative flex flex-col justify-center items-center z-10">

@@ -8,6 +8,8 @@ const useNav = () => {
 
   const goToSignIn = () => router.replace(ROUTES.SIGN_IN);
 
+  const goToSignInPushNav = () => router.push(ROUTES.SIGN_IN);
+
   const goToCardCategory = () => router.replace(ROUTES.CHOOSE_CARD);
 
   const navigateToProfile = () => router.replace(ROUTES.PROFILE);
@@ -29,6 +31,7 @@ const useNav = () => {
     goToHome,
     goToSpendOptimizer,
     goToProfile,
+    goToSignInPushNav,
   };
 };
 

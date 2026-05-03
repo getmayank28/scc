@@ -19,8 +19,7 @@ const CardDrainYou = () => {
               FiSense helps<br className="max-md:hidden" />  you unlock the maximum value across, Cash, flights, hotels,<br className="max-md:hidden" />  and vouchers.
             </Typography>
           </div>
-          {/* <LandingCTA title="Analyze my card spending" eventButtonName={EventName.ANALYSE_FOR_BEST_VALUE_BTN} /> */}
-          <LandingCTA title="Get Early Access" eventButtonName={EventName.ANALYSE_FOR_BEST_VALUE_BTN} />
+          <LandingCTA title="Analyze my card spending" eventButtonName={EventName.ANALYSE_FOR_BEST_VALUE_BTN} />
           
         </div>
 
