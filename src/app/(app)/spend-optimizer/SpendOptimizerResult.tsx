@@ -27,6 +27,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
 
+// Bank travel portal URLs keyed by bankName
+const bankTravelPortals: Record<string, { url: string; name: string }> = {
+  "HDFC Bank": { url: "https://offers.reward360.in/v2/compare-fly", name: "SmartBuy" },
+  "Axis Bank": { url: "https://traveledge.axis.bank.in/", name: "Travel Edge" },
+  "ICICI Bank": { url: "https://www.ishoprewards.com/compare-fly", name: "iShop" },
+  "American Express": { url: "https://www.americanexpress.com/en-us/travel/flights", name: "Amex Travel" },
+  "HSBC Bank": { url: "https://www.hsbc.co.in/security/", name: "HSBC Travel Offers" },
+};
+
 const loadingStates = [
   {
     text: "Learning your spending",
@@ -432,6 +441,15 @@ const SpendOptimizerResult = ({
     });
   }, [data?.cards]);
 
+  const getBankTravelPortal = useCallback(
+    (cardSlug: string) => {
+      const matched = selectedCards?.find((c) => c.cardId?.slug === cardSlug);
+      const bankName = matched?.cardId?.bankName;
+      return bankName ? bankTravelPortals[bankName] : undefined;
+    },
+    [selectedCards]
+  );
+
   const handleDirectSwipeClick = useCallback(
     (card?: SpendOptimizerResponseCard) => {
       const targetCard = card || winnerCard;
@@ -446,9 +464,10 @@ const SpendOptimizerResult = ({
           merchant: formData.merchant,
         });
       }
+      const travelPortal = targetCard ? getBankTravelPortal(targetCard.cardId) : undefined;
       if (
         targetCard?.isDirectSwipePortalSavings &&
-        targetCard?.directSwipePortalLink &&
+        travelPortal &&
         directSwipeLink
       ) {
         track(EventName.SPEND_OPTIMIZER_PORTAL_MODAL_SHOWN, {
@@ -457,13 +476,13 @@ const SpendOptimizerResult = ({
         });
         setPortalModalData({
           merchantLink: directSwipeLink,
-          portalLink: targetCard.directSwipePortalLink,
+          portalLink: travelPortal.url,
         });
       } else if (directSwipeLink) {
         window.open(directSwipeLink, "_blank");
       }
     },
-    [winnerCard, directSwipeLink, track, formData]
+    [winnerCard, directSwipeLink, track, formData, getBankTravelPortal]
   );
 
   return (
