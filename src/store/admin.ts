@@ -182,6 +182,20 @@ export const admin = api.injectEndpoints({
       }),
       invalidatesTags: ["Portal"],
     }),
+
+    getWhatsAppMessages: builder.query({
+      query: ({
+        direction,
+        page,
+      }: {
+        direction: "outbound" | "inbound";
+        page: number;
+      }) => ({
+        url: "admin/whatsapp",
+        params: { direction, page, limit: 50 },
+      }),
+      providesTags: ["WhatsApp"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -207,4 +221,5 @@ export const {
   useCreatePortalMutation,
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
+  useGetWhatsAppMessagesQuery,
 } = admin;

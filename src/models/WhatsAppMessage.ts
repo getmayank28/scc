@@ -22,6 +22,7 @@ export interface IWhatsAppMessage extends Document {
   senderPhone?: string; // inbound sender
   senderName?: string;
   messageType?: string; // text, image, template, ...
+  templateId?: string; // Gupshup template UUID (for dedup)
   text?: string;
   errorCode?: string;
   errorReason?: string;
@@ -77,6 +78,7 @@ const WhatsAppMessageSchema: Schema<IWhatsAppMessage> = new Schema(
     senderPhone: { type: String, index: true },
     senderName: String,
     messageType: String,
+    templateId: { type: String, index: true },
     text: String,
     errorCode: String,
     errorReason: String,

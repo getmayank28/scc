@@ -7,6 +7,7 @@ import AdminLinks from "./Links";
 import Partners from "./Partners/page";
 import Giftors from "./Giftors/page";
 import Portals from "./Portals/page";
+import WhatsAppAdmin from "./WhatsApp/page";
 
 const tabs = [
   {
@@ -32,6 +33,10 @@ const tabs = [
   {
     label: "Portals",
     value: "portals",
+  },
+  {
+    label: "WhatsApp",
+    value: "whatsapp",
   },
 ];
 
@@ -62,6 +67,9 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "portals"&& <Portals/>
+      }
+      {
+        selectedValue === "whatsapp" && <WhatsAppAdmin />
       }
     </div>
   );

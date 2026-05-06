@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
-import WhatsAppMessage, {
-  WhatsAppStatus,
-} from "@/models/WhatsAppMessage";
+import WhatsAppMessage, { WhatsAppStatus } from "@/models/WhatsAppMessage";
 
 // Gupshup webhook receiver.
 // Configure this URL in the Gupshup dashboard:
@@ -38,7 +36,9 @@ function toDate(ts: unknown): Date | undefined {
   return new Date(n);
 }
 
-function extractText(payload: Record<string, unknown> | undefined): string | undefined {
+function extractText(
+  payload: Record<string, unknown> | undefined,
+): string | undefined {
   if (!payload) return undefined;
   const inner = payload.payload as Record<string, unknown> | undefined;
   if (inner && typeof inner.text === "string") return inner.text as string;
@@ -128,7 +128,9 @@ async function handleInboundMessage(body: GupshupPayload) {
     messageType: p.type,
     text: extractText(p),
     providerTimestamp: toDate(body.timestamp),
-    statusHistory: [{ status: "received", at: toDate(body.timestamp) ?? new Date() }],
+    statusHistory: [
+      { status: "received", at: toDate(body.timestamp) ?? new Date() },
+    ],
     raw: body,
   });
 }
@@ -148,8 +150,16 @@ export async function POST(req: NextRequest) {
   try {
     await dbConnect();
 
+    console.log(
+      "[whatsapp-webhook] type:",
+      body.type,
+      "payload.type:",
+      body.payload?.type,
+    );
+
     switch (body.type) {
       case "message-event":
+      case "msg-event":
         await handleMessageEvent(body);
         break;
       case "message":
@@ -159,7 +169,7 @@ export async function POST(req: NextRequest) {
         // user-event, template-event, billing-event, account-event, etc.
         // Persist minimally for audit without failing the ack.
         await WhatsAppMessage.create({
-          direction: "inbound",
+          direction: "outbound",
           status: "other",
           messageType: body.type ?? "unknown",
           providerTimestamp: toDate(body.timestamp),

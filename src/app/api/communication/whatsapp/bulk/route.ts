@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import dbConnect from "@/lib/utils/dbConnet";
+import WhatsAppMessage from "@/models/WhatsAppMessage";
 
 export async function POST(req: NextRequest) {
   const { recipients, templateId, templateParams } = await req.json();
   // recipients: ["919876543210", "918765432109", ...]
   // templateParams: ["John", "Order #123"] — values for {{1}}, {{2}} etc.
+
+  await dbConnect();
 
   const results = [];
 
@@ -30,6 +34,21 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
     results.push({ destination, ...data });
+
+    // Save WhatsAppMessage so webhook status callbacks (sent/delivered/read/failed)
+    // can be matched via gsId
+    if (data.messageId) {
+      await WhatsAppMessage.create({
+        gsId: data.messageId,
+        direction: "outbound",
+        status: "enqueued",
+        source: process.env.GUPSHUP_SOURCE_NUMBER!,
+        destination,
+        messageType: "template",
+        templateId,
+        statusHistory: [{ status: "enqueued", at: new Date() }],
+      });
+    }
 
     // Add a small delay to avoid rate limiting
     await new Promise((r) => setTimeout(r, 300));
