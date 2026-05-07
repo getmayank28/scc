@@ -15,8 +15,12 @@ export function formatNumber(val: number) {
 
 export const formatCurrency = (value: string): string => {
   if (!value) return "";
-  const number = value.replace(/[^\d]/g, "");
-  const formatted = new Intl.NumberFormat("en-IN").format(Number(number));
+  const number = value.replace(/[^\d.]/g, "");
+  const parsed = Number(number);
+  if (!Number.isFinite(parsed)) return "";
+  const formatted = new Intl.NumberFormat("en-IN", {
+    maximumFractionDigits: 2,
+  }).format(parsed);
   return `₹${formatted}`;
 };
 

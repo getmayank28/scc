@@ -63,7 +63,7 @@ async function sendTemplate(
     });
 
     const text = await res.text();
-    let data: Record<string, unknown>;
+    let data: Record<string, unknown> = {};
     try {
       data = JSON.parse(text);
     } catch {

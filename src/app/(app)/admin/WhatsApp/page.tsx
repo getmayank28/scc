@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useGetWhatsAppMessagesQuery } from "@/store/admin";
-import Typography from "@/components/Typography/Typography";
 import TabBar from "@/components/Tab/Tab";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,7 +50,6 @@ const WhatsAppAdmin = () => {
 
   return (
     <div className="flex flex-col gap-4 p-10">
-      <Typography variant="h4">WhatsApp Messages</Typography>
 
       <TabBar
         value={direction}

@@ -22,12 +22,10 @@ export async function GET(req: NextRequest) {
     );
     const skip = (page - 1) * limit;
 
-    const filter: Record<string, unknown> = { direction };
-
-    // For inbound, only show actual user replies — exclude system events
-    if (direction === "inbound") {
-      filter.status = { $ne: "other" };
-    }
+    const filter: Record<string, unknown> = {
+      direction,
+      status: { $ne: "other" },
+    };
 
     const [messages, total] = await Promise.all([
       WhatsAppMessage.find(filter)

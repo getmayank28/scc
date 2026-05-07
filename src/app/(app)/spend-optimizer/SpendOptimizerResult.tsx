@@ -431,7 +431,6 @@ const SpendOptimizerResult = ({
     () => selectedPortal?.affiliateLink || selectedPortal?.websiteUrl,
     [selectedPortal?.affiliateLink, selectedPortal?.websiteUrl],
   );
-  console.log(directSwipeLink,selectedPortal, "cjhfbhvbhfbvhbfhbvh 44")
   const sortedCards = useMemo(() => {
     if (!data?.cards) return [];
     return [...data.cards].sort((a, b) => {

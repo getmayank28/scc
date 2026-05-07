@@ -136,7 +136,8 @@ async function handleInboundMessage(body: GupshupPayload) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifySecret(req)) {
+  const isAllowed = verifySecret(req);
+  if (!isAllowed) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
 
@@ -149,13 +150,6 @@ export async function POST(req: NextRequest) {
 
   try {
     await dbConnect();
-
-    console.log(
-      "[whatsapp-webhook] type:",
-      body.type,
-      "payload.type:",
-      body.payload?.type,
-    );
 
     switch (body.type) {
       case "message-event":

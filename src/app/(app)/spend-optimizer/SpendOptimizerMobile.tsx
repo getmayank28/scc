@@ -63,7 +63,20 @@ export default function SpendOptimizerMobile({
   }, [portals, formData.merchant]);
 
   const winnerCard = useMemo(() => {
-    return data?.cards?.find((card) => card?.isBestCard);
+    return data?.cards?.reduce<(typeof data.cards)[number] | undefined>(
+      (best, card) => {
+        const cardBest = Math.max(
+          Number(card?.voucherSavingsInInr ?? 0),
+          Number(card?.directSwipeSavingsInInr ?? 0),
+        );
+        const bestSoFar = Math.max(
+          Number(best?.voucherSavingsInInr ?? 0),
+          Number(best?.directSwipeSavingsInInr ?? 0),
+        );
+        return !best || cardBest > bestSoFar ? card : best;
+      },  
+      undefined,
+    );
   }, [data?.cards]);
 
   const handleSubmit = async () => {
