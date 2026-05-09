@@ -12,19 +12,21 @@ import WhatsAppMessage from "@/models/WhatsAppMessage";
  * Body:
  * {
  *   batches: [
- *     { templateId: "uuid-a", templateParams: ["param1"], limit: 150 },
- *     { templateId: "uuid-b", templateParams: ["param1"], limit: 100 },
+ *     { templateId: "uuid-a", limit: 150 },
+ *     { templateId: "uuid-b", limit: 100 },
  *   ]
  * }
  *
  * The endpoint fetches waitlist users who have a mobile number,
  * skips users who were already sent a message in this campaign (to avoid duplicates),
  * and assigns them to batches in order until each batch's limit is filled.
+ *
+ * The template is passed the user's first name (derived from fullName) as the
+ * only param, falling back to "there" when fullName is missing.
  */
 
 type BatchConfig = {
   templateId: string;
-  templateParams: string[];
   limit: number;
 };
 
@@ -136,13 +138,11 @@ export async function POST(req: NextRequest) {
         .slice(0, batch.limit);
 
       for (const user of batchUsers) {
-        const result = await sendTemplate(
-          user.phone,
-          batch.templateId,
-          batch.templateParams,
-        );
+        const firstName = user.fullName?.trim().split(/\s+/)[0] || "there";
+        const result = await sendTemplate(user.phone, batch.templateId, [
+          firstName,
+        ]);
 
-        // Save to WhatsAppMessage for webhook tracking
         if (result.messageId) {
           await WhatsAppMessage.create({
             gsId: result.messageId,
@@ -165,7 +165,6 @@ export async function POST(req: NextRequest) {
           error: result.error,
         });
 
-        // Rate limit: 300ms between messages
         await new Promise((r) => setTimeout(r, 300));
       }
     }
