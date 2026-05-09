@@ -60,7 +60,7 @@ async function sendTemplate(
   templateParams: string[],
 ): Promise<SendTemplateResult> {
   const params = new URLSearchParams({
-    source: process.env.GUPSHUP_SOURCE_NUMBER!,
+    source: "917567601600",
     destination,
     "src.name": process.env.GUPSHUP_APP_NAME!,
     template: JSON.stringify({
