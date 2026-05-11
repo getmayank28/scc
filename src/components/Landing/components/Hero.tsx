@@ -1,3 +1,4 @@
+"use client"
 import ElectricBorderCard from "@/components/ElectricCard/ElectricCard";
 import Typography from "@/components/Typography/Typography";
 import ColourfulText from "@/components/ui/colourful-text";
@@ -14,6 +15,8 @@ import Visa from "../../../../public/images/cardList/visa-white.png";
 import Rupay from "../../../../public/images/cardList/rupay-icon.png";
 import { EventName } from "@/lib/analytics/types";
 import LandingCTA from "./LandingCTA";
+import { useEffect } from "react";
+import { trackEvent } from "@/lib/analytics/track";
 
 const NotificationCard = ({
   message,
@@ -241,7 +244,12 @@ const rewardsReceived = [
 ];
 
 const HeroSection = () => {
-
+  useEffect(() => {
+    trackEvent(EventName.LANDING_PAGE, {
+      path: window.location.pathname,
+      referrer: document.referrer,
+    });
+  }, []);
   return (
     <div className="flex max-md:px-4 max-md:pb-14 max-md:gap-0 max-md:flex-col-reverse max-md:pt-14 pt-16 h-screen max-md:h-auto bg-background-primary gap-30 overflow-hidden items-center justify-center  relative z-10">
       <div className="max-md:-mt-2 flex flex-col max-md:items-center justify-start items-start z-10">
