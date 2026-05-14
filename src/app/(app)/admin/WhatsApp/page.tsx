@@ -84,6 +84,9 @@ const WhatsAppAdmin = () => {
                   ) : (
                     <th className="px-4 py-3 font-medium">Message</th>
                   )}
+                  {direction === "outbound" && (
+                    <th className="px-4 py-3 font-medium">Failure</th>
+                  )}
                   <th className="px-4 py-3 font-medium">Date</th>
                 </tr>
               </thead>
@@ -106,6 +109,27 @@ const WhatsAppAdmin = () => {
                     ) : (
                       <td className="px-4 py-3 max-w-[300px] truncate">
                         {msg.text || "—"}
+                      </td>
+                    )}
+                    {direction === "outbound" && (
+                      <td
+                        className="px-4 py-3 max-w-[320px] text-xs text-white/80"
+                        title={msg.errorReason ?? ""}
+                      >
+                        {msg.status === "failed" ? (
+                          <div className="flex flex-col gap-0.5">
+                            {msg.errorCode && (
+                              <span className="font-mono text-red-400">
+                                #{msg.errorCode}
+                              </span>
+                            )}
+                            <span className="text-white/60 truncate">
+                              {msg.errorReason ?? "—"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-white/40">—</span>
+                        )}
                       </td>
                     )}
                     <td className="px-4 py-3 text-white/60">

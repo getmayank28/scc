@@ -13,13 +13,16 @@ import WhatsAppMessage from "@/models/WhatsAppMessage";
  * {
  *   batches: [
  *     { templateId: "uuid-a", limit: 150 },
- *     { templateId: "uuid-b", limit: 100 },
+ *     { templateId: "uuid-b", limit: 100, excludeIfSentTemplateIds: ["uuid-a"] },
  *   ]
  * }
  *
  * The endpoint fetches waitlist users who have a mobile number,
- * skips users who were already sent a message in this campaign (to avoid duplicates),
- * and assigns them to batches in order until each batch's limit is filled.
+ * skips users who were already sent the same template (to avoid duplicates),
+ * additionally skips users who previously received any template listed in
+ * `excludeIfSentTemplateIds`, and skips users already assigned to an earlier
+ * batch in the same request. Users are then assigned to batches in order
+ * until each batch's limit is filled.
  *
  * The template is passed the user's first name (derived from fullName) as the
  * only param, falling back to "there" when fullName is missing.
@@ -28,6 +31,7 @@ import WhatsAppMessage from "@/models/WhatsAppMessage";
 type BatchConfig = {
   templateId: string;
   limit: number;
+  excludeIfSentTemplateIds?: string[];
 };
 
 type SendResult = {
@@ -36,6 +40,17 @@ type SendResult = {
   batch: number;
   messageId?: string;
   status: string;
+  errorCode?: string;
+  errorReason?: string;
+  error?: string;
+};
+
+type SendTemplateResult = {
+  messageId?: string;
+  status: "sent" | "failed";
+  errorCode?: string;
+  errorReason?: string;
+  raw?: unknown;
   error?: string;
 };
 
@@ -43,7 +58,7 @@ async function sendTemplate(
   destination: string,
   templateId: string,
   templateParams: string[],
-): Promise<{ messageId?: string; status: string; error?: string }> {
+): Promise<SendTemplateResult> {
   const params = new URLSearchParams({
     source: process.env.GUPSHUP_SOURCE_NUMBER!,
     destination,
@@ -69,12 +84,23 @@ async function sendTemplate(
     try {
       data = JSON.parse(text);
     } catch {
-      return { status: "failed", error: text };
+      return { status: "failed", error: text, raw: text };
     }
+
+    if (res.ok) {
+      return {
+        messageId: data.messageId as string | undefined,
+        status: "sent",
+        raw: data,
+      };
+    }
+
     return {
-      messageId: data.messageId as string | undefined,
-      status: res.ok ? "sent" : "failed",
-      error: res.ok ? undefined : text,
+      status: "failed",
+      errorCode: data.statusCode as string | undefined,
+      errorReason: (data.details ?? data.message) as string | undefined,
+      error: text,
+      raw: data,
     };
   } catch (err) {
     return { status: "failed", error: String(err) };
@@ -116,34 +142,45 @@ export async function POST(req: NextRequest) {
         : `91${u.mobile.replace(/^\+/, "")}`,
     }));
 
-    // Split users into batches, skipping users who already received that specific template
+    // Split users into batches, skipping users who already received that specific template,
+    // any template the batch wants to exclude, or who were already assigned earlier in this run.
     const results: SendResult[] = [];
     const allPhones = allNormalizedUsers.map((u) => u.phone);
+    const assignedInThisRun = new Set<string>();
 
     for (let batchIdx = 0; batchIdx < batches.length; batchIdx++) {
       const batch = batches[batchIdx];
 
-      // Find numbers that already received this template
+      const excludeTemplateIds = Array.from(
+        new Set([batch.templateId, ...(batch.excludeIfSentTemplateIds ?? [])]),
+      );
+
       const alreadySentDocs = await WhatsAppMessage.find({
         direction: "outbound",
-        templateId: batch.templateId,
+        templateId: { $in: excludeTemplateIds },
         destination: { $in: allPhones },
+        status: { $ne: "failed" },
       })
         .select("destination")
         .lean();
 
       const alreadySentSet = new Set(alreadySentDocs.map((d) => d.destination));
       const batchUsers = allNormalizedUsers
-        .filter((u) => !alreadySentSet.has(u.phone))
+        .filter(
+          (u) =>
+            !alreadySentSet.has(u.phone) && !assignedInThisRun.has(u.phone),
+        )
         .slice(0, batch.limit);
 
       for (const user of batchUsers) {
+        assignedInThisRun.add(user.phone);
         const firstName = user.fullName?.trim().split(/\s+/)[0] || "there";
         const result = await sendTemplate(user.phone, batch.templateId, [
           firstName,
         ]);
 
-        if (result.messageId) {
+        const now = new Date();
+        if (result.status === "sent" && result.messageId) {
           await WhatsAppMessage.create({
             gsId: result.messageId,
             direction: "outbound",
@@ -152,7 +189,28 @@ export async function POST(req: NextRequest) {
             destination: user.phone,
             messageType: "template",
             templateId: batch.templateId,
-            statusHistory: [{ status: "enqueued", at: new Date() }],
+            statusHistory: [{ status: "enqueued", at: now }],
+            raw: result.raw,
+          });
+        } else if (result.status === "failed") {
+          await WhatsAppMessage.create({
+            direction: "outbound",
+            status: "failed",
+            source: process.env.GUPSHUP_SOURCE_NUMBER!,
+            destination: user.phone,
+            messageType: "template",
+            templateId: batch.templateId,
+            errorCode: result.errorCode,
+            errorReason: result.errorReason,
+            statusHistory: [
+              {
+                status: "failed",
+                at: now,
+                code: result.errorCode,
+                reason: result.errorReason,
+              },
+            ],
+            raw: result.raw ?? result.error,
           });
         }
 
@@ -162,6 +220,8 @@ export async function POST(req: NextRequest) {
           batch: batchIdx + 1,
           messageId: result.messageId,
           status: result.status,
+          errorCode: result.errorCode,
+          errorReason: result.errorReason,
           error: result.error,
         });
 
