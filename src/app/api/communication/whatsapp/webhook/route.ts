@@ -81,8 +81,14 @@ async function handleMessageEvent(body: GupshupPayload) {
 
   const status = normalizeStatus(p.type);
   const providerTimestamp = toDate(body.timestamp);
-  const errorCode = p.code != null ? String(p.code) : undefined;
-  const errorReason = p.reason;
+  // Gupshup nests error details inside payload.payload for failed events,
+  // but older/other event shapes put them at payload.code / payload.reason.
+  const inner = p.payload as Record<string, unknown> | undefined;
+  const rawCode = inner?.code ?? p.code;
+  const rawReason = inner?.reason ?? p.reason;
+  const errorCode = rawCode != null ? String(rawCode) : undefined;
+  const errorReason =
+    typeof rawReason === "string" ? rawReason : undefined;
 
   const historyEntry = {
     status,
