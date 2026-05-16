@@ -1,11 +1,8 @@
-import withPWA from "next-pwa";
+import withPWAInit from "@ducanh2912/next-pwa";
+import type { NextConfig } from "next";
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   reactStrictMode: true,
-
-  // ✅ Enable SWC minification (faster + smaller JS)
-  swcMinify: true,
 
   // ✅ Remove console.logs in production (reduces JS size)
   compiler: {
@@ -18,12 +15,16 @@ const nextConfig = {
   // },
 };
 
-export default withPWA({
+const withPWA = withPWAInit({
   dest: "public",
 
   // ✅ Disable PWA in dev (keep this)
   disable: process.env.NODE_ENV === "development",
 
   // ✅ Avoid caching huge JS bundles aggressively during development changes
-  runtimeCaching: [],
-})(nextConfig);
+  workboxOptions: {
+    runtimeCaching: [],
+  },
+});
+
+export default withPWA(nextConfig);

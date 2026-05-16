@@ -196,6 +196,22 @@ export const admin = api.injectEndpoints({
       }),
       providesTags: ["WhatsApp"],
     }),
+
+    getEmailMessages: builder.query({
+      query: ({
+        page,
+        status,
+        templateId,
+      }: {
+        page: number;
+        status?: string;
+        templateId?: string;
+      }) => ({
+        url: "admin/email",
+        params: { page, limit: 50, status, templateId },
+      }),
+      providesTags: ["Email"],
+    }),
   }),
   overrideExisting: false,
 });
@@ -222,4 +238,5 @@ export const {
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
   useGetWhatsAppMessagesQuery,
+  useGetEmailMessagesQuery,
 } = admin;

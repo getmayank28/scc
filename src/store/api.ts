@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // adjust backend URL
-  tagTypes: ["UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp"],
+  tagTypes: ["UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp", "Email"],
   endpoints: (builder) => ({
     getQuestions: builder.query({
       query: () => "/questions",

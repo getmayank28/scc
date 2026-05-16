@@ -11,6 +11,7 @@
   "dependencies": {
     "@amplitude/analytics-browser": "^2.37.2",
     "@amplitude/analytics-node": "^1.5.50",
+    "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^5.2.2",
     "@next/bundle-analyzer": "^16.2.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -46,7 +47,6 @@
     "motion": "^12.23.26",
     "next": "15.4.8",
     "next-auth": "^4.24.13",
-    "next-pwa": "^5.6.0",
     "react": "19.1.0",
     "react-day-picker": "^9.13.0",
     "react-dom": "19.1.0",
