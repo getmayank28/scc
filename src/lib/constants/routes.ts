@@ -23,6 +23,7 @@ export const ROUTES = {
   POINTS_REDEMPTION: "/redemption",
   SUPPORT: "support",
   USER_INFO: "/user-info",
+  CARD_VALUE_CALCULATOR: "/card-value-calculator",
 };
 
 export const PUBLIC_ROUTES = [
@@ -30,6 +31,7 @@ export const PUBLIC_ROUTES = [
   "/sign-in",
   "/verify",
   "/tools/saving-calculator",
+  "/card-value-calculator",
   "/change-password",
   "/privacy-policy",
   "/legal-compliance",

@@ -27,6 +27,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
       "/sign-in",
       "/verify",
       "/tools/saving-calculator",
+      "/card-value-calculator",
       "/change-password",
       "/privacy-policy",
       "/legal-compliance",
