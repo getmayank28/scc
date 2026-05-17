@@ -10,6 +10,8 @@ import WhatsAppMessage, { WhatsAppStatus } from "@/models/WhatsAppMessage";
 
 export const dynamic = "force-dynamic";
 
+const AUTO_REPLY_TEMPLATE_ID = "5da9a967-c168-42f7-8d92-7a48992363d1";
+
 const KNOWN_STATUSES = new Set<WhatsAppStatus>([
   "enqueued",
   "sent",
@@ -119,9 +121,73 @@ async function handleMessageEvent(body: GupshupPayload) {
   );
 }
 
+async function sendAutoReplyTemplate(
+  destination: string,
+  templateId: string,
+  templateParams: string[],
+) {
+  const params = new URLSearchParams({
+    source: process.env.GUPSHUP_SOURCE_NUMBER!,
+    destination,
+    "src.name": process.env.GUPSHUP_APP_NAME!,
+    template: JSON.stringify({ id: templateId, params: templateParams }),
+  });
+
+  const res = await fetch("https://api.gupshup.io/wa/api/v1/template/msg", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      apikey: process.env.GUPSHUP_API_KEY!,
+    },
+    body: params.toString(),
+  });
+
+  const text = await res.text();
+  let data: Record<string, unknown> = {};
+  try {
+    data = JSON.parse(text);
+  } catch {
+    /* non-JSON response — keep raw text */
+  }
+
+  const now = new Date();
+  if (res.ok && data.messageId) {
+    await WhatsAppMessage.create({
+      gsId: data.messageId as string,
+      direction: "outbound",
+      status: "enqueued",
+      source: process.env.GUPSHUP_SOURCE_NUMBER!,
+      destination,
+      messageType: "template",
+      templateId,
+      statusHistory: [{ status: "enqueued", at: now }],
+      raw: data,
+    });
+  } else {
+    const errorCode = data.statusCode as string | undefined;
+    const errorReason = (data.details ?? data.message) as string | undefined;
+    await WhatsAppMessage.create({
+      direction: "outbound",
+      status: "failed",
+      source: process.env.GUPSHUP_SOURCE_NUMBER!,
+      destination,
+      messageType: "template",
+      templateId,
+      errorCode,
+      errorReason,
+      statusHistory: [
+        { status: "failed", at: now, code: errorCode, reason: errorReason },
+      ],
+      raw: Object.keys(data).length ? data : text,
+    });
+  }
+}
+
 async function handleInboundMessage(body: GupshupPayload) {
   const p = body.payload ?? {};
   const externalId = p.id ?? p.gsId;
+  const senderPhone = p.sender?.phone ?? p.source;
+  const senderName = p.sender?.name;
 
   await WhatsAppMessage.create({
     externalId,
@@ -129,8 +195,8 @@ async function handleInboundMessage(body: GupshupPayload) {
     status: "received",
     source: p.destination, // business number (receiver)
     destination: p.destination,
-    senderPhone: p.sender?.phone ?? p.source,
-    senderName: p.sender?.name,
+    senderPhone,
+    senderName,
     messageType: p.type,
     text: extractText(p),
     providerTimestamp: toDate(body.timestamp),
@@ -139,6 +205,17 @@ async function handleInboundMessage(body: GupshupPayload) {
     ],
     raw: body,
   });
+
+  if (senderPhone) {
+    try {
+      const firstName = senderName?.trim().split(/\s+/)[0] || "there";
+      await sendAutoReplyTemplate(senderPhone, AUTO_REPLY_TEMPLATE_ID, [
+        firstName,
+      ]);
+    } catch (err) {
+      console.error("[whatsapp-webhook] auto-reply failed:", err);
+    }
+  }
 }
 
 export async function POST(req: NextRequest) {
