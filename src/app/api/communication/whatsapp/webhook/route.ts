@@ -206,7 +206,10 @@ async function handleInboundMessage(body: GupshupPayload) {
     raw: body,
   });
 
-  if (senderPhone) {
+  // Gupshup delivers the inbound webhook to every configured callback URL
+  // (prod and stage), so guard the auto-reply to a single environment to
+  // avoid sending the template twice to the same sender.
+  if (senderPhone && process.env.VERCEL_ENV === "production") {
     try {
       const firstName = senderName?.trim().split(/\s+/)[0] || "there";
       await sendAutoReplyTemplate(senderPhone, AUTO_REPLY_TEMPLATE_ID, [
