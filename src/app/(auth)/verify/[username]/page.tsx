@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 import { ROUTES } from "@/lib/constants/routes";
 import { decodeBase64 } from "@/lib/utils/encodeDecode";
 import { verifySchema } from "@/schemas/verifySchema";
@@ -38,14 +40,22 @@ const VerifyAccount = () => {
   const [verifyCode, { data, isLoading, error }] = useVerifyCodeMutation();
 
   useEffect(() => {
+    trackEvent(EventName.EMAIL_VERIFY_PAGE_VIEWED, {
+      hasEmail: Boolean(email),
+    });
+  }, [email]);
+
+  useEffect(() => {
     if (data && data?.success) {
       toast.success("Successfully verified email");
+      trackEvent(EventName.EMAIL_VERIFY_SUCCEEDED, {});
       router.replace(ROUTES.DASHBOARD);
     }
     if (error && (error as APIFailure)?.status) {
       const message =
         (error as APIFailure)?.data?.message || "Failed to verify email";
       toast.error(message);
+      trackEvent(EventName.EMAIL_VERIFY_FAILED, { reason: message });
     }
   }, [(error as APIFailure)?.status, data?.success]);
 
@@ -54,7 +64,8 @@ const VerifyAccount = () => {
       username: email,
       code: data.code,
     };
-     await verifyCode(body);
+    trackEvent(EventName.EMAIL_VERIFY_SUBMITTED, {});
+    await verifyCode(body);
   };
 
   return (

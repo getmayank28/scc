@@ -14,12 +14,14 @@ import z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import SignInWithGoogle from "@/components/SignInWithGoogle/SignInWithGoogle";
 import ForgetPassword from "../ForgetPassword/ForgetPassword";
 import { X } from "lucide-react";
 import { useSignInControl } from "@/contexts/SignInContext";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const SignInSection = ({
   showSkip = false,
@@ -38,9 +40,14 @@ const SignInSection = ({
     },
   });
 
+  useEffect(() => {
+    trackEvent(EventName.SIGNIN_PAGE_VIEWED, {});
+  }, []);
+
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
     localStorage.clear()
     setIsLoading(true);
+    trackEvent(EventName.SIGNIN_SUBMITTED, { method: "credentials" });
     try {
       const result = await signIn("credentials", {
         email: data.identifier.trim(),
@@ -50,20 +57,40 @@ const SignInSection = ({
       if (result?.error) {
         const message = result?.error || "Failed to sign-in";
         toast.error(message);
+        trackEvent(EventName.SIGNIN_FAILED, {
+          method: "credentials",
+          reason: message,
+        });
+      } else {
+        trackEvent(EventName.SIGNIN_SUCCEEDED, { method: "credentials" });
       }
     } catch (error) {
       toast.error("Something went wrong");
       console.log("Sign-in error", error);
+      trackEvent(EventName.SIGNIN_FAILED, {
+        method: "credentials",
+        reason: "exception",
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleClose = () => {
+    trackEvent(EventName.SIGNIN_MODAL_CLOSED, {});
+    closeSignUpModal();
+  };
+
+  const handleSkip = () => {
+    trackEvent(EventName.SIGNIN_SKIP_CLICKED, {});
+    onSkip?.();
   };
 
   return (
     <div className="relative z-10 max-md:w-[345px] max-md:px-6 max-md:mx-6 w-[545px] bg-background-primary p-12 px-14 pb-0 rounded-2xl border border-white/20">
       {showSkip && (
         <div
-          onClick={closeSignUpModal}
+          onClick={handleClose}
           className="absolute cursor-pointer top-3 right-3 border border-white p-1 rounded-full"
         >
           <X color="#fff" size={20} />
@@ -140,7 +167,7 @@ const SignInSection = ({
         {showSkip && (
           <p
             className="text-white/70 text-[12px] cursor-pointer"
-            onClick={onSkip}
+            onClick={handleSkip}
           >
             Skip for now
           </p>

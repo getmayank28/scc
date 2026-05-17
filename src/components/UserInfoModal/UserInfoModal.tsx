@@ -27,6 +27,8 @@ import {
 } from "@/schemas/userInfoSchema";
 import { useUpdateUserInfoMutation } from "@/store/userApi";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 type OtpState = "idle" | "sending" | "sent" | "verifying" | "verified";
 
@@ -190,6 +192,10 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
   const [updateUserInfo, { isLoading: isSaving }] = useUpdateUserInfoMutation();
 
+  useEffect(() => {
+    trackEvent(EventName.WHATSAPP_OTP_USER_INFO_VIEWED, {});
+  }, []);
+
   const incomeRanges = form.employmentType
     ? getIncomeRangesForEmployment(form.employmentType as EmploymentTypeValue)
     : [];
@@ -218,7 +224,22 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
 
   const handleSendOtp = useCallback(async () => {
-    if (!validatePhone()) return;
+    const phoneProvided = Boolean(form.phoneNumber);
+    const isResend = otpState === "sent";
+    trackEvent(
+      isResend
+        ? EventName.WHATSAPP_OTP_RESEND_CLICKED
+        : EventName.WHATSAPP_OTP_SEND_CLICKED,
+      { phoneProvided },
+    );
+
+    if (!validatePhone()) {
+      trackEvent(EventName.WHATSAPP_OTP_SEND_FAILED, {
+        phoneProvided,
+        reason: "invalid_phone",
+      });
+      return;
+    }
 
     // Skip OTP on localhost — auto-verify with dummy token
     if (isLocalhost) {
@@ -226,6 +247,8 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
       setVerificationToken("localhost-dev-token");
       setOtpState("verified");
       toast.success("Auto-verified (localhost)");
+      trackEvent(EventName.WHATSAPP_OTP_SEND_SUCCEEDED, { phoneProvided });
+      trackEvent(EventName.WHATSAPP_OTP_VERIFY_SUCCEEDED, { phoneProvided });
       return;
     }
 
@@ -241,21 +264,34 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
       if (!res.ok) {
         toast.error(data.message || "Failed to send OTP");
         setOtpState("idle");
+        trackEvent(EventName.WHATSAPP_OTP_SEND_FAILED, {
+          phoneProvided,
+          reason: data.message || `http_${res.status}`,
+        });
         return;
       }
 
       setRetryAfter(data.retryAfter ?? 60);
       setOtpState("sent");
       toast.success("OTP sent to your WhatsApp number");
+      trackEvent(EventName.WHATSAPP_OTP_SEND_SUCCEEDED, {
+        phoneProvided,
+        retryAfter: data.retryAfter ?? 60,
+      });
     } catch {
       toast.error("Network error. Please try again.");
       setOtpState("idle");
+      trackEvent(EventName.WHATSAPP_OTP_SEND_FAILED, {
+        phoneProvided,
+        reason: "network_error",
+      });
     }
-  }, [form.phoneNumber, validatePhone]);
+  }, [form.phoneNumber, otpState, validatePhone]);
 
   // ── Edit Phone ─────────────────────────────────────────────────────────────
 
   const handleEditPhone = useCallback(() => {
+    trackEvent(EventName.WHATSAPP_OTP_EDIT_PHONE_CLICKED, {});
     setOtpState("idle");
     setField("otp", "");
     setVerificationToken(null);
@@ -264,8 +300,15 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
   // ── Verify OTP ──────────────────────────────────────────────────────────────
 
   const handleVerifyOtp = useCallback(async () => {
+    const phoneProvided = Boolean(form.phoneNumber);
+    trackEvent(EventName.WHATSAPP_OTP_VERIFY_CLICKED, { phoneProvided });
+
     if (form.otp.length !== 6) {
       setErrors((prev) => ({ ...prev, otp: "Enter the 6-digit OTP" }));
+      trackEvent(EventName.WHATSAPP_OTP_VERIFY_FAILED, {
+        phoneProvided,
+        reason: "invalid_otp_length",
+      });
       return;
     }
     setOtpState("verifying");
@@ -280,15 +323,24 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
       if (!res.ok) {
         setErrors((prev) => ({ ...prev, otp: data.message }));
         setOtpState("sent");
+        trackEvent(EventName.WHATSAPP_OTP_VERIFY_FAILED, {
+          phoneProvided,
+          reason: data.message || `http_${res.status}`,
+        });
         return;
       }
 
       setVerificationToken(data.verificationToken);
       setOtpState("verified");
       toast.success("WhatsApp number verified!");
+      trackEvent(EventName.WHATSAPP_OTP_VERIFY_SUCCEEDED, { phoneProvided });
     } catch {
       toast.error("Network error. Please try again.");
       setOtpState("sent");
+      trackEvent(EventName.WHATSAPP_OTP_VERIFY_FAILED, {
+        phoneProvided,
+        reason: "network_error",
+      });
     }
   }, [form.otp, form.phoneNumber]);
 
@@ -296,6 +348,13 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    trackEvent(EventName.WHATSAPP_OTP_USER_INFO_SUBMITTED, {
+      employmentType: form.employmentType,
+      hasSalaryRange: Boolean(form.salaryRange),
+      informationConsent: form.informationConsent,
+      promotionalConsent: form.promotionalConsent,
+    });
 
     const newErrors: FieldError = {};
     if (otpState !== "verified" || !verificationToken) {
@@ -309,6 +368,9 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
     }
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      trackEvent(EventName.WHATSAPP_OTP_USER_INFO_FAILED, {
+        reason: "validation_error",
+      });
       return;
     }
 
@@ -322,10 +384,14 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
         ...(isLocalhost && { phoneNumber: form.phoneNumber }),
       }).unwrap();
       toast.success("Profile updated successfully!");
+      trackEvent(EventName.WHATSAPP_OTP_USER_INFO_SUCCEEDED, {});
       await update();
       onSuccess?.();
     } catch {
       toast.error("Failed to save your information. Please try again.");
+      trackEvent(EventName.WHATSAPP_OTP_USER_INFO_FAILED, {
+        reason: "update_error",
+      });
     }
   };
 
@@ -567,7 +633,10 @@ export default function UserInfoModal({ onSuccess }: UserInfoModalProps) {
         Don&apos;t want to continue?{" "}
         <button
           type="button"
-          onClick={() => signOut({ callbackUrl: "/" })}
+          onClick={() => {
+            trackEvent(EventName.WHATSAPP_OTP_SIGN_OUT_CLICKED, {});
+            signOut({ callbackUrl: "/" });
+          }}
           className="text-white/60 underline underline-offset-2 hover:text-white transition-colors"
         >
           Sign out

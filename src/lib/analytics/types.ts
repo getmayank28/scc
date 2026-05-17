@@ -78,6 +78,56 @@ export enum EventName {
   CARD_INFO_ADVISOR_POPUP_SHOWN = "card_info.advisor_popup_shown",
   CARD_INFO_ADVISOR_FIND_OUT_CLICKED = "card_info.advisor_find_out_clicked",
   CARD_INFO_ADVISOR_DISMISSED = "card_info.advisor_dismissed",
+
+  // ── Sign Up (new customer) ──
+  SIGNUP_PAGE_VIEWED = "signup.page_viewed",
+  SIGNUP_USERNAME_CHECK_RESULT = "signup.username_check_result",
+  SIGNUP_SUBMITTED = "signup.submitted",
+  SIGNUP_SUCCEEDED = "signup.succeeded",
+  SIGNUP_FAILED = "signup.failed",
+
+  // ── Email Verify (after signup) ──
+  EMAIL_VERIFY_PAGE_VIEWED = "email_verify.page_viewed",
+  EMAIL_VERIFY_SUBMITTED = "email_verify.submitted",
+  EMAIL_VERIFY_SUCCEEDED = "email_verify.succeeded",
+  EMAIL_VERIFY_FAILED = "email_verify.failed",
+  EMAIL_VERIFY_RESEND_CLICKED = "email_verify.resend_clicked",
+  EMAIL_VERIFY_RESEND_SUCCEEDED = "email_verify.resend_succeeded",
+  EMAIL_VERIFY_RESEND_FAILED = "email_verify.resend_failed",
+  EMAIL_VERIFY_CHANGE_EMAIL_CLICKED = "email_verify.change_email_clicked",
+
+  // ── Sign In (existing customer) ──
+  SIGNIN_PAGE_VIEWED = "signin.page_viewed",
+  SIGNIN_SUBMITTED = "signin.submitted",
+  SIGNIN_SUCCEEDED = "signin.succeeded",
+  SIGNIN_FAILED = "signin.failed",
+  SIGNIN_GOOGLE_CLICKED = "signin.google_clicked",
+  SIGNIN_MODAL_CLOSED = "signin.modal_closed",
+  SIGNIN_SKIP_CLICKED = "signin.skip_clicked",
+
+  // ── Forget / Change Password ──
+  FORGET_PASSWORD_CLICKED = "forget_password.clicked",
+  FORGET_PASSWORD_EMAIL_SENT = "forget_password.email_sent",
+  FORGET_PASSWORD_EMAIL_FAILED = "forget_password.email_failed",
+  CHANGE_PASSWORD_PAGE_VIEWED = "change_password.page_viewed",
+  CHANGE_PASSWORD_SUBMITTED = "change_password.submitted",
+  CHANGE_PASSWORD_SUCCEEDED = "change_password.succeeded",
+  CHANGE_PASSWORD_FAILED = "change_password.failed",
+
+  // ── WhatsApp Mobile OTP (user info) ──
+  WHATSAPP_OTP_USER_INFO_VIEWED = "whatsapp_otp.user_info_viewed",
+  WHATSAPP_OTP_SEND_CLICKED = "whatsapp_otp.send_clicked",
+  WHATSAPP_OTP_SEND_SUCCEEDED = "whatsapp_otp.send_succeeded",
+  WHATSAPP_OTP_SEND_FAILED = "whatsapp_otp.send_failed",
+  WHATSAPP_OTP_VERIFY_CLICKED = "whatsapp_otp.verify_clicked",
+  WHATSAPP_OTP_VERIFY_SUCCEEDED = "whatsapp_otp.verify_succeeded",
+  WHATSAPP_OTP_VERIFY_FAILED = "whatsapp_otp.verify_failed",
+  WHATSAPP_OTP_RESEND_CLICKED = "whatsapp_otp.resend_clicked",
+  WHATSAPP_OTP_EDIT_PHONE_CLICKED = "whatsapp_otp.edit_phone_clicked",
+  WHATSAPP_OTP_USER_INFO_SUBMITTED = "whatsapp_otp.user_info_submitted",
+  WHATSAPP_OTP_USER_INFO_SUCCEEDED = "whatsapp_otp.user_info_succeeded",
+  WHATSAPP_OTP_USER_INFO_FAILED = "whatsapp_otp.user_info_failed",
+  WHATSAPP_OTP_SIGN_OUT_CLICKED = "whatsapp_otp.sign_out_clicked",
 }
 
 // ─── Event Property Maps ────────────────────────────────────────────
@@ -235,6 +285,68 @@ interface CardInfoSearchProperties extends BaseProperties {
   bankName: string;
 }
 
+// ── Auth ─────────────────────────────────────────────────────────────
+// Auth-funnel events. `method` distinguishes credentials/google/etc.,
+// `reason` carries a normalized error code for failure events so the
+// dashboard can break down drop-offs by cause.
+
+type SignInMethod = "credentials" | "google";
+
+interface AuthBaseProperties extends BaseProperties {
+  method?: SignInMethod;
+}
+
+interface SignupUsernameCheckProperties extends BaseProperties {
+  available: boolean;
+  reason?: string;
+}
+
+interface SignupSubmittedProperties extends BaseProperties {
+  hasUsername: boolean;
+  hasEmail: boolean;
+}
+
+interface AuthFailureProperties extends AuthBaseProperties {
+  reason?: string;
+}
+
+interface EmailVerifyProperties extends BaseProperties {
+  hasEmail: boolean;
+}
+
+interface ResendProperties extends BaseProperties {
+  reason?: string;
+}
+
+interface ForgetPasswordProperties extends BaseProperties {
+  reason?: string;
+}
+
+// ── WhatsApp Mobile OTP ──────────────────────────────────────────────
+
+interface WhatsappOtpBaseProperties extends BaseProperties {
+  phoneProvided?: boolean;
+}
+
+interface WhatsappOtpFailureProperties extends WhatsappOtpBaseProperties {
+  reason?: string;
+}
+
+interface WhatsappOtpSendSuccessProperties extends WhatsappOtpBaseProperties {
+  retryAfter?: number;
+}
+
+interface WhatsappOtpUserInfoSubmittedProperties extends BaseProperties {
+  employmentType: string;
+  hasSalaryRange: boolean;
+  informationConsent: boolean;
+  promotionalConsent: boolean;
+}
+
+interface WhatsappOtpUserInfoFailedProperties extends BaseProperties {
+  reason?: string;
+}
+
 // ─── Event → Properties Type Map ────────────────────────────────────
 // This is the single source of truth. When you add a new event,
 // add its property type here. The trackEvent function uses this
@@ -317,4 +429,54 @@ export interface EventPropertiesMap {
   [EventName.CARD_INFO_ADVISOR_POPUP_SHOWN]: BaseProperties;
   [EventName.CARD_INFO_ADVISOR_FIND_OUT_CLICKED]: BaseProperties;
   [EventName.CARD_INFO_ADVISOR_DISMISSED]: BaseProperties;
+
+  // Sign Up
+  [EventName.SIGNUP_PAGE_VIEWED]: BaseProperties;
+  [EventName.SIGNUP_USERNAME_CHECK_RESULT]: SignupUsernameCheckProperties;
+  [EventName.SIGNUP_SUBMITTED]: SignupSubmittedProperties;
+  [EventName.SIGNUP_SUCCEEDED]: BaseProperties;
+  [EventName.SIGNUP_FAILED]: AuthFailureProperties;
+
+  // Email Verify
+  [EventName.EMAIL_VERIFY_PAGE_VIEWED]: EmailVerifyProperties;
+  [EventName.EMAIL_VERIFY_SUBMITTED]: BaseProperties;
+  [EventName.EMAIL_VERIFY_SUCCEEDED]: BaseProperties;
+  [EventName.EMAIL_VERIFY_FAILED]: AuthFailureProperties;
+  [EventName.EMAIL_VERIFY_RESEND_CLICKED]: BaseProperties;
+  [EventName.EMAIL_VERIFY_RESEND_SUCCEEDED]: BaseProperties;
+  [EventName.EMAIL_VERIFY_RESEND_FAILED]: ResendProperties;
+  [EventName.EMAIL_VERIFY_CHANGE_EMAIL_CLICKED]: BaseProperties;
+
+  // Sign In
+  [EventName.SIGNIN_PAGE_VIEWED]: BaseProperties;
+  [EventName.SIGNIN_SUBMITTED]: AuthBaseProperties;
+  [EventName.SIGNIN_SUCCEEDED]: AuthBaseProperties;
+  [EventName.SIGNIN_FAILED]: AuthFailureProperties;
+  [EventName.SIGNIN_GOOGLE_CLICKED]: BaseProperties;
+  [EventName.SIGNIN_MODAL_CLOSED]: BaseProperties;
+  [EventName.SIGNIN_SKIP_CLICKED]: BaseProperties;
+
+  // Forget / Change Password
+  [EventName.FORGET_PASSWORD_CLICKED]: BaseProperties;
+  [EventName.FORGET_PASSWORD_EMAIL_SENT]: BaseProperties;
+  [EventName.FORGET_PASSWORD_EMAIL_FAILED]: ForgetPasswordProperties;
+  [EventName.CHANGE_PASSWORD_PAGE_VIEWED]: BaseProperties;
+  [EventName.CHANGE_PASSWORD_SUBMITTED]: BaseProperties;
+  [EventName.CHANGE_PASSWORD_SUCCEEDED]: BaseProperties;
+  [EventName.CHANGE_PASSWORD_FAILED]: AuthFailureProperties;
+
+  // WhatsApp Mobile OTP
+  [EventName.WHATSAPP_OTP_USER_INFO_VIEWED]: BaseProperties;
+  [EventName.WHATSAPP_OTP_SEND_CLICKED]: WhatsappOtpBaseProperties;
+  [EventName.WHATSAPP_OTP_SEND_SUCCEEDED]: WhatsappOtpSendSuccessProperties;
+  [EventName.WHATSAPP_OTP_SEND_FAILED]: WhatsappOtpFailureProperties;
+  [EventName.WHATSAPP_OTP_VERIFY_CLICKED]: WhatsappOtpBaseProperties;
+  [EventName.WHATSAPP_OTP_VERIFY_SUCCEEDED]: WhatsappOtpBaseProperties;
+  [EventName.WHATSAPP_OTP_VERIFY_FAILED]: WhatsappOtpFailureProperties;
+  [EventName.WHATSAPP_OTP_RESEND_CLICKED]: WhatsappOtpBaseProperties;
+  [EventName.WHATSAPP_OTP_EDIT_PHONE_CLICKED]: BaseProperties;
+  [EventName.WHATSAPP_OTP_USER_INFO_SUBMITTED]: WhatsappOtpUserInfoSubmittedProperties;
+  [EventName.WHATSAPP_OTP_USER_INFO_SUCCEEDED]: BaseProperties;
+  [EventName.WHATSAPP_OTP_USER_INFO_FAILED]: WhatsappOtpUserInfoFailedProperties;
+  [EventName.WHATSAPP_OTP_SIGN_OUT_CLICKED]: BaseProperties;
 }

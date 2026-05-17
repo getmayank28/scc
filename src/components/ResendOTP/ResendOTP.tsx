@@ -4,6 +4,8 @@ import Typography from "../Typography/Typography";
 import { useSendVerificationCodeMutation } from "@/store/api";
 import { Spinner } from "../ui/spinner";
 import { useState, useEffect } from "react";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const ResendOTP = ({ email }: { email: string }) => {
   const [sendVerificationCode, { isLoading }] =
@@ -26,17 +28,26 @@ const ResendOTP = ({ email }: { email: string }) => {
   const handleResend = async () => {
     if (timer > 0) return; // prevent clicking while countdown active
 
+    trackEvent(EventName.EMAIL_VERIFY_RESEND_CLICKED, {});
+
     try {
       const response = await sendVerificationCode({ email });
 
       if (response?.data?.success) {
         toast.success(response?.data?.message);
+        trackEvent(EventName.EMAIL_VERIFY_RESEND_SUCCEEDED, {});
         setTimer(45);
       } else {
         toast.error("Failed to send verification email");
+        trackEvent(EventName.EMAIL_VERIFY_RESEND_FAILED, {
+          reason: "send_returned_unsuccessful",
+        });
       }
     } catch {
       toast.error("Failed to send verification email");
+      trackEvent(EventName.EMAIL_VERIFY_RESEND_FAILED, {
+        reason: "network_error",
+      });
     }
   };
 

@@ -9,6 +9,8 @@ import { Spinner } from "../ui/spinner";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/lib/constants/routes";
 import { encodeBase64 } from "@/lib/utils/encodeDecode";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 
 const EmailQuerySchema = z.object({
@@ -31,6 +33,9 @@ const ForgetPassword = ({form}:ForgetPasswordProps) => {
 
     if(!email){
       toast.error("Please enter a valid email");
+      trackEvent(EventName.FORGET_PASSWORD_EMAIL_FAILED, {
+        reason: "invalid_email",
+      });
       return
     }
 
@@ -40,25 +45,33 @@ const ForgetPassword = ({form}:ForgetPasswordProps) => {
       if (response?.data?.success) {
         const encodeEmail = encodeBase64(email)
         toast.success(response?.data?.message);
+        trackEvent(EventName.FORGET_PASSWORD_EMAIL_SENT, {});
         router.replace(`${ROUTES.CHANGE_PASSWORD}?e=${encodeEmail}`)
       } else {
         toast.error("Failed to send verification email");
+        trackEvent(EventName.FORGET_PASSWORD_EMAIL_FAILED, {
+          reason: "send_returned_unsuccessful",
+        });
       }
     } catch {
       toast.error("Failed to send verification email");
+      trackEvent(EventName.FORGET_PASSWORD_EMAIL_FAILED, {
+        reason: "network_error",
+      });
     }
   };
 
     const handleForgetPassword = () => {
+        trackEvent(EventName.FORGET_PASSWORD_CLICKED, {});
         const queryParams = {
           email:form.getValues().identifier,
         };
-    
+
         const result = EmailQuerySchema.safeParse(queryParams);
         if (!result.success) {
           const emailErrors = result.error.format().email?._errors || [];
           const error = emailErrors.join(" ") || "Please enter a valid email"
-    
+
           form.setError("identifier", {
             message:error,
           });

@@ -6,6 +6,8 @@ import GoogleLogo from "../../../public/images/google-logo.png"
 import Image from "next/image";
 import { Spinner } from "../ui/spinner";
 import { useState } from "react";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 
 const SignInWithGoogle = () => {
   const [isLoading, setIsLoading] = useState(false)
@@ -13,6 +15,8 @@ const SignInWithGoogle = () => {
   const handleSignIn =  () => {
     localStorage.clear()
     setIsLoading(true)
+    trackEvent(EventName.SIGNIN_GOOGLE_CLICKED, {});
+    trackEvent(EventName.SIGNIN_SUBMITTED, { method: "google" });
     signIn("google")
   }
   return (

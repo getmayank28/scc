@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 import { ROUTES } from "@/lib/constants/routes";
 import { decodeBase64 } from "@/lib/utils/encodeDecode";
 import { changePasswordSchema } from "@/schemas/changePasswordSchema";
@@ -34,14 +36,20 @@ const ChangePasswordComp = () => {
 
 
     useEffect(() => {
+      trackEvent(EventName.CHANGE_PASSWORD_PAGE_VIEWED, {});
+    }, []);
+
+    useEffect(() => {
         if (data && data?.success) {
           toast.success("Password successfully updated");
+          trackEvent(EventName.CHANGE_PASSWORD_SUCCEEDED, {});
           router.replace(ROUTES.SIGN_IN);
         }
         if (error && (error as APIFailure)?.status) {
           const message =
             (error as APIFailure)?.data?.message || "Failed to update password";
           toast.error(message);
+          trackEvent(EventName.CHANGE_PASSWORD_FAILED, { reason: message });
         }
       }, [(error as APIFailure)?.status, data?.success]);
 
@@ -51,6 +59,7 @@ const ChangePasswordComp = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof changePasswordSchema>) => {
+    trackEvent(EventName.CHANGE_PASSWORD_SUBMITTED, {});
     changePasswordMutation({...data, email})
   };
 

@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
 import { ROUTES } from "@/lib/constants/routes";
 import { signUpSchema } from "@/schemas/signUpSchema";
 import {
@@ -59,6 +61,10 @@ const SignUp = () => {
   });
 
   useEffect(() => {
+    trackEvent(EventName.SIGNUP_PAGE_VIEWED, {});
+  }, []);
+
+  useEffect(() => {
     if (username && username?.length > 3) {
       checkUsername({ username });
     }
@@ -70,16 +76,21 @@ const SignUp = () => {
         type: "error",
         message: message,
       });
+      trackEvent(EventName.SIGNUP_USERNAME_CHECK_RESULT, {
+        available: false,
+        reason: message,
+      });
     }
     if (usernameData?.success) {
       form.clearErrors("username");
+      trackEvent(EventName.SIGNUP_USERNAME_CHECK_RESULT, { available: true });
     }
   }, [username, (usernameError as APIFailure)?.status, usernameData?.success]);
 
   useEffect(() => {
     if (createAccountData && createAccountData?.success) {
       toast.success("Successfully send verification email");
-
+      trackEvent(EventName.SIGNUP_SUCCEEDED, {});
       router.replace("/verify/" + username);
     }
     if (createAccountError && (createAccountError as APIFailure)?.status) {
@@ -87,10 +98,15 @@ const SignUp = () => {
         (createAccountError as APIFailure)?.data?.message ||
         "Failed to create account";
       toast.error(message);
+      trackEvent(EventName.SIGNUP_FAILED, { reason: message });
     }
   }, [(createAccountError as APIFailure)?.status, createAccountData?.success]);
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
+    trackEvent(EventName.SIGNUP_SUBMITTED, {
+      hasUsername: Boolean(data.username),
+      hasEmail: Boolean(data.email),
+    });
     await createAccount(data);
   };
 
