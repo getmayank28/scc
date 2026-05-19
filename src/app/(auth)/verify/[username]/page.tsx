@@ -19,6 +19,7 @@ import { verifySchema } from "@/schemas/verifySchema";
 import { useVerifyCodeMutation } from "@/store/api";
 import { APIFailure } from "@/types/ApiResponse";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSession } from "next-auth/react";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ import z from "zod";
 const VerifyAccount = () => {
   const router = useRouter();
   const params = useParams();
+  const { update } = useSession();
 
 
   const email = decodeBase64(params.username as string)
@@ -49,7 +51,11 @@ const VerifyAccount = () => {
     if (data && data?.success) {
       toast.success("Successfully verified email");
       trackEvent(EventName.EMAIL_VERIFY_SUCCEEDED, {});
-      router.replace(ROUTES.DASHBOARD);
+      // Refresh the JWT so middleware sees isVerified=true and routes
+      // to /user-info instead of bouncing back to /sign-in → /verify.
+      update().finally(() => {
+        router.replace(ROUTES.DASHBOARD);
+      });
     }
     if (error && (error as APIFailure)?.status) {
       const message =

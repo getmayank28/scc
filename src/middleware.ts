@@ -30,8 +30,12 @@ export async function middleware(request: NextRequest) {
         );
       } else {
         const email = encodeBase64(token?.email as string);
+        const targetVerifyPath = `${ROUTES.VERIFY_EMAIL}/${email}`;
+        if (url.pathname === targetVerifyPath) {
+          return NextResponse.next();
+        }
         return NextResponse.redirect(
-          new URL(`${ROUTES.VERIFY_EMAIL}/${email}`, request.url),
+          new URL(targetVerifyPath, request.url),
         );
       }
     }
