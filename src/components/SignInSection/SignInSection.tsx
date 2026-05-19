@@ -2,6 +2,7 @@
 import { signInSchema } from "@/schemas/signInSchema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -31,6 +32,7 @@ const SignInSection = ({
   onSkip?: () => void;
 }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const { closeSignUpModal } = useSignInControl();
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -52,6 +54,7 @@ const SignInSection = ({
       const result = await signIn("credentials", {
         email: data.identifier.trim(),
         password: data.password,
+        redirect: false,
       });
 
       if (result?.error) {
@@ -63,6 +66,8 @@ const SignInSection = ({
         });
       } else {
         trackEvent(EventName.SIGNIN_SUCCEEDED, { method: "credentials" });
+        router.push("/home");
+        router.refresh();
       }
     } catch (error) {
       toast.error("Something went wrong");

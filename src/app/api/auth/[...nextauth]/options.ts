@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
   ],
 
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       await dbConnect();
 
       let existingUser = await UserModal.findOne({ email: user.email });
@@ -37,25 +37,21 @@ export const authOptions: NextAuthOptions = {
           isVerified: true,
           provider: [AUTH_PROVIDERS.GOOGLE],
         });
-      }
-      user._id = existingUser._id.toString();
-      user.isVerified = existingUser.isVerified;
-      user.hasCompletedUserInfo = !!(existingUser.phoneNumber && existingUser.employmentType);
-      const existingUserWithCredentialsNowTryingGoogle =
-        existingUser &&
-        existingUser.provider.includes(AUTH_PROVIDERS.CREDENTIALS) &&
-        user &&
-        !user.provider;
-
-      if (existingUserWithCredentialsNowTryingGoogle) {
+      } else if (
+        account?.provider === AUTH_PROVIDERS.GOOGLE &&
+        !existingUser.provider.includes(AUTH_PROVIDERS.GOOGLE)
+      ) {
         existingUser.isVerified = true;
         existingUser.provider = [
           ...existingUser.provider,
           AUTH_PROVIDERS.GOOGLE,
         ];
         await existingUser.save();
-        return true;
       }
+
+      user._id = existingUser._id.toString();
+      user.isVerified = existingUser.isVerified;
+      user.hasCompletedUserInfo = !!(existingUser.phoneNumber && existingUser.employmentType);
 
       return true;
     },
