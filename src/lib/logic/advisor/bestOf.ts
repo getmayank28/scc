@@ -1,11 +1,15 @@
 import { type Category, MOCK_CARDS, type MockCard } from "./cards";
 import {
   MOCK_RULES,
+  validateSharedCapGroups,
   type CapPeriod,
   type CapScope,
   type Merchant,
   type MockRule,
+  type SharedCapGroup,
 } from "./rules";
+
+validateSharedCapGroups(MOCK_RULES);
 
 export interface BestDirectSwipe {
   merchant: Merchant;
@@ -14,13 +18,22 @@ export interface BestDirectSwipe {
   cappedAnnualSpendInr: number | null;
   capNote: string | null;
   capScope: CapScope | null;
+  sharedCapGroup: SharedCapGroup | null;
+  rewardCapAnnualValueInr: number | null;
 }
 
 export interface BestVoucher {
   merchant: Merchant;
   breakdown: { discount: number; reward: number; fee: number };
   totalPercentage: number;
-  cappedAnnualSpendInr: number | null;
+  caps: {
+    monthlyPurchaseInr: number | null;
+    maxVoucherInr: number | null;
+    perBooking: number | null;
+    rewardAnnualSpendInr: number | null;
+  };
+  sharedCapGroup: SharedCapGroup | null;
+  rewardCapAnnualValueInr: number | null;
   fallbackPercentage: number;
 }
 
@@ -52,10 +65,13 @@ const PERIOD_LABEL: Record<CapPeriod, string> = {
   annually: "year",
 };
 
-function annualSpendForCap(rule: MockRule, card: MockCard): number | null {
+function annualSpendForCap(
+  rule: MockRule,
+  card: MockCard,
+  ratePercentage: number,
+): number | null {
   const cap = rule.caps.reward_cap;
   if (!cap) return null;
-  const ratePercentage = rule.reward.direct_swipe_percentage;
   if (ratePercentage <= 0) return null;
 
   // points: spend × (rate/100) = points × point_value_inr
@@ -68,13 +84,32 @@ function annualSpendForCap(rule: MockRule, card: MockCard): number | null {
   return Math.round(perPeriodSpendInr * PERIOD_TO_ANNUAL_MULTIPLIER[cap.period]);
 }
 
+function annualValueForCap(rule: MockRule, card: MockCard): number | null {
+  const cap = rule.caps.reward_cap;
+  if (!cap) return null;
+  const perPeriodValueInr =
+    cap.metric === "points"
+      ? cap.value * card.rewards.point_value_inr
+      : cap.value;
+  return Math.round(perPeriodValueInr * PERIOD_TO_ANNUAL_MULTIPLIER[cap.period]);
+}
+
+function describeSharedCapGroup(group: SharedCapGroup): string {
+  const parts: string[] = [];
+  if (group.multiplier !== null) parts.push(`${group.multiplier}X`);
+  if (group.merchant !== null) parts.push(group.merchant);
+  return parts.length > 0 ? parts.join(" ") : "shared pool";
+}
+
 function capNoteFor(rule: MockRule): string | null {
   const cap = rule.caps.reward_cap;
   if (!cap) return null;
   const valueStr = cap.value.toLocaleString("en-IN");
   const metric = METRIC_LABEL[cap.metric];
   const period = PERIOD_LABEL[cap.period];
-  const shared = rule.shared_cap_group ? ` combined across ${rule.shared_cap_group}` : "";
+  const shared = rule.shared_cap_group
+    ? ` combined across ${describeSharedCapGroup(rule.shared_cap_group)}`
+    : "";
   return `${valueStr} ${metric}/${period}${shared}`;
 }
 
@@ -103,9 +138,11 @@ export function computeBestOfForCard(
           merchant: r.merchant,
           percentage: pct,
           fallbackPercentage: baseRate,
-          cappedAnnualSpendInr: annualSpendForCap(r, card),
+          cappedAnnualSpendInr: annualSpendForCap(r, card, pct),
           capNote: capNoteFor(r),
           capScope: r.caps.reward_cap?.scope ?? null,
+          sharedCapGroup: r.shared_cap_group,
+          rewardCapAnnualValueInr: annualValueForCap(r, card),
         };
       }
     }
@@ -120,7 +157,6 @@ export function computeBestOfForCard(
         rw.voucher_reward_percentage -
         rw.convenience_fee_percentage;
       if (!bestVoucher || total > bestVoucher.totalPercentage) {
-        const monthlyLimit = r.caps.voucher_monthly_purchase_limit_inr;
         bestVoucher = {
           merchant: r.merchant,
           breakdown: {
@@ -129,7 +165,18 @@ export function computeBestOfForCard(
             fee: rw.convenience_fee_percentage,
           },
           totalPercentage: total,
-          cappedAnnualSpendInr: monthlyLimit !== null ? monthlyLimit * 12 : null,
+          caps: {
+            monthlyPurchaseInr: r.caps.voucher_monthly_purchase_limit_inr,
+            maxVoucherInr: r.caps.max_voucher_size_inr,
+            perBooking: r.caps.vouchers_per_booking,
+            rewardAnnualSpendInr: annualSpendForCap(
+              r,
+              card,
+              rw.voucher_reward_percentage,
+            ),
+          },
+          sharedCapGroup: r.shared_cap_group,
+          rewardCapAnnualValueInr: annualValueForCap(r, card),
           fallbackPercentage: baseRate,
         };
       }

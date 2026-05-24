@@ -28,6 +28,47 @@ export type CapPeriod = "monthly" | "quarterly" | "annually";
 export type CapMetric = "points" | "inr" | "cashback";
 export type CapScope = "merchant" | "category" | "card";
 
+export interface SharedCapGroup {
+  multiplier: number | null;
+  merchant: Merchant | null;
+}
+
+export function sharedCapGroupKey(group: SharedCapGroup): string {
+  return `${group.multiplier ?? "*"}::${group.merchant ?? "*"}`;
+}
+
+export function validateSharedCapGroups(rules: MockRule[]): void {
+  const byKey = new Map<string, MockRule[]>();
+  for (const r of rules) {
+    if (!r.shared_cap_group || !r.is_active) continue;
+    const key = `${r.cardId}::${sharedCapGroupKey(r.shared_cap_group)}`;
+    const list = byKey.get(key) ?? [];
+    list.push(r);
+    byKey.set(key, list);
+  }
+  for (const [key, members] of byKey) {
+    if (members.length <= 1) continue;
+    const first = members[0].caps.reward_cap;
+    for (const m of members.slice(1)) {
+      const c = m.caps.reward_cap;
+      const same =
+        (first === null && c === null) ||
+        (first !== null &&
+          c !== null &&
+          first.value === c.value &&
+          first.period === c.period &&
+          first.metric === c.metric);
+      if (!same) {
+        throw new Error(
+          `Shared cap group "${key}" has inconsistent reward_cap across rules: ${members
+            .map((x) => x._id)
+            .join(", ")}`,
+        );
+      }
+    }
+  }
+}
+
 export interface MockRule {
   _id: string;
   cardId: string;
@@ -49,9 +90,11 @@ export interface MockRule {
       scope: CapScope;
     } | null;
     voucher_monthly_purchase_limit_inr: number | null;
+    max_voucher_size_inr: number | null;
+    vouchers_per_booking: number | null;
   };
 
-  shared_cap_group: string | null;
+  shared_cap_group: SharedCapGroup | null;
 
   valid_from: Date;
   valid_until: Date | null;
@@ -75,6 +118,12 @@ const ICICI_AMAZON_PAY_VALID_FROM = new Date("2024-01-01");
 const AMEX_MRCC_ID = "card_amex_mrcc";
 const AMEX_MRCC_VALID_FROM = new Date("2024-01-01");
 
+interface VoucherCapOverrides {
+  maxVoucherSizeInr?: number | null;
+  vouchersPerBooking?: number | null;
+  monthlyPurchaseLimitInr?: number | null;
+}
+
 const makeVoucherRule =
   (
     cardId: string,
@@ -87,6 +136,7 @@ const makeVoucherRule =
     category: Category,
     merchant: Merchant,
     voucherDiscountPercentage: number,
+    capOverrides: VoucherCapOverrides = {},
   ): MockRule => ({
     _id: id,
     cardId,
@@ -100,7 +150,10 @@ const makeVoucherRule =
     },
     caps: {
       reward_cap: null,
-      voucher_monthly_purchase_limit_inr: null,
+      voucher_monthly_purchase_limit_inr:
+        capOverrides.monthlyPurchaseLimitInr ?? null,
+      max_voucher_size_inr: capOverrides.maxVoucherSizeInr ?? null,
+      vouchers_per_booking: capOverrides.vouchersPerBooking ?? null,
     },
     shared_cap_group: null,
     valid_from: validFrom,
@@ -109,31 +162,159 @@ const makeVoucherRule =
     is_active: true,
   });
 
-const regaliaVoucher = makeVoucherRule(HDFC_REGALIA_GOLD_ID, REGALIA_VALID_FROM, 1.33, 6.5);
+const regaliaVoucher = makeVoucherRule(
+  HDFC_REGALIA_GOLD_ID,
+  REGALIA_VALID_FROM,
+  1.33,
+  6.5,
+);
 const aceVoucher = makeVoucherRule(AXIS_ACE_ID, ACE_VALID_FROM, 4.0, 1.5);
-const sbiVoucher = makeVoucherRule(SBI_SIMPLYCLICK_ID, SBI_SIMPLYCLICK_VALID_FROM, 2.5, 2.5);
+const sbiVoucher = makeVoucherRule(
+  SBI_SIMPLYCLICK_ID,
+  SBI_SIMPLYCLICK_VALID_FROM,
+  2.5,
+  2.5,
+);
 const iciciAmazonVoucher = makeVoucherRule(
   ICICI_AMAZON_PAY_ID,
   ICICI_AMAZON_PAY_VALID_FROM,
   1.0,
   1.0,
 );
-const amexMrccVoucher = makeVoucherRule(AMEX_MRCC_ID, AMEX_MRCC_VALID_FROM, 2.0, 4.0);
+const amexMrccVoucher = makeVoucherRule(
+  AMEX_MRCC_ID,
+  AMEX_MRCC_VALID_FROM,
+  2.0,
+  4.0,
+);
 
 export const MOCK_RULES: MockRule[] = [
-  regaliaVoucher("rule_regalia_v_air_india", CATEGORIES.FLIGHTS, MERCHANTS.AIR_INDIA, 0),
-  regaliaVoucher("rule_regalia_v_cleartrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.CLEARTRIP, 0),
-  regaliaVoucher("rule_regalia_v_cleartrip_hotels", CATEGORIES.HOTELS, MERCHANTS.CLEARTRIP, 10),
-  regaliaVoucher("rule_regalia_v_easemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.EASEMYTRIP, 2.5),
-  regaliaVoucher("rule_regalia_v_easemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.EASEMYTRIP, 5),
-  regaliaVoucher("rule_regalia_v_itc_hotels", CATEGORIES.HOTELS, MERCHANTS.ITC_HOTELS, 2.5),
-  regaliaVoucher("rule_regalia_v_ixigo_flights", CATEGORIES.FLIGHTS, MERCHANTS.IXIGO, 2.5),
-  regaliaVoucher("rule_regalia_v_ixigo_hotels", CATEGORIES.HOTELS, MERCHANTS.IXIGO, 7.5),
-  regaliaVoucher("rule_regalia_v_makemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.MAKEMYTRIP, 0),
-  regaliaVoucher("rule_regalia_v_makemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.MAKEMYTRIP, 7.5),
-  regaliaVoucher("rule_regalia_v_taj_experiences", CATEGORIES.HOTELS, MERCHANTS.TAJ_EXPERIENCES, 2),
-  regaliaVoucher("rule_regalia_v_taj_wellness", CATEGORIES.HOTELS, MERCHANTS.TAJ_WELLNESS, 2),
-  regaliaVoucher("rule_regalia_v_yatra", CATEGORIES.FLIGHTS, MERCHANTS.YATRA, 0),
+  regaliaVoucher(
+    "rule_regalia_v_air_india",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.AIR_INDIA,
+    0,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_cleartrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.CLEARTRIP,
+    0,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 15,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_cleartrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.CLEARTRIP,
+    10,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 15,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_easemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.EASEMYTRIP,
+    2.5,
+    {
+      maxVoucherSizeInr: 5000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_easemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.EASEMYTRIP,
+    5,
+    {
+      maxVoucherSizeInr: 5000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_itc_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.ITC_HOTELS,
+    2.5,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_ixigo_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.IXIGO,
+    2.5,
+    {
+      maxVoucherSizeInr: 3000,
+      vouchersPerBooking: 1,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_ixigo_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.IXIGO,
+    7.5,
+    {
+      maxVoucherSizeInr: 2500,
+      vouchersPerBooking: 1,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_makemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.MAKEMYTRIP,
+    0,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_makemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MAKEMYTRIP,
+    7.5,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_taj_experiences",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_EXPERIENCES,
+    2,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_taj_wellness",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_WELLNESS,
+    2,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  regaliaVoucher(
+    "rule_regalia_v_yatra",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.YATRA,
+    0,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 1,
+    },
+  ),
 
   {
     _id: "rule_regalia_base_other",
@@ -149,11 +330,14 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: REGALIA_VALID_FROM,
     valid_until: null,
-    notes: "Base: 4pts/₹150; grocery 2000pt cap; utility/insurance/edu earn base",
+    notes:
+      "Base: 4pts/₹150; grocery 2000pt cap; utility/insurance/edu earn base",
     is_active: true,
   },
   {
@@ -170,6 +354,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: REGALIA_VALID_FROM,
@@ -192,6 +378,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: REGALIA_VALID_FROM,
@@ -200,7 +388,6 @@ export const MOCK_RULES: MockRule[] = [
       "Direct booking on airline/hotel site or OTA (non-portal). Earns base rate. For portal-specific rates see SmartBuy rule.",
     is_active: true,
   },
-
   {
     _id: "rule_regalia_smartbuy_flights",
     cardId: HDFC_REGALIA_GOLD_ID,
@@ -220,8 +407,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
-    shared_cap_group: "SMARTBUY",
+    shared_cap_group: { multiplier: null, merchant: MERCHANTS.SMARTBUY },
     valid_from: REGALIA_VALID_FROM,
     valid_until: null,
     notes:
@@ -247,8 +436,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
-    shared_cap_group: "SMARTBUY",
+    shared_cap_group: { multiplier: null, merchant: MERCHANTS.SMARTBUY },
     valid_from: REGALIA_VALID_FROM,
     valid_until: null,
     notes:
@@ -256,17 +447,104 @@ export const MOCK_RULES: MockRule[] = [
     is_active: true,
   },
 
-  aceVoucher("rule_ace_v_air_india", CATEGORIES.FLIGHTS, MERCHANTS.AIR_INDIA, 4),
-  aceVoucher("rule_ace_v_cleartrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.CLEARTRIP, 4),
-  aceVoucher("rule_ace_v_cleartrip_hotels", CATEGORIES.HOTELS, MERCHANTS.CLEARTRIP, 0),
-  aceVoucher("rule_ace_v_easemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.EASEMYTRIP, 7),
-  aceVoucher("rule_ace_v_easemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.EASEMYTRIP, 12.5),
-  aceVoucher("rule_ace_v_fab_hotels", CATEGORIES.HOTELS, MERCHANTS.FAB_HOTELS, 10),
-  aceVoucher("rule_ace_v_ixigo_flights", CATEGORIES.FLIGHTS, MERCHANTS.IXIGO, 6),
-  aceVoucher("rule_ace_v_makemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.MAKEMYTRIP, 4.5),
-  aceVoucher("rule_ace_v_makemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.MAKEMYTRIP, 10),
-  aceVoucher("rule_ace_v_taj_wellness", CATEGORIES.HOTELS, MERCHANTS.TAJ_WELLNESS, 10),
-
+  aceVoucher(
+    "rule_ace_v_air_india",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.AIR_INDIA,
+    4,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_cleartrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.CLEARTRIP,
+    4,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 15,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_cleartrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.CLEARTRIP,
+    0,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 15,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_easemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.EASEMYTRIP,
+    7,
+    {
+      maxVoucherSizeInr: 5000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_easemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.EASEMYTRIP,
+    12.5,
+    {
+      maxVoucherSizeInr: 5000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_fab_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.FAB_HOTELS,
+    10,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 1,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_ixigo_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.IXIGO,
+    6,
+    {
+      maxVoucherSizeInr: 3000,
+      vouchersPerBooking: 1,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_makemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.MAKEMYTRIP,
+    4.5,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_makemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MAKEMYTRIP,
+    10,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  aceVoucher(
+    "rule_ace_v_taj_wellness",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_WELLNESS,
+    10,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
   {
     _id: "rule_ace_base_other",
     cardId: AXIS_ACE_ID,
@@ -281,6 +559,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: new Date("2024-04-20"),
@@ -302,6 +582,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: ACE_VALID_FROM,
@@ -324,6 +606,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: ACE_VALID_FROM,
@@ -333,16 +617,89 @@ export const MOCK_RULES: MockRule[] = [
     is_active: true,
   },
 
-  sbiVoucher("rule_sbi_v_adani_meet_greet", CATEGORIES.OTHER, MERCHANTS.ADANI_MEET_GREET, 0),
-  sbiVoucher("rule_sbi_v_air_india", CATEGORIES.FLIGHTS, MERCHANTS.AIR_INDIA, 2),
-  sbiVoucher("rule_sbi_v_fab_hotels", CATEGORIES.HOTELS, MERCHANTS.FAB_HOTELS, 8),
+  sbiVoucher(
+    "rule_sbi_v_adani_meet_greet",
+    CATEGORIES.OTHER,
+    MERCHANTS.ADANI_MEET_GREET,
+    0,
+  ),
+  sbiVoucher(
+    "rule_sbi_v_air_india",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.AIR_INDIA,
+    2,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_fab_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.FAB_HOTELS,
+    8,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 1,
+    },
+  ),
   sbiVoucher("rule_sbi_v_irctc", CATEGORIES.OTHER, MERCHANTS.IRCTC, 0),
-  sbiVoucher("rule_sbi_v_itc_hotels", CATEGORIES.HOTELS, MERCHANTS.ITC_HOTELS, 7),
-  sbiVoucher("rule_sbi_v_ixigo_flights", CATEGORIES.FLIGHTS, MERCHANTS.IXIGO, 7),
-  sbiVoucher("rule_sbi_v_makemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.MAKEMYTRIP, 5),
-  sbiVoucher("rule_sbi_v_makemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.MAKEMYTRIP, 9),
-  sbiVoucher("rule_sbi_v_taj_experiences", CATEGORIES.HOTELS, MERCHANTS.TAJ_EXPERIENCES, 7),
-  sbiVoucher("rule_sbi_v_taj_wellness", CATEGORIES.HOTELS, MERCHANTS.TAJ_WELLNESS, 10),
+  sbiVoucher(
+    "rule_sbi_v_itc_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.ITC_HOTELS,
+    7,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_ixigo_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.IXIGO,
+    7,
+    {
+      maxVoucherSizeInr: 3000,
+      vouchersPerBooking: 1,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_makemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.MAKEMYTRIP,
+    5,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_makemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MAKEMYTRIP,
+    9,
+    {
+      maxVoucherSizeInr: 10000,
+      vouchersPerBooking: 3,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_taj_experiences",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_EXPERIENCES,
+    7,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
+  sbiVoucher(
+    "rule_sbi_v_taj_wellness",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_WELLNESS,
+    10,
+    {
+      maxVoucherSizeInr: 10000,
+    },
+  ),
 
   {
     _id: "rule_sbi_v_finusmart",
@@ -358,11 +715,14 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: SBI_SIMPLYCLICK_VALID_FROM,
     valid_until: null,
-    notes: "Finance category earns base 1X on direct swipe; voucher purchase earns 10X (2.5%).",
+    notes:
+      "Finance category earns base 1X on direct swipe; voucher purchase earns 10X (2.5%).",
     is_active: true,
   },
   {
@@ -384,8 +744,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: 10000,
+      vouchers_per_booking: 15,
     },
-    shared_cap_group: "SBI_10X",
+    shared_cap_group: { multiplier: 10, merchant: null },
     valid_from: SBI_SIMPLYCLICK_VALID_FROM,
     valid_until: null,
     notes:
@@ -411,8 +773,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: 10000,
+      vouchers_per_booking: 15,
     },
-    shared_cap_group: "SBI_10X",
+    shared_cap_group: { multiplier: 10, merchant: null },
     valid_from: SBI_SIMPLYCLICK_VALID_FROM,
     valid_until: null,
     notes:
@@ -438,8 +802,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "card",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
-    shared_cap_group: "SBI_10X",
+    shared_cap_group: { multiplier: 10, merchant: null },
     valid_from: SBI_SIMPLYCLICK_VALID_FROM,
     valid_until: null,
     notes:
@@ -465,8 +831,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "card",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
-    shared_cap_group: "SBI_10X",
+    shared_cap_group: { multiplier: 10, merchant: null },
     valid_from: SBI_SIMPLYCLICK_VALID_FROM,
     valid_until: null,
     notes:
@@ -474,13 +842,55 @@ export const MOCK_RULES: MockRule[] = [
     is_active: true,
   },
 
-  iciciAmazonVoucher("rule_icici_amzn_v_cleartrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.CLEARTRIP, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_cleartrip_hotels", CATEGORIES.HOTELS, MERCHANTS.CLEARTRIP, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_easemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.EASEMYTRIP, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_fab_hotels", CATEGORIES.HOTELS, MERCHANTS.FAB_HOTELS, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_itc_hotels", CATEGORIES.HOTELS, MERCHANTS.ITC_HOTELS, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_marriott", CATEGORIES.HOTELS, MERCHANTS.MARRIOTT, 0),
-  iciciAmazonVoucher("rule_icici_amzn_v_taj_experiences", CATEGORIES.HOTELS, MERCHANTS.TAJ_EXPERIENCES, 0),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_cleartrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.CLEARTRIP,
+    0,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 15 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_cleartrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.CLEARTRIP,
+    0,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 15 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_easemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.EASEMYTRIP,
+    0,
+    { maxVoucherSizeInr: 5000, vouchersPerBooking: 3 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_fab_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.FAB_HOTELS,
+    0,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 1 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_itc_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.ITC_HOTELS,
+    0,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_marriott",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MARRIOTT,
+    0,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  iciciAmazonVoucher(
+    "rule_icici_amzn_v_taj_experiences",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_EXPERIENCES,
+    0,
+    { maxVoucherSizeInr: 10000 },
+  ),
 
   {
     _id: "rule_icici_amzn_base_other",
@@ -496,6 +906,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: new Date("2025-10-11"),
@@ -517,6 +929,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: ICICI_AMAZON_PAY_VALID_FROM,
@@ -539,6 +953,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: ICICI_AMAZON_PAY_VALID_FROM,
@@ -561,11 +977,14 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: new Date("2025-10-11"),
     valid_until: null,
-    notes: "Flights booked via Amazon.in travel section earn 5% (Prime) cashback.",
+    notes:
+      "Flights booked via Amazon.in travel section earn 5% (Prime) cashback.",
     is_active: true,
   },
   {
@@ -582,27 +1001,106 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: new Date("2025-10-11"),
     valid_until: null,
-    notes: "Hotels booked via Amazon.in travel section earn 5% (Prime) cashback.",
+    notes:
+      "Hotels booked via Amazon.in travel section earn 5% (Prime) cashback.",
     is_active: true,
   },
 
-  amexMrccVoucher("rule_amex_v_air_india", CATEGORIES.FLIGHTS, MERCHANTS.AIR_INDIA, 3),
-  amexMrccVoucher("rule_amex_v_cleartrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.CLEARTRIP, 2.3),
-  amexMrccVoucher("rule_amex_v_cleartrip_hotels", CATEGORIES.HOTELS, MERCHANTS.CLEARTRIP, 11.9),
-  amexMrccVoucher("rule_amex_v_fab_hotels", CATEGORIES.HOTELS, MERCHANTS.FAB_HOTELS, 3.1),
-  amexMrccVoucher("rule_amex_v_goibibo_hotels", CATEGORIES.HOTELS, MERCHANTS.GOIBIBO, 2.1),
-  amexMrccVoucher("rule_amex_v_itc_hotels", CATEGORIES.HOTELS, MERCHANTS.ITC_HOTELS, 5.1),
-  amexMrccVoucher("rule_amex_v_makemytrip_flights", CATEGORIES.FLIGHTS, MERCHANTS.MAKEMYTRIP, 0),
-  amexMrccVoucher("rule_amex_v_makemytrip_hotels", CATEGORIES.HOTELS, MERCHANTS.MAKEMYTRIP, 6.6),
-  amexMrccVoucher("rule_amex_v_marriott_hotels", CATEGORIES.HOTELS, MERCHANTS.MARRIOTT, 0),
-  amexMrccVoucher("rule_amex_v_taj_experiences", CATEGORIES.HOTELS, MERCHANTS.TAJ_EXPERIENCES, 2.4),
-  amexMrccVoucher("rule_amex_v_the_leela", CATEGORIES.HOTELS, MERCHANTS.THE_LEELA, 2.1),
-  amexMrccVoucher("rule_amex_v_the_postcard", CATEGORIES.HOTELS, MERCHANTS.THE_POSTCARD, 2.2),
-  amexMrccVoucher("rule_amex_v_yatra_flights", CATEGORIES.FLIGHTS, MERCHANTS.YATRA, 1),
+  amexMrccVoucher(
+    "rule_amex_v_air_india",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.AIR_INDIA,
+    3,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_cleartrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.CLEARTRIP,
+    2.3,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 15 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_cleartrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.CLEARTRIP,
+    11.9,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 15 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_fab_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.FAB_HOTELS,
+    3.1,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 1 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_goibibo_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.GOIBIBO,
+    2.1,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_itc_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.ITC_HOTELS,
+    5.1,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_makemytrip_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.MAKEMYTRIP,
+    0,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 3 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_makemytrip_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MAKEMYTRIP,
+    6.6,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 3 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_marriott_hotels",
+    CATEGORIES.HOTELS,
+    MERCHANTS.MARRIOTT,
+    0,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_taj_experiences",
+    CATEGORIES.HOTELS,
+    MERCHANTS.TAJ_EXPERIENCES,
+    2.4,
+    { maxVoucherSizeInr: 10000 },
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_the_leela",
+    CATEGORIES.HOTELS,
+    MERCHANTS.THE_LEELA,
+    2.1,
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_the_postcard",
+    CATEGORIES.HOTELS,
+    MERCHANTS.THE_POSTCARD,
+    2.2,
+  ),
+  amexMrccVoucher(
+    "rule_amex_v_yatra_flights",
+    CATEGORIES.FLIGHTS,
+    MERCHANTS.YATRA,
+    1,
+    { maxVoucherSizeInr: 10000, vouchersPerBooking: 1 },
+  ),
 
   {
     _id: "rule_amex_partner_easemytrip_flights",
@@ -623,8 +1121,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: 5000,
+      vouchers_per_booking: 3,
     },
-    shared_cap_group: "AMEX_10X_EZ",
+    shared_cap_group: { multiplier: 10, merchant: MERCHANTS.EASEMYTRIP },
     valid_from: AMEX_MRCC_VALID_FROM,
     valid_until: null,
     notes:
@@ -650,8 +1150,10 @@ export const MOCK_RULES: MockRule[] = [
         scope: "merchant",
       },
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: 5000,
+      vouchers_per_booking: 3,
     },
-    shared_cap_group: "AMEX_10X_EZ",
+    shared_cap_group: { multiplier: 10, merchant: MERCHANTS.EASEMYTRIP },
     valid_from: AMEX_MRCC_VALID_FROM,
     valid_until: null,
     notes: "EaseMyTrip hotels. 10X = 20pts/₹100. Shared 500pt/month cap.",
@@ -671,6 +1173,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: AMEX_MRCC_VALID_FROM,
@@ -692,6 +1196,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: AMEX_MRCC_VALID_FROM,
@@ -714,6 +1220,8 @@ export const MOCK_RULES: MockRule[] = [
     caps: {
       reward_cap: null,
       voucher_monthly_purchase_limit_inr: null,
+      max_voucher_size_inr: null,
+      vouchers_per_booking: null,
     },
     shared_cap_group: null,
     valid_from: AMEX_MRCC_VALID_FROM,

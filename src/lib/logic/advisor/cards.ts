@@ -15,6 +15,24 @@ export type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 export type CardNetwork = "visa" | "mastercard" | "amex" | "rupay" | "diners";
 export type RewardType = "points" | "cashback" | "miles";
 export type WelcomeBenefitType = "points" | "voucher" | "cashback" | "miles";
+export type LoungeProgram =
+  | "issuer"
+  | "priority_pass"
+  | "dreamfolks"
+  | "loungekey";
+
+export interface LoungeAccess {
+  visitsPerPeriod: number;
+  period: "quarter" | "year";
+  annualCap: number;
+  spendCondition: {
+    thresholdInr: number;
+    windowMonths: number;
+  } | null;
+  membershipRequired: string | null;
+  program: LoungeProgram;
+  display: string;
+}
 
 export interface MockCard {
   _id: string;
@@ -59,6 +77,11 @@ export interface MockCard {
     display: string;
   } | null;
 
+  lounge: {
+    domestic: LoungeAccess | null;
+    international: LoungeAccess | null;
+  };
+
   ideal_for: string[];
   not_ideal_for: string[];
   is_active: boolean;
@@ -101,6 +124,26 @@ export const MOCK_CARDS: MockCard[] = [
       expires_in_months: 12,
       display:
         "₹2,500 gift voucher on joining; Swiggy One + MMT Black Gold on ₹1L spend in 90 days",
+    },
+    lounge: {
+      domestic: {
+        visitsPerPeriod: 3,
+        period: "quarter",
+        annualCap: 12,
+        spendCondition: { thresholdInr: 60000, windowMonths: 3 },
+        membershipRequired: null,
+        program: "issuer",
+        display: "3/quarter on ₹60K spend prev quarter (max 12/year)",
+      },
+      international: {
+        visitsPerPeriod: 6,
+        period: "year",
+        annualCap: 6,
+        spendCondition: null,
+        membershipRequired: null,
+        program: "priority_pass",
+        display: "6/year via Priority Pass (no spend condition)",
+      },
     },
     ideal_for: [],
     not_ideal_for: [
@@ -146,6 +189,18 @@ export const MOCK_CARDS: MockCard[] = [
       expires_in_months: 12,
       display: "₹250 Amazon eVoucher on first transaction",
     },
+    lounge: {
+      domestic: {
+        visitsPerPeriod: 1,
+        period: "quarter",
+        annualCap: 4,
+        spendCondition: { thresholdInr: 50000, windowMonths: 3 },
+        membershipRequired: null,
+        program: "issuer",
+        display: "1/quarter on ₹50K spend prev 3 months (max 4/year)",
+      },
+      international: null,
+    },
     ideal_for: [],
     not_ideal_for: [
       "Heavy offline shoppers or those who rarely pay utility bills digitally",
@@ -189,6 +244,10 @@ export const MOCK_CARDS: MockCard[] = [
       condition: "joining_fee_payment",
       expires_in_months: 12,
       display: "₹500 Amazon e-gift voucher on payment of joining fee",
+    },
+    lounge: {
+      domestic: null,
+      international: null,
     },
     ideal_for: [],
     not_ideal_for: [
@@ -235,6 +294,18 @@ export const MOCK_CARDS: MockCard[] = [
       expires_in_months: 12,
       display: "No joining fee; ₹200 cashback on first Amazon order",
     },
+    lounge: {
+      domestic: {
+        visitsPerPeriod: 1,
+        period: "quarter",
+        annualCap: 4,
+        spendCondition: { thresholdInr: 75000, windowMonths: 3 },
+        membershipRequired: "Amazon Prime",
+        program: "issuer",
+        display: "1/quarter on ₹75K spend prev quarter (Prime members only)",
+      },
+      international: null,
+    },
     ideal_for: [],
     not_ideal_for: [
       "Non-Amazon shoppers",
@@ -279,6 +350,10 @@ export const MOCK_CARDS: MockCard[] = [
       expires_in_months: 12,
       display:
         "4,000 bonus MR pts on first spend within 90 days; 1,000 bonus pts/month on 4 txns ≥₹1,500",
+    },
+    lounge: {
+      domestic: null,
+      international: null,
     },
     ideal_for: [],
     not_ideal_for: [
