@@ -28,8 +28,11 @@ export interface TravelCardPhaseOneOutput {
     domestic: CategorySplit;
     international: CategorySplit;
   };
+  bookings: {
+    domestic: number;
+    international: number;
+  };
   forex: {
-    exposurePercentage: number;
     applicableSpend: number;
     gstPercentage: number;
   };
@@ -59,13 +62,6 @@ const INTERNATIONAL_CATEGORY_SPLIT: CategorySplit = {
   other: 0.2,
 };
 
-const FOREX_EXPOSURE_PERCENTAGE: Record<TravelMix, number> = {
-  only_domestic: 0,
-  mostly_domestic: 0.6,
-  balanced: 0.65,
-  mostly_international: 0.7,
-};
-
 function allocate(total: number, split: CategorySplit): CategorySplit {
   return {
     flights: total * split.flights,
@@ -91,8 +87,10 @@ export function travelCardPhaseOneRecommendation(
     INTERNATIONAL_CATEGORY_SPLIT,
   );
 
-  const exposurePercentage = FOREX_EXPOSURE_PERCENTAGE[travelMix];
-  const forexApplicableSpend = internationalSpend * exposurePercentage;
+  const forexApplicableSpend = internationalCategory.other;
+
+  const domesticBookings = tripsPerYear * travelSplit.domestic;
+  const internationalBookings = tripsPerYear * travelSplit.international;
 
   return {
     annualTravelSpend,
@@ -106,8 +104,11 @@ export function travelCardPhaseOneRecommendation(
       domestic: domesticCategory,
       international: internationalCategory,
     },
+    bookings: {
+      domestic: domesticBookings,
+      international: internationalBookings,
+    },
     forex: {
-      exposurePercentage: exposurePercentage * 100,
       applicableSpend: forexApplicableSpend,
       gstPercentage: GST_ON_FOREX * 100,
     },
