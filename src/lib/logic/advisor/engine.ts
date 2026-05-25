@@ -5,7 +5,28 @@ import {
   type MockCard,
 } from "./cards";
 import { MOCK_BEST_OF, type BestVoucher, type MockBestOf } from "./bestOf";
-import { sharedCapGroupKey } from "./rules";
+import { type CapPeriod, sharedCapGroupKey } from "./rules";
+
+const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
+  monthly: 12,
+  quarterly: 4,
+  annually: 1,
+};
+
+// Travel bookings are lumpy: all of a trip's spend lands inside a single cap
+// period. So the annual accelerated headroom is the per-period cap repeated
+// across however many *cap periods actually contain a trip*. For monthly caps
+// that's min(trips/yr, 12); quarterly is min(trips, 4); annually min(trips, 1).
+function tripAwareAnnualCapInr(
+  perPeriodInr: number | null,
+  period: CapPeriod | null,
+  tripsPerYear: number,
+): number | null {
+  if (perPeriodInr === null || period === null) return null;
+  const periodsPerYear = PERIODS_PER_YEAR[period];
+  const activePeriods = Math.min(tripsPerYear, periodsPerYear);
+  return perPeriodInr * activePeriods;
+}
 import {
   travelCardPhaseOneRecommendation,
   type CategorySplit,
@@ -123,14 +144,13 @@ function formatInr(value: number): string {
 }
 
 function buildVoucherCapNote(
-  voucher: BestVoucher,
   purchaseCap: number | null,
+  rewardCap: number | null,
 ): string | null {
   const parts: string[] = [];
   if (purchaseCap !== null) {
     parts.push(`voucher covers ${formatInr(purchaseCap)}/yr`);
   }
-  const rewardCap = voucher.caps.rewardAnnualSpendInr;
   if (rewardCap !== null && (purchaseCap === null || rewardCap < purchaseCap)) {
     parts.push(`accelerated reward to ${formatInr(rewardCap)}/yr`);
   }
@@ -141,6 +161,7 @@ function computeVoucherReturn(
   spend: number,
   voucher: BestVoucher,
   purchaseCap: number | null,
+  rewardCap: number | null,
 ): number {
   const { discount, reward, fee } = voucher.breakdown;
   const baseRate = voucher.fallbackPercentage;
@@ -150,7 +171,6 @@ function computeVoucherReturn(
   const nonVoucherSpend = spend - V;
 
   // Reward portion splits at reward_cap: accelerated below, base above
-  const rewardCap = voucher.caps.rewardAnnualSpendInr;
   const acceleratedV = rewardCap === null ? V : Math.min(V, rewardCap);
   const overflowV = V - acceleratedV;
 
@@ -174,11 +194,19 @@ function computeCategoryReturn(
   const direct = bestOf?.bestDirectSwipe ?? null;
   const voucher = bestOf?.bestVoucher ?? null;
 
+  const directRewardCap = direct
+    ? tripAwareAnnualCapInr(
+        direct.cappedSpendPerPeriodInr,
+        direct.capPeriod,
+        bookingsPerYear,
+      )
+    : null;
+
   const directReturn = direct
     ? returnWithCap(
         spend,
         direct.percentage,
-        direct.cappedAnnualSpendInr,
+        directRewardCap,
         direct.fallbackPercentage,
       )
     : (spend * baseRate) / 100;
@@ -187,9 +215,16 @@ function computeCategoryReturn(
   const voucherCap = voucher
     ? voucherAnnualCap(voucher, bookingsPerYear, avgBookingInr)
     : null;
+  const voucherRewardCap = voucher
+    ? tripAwareAnnualCapInr(
+        voucher.caps.rewardSpendPerPeriodInr,
+        voucher.capPeriod,
+        bookingsPerYear,
+      )
+    : null;
 
   const voucherReturn = voucher
-    ? computeVoucherReturn(spend, voucher, voucherCap)
+    ? computeVoucherReturn(spend, voucher, voucherCap, voucherRewardCap)
     : null;
 
   if (voucher && voucherReturn !== null && voucherReturn >= directReturn) {
@@ -199,7 +234,7 @@ function computeCategoryReturn(
       effectivePercentage: voucher.totalPercentage,
       source: "voucher",
       merchant: voucher.merchant,
-      capNote: buildVoucherCapNote(voucher, voucherCap),
+      capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
       cappedAnnualSpendInr: voucherCap,
       returnInr: voucherReturn,
     });
@@ -213,7 +248,7 @@ function computeCategoryReturn(
       source: "direct",
       merchant: direct.merchant,
       capNote: direct.capNote,
-      cappedAnnualSpendInr: direct.cappedAnnualSpendInr,
+      cappedAnnualSpendInr: directRewardCap,
       returnInr: directReturn,
     });
   }
@@ -285,6 +320,7 @@ function collectSharedCapParticipants(
   segLabel: "domestic" | "international",
   segment: SegmentReturn,
   index: Map<string, MockBestOf>,
+  tripsPerYearForGroup: number,
 ): SharedCapParticipant[] {
   const out: SharedCapParticipant[] = [];
   for (const cat of [segment.flights, segment.hotels, segment.other]) {
@@ -294,7 +330,13 @@ function collectSharedCapParticipants(
 
     if (cat.source === "voucher") {
       const v = bestOf.bestVoucher;
-      if (!v || !v.sharedCapGroup || v.rewardCapAnnualValueInr === null) continue;
+      if (!v || !v.sharedCapGroup) continue;
+      const rewardCapAnnualValueInr = tripAwareAnnualCapInr(
+        v.rewardCapPerPeriodValueInr,
+        v.capPeriod,
+        tripsPerYearForGroup,
+      );
+      if (rewardCapAnnualValueInr === null) continue;
       // cat.cappedAnnualSpendInr was set to the voucher purchase cap in
       // computeCategoryReturn — reuse rather than recomputing voucherAnnualCap.
       const coveredSpend =
@@ -311,11 +353,17 @@ function collectSharedCapParticipants(
         baseRate: v.fallbackPercentage,
         discount: v.breakdown.discount,
         fee: v.breakdown.fee,
-        rewardCapAnnualValueInr: v.rewardCapAnnualValueInr,
+        rewardCapAnnualValueInr,
       });
     } else {
       const d = bestOf.bestDirectSwipe;
-      if (!d || !d.sharedCapGroup || d.rewardCapAnnualValueInr === null) continue;
+      if (!d || !d.sharedCapGroup) continue;
+      const rewardCapAnnualValueInr = tripAwareAnnualCapInr(
+        d.rewardCapPerPeriodValueInr,
+        d.capPeriod,
+        tripsPerYearForGroup,
+      );
+      if (rewardCapAnnualValueInr === null) continue;
       out.push({
         segment: segLabel,
         category: cat.category,
@@ -326,7 +374,7 @@ function collectSharedCapParticipants(
         baseRate: d.fallbackPercentage,
         discount: 0,
         fee: 0,
-        rewardCapAnnualValueInr: d.rewardCapAnnualValueInr,
+        rewardCapAnnualValueInr,
       });
     }
   }
@@ -358,10 +406,19 @@ function applySharedCapGroups(
   domestic: SegmentReturn,
   international: SegmentReturn,
   index: Map<string, MockBestOf>,
+  tripsPerYear: number,
 ): { domestic: SegmentReturn; international: SegmentReturn } {
+  // Shared cap pools span categories (and sometimes segments) on the same card,
+  // so the cap is consumed by total trips across the year, not per-segment.
   const participants = [
-    ...collectSharedCapParticipants(cardId, "domestic", domestic, index),
-    ...collectSharedCapParticipants(cardId, "international", international, index),
+    ...collectSharedCapParticipants(cardId, "domestic", domestic, index, tripsPerYear),
+    ...collectSharedCapParticipants(
+      cardId,
+      "international",
+      international,
+      index,
+      tripsPerYear,
+    ),
   ];
 
   const byGroup = new Map<string, SharedCapParticipant[]>();
@@ -475,6 +532,7 @@ export function recommendTravelCard(
         rawDomestic,
         rawInternational,
         index,
+        input.tripsPerYear,
       );
       const forex = computeForexCost(
         travel.forex.applicableSpend,
