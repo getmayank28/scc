@@ -18,7 +18,7 @@ export const ROUTES = {
   COMPLIANCE: "/legal-compliance",
   TERMS: "/terms",
   CHOOSE_CARD: "/choose-card",
-  CARD_INDO: "/card-info",
+  APPLY_CARD: "/apply-card",
   SPEND_OPTIMIZER: "/spend-optimizer",
   POINTS_REDEMPTION: "/redemption",
   SUPPORT: "support",

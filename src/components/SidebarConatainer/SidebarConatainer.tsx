@@ -32,8 +32,8 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       icon: <BadgeIndianRupee className="h-5 w-5 shrink-0 text-neutral-200" />,
     },
     {
-      label: "Explore Cards",
-      href: ROUTES.CARD_INDO,
+      label: "Apply Card",
+      href: ROUTES.APPLY_CARD,
       icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
     }
   ];

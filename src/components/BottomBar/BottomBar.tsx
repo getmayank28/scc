@@ -6,9 +6,9 @@ import useChatSidebar from "@/lib/hooks/useChatSidebar";
 
 const navs = [
   {
-    id: 'info',
+    id: 'apply',
     icon: Search,
-    href: ROUTES.CARD_INDO,
+    href: ROUTES.APPLY_CARD,
   },
   {
     id: 'optimizer',
