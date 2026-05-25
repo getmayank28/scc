@@ -13,6 +13,7 @@ interface Card {
   _id: string;
   name: string;
   bankName: string;
+  slug?: string;
 }
 
 export default function SearchSelect({

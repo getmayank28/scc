@@ -75,7 +75,7 @@ export const config = {
     "/home",
     "/choose-card",
     "/spend-optimizer",
-    "/card-info",
+    "/apply-card",
     "/user-info",
     "/verify/:path*",
   ],

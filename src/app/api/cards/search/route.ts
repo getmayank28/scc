@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const cards = await CardModel.find({
       name: { $regex: query, $options: "i" }, // case-insensitive search
     })
-      .select("_id name bankName")
+      .select("_id name bankName slug")
       .limit(10)
       .lean();
 
