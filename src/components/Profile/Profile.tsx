@@ -28,7 +28,7 @@ export default function ProfileDropdown() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {
-          isUserDataLoading || !nameInitials ? (
+          !nameInitials && isUserDataLoading ? (
             <Skeleton className="w-12 h-12 max-md:w-10 max-md:h-10  rounded-full text-brown-background bg-[#AD744A]" />
           ) : (
             <div className="flex justify-center w-12 h-12 items-center max-md:w-10 max-md:h-10 rounded-full p-2 border border-[#452D1C] bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">

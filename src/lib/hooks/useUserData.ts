@@ -8,28 +8,29 @@ const useUserData = () => {
   const isUserAuthenticated = session?.status === AUTH_STATE.AUTHENTICATED;
   const userId = session?.data?.user?._id || null;
 
-  const { data, isFetching: isUserDataLoading } = useGetUserByIdQuery(userId, {
+  const { data, isLoading: isUserDataLoading } = useGetUserByIdQuery(userId, {
     skip: !userId,
   });
 
+  const displayName = data?.name || session?.data?.user?.name || null;
   const name = data?.name || null;
   const email = data?.email || null;
   const firstName = useMemo(() => {
-    const firstName = data?.name?.split(" ")?.at(0);
+    const firstName = displayName?.split(" ")?.at(0);
     const formattedName = firstName
       ? firstName.slice(0, 1)?.toUpperCase() + firstName.slice(1)?.toLowerCase()
       : undefined;
 
     return formattedName;
-  }, [data?.name]);
+  }, [displayName]);
 
   const nameInitials = useMemo(() => {
     let initials = "";
-    data?.name?.split(" ")?.forEach((word: string) => {
+    displayName?.split(" ")?.forEach((word: string) => {
       initials = initials + word?.slice(0, 1)?.toUpperCase() || "";
     });
     return initials;
-  }, [data?.name]);
+  }, [displayName]);
 
   return {
     isUserAuthenticated,
