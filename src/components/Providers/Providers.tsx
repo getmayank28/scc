@@ -12,8 +12,7 @@ import { ChatContextProvider } from "@/contexts/ChatContext";
 import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
-import { initAmplitude } from "@/lib/analytics/amplitude";
+import AnalyticsIdentifier from "./AnalyticsIdentifier";
 
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
@@ -34,18 +33,9 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
       "/user-info",
     ]?.includes(pathname);
 
-    useEffect(() => {
-      // wait for browser idle, don't block rendering
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => initAmplitude());
-      } else {
-        setTimeout(() => initAmplitude(), 2000);
-      }
-    }, []);
-
-
   return (
     <SessionProvider>
+      <AnalyticsIdentifier />
       <FeatureFlagProvider flags={featureFlags}>
         <SignInProvider>
           <ChatContextProvider>
