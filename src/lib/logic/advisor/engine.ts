@@ -29,10 +29,25 @@ function tripAwareAnnualCapInr(
 }
 import {
   travelCardPhaseOneRecommendation,
+  travelCardPhaseTwoRecommendation,
   type CategorySplit,
   type TravelCardPhaseOneInput,
   type TravelCardPhaseOneOutput,
+  type TravelCardPhaseTwoInput,
+  type TravelCardPhaseTwoOutput,
+  type TravelPriority,
 } from "./travel";
+
+// Forex filter: applies only when foreign travel exceeds this share of trips,
+// and eliminates cards whose markup (including GST) is above the ceiling.
+const LOW_FOREX_MIN_INTL_PERCENTAGE = 40;
+const LOW_FOREX_GST_MULTIPLIER = 1.18;
+const LOW_FOREX_MAX_WITH_GST_PERCENTAGE = 2.36;
+
+// Lounge filter: total free annual visits must cover at least this fraction of
+// `trips × 1.5`.
+const LOUNGE_TRIPS_MULTIPLIER = 1.5;
+const LOUNGE_MIN_COVERAGE_RATIO = 0.3;
 
 export type ReturnSource = "voucher" | "direct" | "fallback";
 
@@ -79,6 +94,7 @@ export interface CardTravelReturn {
   cardName: string;
   domestic: SegmentReturn;
   international: SegmentReturn;
+  extraFlights: SegmentReturn | null;
   forex: ForexReturn;
   grossReturnInr: number;
   netReturnInr: number;
@@ -89,6 +105,15 @@ export interface TravelEngineResult {
   travel: TravelCardPhaseOneOutput;
   byCard: CardTravelReturn[];
   best: CardTravelReturn | null;
+}
+
+export interface TravelEngineAdvancedResult {
+  input: TravelCardPhaseTwoInput;
+  travel: TravelCardPhaseTwoOutput;
+  byCard: CardTravelReturn[];
+  best: CardTravelReturn | null;
+  filteredCardCount: number;
+  totalCardCount: number;
 }
 
 function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
@@ -546,6 +571,7 @@ export function recommendTravelCard(
         cardName: card.name,
         domestic,
         international,
+        extraFlights: null,
         forex,
         grossReturnInr,
         netReturnInr: grossReturnInr - forex.totalCostInr,
@@ -558,5 +584,253 @@ export function recommendTravelCard(
     travel,
     byCard,
     best: byCard[0] ?? null,
+  };
+}
+
+export function annualLoungeVisits(card: MockCard): number {
+  const dom = card.lounge.domestic?.annualCap ?? 0;
+  const intl = card.lounge.international?.annualCap ?? 0;
+  return dom + intl;
+}
+
+export function loungeCoverageRatio(
+  card: MockCard,
+  tripsPerYear: number,
+): number | null {
+  if (tripsPerYear <= 0) return null;
+  return annualLoungeVisits(card) / (tripsPerYear * LOUNGE_TRIPS_MULTIPLIER);
+}
+
+interface PriorityFilterContext {
+  tripsPerYear: number;
+  internationalPercentage: number;
+}
+
+function filterCardsByPriority(
+  cards: MockCard[],
+  priorities: TravelPriority[],
+  ctx: PriorityFilterContext,
+): MockCard[] {
+  if (priorities.length === 0) return cards;
+  return cards.filter((card) => {
+    for (const p of priorities) {
+      if (p === "maximumRewards") continue;
+      if (p === "lowForex") {
+        // Forex filter only applies when foreign travel exceeds the threshold.
+        if (ctx.internationalPercentage <= LOW_FOREX_MIN_INTL_PERCENTAGE) continue;
+        const effectiveForex =
+          card.forex_markup_percentage * LOW_FOREX_GST_MULTIPLIER;
+        if (effectiveForex > LOW_FOREX_MAX_WITH_GST_PERCENTAGE) return false;
+      }
+      if (p === "loungeAccess") {
+        const ratio = loungeCoverageRatio(card, ctx.tripsPerYear);
+        if (ratio !== null && ratio < LOUNGE_MIN_COVERAGE_RATIO) return false;
+      }
+    }
+    return true;
+  });
+}
+
+interface ThreeSegmentSharedCapEntry {
+  label: "domestic" | "international" | "extraFlights";
+  segment: SegmentReturn;
+  tripsForGroup: number;
+}
+
+function applySharedCapGroupsMulti(
+  cardId: string,
+  segments: ThreeSegmentSharedCapEntry[],
+  index: Map<string, MockBestOf>,
+): Record<"domestic" | "international" | "extraFlights", SegmentReturn | null> {
+  // Collect participants across all provided segments. We reuse the existing
+  // shared-cap mechanics but generalise the segment label so extra-flights
+  // participates in the same pools.
+  const allParticipants: (SharedCapParticipant & {
+    segLabel: "domestic" | "international" | "extraFlights";
+  })[] = [];
+  for (const s of segments) {
+    if (s.segment.totalSpend <= 0) continue;
+    const ps = collectSharedCapParticipants(
+      cardId,
+      // collectSharedCapParticipants's `segment` field is a label only used
+      // for override lookup; we override the label after the call.
+      "domestic",
+      s.segment,
+      index,
+      s.tripsForGroup,
+    );
+    for (const p of ps) {
+      allParticipants.push({ ...p, segLabel: s.label });
+    }
+  }
+
+  const byGroup = new Map<
+    string,
+    (SharedCapParticipant & { segLabel: "domestic" | "international" | "extraFlights" })[]
+  >();
+  for (const p of allParticipants) {
+    const seg = segments.find((s) => s.label === p.segLabel)!.segment;
+    const cat = seg[p.category as "flights" | "hotels" | "other"];
+    const bestOf = index.get(`${cardId}::${cat.category}`);
+    const group =
+      cat.source === "voucher"
+        ? bestOf?.bestVoucher?.sharedCapGroup
+        : bestOf?.bestDirectSwipe?.sharedCapGroup;
+    if (!group) continue;
+    const key = sharedCapGroupKey(group);
+    const list = byGroup.get(key) ?? [];
+    list.push(p);
+    byGroup.set(key, list);
+  }
+
+  const overrides = new Map<string, number>();
+  for (const members of byGroup.values()) {
+    if (members.length <= 1) continue;
+    const B = members[0].rewardCapAnnualValueInr;
+    if (B <= 0) continue;
+    const sorted = [...members].sort((a, b) => b.rate - a.rate);
+    let remaining = B;
+    for (const m of sorted) {
+      const potential = (m.coveredSpend * m.rate) / 100;
+      const accelerated = Math.min(potential, remaining);
+      overrides.set(
+        `${m.segLabel}::${m.category}`,
+        participantReturn(m, accelerated),
+      );
+      remaining = Math.max(0, remaining - accelerated);
+    }
+  }
+
+  const apply = (
+    label: "domestic" | "international" | "extraFlights",
+    seg: SegmentReturn,
+  ): SegmentReturn => {
+    const upd = (cat: CategoryReturn): CategoryReturn => {
+      const key = `${label}::${cat.category}`;
+      if (!overrides.has(key)) return cat;
+      const returnInr = overrides.get(key)!;
+      return withEffectiveRate({ ...cat, returnInr });
+    };
+    const flights = upd(seg.flights);
+    const hotels = upd(seg.hotels);
+    const other = upd(seg.other);
+    return {
+      flights,
+      hotels,
+      other,
+      totalSpend: seg.totalSpend,
+      totalReturnInr: flights.returnInr + hotels.returnInr + other.returnInr,
+    };
+  };
+
+  const out: Record<
+    "domestic" | "international" | "extraFlights",
+    SegmentReturn | null
+  > = { domestic: null, international: null, extraFlights: null };
+  for (const s of segments) {
+    out[s.label] = apply(s.label, s.segment);
+  }
+  return out;
+}
+
+export function recommendTravelCardAdvanced(
+  input: TravelCardPhaseTwoInput,
+  cards: MockCard[] = MOCK_CARDS,
+  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+): TravelEngineAdvancedResult {
+  const travel = travelCardPhaseTwoRecommendation(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const activeCards = cards.filter((c) => c.is_active);
+  const filtered = filterCardsByPriority(activeCards, input.travelPriority, {
+    tripsPerYear: input.tripsPerYear,
+    internationalPercentage: travel.split.internationalPercentage,
+  });
+
+  const byCard = filtered
+    .map<CardTravelReturn>((card) => {
+      const rawDomestic = buildSegment(
+        travel.categorySpend.domestic,
+        card,
+        index,
+        travel.bookings.domestic,
+      );
+      const rawInternational = buildSegment(
+        travel.categorySpend.international,
+        card,
+        index,
+        travel.bookings.international,
+      );
+      const hasExtra = travel.additionalFlightSpend > 0;
+      const rawExtra = hasExtra
+        ? buildSegment(
+            travel.categorySpend.extraFlights,
+            card,
+            index,
+            travel.bookings.extraFlightsSpreadMonths,
+          )
+        : null;
+
+      const segmentsForCap: ThreeSegmentSharedCapEntry[] = [
+        {
+          label: "domestic",
+          segment: rawDomestic,
+          tripsForGroup: input.tripsPerYear,
+        },
+        {
+          label: "international",
+          segment: rawInternational,
+          tripsForGroup: input.tripsPerYear,
+        },
+      ];
+      if (rawExtra) {
+        segmentsForCap.push({
+          label: "extraFlights",
+          segment: rawExtra,
+          tripsForGroup: travel.bookings.extraFlightsSpreadMonths,
+        });
+      }
+
+      const adjusted = applySharedCapGroupsMulti(
+        card._id,
+        segmentsForCap,
+        index,
+      );
+
+      const domestic = adjusted.domestic ?? rawDomestic;
+      const international = adjusted.international ?? rawInternational;
+      const extraFlights = rawExtra ? adjusted.extraFlights ?? rawExtra : null;
+
+      const forex = computeForexCost(
+        travel.forex.applicableSpend,
+        travel.forex.gstPercentage,
+        card.forex_markup_percentage,
+      );
+
+      const grossReturnInr =
+        domestic.totalReturnInr +
+        international.totalReturnInr +
+        (extraFlights?.totalReturnInr ?? 0);
+
+      return {
+        cardId: card._id,
+        cardName: card.name,
+        domestic,
+        international,
+        extraFlights,
+        forex,
+        grossReturnInr,
+        netReturnInr: grossReturnInr - forex.totalCostInr,
+      };
+    })
+    .sort((a, b) => b.netReturnInr - a.netReturnInr);
+
+  return {
+    input,
+    travel,
+    byCard,
+    best: byCard[0] ?? null,
+    filteredCardCount: filtered.length,
+    totalCardCount: activeCards.length,
   };
 }
