@@ -40,6 +40,18 @@ import {
   type CardAllRounderReturn,
   type SubBucketReturn,
 } from "@/lib/logic/advisor/allrounderEngine";
+import {
+  recommendFoodCardPhaseOne,
+  recommendFoodCardPhaseTwo,
+  type CardFoodReturn,
+  type FoodCardEngineResult,
+  type FoodCardEngineResultTwo,
+  type FoodDeliveryPlatformPreferenceTwo,
+  type FoodDiningPlatformPreference,
+  type FoodPlatformPreference,
+  type FoodStreamReturn,
+  type FoodSubReturn,
+} from "@/lib/logic/advisor/foodCardEngine";
 
 const TRAVEL_MIX_OPTIONS: { label: string; value: TravelMix }[] = [
   { label: "Only domestic", value: "only_domestic" },
@@ -962,6 +974,536 @@ function AllRounderPhaseTwoForm() {
   );
 }
 
+const FOOD_DELIVERY_FREQ_OPTIONS: { label: string; value: number }[] = [
+  { label: "Rarely or never", value: 1 },
+  { label: "1–2 times a week", value: 6 },
+  { label: "3–5 times a week", value: 16 },
+  { label: "6+ times a week", value: 25 },
+];
+
+const DINING_FREQ_OPTIONS: { label: string; value: number }[] = [
+  { label: "1–2 times a month", value: 2 },
+  { label: "3–5 times a month", value: 4 },
+  { label: "1–2 times a week", value: 6 },
+  { label: "3+ times a week", value: 14 },
+];
+const FOOD_PLATFORM_OPTIONS: { label: string; value: FoodPlatformPreference }[] =
+  [
+    { label: "Swiggy", value: "swiggy" },
+    { label: "Zomato", value: "zomato" },
+    { label: "Both", value: "both" },
+    { label: "None", value: "none" },
+  ];
+
+function FoodSubRow({ sub }: { sub: FoodSubReturn }) {
+  return (
+    <div className="flex justify-between items-start gap-4 py-1 text-sm">
+      <div>
+        <div>{sub.label}</div>
+        <div className="text-xs text-muted-foreground">
+          {inr(sub.spend)} @ {pct(sub.effectivePercentage)} ({sub.source}
+          {sub.merchant ? ` · ${sub.merchant}` : ""})
+        </div>
+      </div>
+      <div className="text-right font-semibold text-green-500">
+        +{inr(sub.returnInr)}
+      </div>
+    </div>
+  );
+}
+
+function FoodStreamBlock({
+  title,
+  stream,
+}: {
+  title: string;
+  stream: FoodStreamReturn;
+}) {
+  if (stream.spend <= 0) return null;
+  return (
+    <div className="rounded-lg border border-white/10 p-4">
+      <div className="flex justify-between text-sm font-semibold mb-2">
+        <span>{title}</span>
+        <span>{inr(stream.spend)}/yr</span>
+      </div>
+      {stream.subs.map((s, i) => (
+        <FoodSubRow key={i} sub={s} />
+      ))}
+      <div className="flex justify-between text-sm mt-2 pt-2 border-t border-white/10">
+        <span>Stream return</span>
+        <span className="font-semibold text-green-500">
+          +{inr(stream.returnInr)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FoodCardResult({
+  result,
+  rank,
+}: {
+  result: CardFoodReturn;
+  rank: number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/15 p-5 text-white space-y-4">
+      <div className="flex justify-between items-baseline">
+        <div>
+          <div className="text-xs text-muted-foreground">#{rank + 1}</div>
+          <h3 className="text-lg font-semibold">{result.cardName}</h3>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xl font-bold text-green-500">
+            {inr(result.annualReturnInr)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {pct(result.effectiveRatePercentage)} effective
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <FoodStreamBlock title="Online delivery" stream={result.delivery} />
+        <FoodStreamBlock title="Offline dining" stream={result.dining} />
+      </div>
+    </div>
+  );
+}
+
+function FoodCardPhaseOneForm() {
+  const [deliveryFreq, setDeliveryFreq] = useState("6");
+  const [diningFreq, setDiningFreq] = useState("4");
+  const [platform, setPlatform] = useState<FoodPlatformPreference>("both");
+  const [result, setResult] = useState<FoodCardEngineResult | null>(null);
+
+  const onCalculate = () => {
+    const d = Number(deliveryFreq);
+    const o = Number(diningFreq);
+    if (!Number.isFinite(d) || d < 0) return;
+    if (!Number.isFinite(o) || o < 0) return;
+
+    setResult(
+      recommendFoodCardPhaseOne({
+        onlineFoodDeliveryFrequency: d,
+        diningOutFrequency: o,
+        foodDeliveryPlatformPreference: platform,
+      }),
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Online food delivery / month
+          </Label>
+          <Select value={deliveryFreq} onValueChange={setDeliveryFreq}>
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              {FOOD_DELIVERY_FREQ_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={String(o.value)}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Dining out / month
+          </Label>
+          <Select value={diningFreq} onValueChange={setDiningFreq}>
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              {DINING_FREQ_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={String(o.value)}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Delivery platform preference
+          </Label>
+          <Select
+            value={platform}
+            onValueChange={(v) => setPlatform(v as FoodPlatformPreference)}
+          >
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select platform" />
+            </SelectTrigger>
+            <SelectContent>
+              {FOOD_PLATFORM_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Button onClick={onCalculate} className="w-full md:w-auto">
+        Recommend food card
+      </Button>
+
+      {result && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/15 p-5 text-white space-y-3">
+            <h2 className="text-lg font-semibold">
+              Phase 1 — food spend breakdown
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 text-sm">
+              <div>
+                Annual delivery spend:{" "}
+                {inr(result.spend.annualDeliverySpend)}
+              </div>
+              <div>
+                Annual dining-out spend:{" "}
+                {inr(result.spend.annualDiningSpend)}
+              </div>
+              <div>Annual total: {inr(result.spend.annualTotal)}</div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Allocation</span>
+                <span className="text-right">Annual spend</span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Swiggy</span>
+                <span className="text-right">
+                  {inr(result.spend.platformAllocation.swiggy)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Zomato</span>
+                <span className="text-right">
+                  {inr(result.spend.platformAllocation.zomato)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Other delivery</span>
+                <span className="text-right">
+                  {inr(result.spend.platformAllocation.other)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Offline dining</span>
+                <span className="text-right">
+                  {inr(result.spend.platformAllocation.offlineDining)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {result.best && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/5 p-5 text-white">
+              <div className="text-xs uppercase text-green-400">
+                Best card for this profile
+              </div>
+              <div className="text-2xl font-bold">{result.best.cardName}</div>
+              <div className="text-sm text-muted-foreground">
+                Annual return:{" "}
+                <span className="text-green-500 font-semibold">
+                  {inr(result.best.annualReturnInr)}
+                </span>{" "}
+                ({pct(result.best.effectiveRatePercentage)} effective)
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {result.byCard.map((row, idx) => (
+              <FoodCardResult key={row.cardId} result={row} rank={idx} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const FOOD_DELIVERY_PLATFORM_OPTIONS_TWO: {
+  label: string;
+  value: FoodDeliveryPlatformPreferenceTwo;
+}[] = [
+  { label: "Swiggy", value: "swiggy" },
+  { label: "Zomato", value: "zomato" },
+  { label: "Others", value: "others" },
+];
+
+const FOOD_DINING_PLATFORM_OPTIONS: {
+  label: string;
+  value: FoodDiningPlatformPreference;
+}[] = [
+  { label: "Swiggy Dineout", value: "swiggy_dineout" },
+  { label: "Zomato District", value: "zomato_district" },
+  { label: "EazyDiner", value: "eazydiner" },
+  { label: "Direct restaurant payment", value: "others" },
+];
+
+function FoodCardPhaseTwoForm() {
+  const [deliveryFreq, setDeliveryFreq] = useState("6");
+  const [diningFreq, setDiningFreq] = useState("4");
+  const [deliveryAvg, setDeliveryAvg] = useState("700");
+  const [diningAvg, setDiningAvg] = useState("2000");
+  const [deliveryPlatform, setDeliveryPlatform] =
+    useState<FoodDeliveryPlatformPreferenceTwo>("swiggy");
+  const [diningPlatform, setDiningPlatform] =
+    useState<FoodDiningPlatformPreference>("swiggy_dineout");
+  const [result, setResult] = useState<FoodCardEngineResultTwo | null>(null);
+
+  const onCalculate = () => {
+    const d = Number(deliveryFreq);
+    const o = Number(diningFreq);
+    const dAvg = Number(deliveryAvg);
+    const oAvg = Number(diningAvg);
+    if (!Number.isFinite(d) || d < 0) return;
+    if (!Number.isFinite(o) || o < 0) return;
+    if (!Number.isFinite(dAvg) || dAvg < 0) return;
+    if (!Number.isFinite(oAvg) || oAvg < 0) return;
+
+    setResult(
+      recommendFoodCardPhaseTwo({
+        onlineFoodDeliveryFrequency: d,
+        diningOutFrequency: o,
+        onlineFoodDeliveryAverageSpend: dAvg,
+        diningOutAverageSpend: oAvg,
+        foodDeliveryPlatformPreference: deliveryPlatform,
+        diningOutPlatformPreference: diningPlatform,
+      }),
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Online food delivery / month
+          </Label>
+          <Select value={deliveryFreq} onValueChange={setDeliveryFreq}>
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              {FOOD_DELIVERY_FREQ_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={String(o.value)}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Dining out / month
+          </Label>
+          <Select value={diningFreq} onValueChange={setDiningFreq}>
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              {DINING_FREQ_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={String(o.value)}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Avg delivery order (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={deliveryAvg}
+            className="text-white"
+            onChange={(e) => setDeliveryAvg(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Avg dining bill (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={diningAvg}
+            className="text-white"
+            onChange={(e) => setDiningAvg(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Delivery platform preference
+          </Label>
+          <Select
+            value={deliveryPlatform}
+            onValueChange={(v) =>
+              setDeliveryPlatform(v as FoodDeliveryPlatformPreferenceTwo)
+            }
+          >
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select platform" />
+            </SelectTrigger>
+            <SelectContent>
+              {FOOD_DELIVERY_PLATFORM_OPTIONS_TWO.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Dining payment route
+          </Label>
+          <Select
+            value={diningPlatform}
+            onValueChange={(v) =>
+              setDiningPlatform(v as FoodDiningPlatformPreference)
+            }
+          >
+            <SelectTrigger className="h-12 text-white">
+              <SelectValue placeholder="Select payment route" />
+            </SelectTrigger>
+            <SelectContent>
+              {FOOD_DINING_PLATFORM_OPTIONS.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Button onClick={onCalculate} className="w-full md:w-auto">
+        Recommend food card
+      </Button>
+
+      {result && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/15 p-5 text-white space-y-3">
+            <h2 className="text-lg font-semibold">
+              Phase 2 — food spend breakdown
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 text-sm">
+              <div>
+                Annual delivery spend:{" "}
+                {inr(result.spend.annualDeliverySpend)}
+              </div>
+              <div>
+                Annual dining-out spend:{" "}
+                {inr(result.spend.annualDiningSpend)}
+              </div>
+              <div>Annual total: {inr(result.spend.annualTotal)}</div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Delivery allocation</span>
+                <span className="text-right">Annual spend</span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Swiggy</span>
+                <span className="text-right">
+                  {inr(result.spend.deliveryAllocation.swiggy)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Zomato</span>
+                <span className="text-right">
+                  {inr(result.spend.deliveryAllocation.zomato)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Other delivery</span>
+                <span className="text-right">
+                  {inr(result.spend.deliveryAllocation.other)}
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Dining allocation</span>
+                <span className="text-right">Annual spend</span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Swiggy Dineout</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.swiggyDineout)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Zomato District</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.zomatoDistrict)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>EazyDiner</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.eazyDiner)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Direct restaurant payment</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.other)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {result.best && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/5 p-5 text-white">
+              <div className="text-xs uppercase text-green-400">
+                Best card for this profile
+              </div>
+              <div className="text-2xl font-bold">{result.best.cardName}</div>
+              <div className="text-sm text-muted-foreground">
+                Annual return:{" "}
+                <span className="text-green-500 font-semibold">
+                  {inr(result.best.annualReturnInr)}
+                </span>{" "}
+                ({pct(result.best.effectiveRatePercentage)} effective)
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {result.byCard.map((row, idx) => (
+              <FoodCardResult key={row.cardId} result={row} rank={idx} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Demo9Page() {
   return (
     <div className="min-h-screen p-6 mt-10 md:p-12 max-w-5xl mx-auto space-y-8">
@@ -980,6 +1522,8 @@ export default function Demo9Page() {
           <TabsTrigger value="all-rounder-two">
             All-rounder phase two
           </TabsTrigger>
+          <TabsTrigger value="food-one">Food card phase one</TabsTrigger>
+          <TabsTrigger value="food-two">Food card phase two</TabsTrigger>
         </TabsList>
         <TabsContent value="initial" className="mt-6">
           <InitialTravelForm />
@@ -992,6 +1536,12 @@ export default function Demo9Page() {
         </TabsContent>
         <TabsContent value="all-rounder-two" className="mt-6">
           <AllRounderPhaseTwoForm />
+        </TabsContent>
+        <TabsContent value="food-one" className="mt-6">
+          <FoodCardPhaseOneForm />
+        </TabsContent>
+        <TabsContent value="food-two" className="mt-6">
+          <FoodCardPhaseTwoForm />
         </TabsContent>
       </Tabs>
     </div>
