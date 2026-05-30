@@ -31,8 +31,10 @@ import type {
 import {
   ALL_ROUNDER_CATEGORIES,
   recommendAllRounderCardPhaseOne,
+  recommendAllRounderCardPhaseTwo,
   type AllRounderBucket,
   type AllRounderCategory,
+  type AllRounderEnginePhaseTwoResult,
   type AllRounderEngineResult,
   type BucketReturn,
   type CardAllRounderReturn,
@@ -774,14 +776,199 @@ function AllRounderPhaseOneForm() {
   );
 }
 
+interface PhaseTwoField {
+  key:
+    | "annualTravelSpend"
+    | "monthlyDining"
+    | "monthlyBills"
+    | "monthlyOnlineShopping"
+    | "monthlyFuel"
+    | "monthlyRentInsuranceFees";
+  label: string;
+}
+
+const PHASE_TWO_FIELDS: PhaseTwoField[] = [
+  { key: "annualTravelSpend", label: "Annual travel spend (₹)" },
+  { key: "monthlyDining", label: "Monthly food delivery & dining (₹)" },
+  { key: "monthlyBills", label: "Monthly bill payments (₹)" },
+  { key: "monthlyOnlineShopping", label: "Monthly online shopping (₹)" },
+  { key: "monthlyFuel", label: "Monthly fuel (₹)" },
+  {
+    key: "monthlyRentInsuranceFees",
+    label: "Monthly rent / insurance / taxes (₹)",
+  },
+];
+
+function AllRounderPhaseTwoForm() {
+  const [monthlyTotal, setMonthlyTotal] = useState("50000");
+  const [monthlyOnline, setMonthlyOnline] = useState("30000");
+  const [declared, setDeclared] = useState<
+    Record<PhaseTwoField["key"], string>
+  >({
+    annualTravelSpend: "240000",
+    monthlyDining: "15000",
+    monthlyBills: "10000",
+    monthlyOnlineShopping: "18000",
+    monthlyFuel: "8000",
+    monthlyRentInsuranceFees: "12000",
+  });
+  const [result, setResult] = useState<AllRounderEnginePhaseTwoResult | null>(
+    null,
+  );
+
+  const setField = (key: PhaseTwoField["key"], value: string) =>
+    setDeclared((prev) => ({ ...prev, [key]: value }));
+
+  const onCalculate = () => {
+    const T = Number(monthlyTotal);
+    const O = Number(monthlyOnline);
+    if (!Number.isFinite(T) || T <= 0) return;
+    if (!Number.isFinite(O) || O < 0) return;
+
+    const numericDeclared = PHASE_TWO_FIELDS.reduce<
+      Record<PhaseTwoField["key"], number>
+    >((acc, f) => {
+      const n = Number(declared[f.key]);
+      acc[f.key] = Number.isFinite(n) && n > 0 ? n : 0;
+      return acc;
+    }, {} as Record<PhaseTwoField["key"], number>);
+
+    setResult(
+      recommendAllRounderCardPhaseTwo({
+        averageTotalMonthlySpend: T,
+        averageOnlineMonthlySpend: O,
+        ...numericDeclared,
+      }),
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Average total monthly spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={monthlyTotal}
+            className="text-white"
+            onChange={(e) => setMonthlyTotal(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Average online monthly spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={monthlyOnline}
+            className="text-white"
+            onChange={(e) => setMonthlyOnline(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {PHASE_TWO_FIELDS.map((f) => (
+          <div key={f.key} className="space-y-2">
+            <Label className="text-white font-semibold">{f.label}</Label>
+            <Input
+              type="number"
+              min={0}
+              value={declared[f.key]}
+              className="text-white"
+              onChange={(e) => setField(f.key, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+
+      <Button onClick={onCalculate} className="w-full md:w-auto">
+        Recommend all-rounder card
+      </Button>
+
+      {result && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/15 p-5 text-white space-y-3">
+            <h2 className="text-lg font-semibold">
+              Phase 2 — declared spend distribution
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 text-sm">
+              <div>Monthly total: {inr(result.phaseTwo.monthlyTotal)}</div>
+              <div>
+                Monthly online: {inr(result.phaseTwo.monthlyOnline)} (target{" "}
+                {inr(result.input.averageOnlineMonthlySpend)})
+              </div>
+              <div>Annual total: {inr(result.annualTotal)}</div>
+              <div>Annual online: {inr(result.annualOnline)}</div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-4 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Category</span>
+                <span className="text-right">Total /mo</span>
+                <span className="text-right">Online</span>
+                <span className="text-right">Offline</span>
+              </div>
+              {(
+                Object.entries(result.phaseTwo.categories) as [
+                  AllRounderBucket,
+                  { total: number; online: number; offline: number },
+                ][]
+              )
+                .filter(([, v]) => v.total > 0)
+                .map(([k, v]) => (
+                  <div key={k} className="grid grid-cols-4 py-1 text-sm">
+                    <span>{ALL_ROUNDER_BUCKET_LABELS[k]}</span>
+                    <span className="text-right">{inr(v.total)}</span>
+                    <span className="text-right">{inr(v.online)}</span>
+                    <span className="text-right">{inr(v.offline)}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {result.best && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/5 p-5 text-white">
+              <div className="text-xs uppercase text-green-400">
+                Best card for this profile
+              </div>
+              <div className="text-2xl font-bold">{result.best.cardName}</div>
+              <div className="text-sm text-muted-foreground">
+                Annual return:{" "}
+                <span className="text-green-500 font-semibold">
+                  {inr(result.best.annualReturnInr)}
+                </span>{" "}
+                ({pct(result.best.effectiveRatePercentage)} effective)
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {result.byCard.map((row, idx) => (
+              <AllRounderCardResult
+                key={row.cardId}
+                result={row}
+                rank={idx}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Demo9Page() {
   return (
     <div className="min-h-screen p-6 mt-10 md:p-12 max-w-5xl mx-auto space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-white">Card Advisor</h1>
         <p className="text-sm text-muted-foreground">
-          Compare travel-card flows and the all-rounder phase-one
-          recommendation.
+          Compare travel-card flows and the all-rounder recommendations.
         </p>
       </div>
 
@@ -790,6 +977,9 @@ export default function Demo9Page() {
           <TabsTrigger value="initial">Initial travel journey</TabsTrigger>
           <TabsTrigger value="advanced">Full travel journey</TabsTrigger>
           <TabsTrigger value="all-rounder">All-rounder phase one</TabsTrigger>
+          <TabsTrigger value="all-rounder-two">
+            All-rounder phase two
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="initial" className="mt-6">
           <InitialTravelForm />
@@ -799,6 +989,9 @@ export default function Demo9Page() {
         </TabsContent>
         <TabsContent value="all-rounder" className="mt-6">
           <AllRounderPhaseOneForm />
+        </TabsContent>
+        <TabsContent value="all-rounder-two" className="mt-6">
+          <AllRounderPhaseTwoForm />
         </TabsContent>
       </Tabs>
     </div>
