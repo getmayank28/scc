@@ -28,6 +28,16 @@ import type {
   TravelMix,
   TravelPriority,
 } from "@/lib/logic/advisor/travel";
+import {
+  ALL_ROUNDER_CATEGORIES,
+  recommendAllRounderCardPhaseOne,
+  type AllRounderBucket,
+  type AllRounderCategory,
+  type AllRounderEngineResult,
+  type BucketReturn,
+  type CardAllRounderReturn,
+  type SubBucketReturn,
+} from "@/lib/logic/advisor/allrounderEngine";
 
 const TRAVEL_MIX_OPTIONS: { label: string; value: TravelMix }[] = [
   { label: "Only domestic", value: "only_domestic" },
@@ -494,13 +504,284 @@ function AdvancedTravelForm() {
   );
 }
 
+const ALL_ROUNDER_CATEGORY_LABELS: Record<AllRounderCategory, string> = {
+  travel: "Travel",
+  foodAndDining: "Food & Dining",
+  onlineShopping: "Online Shopping",
+  utilityBills: "Utility Bills",
+  fuel: "Fuel",
+  rentInsuranceFees: "Rent / Insurance / Fees",
+};
+
+const ALL_ROUNDER_BUCKET_LABELS: Record<AllRounderBucket, string> = {
+  ...ALL_ROUNDER_CATEGORY_LABELS,
+  others: "Others",
+};
+
+function SubBucketRow({ sub }: { sub: SubBucketReturn }) {
+  return (
+    <div className="flex justify-between items-start gap-4 py-1 text-sm">
+      <div>
+        <div>{sub.label}</div>
+        <div className="text-xs text-muted-foreground">
+          {inr(sub.spend)} @ {pct(sub.effectivePercentage)} ({sub.source}
+          {sub.merchant ? ` · ${sub.merchant}` : ""})
+        </div>
+      </div>
+      <div className="text-right font-semibold text-green-500">
+        +{inr(sub.returnInr)}
+      </div>
+    </div>
+  );
+}
+
+function BucketBlock({ bucket }: { bucket: BucketReturn }) {
+  const hasOnline = bucket.online.subs.length > 0;
+  const hasOffline = bucket.offline.subs.length > 0;
+  if (bucket.annualSpend <= 0) return null;
+  return (
+    <div className="rounded-lg border border-white/10 p-4">
+      <div className="flex justify-between text-sm font-semibold mb-2">
+        <span>{ALL_ROUNDER_BUCKET_LABELS[bucket.bucket]}</span>
+        <span>{inr(bucket.annualSpend)}/yr</span>
+      </div>
+      {hasOnline && (
+        <div className="mb-2">
+          <div className="text-xs uppercase text-muted-foreground mb-1">
+            Online {inr(bucket.online.pot)}
+          </div>
+          {bucket.online.subs.map((s, i) => (
+            <SubBucketRow key={`on-${i}`} sub={s} />
+          ))}
+        </div>
+      )}
+      {hasOffline && (
+        <div>
+          <div className="text-xs uppercase text-muted-foreground mb-1">
+            Offline {inr(bucket.offline.pot)}
+          </div>
+          {bucket.offline.subs.map((s, i) => (
+            <SubBucketRow key={`off-${i}`} sub={s} />
+          ))}
+        </div>
+      )}
+      <div className="flex justify-between text-sm mt-2 pt-2 border-t border-white/10">
+        <span>Bucket return</span>
+        <span className="font-semibold text-green-500">
+          +{inr(bucket.totalReturnInr)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AllRounderCardResult({
+  result,
+  rank,
+}: {
+  result: CardAllRounderReturn;
+  rank: number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/15 p-5 text-white space-y-4">
+      <div className="flex justify-between items-baseline">
+        <div>
+          <div className="text-xs text-muted-foreground">#{rank + 1}</div>
+          <h3 className="text-lg font-semibold">{result.cardName}</h3>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xl font-bold text-green-500">
+            {inr(result.annualReturnInr)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {pct(result.effectiveRatePercentage)} effective
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        {Object.values(result.buckets).map((b) => (
+          <BucketBlock key={b.bucket} bucket={b} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AllRounderPhaseOneForm() {
+  const [monthlyTotal, setMonthlyTotal] = useState("50000");
+  const [monthlyOnline, setMonthlyOnline] = useState("30000");
+  const [selected, setSelected] = useState<AllRounderCategory[]>([
+    "foodAndDining",
+    "onlineShopping",
+  ]);
+  const [result, setResult] = useState<AllRounderEngineResult | null>(null);
+
+  const toggleCategory = (cat: AllRounderCategory, checked: boolean) => {
+    setSelected((prev) => {
+      if (checked) {
+        if (prev.includes(cat)) return prev;
+        return [...prev, cat].slice(-2);
+      }
+      return prev.filter((x) => x !== cat);
+    });
+  };
+
+  const onCalculate = () => {
+    const T = Number(monthlyTotal);
+    const O = Number(monthlyOnline);
+    if (!Number.isFinite(T) || T <= 0) return;
+    if (!Number.isFinite(O) || O < 0) return;
+
+    setResult(
+      recommendAllRounderCardPhaseOne({
+        averageTotalMonthlySpend: T,
+        averageOnlineMonthlySpend: O,
+        mostSpendCategory: selected,
+      }),
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Average total monthly spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={monthlyTotal}
+            className="text-white"
+            onChange={(e) => setMonthlyTotal(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Average online monthly spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={monthlyOnline}
+            className="text-white"
+            onChange={(e) => setMonthlyOnline(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-white font-semibold">
+          Most spend categories (pick 1 or 2)
+        </Label>
+        <div className="flex flex-wrap gap-4">
+          {ALL_ROUNDER_CATEGORIES.map((cat) => {
+            const checked = selected.includes(cat);
+            const disabled = !checked && selected.length >= 2;
+            return (
+              <label
+                key={cat}
+                className={`flex items-center gap-2 text-sm text-white ${
+                  disabled ? "opacity-50" : ""
+                }`}
+              >
+                <Checkbox
+                  checked={checked}
+                  disabled={disabled}
+                  onCheckedChange={(v) => toggleCategory(cat, v === true)}
+                />
+                {ALL_ROUNDER_CATEGORY_LABELS[cat]}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <Button onClick={onCalculate} className="w-full md:w-auto">
+        Recommend all-rounder card
+      </Button>
+
+      {result && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/15 p-5 text-white space-y-3">
+            <h2 className="text-lg font-semibold">
+              Phase 1 — calibrated spend distribution
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 text-sm">
+              <div>Monthly total: {inr(result.phaseOne.monthlyTotal)}</div>
+              <div>
+                Monthly online: {inr(result.phaseOne.monthlyOnline)} (target{" "}
+                {inr(result.input.averageOnlineMonthlySpend)})
+              </div>
+              <div>Annual total: {inr(result.annualTotal)}</div>
+              <div>Annual online: {inr(result.annualOnline)}</div>
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-4 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Category</span>
+                <span className="text-right">Total /mo</span>
+                <span className="text-right">Online</span>
+                <span className="text-right">Offline</span>
+              </div>
+              {(
+                Object.entries(result.phaseOne.categories) as [
+                  AllRounderBucket,
+                  { total: number; online: number; offline: number },
+                ][]
+              )
+                .filter(([, v]) => v.total > 0)
+                .map(([k, v]) => (
+                  <div key={k} className="grid grid-cols-4 py-1 text-sm">
+                    <span>{ALL_ROUNDER_BUCKET_LABELS[k]}</span>
+                    <span className="text-right">{inr(v.total)}</span>
+                    <span className="text-right">{inr(v.online)}</span>
+                    <span className="text-right">{inr(v.offline)}</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {result.best && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/5 p-5 text-white">
+              <div className="text-xs uppercase text-green-400">
+                Best card for this profile
+              </div>
+              <div className="text-2xl font-bold">{result.best.cardName}</div>
+              <div className="text-sm text-muted-foreground">
+                Annual return:{" "}
+                <span className="text-green-500 font-semibold">
+                  {inr(result.best.annualReturnInr)}
+                </span>{" "}
+                ({pct(result.best.effectiveRatePercentage)} effective)
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {result.byCard.map((row, idx) => (
+              <AllRounderCardResult
+                key={row.cardId}
+                result={row}
+                rank={idx}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Demo9Page() {
   return (
     <div className="min-h-screen p-6 mt-10 md:p-12 max-w-5xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-white">Travel Card Advisor</h1>
+        <h1 className="text-2xl font-bold text-white">Card Advisor</h1>
         <p className="text-sm text-muted-foreground">
-          Compare the initial and advanced travel-card recommendation flows.
+          Compare travel-card flows and the all-rounder phase-one
+          recommendation.
         </p>
       </div>
 
@@ -508,12 +789,16 @@ export default function Demo9Page() {
         <TabsList>
           <TabsTrigger value="initial">Initial travel journey</TabsTrigger>
           <TabsTrigger value="advanced">Full travel journey</TabsTrigger>
+          <TabsTrigger value="all-rounder">All-rounder phase one</TabsTrigger>
         </TabsList>
         <TabsContent value="initial" className="mt-6">
           <InitialTravelForm />
         </TabsContent>
         <TabsContent value="advanced" className="mt-6">
           <AdvancedTravelForm />
+        </TabsContent>
+        <TabsContent value="all-rounder" className="mt-6">
+          <AllRounderPhaseOneForm />
         </TabsContent>
       </Tabs>
     </div>

@@ -8,6 +8,9 @@ export const CATEGORIES = {
   ONLINE_SHOPPING: "online_shopping",
   UTILITIES: "utilities",
   OTHER: "other",
+  RENT: "rent",
+  INSURANCE: "insurance",
+  FEES_TAXES: "fees_taxes",
 } as const;
 
 export type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
@@ -85,6 +88,13 @@ export interface MockCard {
   ideal_for: string[];
   not_ideal_for: string[];
   is_active: boolean;
+
+  // Categories where the card's base reward rate does NOT apply. Specific
+  // merchant rules still earn at their declared rate; spend that doesn't match
+  // any merchant rule earns 0% (instead of falling back to the base rate).
+  // Example: ICICI Amazon Pay excludes UTILITIES — only Amazon-routed utility
+  // (UTILITIES_AMAZON merchant) earns 2%; everything else earns 0%, not 1%.
+  excluded_categories?: Category[];
 }
 
 export const MOCK_CARDS: MockCard[] = [
@@ -152,6 +162,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Those wanting simple flat cashback",
     ],
     is_active: true,
+    // FUEL: 1% surcharge + GST = -0.85% net (treat as excluded for engine).
+    // RENT: MCC 6513 excluded from Aug 2024 + 1% fee.
+    excluded_categories: [CATEGORIES.FUEL, CATEGORIES.RENT],
   },
   {
     _id: "card_axis_ace",
@@ -208,6 +221,12 @@ export const MOCK_CARDS: MockCard[] = [
       "People who spend primarily on fuel (no accelerated rate on fuel)",
     ],
     is_active: true,
+    // FUEL/INSURANCE/RENT all excluded on ACE.
+    excluded_categories: [
+      CATEGORIES.FUEL,
+      CATEGORIES.INSURANCE,
+      CATEGORIES.RENT,
+    ],
   },
   {
     _id: "card_sbi_simplyclick",
@@ -257,6 +276,14 @@ export const MOCK_CARDS: MockCard[] = [
       "Users needing lounge access",
     ],
     is_active: true,
+    // FUEL: MCC 5541/5542/5172/5983 excluded (BPCL SmartDrive voucher still
+    // earns). RENT: excluded from Apr 2024. FEES_TAXES: govt MCCs excluded
+    // from Jun 2024 (Cleartax voucher still earns).
+    excluded_categories: [
+      CATEGORIES.FUEL,
+      CATEGORIES.RENT,
+      CATEGORIES.FEES_TAXES,
+    ],
   },
   {
     _id: "card_icici_amazon_pay",
@@ -313,6 +340,15 @@ export const MOCK_CARDS: MockCard[] = [
       "Cardholders needing forex spends (3.4% forex markup on spending abroad is on the higher side for a no-fee card)",
     ],
     is_active: true,
+    // UTILITIES: non-Amazon utility earns 0% (Amazon utility merchant rule
+    // still earns 2%). FUEL: excluded (surcharge waiver only). RENT: MCC 6513
+    // excluded from Oct 2025. FEES_TAXES: govt MCC 9311 excluded.
+    excluded_categories: [
+      CATEGORIES.UTILITIES,
+      CATEGORIES.FUEL,
+      CATEGORIES.RENT,
+      CATEGORIES.FEES_TAXES,
+    ],
   },
   {
     _id: "card_amex_mrcc",
@@ -363,5 +399,16 @@ export const MOCK_CARDS: MockCard[] = [
       "Low monthly spenders who won't hit ₹20K milestone",
     ],
     is_active: true,
+    // UTILITIES: MCC 4900/4811/4899 excluded (mobile/broadband/DTH still earn
+    // via UTILITY_OTHERS rule). FUEL: excluded from Jun 2025 (1.18% net cost
+    // from surcharge — engine models as 0% reward). INSURANCE: MCC 6300/5960
+    // excluded. RENT: MCC 6513 excluded via CRED/PayTM/Cheq (myHQ / Rentomojo
+    // vouchers still earn).
+    excluded_categories: [
+      CATEGORIES.UTILITIES,
+      CATEGORIES.FUEL,
+      CATEGORIES.INSURANCE,
+      CATEGORIES.RENT,
+    ],
   },
 ];

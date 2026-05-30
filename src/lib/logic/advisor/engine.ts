@@ -208,7 +208,7 @@ function computeVoucherReturn(
   );
 }
 
-function computeCategoryReturn(
+export function computeCategoryReturn(
   spend: number,
   category: Category,
   card: MockCard,
