@@ -287,37 +287,55 @@ function evaluateStream(
   };
 }
 
+// Phase-agnostic per-card scorer. Callers build the delivery and dining
+// specs from their own allocation rules; this collapses the per-stream
+// returns into a single ranked card row.
+function scoreCardFromStreams(
+  card: MockCard,
+  deliverySpend: number,
+  deliverySpecs: FoodSubSpec[],
+  diningSpend: number,
+  diningSpecs: FoodSubSpec[],
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+): CardFoodReturn {
+  const delivery = evaluateStream(
+    deliverySpecs,
+    deliverySpend,
+    card,
+    index,
+    rules,
+  );
+  const dining = evaluateStream(diningSpecs, diningSpend, card, index, rules);
+  const annualReturnInr = delivery.returnInr + dining.returnInr;
+  const annualSpend = deliverySpend + diningSpend;
+  return {
+    cardId: card._id,
+    cardName: card.name,
+    delivery,
+    dining,
+    annualSpend,
+    annualReturnInr,
+    effectiveRatePercentage:
+      annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+  };
+}
+
 function scoreCard(
   card: MockCard,
   spend: FoodSpendBreakdown,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
 ): CardFoodReturn {
-  const delivery = evaluateStream(
-    buildDeliverySpecs(spend),
+  return scoreCardFromStreams(
+    card,
     spend.annualDeliverySpend,
-    card,
-    index,
-    rules,
-  );
-  const dining = evaluateStream(
-    buildDiningSpecs(spend),
+    buildDeliverySpecs(spend),
     spend.annualDiningSpend,
-    card,
+    buildDiningSpecs(spend),
     index,
     rules,
   );
-  const annualReturnInr = delivery.returnInr + dining.returnInr;
-  return {
-    cardId: card._id,
-    cardName: card.name,
-    delivery,
-    dining,
-    annualSpend: spend.annualTotal,
-    annualReturnInr,
-    effectiveRatePercentage:
-      spend.annualTotal > 0 ? (annualReturnInr / spend.annualTotal) * 100 : 0,
-  };
 }
 
 export function recommendFoodCardPhaseOne(
@@ -340,4 +358,241 @@ export function recommendFoodCardPhaseOne(
     byCard,
     best: byCard[0] ?? null,
   };
+}
+
+// ============================================================================
+// Phase 2 — declared per-bill amounts + explicit dining payment route
+// ============================================================================
+//
+// Phase 2 replaces phase 1's flat ₹700 / ₹2000 assumptions with user-supplied
+// per-bill amounts and adds a `diningOutPlatformPreference` so the dining pot
+// can route to aggregators (Swiggy Dineout, Zomato District, EazyDiner) that
+// have their own merchant rules. Delivery preference loses the "both" option;
+// "swiggy"/"zomato" now split 80/20 (vs. 75/25 in phase 1).
+
+export type FoodDeliveryPlatformPreferenceTwo = "swiggy" | "zomato" | "others";
+
+export type FoodDiningPlatformPreference =
+  | "swiggy_dineout"
+  | "zomato_district"
+  | "eazydiner"
+  | "others";
+
+export interface FoodCardPhaseTwoInput {
+  onlineFoodDeliveryFrequency: number;
+  diningOutFrequency: number;
+  onlineFoodDeliveryAverageSpend: number;
+  diningOutAverageSpend: number;
+  foodDeliveryPlatformPreference: FoodDeliveryPlatformPreferenceTwo;
+  diningOutPlatformPreference: FoodDiningPlatformPreference;
+}
+
+interface DeliverySharesTwo {
+  swiggy: number;
+  zomato: number;
+  other: number;
+}
+
+interface DiningShares {
+  swiggyDineout: number;
+  zomatoDistrict: number;
+  eazyDiner: number;
+  other: number;
+}
+
+function deliverySharesTwo(
+  pref: FoodDeliveryPlatformPreferenceTwo,
+): DeliverySharesTwo {
+  switch (pref) {
+    case "swiggy":
+      return { swiggy: 0.8, zomato: 0, other: 0.2 };
+    case "zomato":
+      return { swiggy: 0, zomato: 0.8, other: 0.2 };
+    case "others":
+      return { swiggy: 0, zomato: 0, other: 1 };
+  }
+}
+
+function diningShares(pref: FoodDiningPlatformPreference): DiningShares {
+  switch (pref) {
+    case "swiggy_dineout":
+      return {
+        swiggyDineout: 0.7,
+        zomatoDistrict: 0,
+        eazyDiner: 0,
+        other: 0.3,
+      };
+    case "zomato_district":
+      return {
+        swiggyDineout: 0,
+        zomatoDistrict: 0.7,
+        eazyDiner: 0,
+        other: 0.3,
+      };
+    case "eazydiner":
+      return {
+        swiggyDineout: 0,
+        zomatoDistrict: 0,
+        eazyDiner: 0.7,
+        other: 0.3,
+      };
+    case "others":
+      return { swiggyDineout: 0, zomatoDistrict: 0, eazyDiner: 0, other: 1 };
+  }
+}
+
+export interface FoodSpendBreakdownTwo {
+  annualDeliverySpend: number;
+  annualDiningSpend: number;
+  annualTotal: number;
+  deliveryAllocation: {
+    swiggy: number;
+    zomato: number;
+    other: number;
+  };
+  diningAllocation: {
+    swiggyDineout: number;
+    zomatoDistrict: number;
+    eazyDiner: number;
+    other: number;
+  };
+}
+
+export function buildFoodSpendBreakdownTwo(
+  input: FoodCardPhaseTwoInput,
+): FoodSpendBreakdownTwo {
+  const delivery =
+    Math.max(0, input.onlineFoodDeliveryFrequency) *
+    Math.max(0, input.onlineFoodDeliveryAverageSpend) *
+    MONTHS_PER_YEAR;
+  const dining =
+    Math.max(0, input.diningOutFrequency) *
+    Math.max(0, input.diningOutAverageSpend) *
+    MONTHS_PER_YEAR;
+  const dShares = deliverySharesTwo(input.foodDeliveryPlatformPreference);
+  const oShares = diningShares(input.diningOutPlatformPreference);
+  return {
+    annualDeliverySpend: delivery,
+    annualDiningSpend: dining,
+    annualTotal: delivery + dining,
+    deliveryAllocation: {
+      swiggy: delivery * dShares.swiggy,
+      zomato: delivery * dShares.zomato,
+      other: delivery * dShares.other,
+    },
+    diningAllocation: {
+      swiggyDineout: dining * oShares.swiggyDineout,
+      zomatoDistrict: dining * oShares.zomatoDistrict,
+      eazyDiner: dining * oShares.eazyDiner,
+      other: dining * oShares.other,
+    },
+  };
+}
+
+function buildDeliverySpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggy, zomato, other } = spend.deliveryAllocation;
+  if (swiggy > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy delivery",
+      spend: swiggy,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomato > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato delivery",
+      spend: zomato,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.ZOMATO,
+    });
+  }
+  if (other > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Other delivery platforms",
+      spend: other,
+      category: CATEGORIES.DINING,
+    });
+  }
+  return out;
+}
+
+function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggyDineout, zomatoDistrict, eazyDiner, other } =
+    spend.diningAllocation;
+  if (swiggyDineout > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy Dineout",
+      spend: swiggyDineout,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.SWIGGY_DINEOUT,
+    });
+  }
+  if (zomatoDistrict > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato District",
+      spend: zomatoDistrict,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.ZOMATO_DISTRICT,
+    });
+  }
+  if (eazyDiner > 0) {
+    out.push({
+      kind: "merchant",
+      label: "EazyDiner",
+      spend: eazyDiner,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.EAZYDINER,
+    });
+  }
+  if (other > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Direct restaurant payment",
+      spend: other,
+      category: CATEGORIES.DINING,
+    });
+  }
+  return out;
+}
+
+export interface FoodCardEngineResultTwo {
+  input: FoodCardPhaseTwoInput;
+  spend: FoodSpendBreakdownTwo;
+  byCard: CardFoodReturn[];
+  best: CardFoodReturn | null;
+}
+
+export function recommendFoodCardPhaseTwo(
+  input: FoodCardPhaseTwoInput,
+  cards: MockCard[] = MOCK_CARDS,
+  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  rules: MockRule[] = MOCK_RULES,
+): FoodCardEngineResultTwo {
+  const spend = buildFoodSpendBreakdownTwo(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const byCard = cards
+    .filter((c) => c.is_active)
+    .map((card) =>
+      scoreCardFromStreams(
+        card,
+        spend.annualDeliverySpend,
+        buildDeliverySpecsTwo(spend),
+        spend.annualDiningSpend,
+        buildDiningSpecsTwo(spend),
+        index,
+        rules,
+      ),
+    )
+    .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
+
+  return { input, spend, byCard, best: byCard[0] ?? null };
 }
