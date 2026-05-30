@@ -90,19 +90,23 @@ function distributeCategoryTotals(
   return totals;
 }
 
-export function allRounderPhaseOne(
-  input: AllRounderPhaseOneInput,
+// Shared online/offline allocation. Given per-bucket monthly totals and the
+// target online spend `O`, applies DEFAULT_ONLINE_RATIO with a single scaling
+// factor so the realized online sum lands at `O` (clamped to [0, total] per
+// bucket). Reused by phase 1 and phase 2 — both produce the same output shape
+// once they've decided their bucket totals.
+function allocateOnlineOffline(
+  totals: Record<AllRounderBucket, number>,
+  O: number,
 ): AllRounderPhaseOneOutput {
-  const T = Math.max(0, input.averageTotalMonthlySpend);
-  const O = Math.max(0, Math.min(input.averageOnlineMonthlySpend, T));
-
-  const totals = distributeCategoryTotals(T, input.mostSpendCategory);
+  const monthlyTotal = ALL_BUCKETS.reduce((acc, b) => acc + totals[b], 0);
+  const targetOnline = Math.max(0, Math.min(O, monthlyTotal));
 
   let impliedOnline = 0;
   for (const b of ALL_BUCKETS) {
     impliedOnline += totals[b] * DEFAULT_ONLINE_RATIO[b];
   }
-  const k = impliedOnline > 0 ? O / impliedOnline : 0;
+  const k = impliedOnline > 0 ? targetOnline / impliedOnline : 0;
 
   const categories = emptyBucketMap<CategoryAllocation>({
     total: 0,
@@ -120,11 +124,19 @@ export function allRounderPhaseOne(
   }
 
   return {
-    monthlyTotal: T,
+    monthlyTotal,
     monthlyOnline: onlineSum,
-    monthlyOffline: T - onlineSum,
+    monthlyOffline: monthlyTotal - onlineSum,
     categories,
   };
+}
+
+export function allRounderPhaseOne(
+  input: AllRounderPhaseOneInput,
+): AllRounderPhaseOneOutput {
+  const T = Math.max(0, input.averageTotalMonthlySpend);
+  const totals = distributeCategoryTotals(T, input.mostSpendCategory);
+  return allocateOnlineOffline(totals, input.averageOnlineMonthlySpend);
 }
 
 // ============================================================================
@@ -671,15 +683,26 @@ function evaluateBucket(
   };
 }
 
-export function recommendAllRounderCardPhaseOne(
-  input: AllRounderPhaseOneInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
-): AllRounderEngineResult {
-  const phaseOne = allRounderPhaseOne(input);
+interface DistributionScoring {
+  byCard: CardAllRounderReturn[];
+  best: CardAllRounderReturn | null;
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+}
+
+// Phase-agnostic card evaluation. Given a finalized monthly distribution
+// (totals + online/offline split per bucket), scores every active card by
+// summing per-bucket returns. Phase 1 and phase 2 differ only in how they
+// produce the distribution.
+function scoreCardsForDistribution(
+  distribution: AllRounderPhaseOneOutput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+): DistributionScoring {
   const index = buildIndex(bestOfList);
-  const annualTotal = phaseOne.monthlyTotal * 12;
+  const annualTotal = distribution.monthlyTotal * 12;
 
   const byCard = cards
     .filter((c) => c.is_active)
@@ -698,7 +721,7 @@ export function recommendAllRounderCardPhaseOne(
       for (const b of ALL_BUCKETS) {
         const br = evaluateBucket(
           b,
-          phaseOne.categories[b],
+          distribution.categories[b],
           card,
           index,
           rules,
@@ -719,12 +742,132 @@ export function recommendAllRounderCardPhaseOne(
     .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
 
   return {
-    input,
-    phaseOne,
-    annualTotal,
-    annualOnline: phaseOne.monthlyOnline * 12,
-    annualOffline: phaseOne.monthlyOffline * 12,
     byCard,
     best: byCard[0] ?? null,
+    annualTotal,
+    annualOnline: distribution.monthlyOnline * 12,
+    annualOffline: distribution.monthlyOffline * 12,
   };
+}
+
+export function recommendAllRounderCardPhaseOne(
+  input: AllRounderPhaseOneInput,
+  cards: MockCard[] = MOCK_CARDS,
+  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  rules: MockRule[] = MOCK_RULES,
+): AllRounderEngineResult {
+  const phaseOne = allRounderPhaseOne(input);
+  const scoring = scoreCardsForDistribution(phaseOne, cards, bestOfList, rules);
+  return { input, phaseOne, ...scoring };
+}
+
+// ============================================================================
+// Phase 2 — declared per-category spend
+// ============================================================================
+
+export interface AllRounderPhaseTwoInput {
+  averageTotalMonthlySpend: number;
+  averageOnlineMonthlySpend: number;
+  annualTravelSpend: number;
+  monthlyDining: number;
+  monthlyBills: number;
+  monthlyOnlineShopping: number;
+  monthlyFuel: number;
+  monthlyRentInsuranceFees: number;
+}
+
+export interface AllRounderPhaseTwoOutput extends AllRounderPhaseOneOutput {
+  // Pre-scaling declared monthly spend per category (travel already in monthly
+  // form). Useful for the UI to surface what the user typed vs. what the model
+  // settled on after scaling — but the scaling itself is an internal correction
+  // and shouldn't be exposed as a separate line item.
+  declared: Record<AllRounderCategory, number>;
+  declaredTotal: number;
+  scalingFactor: number;
+}
+
+export interface AllRounderEnginePhaseTwoResult {
+  input: AllRounderPhaseTwoInput;
+  phaseTwo: AllRounderPhaseTwoOutput;
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+  byCard: CardAllRounderReturn[];
+  best: CardAllRounderReturn | null;
+}
+
+function declaredFromPhaseTwoInput(
+  input: AllRounderPhaseTwoInput,
+): Record<AllRounderCategory, number> {
+  return {
+    travel: Math.max(0, input.annualTravelSpend) / 12,
+    foodAndDining: Math.max(0, input.monthlyDining),
+    onlineShopping: Math.max(0, input.monthlyOnlineShopping),
+    utilityBills: Math.max(0, input.monthlyBills),
+    fuel: Math.max(0, input.monthlyFuel),
+    rentInsuranceFees: Math.max(0, input.monthlyRentInsuranceFees),
+  };
+}
+
+// Phase 2 distribution: convert declared per-category spend into bucket totals
+// that sum to T. Two paths:
+//   - declared ≤ T: keep declared as-is, dump the residual into `others`.
+//   - declared > T: scale every declared category by T/declared (no others).
+// Edge case: declared sum is 0 — treat everything as `others`.
+function distributeFromDeclared(
+  input: AllRounderPhaseTwoInput,
+): {
+  totals: Record<AllRounderBucket, number>;
+  declared: Record<AllRounderCategory, number>;
+  declaredTotal: number;
+  scalingFactor: number;
+} {
+  const T = Math.max(0, input.averageTotalMonthlySpend);
+  const declared = declaredFromPhaseTwoInput(input);
+  const declaredTotal = ALL_ROUNDER_CATEGORIES.reduce(
+    (acc, c) => acc + declared[c],
+    0,
+  );
+
+  const totals = emptyBucketMap(0);
+
+  if (declaredTotal === 0) {
+    totals.others = T;
+    return { totals, declared, declaredTotal, scalingFactor: 1 };
+  }
+
+  if (declaredTotal <= T) {
+    for (const c of ALL_ROUNDER_CATEGORIES) totals[c] = declared[c];
+    totals.others = T - declaredTotal;
+    return { totals, declared, declaredTotal, scalingFactor: 1 };
+  }
+
+  const scalingFactor = T / declaredTotal;
+  for (const c of ALL_ROUNDER_CATEGORIES) {
+    totals[c] = declared[c] * scalingFactor;
+  }
+  return { totals, declared, declaredTotal, scalingFactor };
+}
+
+export function allRounderPhaseTwo(
+  input: AllRounderPhaseTwoInput,
+): AllRounderPhaseTwoOutput {
+  const { totals, declared, declaredTotal, scalingFactor } =
+    distributeFromDeclared(input);
+  const allocation = allocateOnlineOffline(
+    totals,
+    input.averageOnlineMonthlySpend,
+  );
+  return { ...allocation, declared, declaredTotal, scalingFactor };
+}
+
+export function recommendAllRounderCardPhaseTwo(
+  input: AllRounderPhaseTwoInput,
+  cards: MockCard[] = MOCK_CARDS,
+  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  rules: MockRule[] = MOCK_RULES,
+): AllRounderEnginePhaseTwoResult {
+  const phaseTwo = allRounderPhaseTwo(input);
+  const scoring = scoreCardsForDistribution(phaseTwo, cards, bestOfList, rules);
+  return { input, phaseTwo, ...scoring };
 }
