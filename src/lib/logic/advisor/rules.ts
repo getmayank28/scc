@@ -123,6 +123,12 @@ export const MERCHANTS = {
   FINUSMART_SURAKSHA: "finusmart_suraksha",
   MYHQ: "myhq",
   RENTOMOJO: "rentomojo",
+
+  // Offline shopping merchants
+  CROSSWORD: "crossword",
+  PUMA: "puma",
+  HARPERS_BAZAAR_INDIA: "harpers_bazaar_india",
+  WOGGLES: "woggles",
 } as const;
 
 export type Merchant = (typeof MERCHANTS)[keyof typeof MERCHANTS];
@@ -3202,5 +3208,90 @@ export const MOCK_RULES: MockRule[] = [
     2.0,
     AMEX_MRCC_VALID_FROM,
     "Amex fees/taxes: base 2pts/₹100 = 2%. Govt MCC not specifically excluded.",
+  ),
+
+  // ==========================================================================
+  // Offline Shopping — voucher_available + base rules per card
+  // ==========================================================================
+
+  // HDFC Regalia Gold — Crossword on 5X portal (6.67% direct + 6.5% voucher),
+  // Puma at base (1.33% direct + 6.5% voucher).
+  regalia5XOnline(
+    "rule_regalia_offline_v_crossword",
+    CATEGORIES.OFFLINE_SHOPPING,
+    MERCHANTS.CROSSWORD,
+    1.0,
+  ),
+  regaliaVoucher(
+    "rule_regalia_offline_v_puma",
+    CATEGORIES.OFFLINE_SHOPPING,
+    MERCHANTS.PUMA,
+    2.5,
+  ),
+  baseDocRule(
+    "rule_regalia_offline_base",
+    HDFC_REGALIA_GOLD_ID,
+    CATEGORIES.OFFLINE_SHOPPING,
+    1.33,
+    REGALIA_VALID_FROM,
+    "Base rate on all offline retail swipes. Grocery offline: 2.6667pts (2000pt cap).",
+  ),
+
+  // Axis ACE — no offline accelerator; base 1.5% cashback only.
+  baseDocRule(
+    "rule_ace_offline_base",
+    AXIS_ACE_ID,
+    CATEGORIES.OFFLINE_SHOPPING,
+    1.5,
+    new Date("2024-04-20"),
+    "Base 1.5% cashback on offline retail. No offline shopping accelerator on ACE.",
+  ),
+
+  // SBI SimplyCLICK — Harper's Bazaar India voucher (2.5%/2.5%); base 0.25%.
+  sbiVoucher(
+    "rule_sbi_offline_v_harpers_bazaar_india",
+    CATEGORIES.OFFLINE_SHOPPING,
+    MERCHANTS.HARPERS_BAZAAR_INDIA,
+    0,
+  ),
+  baseDocRule(
+    "rule_sbi_offline_base",
+    SBI_SIMPLYCLICK_ID,
+    CATEGORIES.OFFLINE_SHOPPING,
+    0.25,
+    SBI_SIMPLYCLICK_VALID_FROM,
+    "Base 1pt/₹100 offline. SimplyCLICK accelerators are online only.",
+  ),
+
+  // ICICI Amazon Pay — Woggles voucher (1%/1%); base 1% cashback.
+  iciciAmazonVoucher(
+    "rule_icici_offline_v_woggles",
+    CATEGORIES.OFFLINE_SHOPPING,
+    MERCHANTS.WOGGLES,
+    0,
+  ),
+  baseDocRule(
+    "rule_icici_offline_base",
+    ICICI_AMAZON_PAY_ID,
+    CATEGORIES.OFFLINE_SHOPPING,
+    1.0,
+    new Date("2025-10-11"),
+    "Base 1% cashback on offline retail. No offline accelerator on Amazon Pay card.",
+  ),
+
+  // Amex MRCC — Crossword voucher (2%/4% with 1.1% discount); base 2pts/₹100.
+  amexMrccVoucher(
+    "rule_amex_offline_v_crossword",
+    CATEGORIES.OFFLINE_SHOPPING,
+    MERCHANTS.CROSSWORD,
+    1.1,
+  ),
+  baseDocRule(
+    "rule_amex_offline_base",
+    AMEX_MRCC_ID,
+    CATEGORIES.OFFLINE_SHOPPING,
+    2.0,
+    AMEX_MRCC_VALID_FROM,
+    "Base 2pts/₹100 on offline retail. Amex accelerators are all online-only.",
   ),
 ];

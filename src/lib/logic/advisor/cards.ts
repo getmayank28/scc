@@ -6,6 +6,7 @@ export const CATEGORIES = {
   FUEL: "fuel",
   GROCERY: "grocery",
   ONLINE_SHOPPING: "online_shopping",
+  OFFLINE_SHOPPING: "offline_shopping",
   UTILITIES: "utilities",
   OTHER: "other",
   RENT: "rent",
