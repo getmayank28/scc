@@ -30,6 +30,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
       "/privacy-policy",
       "/legal-compliance",
       "/terms",
+      "/affiliate-disclosure",
       "/user-info",
     ]?.includes(pathname);
 

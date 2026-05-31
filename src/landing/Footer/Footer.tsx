@@ -39,6 +39,11 @@ const Footer: React.FC = () => {
                   Terms
                 </h3>
               </Link>
+              <Link href='/affiliate-disclosure'>
+                <h3 className="text-[12px] text-[#fff] text-start">
+                  Affiliate Disclosure
+                </h3>
+              </Link>
             </div>
           </div>
           <div className='w-[calc(100%/3)]'>
@@ -108,6 +113,11 @@ const Footer: React.FC = () => {
               <Link href='/terms'>
                 <h3 className="text-[12px] text-[#fff]">
                   Terms
+                </h3>
+              </Link>
+              <Link href='/affiliate-disclosure'>
+                <h3 className="text-[12px] text-[#fff]">
+                  Affiliate Disclosure
                 </h3>
               </Link>
             </div>
