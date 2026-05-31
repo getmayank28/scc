@@ -93,11 +93,7 @@ export const shoppingCard = [
       {
         label: "I shop across many paltform",
         value: "I shop across many paltform",
-      },
-      {
-        label: "Others",
-        value: "Others",
-      },
+      }
     ],
   },
   {
