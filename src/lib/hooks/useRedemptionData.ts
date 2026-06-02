@@ -27,7 +27,12 @@ const useRedemptionData = () => {
     });
     setRedemptionPoints(points);
     setSelectedCardName(cardName);
-    const content = joinTextMessagesByMid(data?.data?.messages);
+    const messages = data?.data?.messages?.filter(
+      (ele: { type: "TextMessage" | "SlotMessage" }) =>
+        ele?.type === "TextMessage",
+    );
+
+    const content = joinTextMessagesByMid(messages);
 
     const msg =
       content?.find((msg) => msg?.m_id && msg?.content)?.content || "";
