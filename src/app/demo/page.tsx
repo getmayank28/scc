@@ -54,8 +54,11 @@ import {
 } from "@/lib/logic/advisor/foodCardEngine";
 import {
   recommendShoppingCardPhaseOne,
+  recommendShoppingCardPhaseTwo,
   type CardShoppingReturn,
+  type CardShoppingReturnTwo,
   type ShoppingCardEngineResult,
+  type ShoppingCardEngineResultTwo,
   type ShoppingOnlinePlatform,
   type ShoppingPreference,
   type ShoppingStreamReturn,
@@ -1765,6 +1768,261 @@ function ShoppingCardPhaseOneForm() {
   );
 }
 
+function ShoppingCardPhaseTwoResult({
+  result,
+  rank,
+}: {
+  result: CardShoppingReturnTwo;
+  rank: number;
+}) {
+  return (
+    <div className="rounded-xl border border-white/15 p-5 text-white space-y-4">
+      <div className="flex justify-between items-baseline">
+        <div>
+          <div className="text-xs text-muted-foreground">#{rank + 1}</div>
+          <h3 className="text-lg font-semibold">{result.cardName}</h3>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xl font-bold text-green-500">
+            {inr(result.annualReturnInr)}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {pct(result.effectiveRatePercentage)} effective
+          </div>
+        </div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <ShoppingStreamBlock title="Online shopping" stream={result.online} />
+        <ShoppingStreamBlock title="Offline shopping" stream={result.offline} />
+        {result.utility && (
+          <ShoppingStreamBlock title="Utility bills" stream={result.utility} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ShoppingCardPhaseTwoForm() {
+  const [monthlySpend, setMonthlySpend] = useState("40000");
+  const [onlineShoppingSpend, setOnlineShoppingSpend] = useState("28000");
+  const [platforms, setPlatforms] = useState<ShoppingOnlinePlatform[]>([
+    "amazon",
+  ]);
+  const [hasUtility, setHasUtility] = useState(true);
+  const [utilitySpend, setUtilitySpend] = useState("6000");
+  const [result, setResult] = useState<ShoppingCardEngineResultTwo | null>(
+    null,
+  );
+
+  const togglePlatform = (p: ShoppingOnlinePlatform, checked: boolean) => {
+    setPlatforms((prev) =>
+      checked ? [...prev, p] : prev.filter((x) => x !== p),
+    );
+  };
+
+  const onCalculate = () => {
+    const monthly = Number(monthlySpend);
+    const online = Number(onlineShoppingSpend);
+    const utility = Number(utilitySpend);
+    if (!Number.isFinite(monthly) || monthly <= 0) return;
+    if (!Number.isFinite(online) || online < 0) return;
+    if (hasUtility && (!Number.isFinite(utility) || utility < 0)) return;
+
+    setResult(
+      recommendShoppingCardPhaseTwo({
+        monthlySpend: monthly,
+        preferredOnlinePlatform: platforms,
+        totalOnlineShoppingMonthlySpend: online,
+        additionalUtilityBills: hasUtility,
+        additionalUtilityBillsMonthlySpend: hasUtility ? utility : 0,
+      }),
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Monthly shopping spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={monthlySpend}
+            className="text-white"
+            onChange={(e) => setMonthlySpend(e.target.value)}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-white font-semibold">
+            Monthly online shopping spend (₹)
+          </Label>
+          <Input
+            type="number"
+            min={0}
+            value={onlineShoppingSpend}
+            className="text-white"
+            onChange={(e) => setOnlineShoppingSpend(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-white font-semibold">
+          Preferred online platforms (pick one or more)
+        </Label>
+        <div className="flex flex-wrap gap-4">
+          {SHOPPING_PLATFORM_OPTIONS.map((o) => {
+            const checked = platforms.includes(o.value);
+            return (
+              <label
+                key={o.value}
+                className="flex items-center gap-2 text-sm text-white"
+              >
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(v) => togglePlatform(o.value, v === true)}
+                />
+                {o.label}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-white/10 p-4">
+        <label className="flex items-center gap-2 text-sm text-white">
+          <Checkbox
+            checked={hasUtility}
+            onCheckedChange={(v) => setHasUtility(v === true)}
+          />
+          I also pay utility bills on this card
+        </label>
+        {hasUtility && (
+          <div className="space-y-2">
+            <Label className="text-white font-semibold">
+              Monthly utility bills (₹)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              value={utilitySpend}
+              className="text-white"
+              onChange={(e) => setUtilitySpend(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <Button onClick={onCalculate} className="w-full md:w-auto">
+        Recommend shopping card
+      </Button>
+
+      {result && (
+        <div className="space-y-6">
+          <div className="rounded-xl border border-white/15 p-5 text-white space-y-3">
+            <h2 className="text-lg font-semibold">
+              Phase 2 — shopping spend breakdown
+            </h2>
+            <div className="grid gap-2 md:grid-cols-2 text-sm">
+              <div>Annual total: {inr(result.spend.annualTotal)}</div>
+              <div>
+                Online {result.spend.onlineSharePercentage.toFixed(1)}%:{" "}
+                {inr(result.spend.annualOnline)}
+              </div>
+              <div>
+                Offline {result.spend.offlineSharePercentage.toFixed(1)}%:{" "}
+                {inr(result.spend.annualOffline)}
+              </div>
+              {result.spend.utility && (
+                <div>
+                  Annual utility bills: {inr(result.spend.utility.annualTotal)}
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Online allocation</span>
+                <span className="text-right">Annual spend</span>
+              </div>
+              {result.spend.onlineAllocation.map((a, i) => (
+                <div key={i} className="grid grid-cols-2 py-1">
+                  <span>{a.label}</span>
+                  <span className="text-right">{inr(a.spend)}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-white/10 p-3 text-sm">
+              <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                <span>Offline allocation</span>
+                <span className="text-right">Annual spend</span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>{result.spend.offlineAllocation.label}</span>
+                <span className="text-right">
+                  {inr(result.spend.offlineAllocation.spend)}
+                </span>
+              </div>
+            </div>
+
+            {result.spend.utility && (
+              <div className="rounded-lg border border-white/10 p-3 text-sm">
+                <div className="grid grid-cols-2 font-semibold text-xs text-muted-foreground pb-2 border-b border-white/10">
+                  <span>Utility allocation (90/10)</span>
+                  <span className="text-right">Annual spend</span>
+                </div>
+                <div className="grid grid-cols-2 py-1">
+                  <span>Utilities online</span>
+                  <span className="text-right">
+                    {inr(result.spend.utility.annualOnline)}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 py-1">
+                  <span>Utility offline (fallback)</span>
+                  <span className="text-right">
+                    {inr(result.spend.utility.annualOffline)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {result.best && (
+            <div className="rounded-xl border border-green-500/40 bg-green-500/5 p-5 text-white">
+              <div className="text-xs uppercase text-green-400">
+                Best card for this profile
+              </div>
+              <div className="text-2xl font-bold">{result.best.cardName}</div>
+              <div className="text-sm text-muted-foreground">
+                Annual return:{" "}
+                <span className="text-green-500 font-semibold">
+                  {inr(result.best.annualReturnInr)}
+                </span>{" "}
+                ({pct(result.best.effectiveRatePercentage)} effective)
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {result.byCard.map((row, idx) => (
+              <ShoppingCardPhaseTwoResult
+                key={row.cardId}
+                result={row}
+                rank={idx}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Demo9Page() {
   return (
     <div className="min-h-screen p-6 mt-10 md:p-12 max-w-5xl mx-auto space-y-8">
@@ -1777,16 +2035,19 @@ export default function Demo9Page() {
 
       <Tabs defaultValue="initial" className="w-full">
         <TabsList>
-          <TabsTrigger value="initial">Initial travel journey</TabsTrigger>
-          <TabsTrigger value="advanced">Full travel journey</TabsTrigger>
-          <TabsTrigger value="all-rounder">All-rounder phase one</TabsTrigger>
+          <TabsTrigger value="initial">Travel 1</TabsTrigger>
+          <TabsTrigger value="advanced">Travel 2</TabsTrigger>
+          <TabsTrigger value="all-rounder">Rounder 1</TabsTrigger>
           <TabsTrigger value="all-rounder-two">
-            All-rounder phase two
+          Rounder 2
           </TabsTrigger>
-          <TabsTrigger value="food-one">Food card phase one</TabsTrigger>
-          <TabsTrigger value="food-two">Food card phase two</TabsTrigger>
+          <TabsTrigger value="food-one">Food 1</TabsTrigger>
+          <TabsTrigger value="food-two">Food 2</TabsTrigger>
           <TabsTrigger value="shopping-one">
-            Shopping card phase one
+            Shopping 1
+          </TabsTrigger>
+          <TabsTrigger value="shopping-two">
+            Shopping 2
           </TabsTrigger>
         </TabsList>
         <TabsContent value="initial" className="mt-6">
@@ -1809,6 +2070,9 @@ export default function Demo9Page() {
         </TabsContent>
         <TabsContent value="shopping-one" className="mt-6">
           <ShoppingCardPhaseOneForm />
+        </TabsContent>
+        <TabsContent value="shopping-two" className="mt-6">
+          <ShoppingCardPhaseTwoForm />
         </TabsContent>
       </Tabs>
     </div>
