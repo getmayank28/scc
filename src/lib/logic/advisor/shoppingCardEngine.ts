@@ -258,8 +258,12 @@ function fallbackRate(card: MockCard, category: Category): number {
   return card.rewards.base_reward_rate;
 }
 
-function buildOnlineSpecs(spend: ShoppingSpendBreakdown): ShoppingSubSpec[] {
-  return spend.onlineAllocation
+// Phase 1 and phase 2 share allocation shape, so these helpers consume only the
+// minimal slices they need — letting both phases feed them directly.
+function buildOnlineSpecs(
+  alloc: OnlinePlatformAllocation[],
+): ShoppingSubSpec[] {
+  return alloc
     .filter((a) => a.spend > 0)
     .map<ShoppingSubSpec>((a) =>
       a.merchant
@@ -279,13 +283,16 @@ function buildOnlineSpecs(spend: ShoppingSpendBreakdown): ShoppingSubSpec[] {
     );
 }
 
-function buildOfflineSpecs(spend: ShoppingSpendBreakdown): ShoppingSubSpec[] {
-  if (spend.offlineAllocation.spend <= 0) return [];
+function buildOfflineSpecs(alloc: {
+  label: string;
+  spend: number;
+}): ShoppingSubSpec[] {
+  if (alloc.spend <= 0) return [];
   return [
     {
       kind: "category-best",
-      label: spend.offlineAllocation.label,
-      spend: spend.offlineAllocation.spend,
+      label: alloc.label,
+      spend: alloc.spend,
       category: CATEGORIES.OFFLINE_SHOPPING,
     },
   ];
@@ -363,14 +370,14 @@ function scoreCard(
   rules: MockRule[],
 ): CardShoppingReturn {
   const online = evaluateStream(
-    buildOnlineSpecs(spend),
+    buildOnlineSpecs(spend.onlineAllocation),
     spend.annualOnline,
     card,
     index,
     rules,
   );
   const offline = evaluateStream(
-    buildOfflineSpecs(spend),
+    buildOfflineSpecs(spend.offlineAllocation),
     spend.annualOffline,
     card,
     index,
@@ -410,4 +417,195 @@ export function recommendShoppingCardPhaseOne(
     byCard,
     best: byCard[0] ?? null,
   };
+}
+
+// ============================================================================
+// Phase 2 — declared online spend + optional utility bills
+// ============================================================================
+//
+// Phase 2 replaces phase 1's preset channel splits with a derived ratio
+// (online = totalOnlineShoppingMonthlySpend / monthlySpend) and adds an
+// independent utility-bills pot when the user reports paying them on cards.
+// Platform allocation reuses phase 1's rule (70/30 for one merchant, even
+// n+1 split for multiple, 100% "others" when only "multiple_platform" is
+// chosen). Utility pot splits 90/10 online/offline; the online side maps to
+// the UTILITIES best-of rule, the offline side to the card's fallback rate.
+
+// Matches the all-rounder utility recipe (DEFAULT_ONLINE_RATIO.utilityBills).
+const UTILITY_ONLINE_RATIO = 0.9;
+
+export interface ShoppingCardPhaseTwoInput {
+  monthlySpend: number;
+  preferredOnlinePlatform: ShoppingOnlinePlatform[];
+  totalOnlineShoppingMonthlySpend: number;
+  additionalUtilityBills: boolean;
+  additionalUtilityBillsMonthlySpend: number;
+}
+
+export interface UtilityPotBreakdown {
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+}
+
+export interface ShoppingSpendBreakdownTwo {
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+  onlineSharePercentage: number;
+  offlineSharePercentage: number;
+  onlineAllocation: OnlinePlatformAllocation[];
+  offlineAllocation: { label: string; spend: number };
+  utility: UtilityPotBreakdown | null;
+}
+
+function channelSharesFromInput(
+  monthlySpend: number,
+  onlineMonthlySpend: number,
+): ChannelShares {
+  const total = Math.max(0, monthlySpend);
+  if (total === 0) return { online: 0, offline: 0 };
+  const online = Math.max(0, Math.min(onlineMonthlySpend, total)) / total;
+  return { online, offline: 1 - online };
+}
+
+export function buildShoppingSpendBreakdownTwo(
+  input: ShoppingCardPhaseTwoInput,
+): ShoppingSpendBreakdownTwo {
+  const annualTotal = Math.max(0, input.monthlySpend) * MONTHS_PER_YEAR;
+  const { online, offline } = channelSharesFromInput(
+    input.monthlySpend,
+    input.totalOnlineShoppingMonthlySpend,
+  );
+  const annualOnline = annualTotal * online;
+  const annualOffline = annualTotal * offline;
+
+  const utilityAnnualTotal =
+    input.additionalUtilityBills
+      ? Math.max(0, input.additionalUtilityBillsMonthlySpend) * MONTHS_PER_YEAR
+      : 0;
+  const utility =
+    utilityAnnualTotal > 0
+      ? {
+          annualTotal: utilityAnnualTotal,
+          annualOnline: utilityAnnualTotal * UTILITY_ONLINE_RATIO,
+          annualOffline: utilityAnnualTotal * (1 - UTILITY_ONLINE_RATIO),
+        }
+      : null;
+
+  return {
+    annualTotal,
+    annualOnline,
+    annualOffline,
+    onlineSharePercentage: online * 100,
+    offlineSharePercentage: offline * 100,
+    onlineAllocation: buildOnlineAllocation(
+      annualOnline,
+      input.preferredOnlinePlatform,
+    ),
+    offlineAllocation: { label: "Offline shopping", spend: annualOffline },
+    utility,
+  };
+}
+
+// Recipe from the spec: online side asks best-of UTILITIES (or fallback when
+// the card has no rule); offline side runs straight at the card's fallback
+// rate for utilities.
+function buildUtilitySpecs(utility: UtilityPotBreakdown): ShoppingSubSpec[] {
+  const out: ShoppingSubSpec[] = [];
+  if (utility.annualOnline > 0) {
+    out.push({
+      kind: "category-best",
+      label: "Utilities online (best-of)",
+      spend: utility.annualOnline,
+      category: CATEGORIES.UTILITIES,
+    });
+  }
+  if (utility.annualOffline > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Utility offline (fallback)",
+      spend: utility.annualOffline,
+      category: CATEGORIES.UTILITIES,
+    });
+  }
+  return out;
+}
+
+export interface CardShoppingReturnTwo extends CardShoppingReturn {
+  utility: ShoppingStreamReturn | null;
+}
+
+export interface ShoppingCardEngineResultTwo {
+  input: ShoppingCardPhaseTwoInput;
+  spend: ShoppingSpendBreakdownTwo;
+  byCard: CardShoppingReturnTwo[];
+  best: CardShoppingReturnTwo | null;
+}
+
+function scoreCardTwo(
+  card: MockCard,
+  spend: ShoppingSpendBreakdownTwo,
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+): CardShoppingReturnTwo {
+  const online = evaluateStream(
+    buildOnlineSpecs(spend.onlineAllocation),
+    spend.annualOnline,
+    card,
+    index,
+    rules,
+  );
+  const offline = evaluateStream(
+    buildOfflineSpecs(spend.offlineAllocation),
+    spend.annualOffline,
+    card,
+    index,
+    rules,
+  );
+  const utility = spend.utility
+    ? evaluateStream(
+        buildUtilitySpecs(spend.utility),
+        spend.utility.annualTotal,
+        card,
+        index,
+        rules,
+      )
+    : null;
+
+  const annualSpend =
+    spend.annualOnline +
+    spend.annualOffline +
+    (spend.utility?.annualTotal ?? 0);
+  const annualReturnInr =
+    online.returnInr + offline.returnInr + (utility?.returnInr ?? 0);
+
+  return {
+    cardId: card._id,
+    cardName: card.name,
+    online,
+    offline,
+    utility,
+    annualSpend,
+    annualReturnInr,
+    effectiveRatePercentage:
+      annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+  };
+}
+
+export function recommendShoppingCardPhaseTwo(
+  input: ShoppingCardPhaseTwoInput,
+  cards: MockCard[] = MOCK_CARDS,
+  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  rules: MockRule[] = MOCK_RULES,
+): ShoppingCardEngineResultTwo {
+  const spend = buildShoppingSpendBreakdownTwo(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const byCard = cards
+    .filter((c) => c.is_active)
+    .map((card) => scoreCardTwo(card, spend, index, rules))
+    .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
+
+  return { input, spend, byCard, best: byCard[0] ?? null };
 }
