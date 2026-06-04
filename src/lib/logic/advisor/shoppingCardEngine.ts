@@ -70,7 +70,7 @@ interface ChannelShares {
 function channelShares(pref: ShoppingPreference): ChannelShares {
   switch (pref) {
     case "online":
-      return { online: 0.75, offline: 0.25 };
+      return { online: 0.8, offline: 0.2 };
     case "equal":
       return { online: 0.5, offline: 0.5 };
     case "offline":
@@ -92,6 +92,12 @@ export interface ShoppingSpendBreakdown {
   onlineAllocation: OnlinePlatformAllocation[];
   offlineAllocation: { label: string; spend: number };
 }
+
+// Multi-platform online split: 80% goes to the preferred platforms (divided
+// equally), 20% to the "others" bucket. The single-platform case is its own
+// rule (70/30, see below).
+const ONLINE_PREFERRED_SHARE = 0.8;
+const ONLINE_OTHERS_SHARE = 0.2;
 
 function buildOnlineAllocation(
   onlineSpend: number,
@@ -135,20 +141,20 @@ function buildOnlineAllocation(
     ];
   }
 
-  // Multiple specific platforms → split evenly across platforms + one "others"
-  // bucket (n+1 even shares). If the user also picked "I shop across many",
-  // it's already represented by the "others" bucket — no extra share added.
-  const buckets = specific.length + 1;
-  const share = 1 / buckets;
+  // Multiple specific platforms (N ≥ 2) → 80% split equally across the N
+  // preferred platforms, 20% to "others". The single-platform case above keeps
+  // its 70/30 split. If the user also picked "I shop across many", it's
+  // already represented by the "others" bucket — no extra share added.
+  const perPlatform = ONLINE_PREFERRED_SHARE / specific.length;
   const out: OnlinePlatformAllocation[] = specific.map((p) => ({
     merchant: PLATFORM_TO_MERCHANT[p],
     label: PLATFORM_LABEL[p],
-    spend: onlineSpend * share,
+    spend: onlineSpend * perPlatform,
   }));
   out.push({
     merchant: null,
     label: "Other online platforms",
-    spend: onlineSpend * share,
+    spend: onlineSpend * ONLINE_OTHERS_SHARE,
   });
   return out;
 }
@@ -283,19 +289,89 @@ function buildOnlineSpecs(
     );
 }
 
-function buildOfflineSpecs(alloc: {
-  label: string;
-  spend: number;
-}): ShoppingSubSpec[] {
+// Offline split: top accelerated category 20%, 2nd best 10%, OFFLINE_SHOPPING
+// base bucket 70%. Candidates for "top" / "2nd best" are DINING, GROCERY, FUEL.
+// Ranking is by the card's nominal best-of rate (max of direct / voucher /
+// base); categories that don't beat the card's base rate aren't eligible and
+// their share folds into the OFFLINE_SHOPPING base bucket.
+const OFFLINE_CATEGORY_CANDIDATES = [
+  CATEGORIES.DINING,
+  CATEGORIES.GROCERY,
+  CATEGORIES.FUEL,
+] as const;
+const OFFLINE_TOP_SHARES = [0.2, 0.1] as const;
+const OFFLINE_BASE_SHARE = 0.7;
+
+const OFFLINE_CATEGORY_LABELS: Record<
+  (typeof OFFLINE_CATEGORY_CANDIDATES)[number],
+  string
+> = {
+  [CATEGORIES.DINING]: "Dining",
+  [CATEGORIES.GROCERY]: "Grocery",
+  [CATEGORIES.FUEL]: "Fuel",
+};
+
+function categoryNominalRate(
+  card: MockCard,
+  bestOf: MockBestOf | undefined,
+): number {
+  const baseRate = card.rewards.base_reward_rate;
+  const direct = bestOf?.bestDirectSwipe?.percentage ?? 0;
+  const voucher = bestOf?.bestVoucher?.totalPercentage ?? 0;
+  return Math.max(direct, voucher, baseRate);
+}
+
+function rankOfflineCategories(
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+): Category[] {
+  const baseRate = card.rewards.base_reward_rate;
+  return OFFLINE_CATEGORY_CANDIDATES.map((cat) => ({
+    category: cat,
+    rate: categoryNominalRate(card, index.get(`${card._id}::${cat}`)),
+  }))
+    .filter((c) => c.rate > baseRate)
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, OFFLINE_TOP_SHARES.length)
+    .map((c) => c.category);
+}
+
+function buildOfflineSpecs(
+  alloc: { label: string; spend: number },
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+): ShoppingSubSpec[] {
   if (alloc.spend <= 0) return [];
-  return [
-    {
+
+  const ranked = rankOfflineCategories(card, index);
+  const specs: ShoppingSubSpec[] = [];
+  let baseShare = OFFLINE_BASE_SHARE;
+
+  ranked.forEach((cat, i) => {
+    const rankLabel = i === 0 ? "top" : "2nd best";
+    specs.push({
       kind: "category-best",
-      label: alloc.label,
-      spend: alloc.spend,
-      category: CATEGORIES.OFFLINE_SHOPPING,
-    },
-  ];
+      label: `${
+        OFFLINE_CATEGORY_LABELS[cat as (typeof OFFLINE_CATEGORY_CANDIDATES)[number]]
+      } (${rankLabel} offline)`,
+      spend: alloc.spend * OFFLINE_TOP_SHARES[i],
+      category: cat,
+    });
+  });
+
+  // Unfilled top slots collapse into the OFFLINE_SHOPPING base bucket.
+  for (let i = ranked.length; i < OFFLINE_TOP_SHARES.length; i++) {
+    baseShare += OFFLINE_TOP_SHARES[i];
+  }
+
+  specs.push({
+    kind: "category-best",
+    label: alloc.label,
+    spend: alloc.spend * baseShare,
+    category: CATEGORIES.OFFLINE_SHOPPING,
+  });
+
+  return specs;
 }
 
 function evaluateSpec(
@@ -377,7 +453,7 @@ function scoreCard(
     rules,
   );
   const offline = evaluateStream(
-    buildOfflineSpecs(spend.offlineAllocation),
+    buildOfflineSpecs(spend.offlineAllocation, card, index),
     spend.annualOffline,
     card,
     index,
@@ -557,7 +633,7 @@ function scoreCardTwo(
     rules,
   );
   const offline = evaluateStream(
-    buildOfflineSpecs(spend.offlineAllocation),
+    buildOfflineSpecs(spend.offlineAllocation, card, index),
     spend.annualOffline,
     card,
     index,
