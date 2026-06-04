@@ -431,58 +431,63 @@ function applySharedCapGroups(
   domestic: SegmentReturn,
   international: SegmentReturn,
   index: Map<string, MockBestOf>,
-  tripsPerYear: number,
+  domesticTrips: number,
+  internationalTrips: number,
 ): { domestic: SegmentReturn; international: SegmentReturn } {
-  // Shared cap pools span categories (and sometimes segments) on the same card,
-  // so the cap is consumed by total trips across the year, not per-segment.
-  const participants = [
-    ...collectSharedCapParticipants(cardId, "domestic", domestic, index, tripsPerYear),
-    ...collectSharedCapParticipants(
-      cardId,
-      "international",
-      international,
-      index,
-      tripsPerYear,
-    ),
-  ];
-
-  const byGroup = new Map<string, SharedCapParticipant[]>();
-  for (const p of participants) {
-    const cat =
-      p.segment === "domestic"
-        ? domestic[p.category as keyof Pick<SegmentReturn, "flights" | "hotels" | "other">]
-        : international[p.category as keyof Pick<SegmentReturn, "flights" | "hotels" | "other">];
-    // grouping key comes from the rule (we re-derive from bestOf via best-of lookup); reuse via index
-    const bestOf = index.get(`${cardId}::${cat.category}`);
-    const group =
-      cat.source === "voucher"
-        ? bestOf?.bestVoucher?.sharedCapGroup
-        : bestOf?.bestDirectSwipe?.sharedCapGroup;
-    if (!group) continue;
-    const key = sharedCapGroupKey(group);
-    const list = byGroup.get(key) ?? [];
-    list.push(p);
-    byGroup.set(key, list);
-  }
-
+  // Shared cap pools are scoped per segment: each segment's pool size scales
+  // with its own trip count, and pools are consumed independently. Within a
+  // segment, participants still compete top-down by rate.
   const overrides = new Map<string, number>();
-  for (const members of byGroup.values()) {
-    if (members.length <= 1) continue;
-    const B = members[0].rewardCapAnnualValueInr;
-    if (B <= 0) continue;
 
-    const sorted = [...members].sort((a, b) => b.rate - a.rate);
-    let remaining = B;
-    for (const m of sorted) {
-      const potential = (m.coveredSpend * m.rate) / 100;
-      const accelerated = Math.min(potential, remaining);
-      overrides.set(
-        `${m.segment}::${m.category}`,
-        participantReturn(m, accelerated),
-      );
-      remaining = Math.max(0, remaining - accelerated);
+  const processSegment = (
+    segLabel: "domestic" | "international",
+    seg: SegmentReturn,
+    trips: number,
+  ) => {
+    const participants = collectSharedCapParticipants(
+      cardId,
+      segLabel,
+      seg,
+      index,
+      trips,
+    );
+    const byGroup = new Map<string, SharedCapParticipant[]>();
+    for (const p of participants) {
+      const cat =
+        seg[p.category as keyof Pick<SegmentReturn, "flights" | "hotels" | "other">];
+      const bestOf = index.get(`${cardId}::${cat.category}`);
+      const group =
+        cat.source === "voucher"
+          ? bestOf?.bestVoucher?.sharedCapGroup
+          : bestOf?.bestDirectSwipe?.sharedCapGroup;
+      if (!group) continue;
+      const key = sharedCapGroupKey(group);
+      const list = byGroup.get(key) ?? [];
+      list.push(p);
+      byGroup.set(key, list);
     }
-  }
+
+    for (const members of byGroup.values()) {
+      if (members.length <= 1) continue;
+      const B = members[0].rewardCapAnnualValueInr;
+      if (B <= 0) continue;
+
+      const sorted = [...members].sort((a, b) => b.rate - a.rate);
+      let remaining = B;
+      for (const m of sorted) {
+        const potential = (m.coveredSpend * m.rate) / 100;
+        const accelerated = Math.min(potential, remaining);
+        overrides.set(
+          `${m.segment}::${m.category}`,
+          participantReturn(m, accelerated),
+        );
+        remaining = Math.max(0, remaining - accelerated);
+      }
+    }
+  };
+
+  processSegment("domestic", domestic, domesticTrips);
+  processSegment("international", international, internationalTrips);
 
   const apply = (
     segLabel: "domestic" | "international",
@@ -557,7 +562,8 @@ export function recommendTravelCard(
         rawDomestic,
         rawInternational,
         index,
-        input.tripsPerYear,
+        travel.bookings.domestic,
+        travel.bookings.international,
       );
       const forex = computeForexCost(
         travel.forex.applicableSpend,
@@ -642,62 +648,56 @@ function applySharedCapGroupsMulti(
   segments: ThreeSegmentSharedCapEntry[],
   index: Map<string, MockBestOf>,
 ): Record<"domestic" | "international" | "extraFlights", SegmentReturn | null> {
-  // Collect participants across all provided segments. We reuse the existing
-  // shared-cap mechanics but generalise the segment label so extra-flights
-  // participates in the same pools.
-  const allParticipants: (SharedCapParticipant & {
-    segLabel: "domestic" | "international" | "extraFlights";
-  })[] = [];
+  // Each segment (domestic / international / extraFlights) gets its own
+  // shared-cap pool sized by that segment's own trip count. Within a segment,
+  // participants in the same group still compete top-down by rate.
+  const overrides = new Map<string, number>();
   for (const s of segments) {
     if (s.segment.totalSpend <= 0) continue;
-    const ps = collectSharedCapParticipants(
+    const participants = collectSharedCapParticipants(
       cardId,
-      // collectSharedCapParticipants's `segment` field is a label only used
-      // for override lookup; we override the label after the call.
+      // segment field on participants is unused here; we key overrides by the
+      // segment label assigned below.
       "domestic",
       s.segment,
       index,
       s.tripsForGroup,
     );
-    for (const p of ps) {
-      allParticipants.push({ ...p, segLabel: s.label });
+    const labeled = participants.map((p) => ({ ...p, segLabel: s.label }));
+
+    const byGroup = new Map<
+      string,
+      (SharedCapParticipant & { segLabel: typeof s.label })[]
+    >();
+    for (const p of labeled) {
+      const cat = s.segment[p.category as "flights" | "hotels" | "other"];
+      const bestOf = index.get(`${cardId}::${cat.category}`);
+      const group =
+        cat.source === "voucher"
+          ? bestOf?.bestVoucher?.sharedCapGroup
+          : bestOf?.bestDirectSwipe?.sharedCapGroup;
+      if (!group) continue;
+      const key = sharedCapGroupKey(group);
+      const list = byGroup.get(key) ?? [];
+      list.push(p);
+      byGroup.set(key, list);
     }
-  }
 
-  const byGroup = new Map<
-    string,
-    (SharedCapParticipant & { segLabel: "domestic" | "international" | "extraFlights" })[]
-  >();
-  for (const p of allParticipants) {
-    const seg = segments.find((s) => s.label === p.segLabel)!.segment;
-    const cat = seg[p.category as "flights" | "hotels" | "other"];
-    const bestOf = index.get(`${cardId}::${cat.category}`);
-    const group =
-      cat.source === "voucher"
-        ? bestOf?.bestVoucher?.sharedCapGroup
-        : bestOf?.bestDirectSwipe?.sharedCapGroup;
-    if (!group) continue;
-    const key = sharedCapGroupKey(group);
-    const list = byGroup.get(key) ?? [];
-    list.push(p);
-    byGroup.set(key, list);
-  }
-
-  const overrides = new Map<string, number>();
-  for (const members of byGroup.values()) {
-    if (members.length <= 1) continue;
-    const B = members[0].rewardCapAnnualValueInr;
-    if (B <= 0) continue;
-    const sorted = [...members].sort((a, b) => b.rate - a.rate);
-    let remaining = B;
-    for (const m of sorted) {
-      const potential = (m.coveredSpend * m.rate) / 100;
-      const accelerated = Math.min(potential, remaining);
-      overrides.set(
-        `${m.segLabel}::${m.category}`,
-        participantReturn(m, accelerated),
-      );
-      remaining = Math.max(0, remaining - accelerated);
+    for (const members of byGroup.values()) {
+      if (members.length <= 1) continue;
+      const B = members[0].rewardCapAnnualValueInr;
+      if (B <= 0) continue;
+      const sorted = [...members].sort((a, b) => b.rate - a.rate);
+      let remaining = B;
+      for (const m of sorted) {
+        const potential = (m.coveredSpend * m.rate) / 100;
+        const accelerated = Math.min(potential, remaining);
+        overrides.set(
+          `${m.segLabel}::${m.category}`,
+          participantReturn(m, accelerated),
+        );
+        remaining = Math.max(0, remaining - accelerated);
+      }
     }
   }
 
@@ -767,7 +767,7 @@ export function recommendTravelCardAdvanced(
             travel.categorySpend.extraFlights,
             card,
             index,
-            travel.bookings.extraFlightsSpreadMonths,
+            travel.bookings.extraFlightsTrips,
           )
         : null;
 
@@ -775,19 +775,19 @@ export function recommendTravelCardAdvanced(
         {
           label: "domestic",
           segment: rawDomestic,
-          tripsForGroup: input.tripsPerYear,
+          tripsForGroup: travel.bookings.domestic,
         },
         {
           label: "international",
           segment: rawInternational,
-          tripsForGroup: input.tripsPerYear,
+          tripsForGroup: travel.bookings.international,
         },
       ];
       if (rawExtra) {
         segmentsForCap.push({
           label: "extraFlights",
           segment: rawExtra,
-          tripsForGroup: travel.bookings.extraFlightsSpreadMonths,
+          tripsForGroup: travel.bookings.extraFlightsTrips,
         });
       }
 

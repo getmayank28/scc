@@ -488,8 +488,8 @@ function AdvancedTravelForm() {
                     {inr(result.travel.additionalFlightSpend)}
                   </div>
                   <div>
-                    Spread across{" "}
-                    {result.travel.bookings.extraFlightsSpreadMonths} month(s)
+                    Spread across {result.travel.bookings.extraFlightsTrips}{" "}
+                    trip(s)
                   </div>
                 </>
               )}
