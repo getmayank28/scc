@@ -66,9 +66,8 @@ export interface TravelCardPhaseTwoOutput {
   bookings: {
     domestic: number;
     international: number;
-    // For extra flights we don't have trips; we use the spread (months) as
-    // the cap horizon so monthly caps reset that many times.
-    extraFlightsSpreadMonths: number;
+    // Number of standalone flight bookings, derived from the spend bracket.
+    extraFlightsTrips: number;
   };
   forex: {
     applicableSpend: number;
@@ -160,15 +159,15 @@ export function travelCardPhaseOneRecommendation(
   };
 }
 
-// Additional flight spend lands in lumpy bursts; the spread (months) determines
-// how many monthly cap periods can absorb it.
-export function additionalFlightSpreadMonths(spend: number): number {
+// Additional flight spend is split into a number of standalone bookings based
+// on the spend bracket. Each derived trip claims one cap period for accelerator
+// purposes, and the per-trip spend = spend / trips.
+export function additionalFlightTrips(spend: number): number {
   if (spend <= 0) return 0;
-  if (spend <= 40000) return 2;
-  if (spend <= 90000) return 3;
-  if (spend <= 150000) return 5;
-  if (spend <= 300000) return 8;
-  return 12;
+  if (spend <= 50000) return 2;
+  if (spend <= 100000) return 3;
+  if (spend <= 200000) return 5;
+  return 7;
 }
 
 export function travelCardPhaseTwoRecommendation(
@@ -221,7 +220,7 @@ export function travelCardPhaseTwoRecommendation(
     bookings: {
       domestic: domesticTrips,
       international: totalInternationalTrip,
-      extraFlightsSpreadMonths: additionalFlightSpreadMonths(extraFlights),
+      extraFlightsTrips: additionalFlightTrips(extraFlights),
     },
     forex: {
       applicableSpend: internationalCategory.other,

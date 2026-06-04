@@ -55,13 +55,18 @@ export interface FoodSpendBreakdown {
   annualDeliverySpend: number;
   annualDiningSpend: number;
   annualTotal: number;
-  // Annual rupee amounts after platform allocation. `offlineDining` is the
-  // dining-out pot; the other three split the delivery pot.
-  platformAllocation: {
+  // Same platform shares apply to both pots: delivery splits across
+  // Swiggy/Zomato/other-delivery; dining splits across Swiggy/Zomato
+  // (assumed via Dineout-style routes) and offline (the "other" share).
+  deliveryAllocation: {
     swiggy: number;
     zomato: number;
     other: number;
-    offlineDining: number;
+  };
+  diningAllocation: {
+    swiggy: number;
+    zomato: number;
+    other: number;
   };
 }
 
@@ -81,11 +86,15 @@ export function buildFoodSpendBreakdown(
     annualDeliverySpend: delivery,
     annualDiningSpend: dining,
     annualTotal: delivery + dining,
-    platformAllocation: {
+    deliveryAllocation: {
       swiggy: delivery * shares.swiggy,
       zomato: delivery * shares.zomato,
       other: delivery * shares.other,
-      offlineDining: dining,
+    },
+    diningAllocation: {
+      swiggy: dining * shares.swiggy,
+      zomato: dining * shares.zomato,
+      other: dining * shares.other,
     },
   };
 }
@@ -178,7 +187,7 @@ function diningFallbackRate(card: MockCard): number {
 
 function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
   const out: FoodSubSpec[] = [];
-  const { swiggy, zomato, other } = spend.platformAllocation;
+  const { swiggy, zomato, other } = spend.deliveryAllocation;
   if (swiggy > 0) {
     out.push({
       kind: "merchant",
@@ -209,17 +218,37 @@ function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
 }
 
 function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
-  if (spend.platformAllocation.offlineDining <= 0) return [];
-  // Offline dining doesn't pin to a specific merchant; spend earns the card's
-  // dining base rate (or 0 if the card excludes dining).
-  return [
-    {
+  const out: FoodSubSpec[] = [];
+  const { swiggy, zomato, other } = spend.diningAllocation;
+  if (swiggy > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy dining",
+      spend: swiggy,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomato > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato dining",
+      spend: zomato,
+      category: CATEGORIES.DINING,
+      merchant: MERCHANTS.ZOMATO,
+    });
+  }
+  if (other > 0) {
+    // Leftover dining share after Swiggy/Zomato — paid directly at the
+    // restaurant, earns the card's dining base rate (or 0 if excluded).
+    out.push({
       kind: "fallback",
       label: "Offline dining",
-      spend: spend.platformAllocation.offlineDining,
+      spend: other,
       category: CATEGORIES.DINING,
-    },
-  ];
+    });
+  }
+  return out;
 }
 
 function evaluateSpec(

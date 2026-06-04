@@ -488,8 +488,8 @@ function AdvancedTravelForm() {
                     {inr(result.travel.additionalFlightSpend)}
                   </div>
                   <div>
-                    Spread across{" "}
-                    {result.travel.bookings.extraFlightsSpreadMonths} month(s)
+                    Spread across {result.travel.bookings.extraFlightsTrips}{" "}
+                    trip(s)
                   </div>
                 </>
               )}
@@ -1193,27 +1193,39 @@ function FoodCardPhaseOneForm() {
                 <span className="text-right">Annual spend</span>
               </div>
               <div className="grid grid-cols-2 py-1">
-                <span>Swiggy</span>
+                <span>Swiggy delivery</span>
                 <span className="text-right">
-                  {inr(result.spend.platformAllocation.swiggy)}
+                  {inr(result.spend.deliveryAllocation.swiggy)}
                 </span>
               </div>
               <div className="grid grid-cols-2 py-1">
-                <span>Zomato</span>
+                <span>Zomato delivery</span>
                 <span className="text-right">
-                  {inr(result.spend.platformAllocation.zomato)}
+                  {inr(result.spend.deliveryAllocation.zomato)}
                 </span>
               </div>
               <div className="grid grid-cols-2 py-1">
                 <span>Other delivery</span>
                 <span className="text-right">
-                  {inr(result.spend.platformAllocation.other)}
+                  {inr(result.spend.deliveryAllocation.other)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Swiggy dining</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.swiggy)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 py-1">
+                <span>Zomato dining</span>
+                <span className="text-right">
+                  {inr(result.spend.diningAllocation.zomato)}
                 </span>
               </div>
               <div className="grid grid-cols-2 py-1">
                 <span>Offline dining</span>
                 <span className="text-right">
-                  {inr(result.spend.platformAllocation.offlineDining)}
+                  {inr(result.spend.diningAllocation.other)}
                 </span>
               </div>
             </div>
