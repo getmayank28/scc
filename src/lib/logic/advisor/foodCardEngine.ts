@@ -56,8 +56,8 @@ export interface FoodSpendBreakdown {
   annualDiningSpend: number;
   annualTotal: number;
   // Same platform shares apply to both pots: delivery splits across
-  // Swiggy/Zomato/other-delivery; dining splits across Swiggy/Zomato
-  // (assumed via Dineout-style routes) and offline (the "other" share).
+  // Swiggy/Zomato/other-delivery; dining splits across Swiggy Dineout /
+  // Zomato District (aggregator routes) and offline (the "other" share).
   deliveryAllocation: {
     swiggy: number;
     zomato: number;
@@ -226,7 +226,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       label: "Swiggy dining",
       spend: swiggy,
       category: CATEGORIES.DINING,
-      merchant: MERCHANTS.SWIGGY,
+      merchant: MERCHANTS.SWIGGY_DINEOUT,
     });
   }
   if (zomato > 0) {
@@ -235,7 +235,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       label: "Zomato dining",
       spend: zomato,
       category: CATEGORIES.DINING,
-      merchant: MERCHANTS.ZOMATO,
+      merchant: MERCHANTS.ZOMATO_DISTRICT,
     });
   }
   if (other > 0) {
