@@ -4,7 +4,12 @@ import {
   MOCK_CARDS,
   type MockCard,
 } from "./cards";
-import { MOCK_BEST_OF, type BestVoucher, type MockBestOf } from "./bestOf";
+import {
+  MOCK_BEST_OF,
+  type BestDirectSwipe,
+  type BestVoucher,
+  type MockBestOf,
+} from "./bestOf";
 import { type CapPeriod, sharedCapGroupKey } from "./rules";
 
 const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
@@ -124,18 +129,140 @@ function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
   return index;
 }
 
-function returnWithCap(
+// Pool key for waterfall cap accounting. Rules sharing a cap group draw from
+// one pool; everything else gets its own private pool.
+function directPoolKey(c: BestDirectSwipe): string {
+  if (c.sharedCapGroup) return `shared::${sharedCapGroupKey(c.sharedCapGroup)}`;
+  return `unshared::${c.merchant ?? "base"}::${c.percentage}::${
+    c.cappedSpendPerPeriodInr ?? "null"
+  }`;
+}
+
+interface DirectWaterfallResult {
+  totalInr: number;
+  primary: BestDirectSwipe | null;
+}
+
+// Drain spend top-down through the direct frontier (highest rate first),
+// respecting per-rule and shared-pool caps. Anything not absorbed by a rule
+// finally falls to the card's base reward rate.
+function directWaterfallInr(
   spend: number,
-  effectivePct: number,
-  cappedAnnualSpendInr: number | null,
-  fallbackPct: number,
-): number {
-  if (cappedAnnualSpendInr === null || spend <= cappedAnnualSpendInr) {
-    return (spend * effectivePct) / 100;
+  directFrontier: BestDirectSwipe[],
+  baseTier: BestDirectSwipe | null,
+  baseRate: number,
+  bookingsPerYear: number,
+): DirectWaterfallResult {
+  const candidates: BestDirectSwipe[] = [...directFrontier];
+  if (baseTier) candidates.push(baseTier);
+  candidates.sort((a, b) => b.percentage - a.percentage);
+
+  const poolCapReward = new Map<string, number>();
+  const poolUsedReward = new Map<string, number>();
+  for (const c of candidates) {
+    const k = directPoolKey(c);
+    if (!poolCapReward.has(k)) {
+      const annual = tripAwareAnnualCapInr(
+        c.rewardCapPerPeriodValueInr,
+        c.capPeriod,
+        bookingsPerYear,
+      );
+      poolCapReward.set(k, annual ?? Number.POSITIVE_INFINITY);
+    }
   }
-  const cappedPortion = (cappedAnnualSpendInr * effectivePct) / 100;
-  const overflowPortion = ((spend - cappedAnnualSpendInr) * fallbackPct) / 100;
-  return cappedPortion + overflowPortion;
+
+  let remaining = spend;
+  let totalInr = 0;
+  let primary: BestDirectSwipe | null = null;
+
+  for (const c of candidates) {
+    if (remaining <= 0) break;
+    if (c.percentage <= 0) continue;
+    const k = directPoolKey(c);
+    const used = poolUsedReward.get(k) ?? 0;
+    const cap = poolCapReward.get(k)!;
+    const headroom = cap - used;
+    if (headroom <= 0) continue;
+    const maxSpend = (headroom * 100) / c.percentage;
+    const absorbed = Math.min(remaining, maxSpend);
+    if (absorbed <= 0) continue;
+    const earned = (absorbed * c.percentage) / 100;
+    totalInr += earned;
+    remaining -= absorbed;
+    poolUsedReward.set(k, used + earned);
+    if (!primary) primary = c;
+  }
+
+  totalInr += (remaining * baseRate) / 100;
+  return { totalInr, primary };
+}
+
+interface VoucherWaterfallResult {
+  totalInr: number;
+  primary: BestVoucher | null;
+}
+
+// Voucher lane: top-totalPercentage voucher absorbs spend up to its annual
+// purchase cap, next voucher absorbs the next slice, etc. Spend that can't be
+// routed through any voucher spills into the *direct* waterfall (not the card
+// base rate) — this is the key correctness fix vs. the old single-rule lane.
+function voucherWaterfallInr(
+  spend: number,
+  voucherFrontier: BestVoucher[],
+  directFrontier: BestDirectSwipe[],
+  baseTier: BestDirectSwipe | null,
+  baseRate: number,
+  bookingsPerYear: number,
+): VoucherWaterfallResult {
+  const sorted = [...voucherFrontier].sort(
+    (a, b) => b.totalPercentage - a.totalPercentage,
+  );
+  // avgBookingInr derived from full spend matches the legacy single-voucher
+  // model — keeps voucher cap math consistent across the waterfall.
+  const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+
+  let remaining = spend;
+  let totalInr = 0;
+  let primary: BestVoucher | null = null;
+
+  for (const v of sorted) {
+    if (remaining <= 0) break;
+    const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+    const absorbed =
+      purchaseCap === null ? remaining : Math.min(remaining, purchaseCap);
+    if (absorbed <= 0) continue;
+
+    const rewardCap = tripAwareAnnualCapInr(
+      v.caps.rewardSpendPerPeriodInr,
+      v.capPeriod,
+      bookingsPerYear,
+    );
+    const acceleratedV = rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
+    const overflowV = absorbed - acceleratedV;
+
+    const earned =
+      (absorbed * v.breakdown.discount) / 100 -
+      (absorbed * v.breakdown.fee) / 100 +
+      (acceleratedV * v.breakdown.reward) / 100 +
+      (overflowV * baseRate) / 100;
+
+    totalInr += earned;
+    remaining -= absorbed;
+    if (!primary) primary = v;
+  }
+
+  if (remaining > 0) {
+    const spill = directWaterfallInr(
+      remaining,
+      directFrontier,
+      baseTier,
+      baseRate,
+      bookingsPerYear,
+    );
+    totalInr += spill.totalInr;
+  }
+
+  return { totalInr, primary };
 }
 
 function voucherAnnualCap(
@@ -182,32 +309,6 @@ function buildVoucherCapNote(
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-function computeVoucherReturn(
-  spend: number,
-  voucher: BestVoucher,
-  purchaseCap: number | null,
-  rewardCap: number | null,
-): number {
-  const { discount, reward, fee } = voucher.breakdown;
-  const baseRate = voucher.fallbackPercentage;
-
-  // V = voucher-covered spend (bounded by purchase ceilings)
-  const V = purchaseCap === null ? spend : Math.min(spend, purchaseCap);
-  const nonVoucherSpend = spend - V;
-
-  // Reward portion splits at reward_cap: accelerated below, base above
-  const acceleratedV = rewardCap === null ? V : Math.min(V, rewardCap);
-  const overflowV = V - acceleratedV;
-
-  return (
-    (nonVoucherSpend * baseRate) / 100 +
-    (V * discount) / 100 -
-    (V * fee) / 100 +
-    (acceleratedV * reward) / 100 +
-    (overflowV * baseRate) / 100
-  );
-}
-
 export function computeCategoryReturn(
   spend: number,
   category: Category,
@@ -216,65 +317,71 @@ export function computeCategoryReturn(
   bookingsPerYear: number,
 ): CategoryReturn {
   const baseRate = card.rewards.base_reward_rate;
-  const direct = bestOf?.bestDirectSwipe ?? null;
-  const voucher = bestOf?.bestVoucher ?? null;
+  const directFrontier = bestOf?.directFrontier ?? [];
+  const voucherFrontier = bestOf?.voucherFrontier ?? [];
+  const baseTier = bestOf?.baseTier ?? null;
 
-  const directRewardCap = direct
-    ? tripAwareAnnualCapInr(
-        direct.cappedSpendPerPeriodInr,
-        direct.capPeriod,
-        bookingsPerYear,
-      )
-    : null;
+  const directResult = directWaterfallInr(
+    spend,
+    directFrontier,
+    baseTier,
+    baseRate,
+    bookingsPerYear,
+  );
 
-  const directReturn = direct
-    ? returnWithCap(
-        spend,
-        direct.percentage,
-        directRewardCap,
-        direct.fallbackPercentage,
-      )
-    : (spend * baseRate) / 100;
+  const voucherResult =
+    voucherFrontier.length > 0
+      ? voucherWaterfallInr(
+          spend,
+          voucherFrontier,
+          directFrontier,
+          baseTier,
+          baseRate,
+          bookingsPerYear,
+        )
+      : null;
 
-  const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
-  const voucherCap = voucher
-    ? voucherAnnualCap(voucher, bookingsPerYear, avgBookingInr)
-    : null;
-  const voucherRewardCap = voucher
-    ? tripAwareAnnualCapInr(
-        voucher.caps.rewardSpendPerPeriodInr,
-        voucher.capPeriod,
-        bookingsPerYear,
-      )
-    : null;
-
-  const voucherReturn = voucher
-    ? computeVoucherReturn(spend, voucher, voucherCap, voucherRewardCap)
-    : null;
-
-  if (voucher && voucherReturn !== null && voucherReturn >= directReturn) {
+  if (
+    voucherResult &&
+    voucherResult.primary &&
+    voucherResult.totalInr >= directResult.totalInr
+  ) {
+    const v = voucherResult.primary;
+    const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+    const voucherCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+    const voucherRewardCap = tripAwareAnnualCapInr(
+      v.caps.rewardSpendPerPeriodInr,
+      v.capPeriod,
+      bookingsPerYear,
+    );
     return withEffectiveRate({
       category,
       spend,
-      effectivePercentage: voucher.totalPercentage,
+      effectivePercentage: v.totalPercentage,
       source: "voucher",
-      merchant: voucher.merchant,
+      merchant: v.merchant,
       capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
       cappedAnnualSpendInr: voucherCap,
-      returnInr: voucherReturn,
+      returnInr: voucherResult.totalInr,
     });
   }
 
-  if (direct) {
+  if (directResult.primary) {
+    const d = directResult.primary;
+    const directRewardCap = tripAwareAnnualCapInr(
+      d.cappedSpendPerPeriodInr,
+      d.capPeriod,
+      bookingsPerYear,
+    );
     return withEffectiveRate({
       category,
       spend,
-      effectivePercentage: direct.percentage,
+      effectivePercentage: d.percentage,
       source: "direct",
-      merchant: direct.merchant,
-      capNote: direct.capNote,
+      merchant: d.merchant,
+      capNote: d.capNote,
       cappedAnnualSpendInr: directRewardCap,
-      returnInr: directReturn,
+      returnInr: directResult.totalInr,
     });
   }
 
@@ -286,7 +393,7 @@ export function computeCategoryReturn(
     merchant: null,
     capNote: null,
     cappedAnnualSpendInr: null,
-    returnInr: directReturn,
+    returnInr: directResult.totalInr,
   });
 }
 
