@@ -1,6 +1,7 @@
 import { type Category, MOCK_CARDS, type MockCard } from "./cards";
 import {
   MOCK_RULES,
+  sharedCapGroupKey,
   validateSharedCapGroups,
   type CapPeriod,
   type CapScope,
@@ -12,7 +13,9 @@ import {
 validateSharedCapGroups(MOCK_RULES);
 
 export interface BestDirectSwipe {
-  merchant: Merchant;
+  // null only on the category-floor rule (baseTier). All frontier rules have
+  // a concrete merchant.
+  merchant: Merchant | null;
   percentage: number;
   fallbackPercentage: number;
   cappedSpendPerPeriodInr: number | null;
@@ -43,8 +46,19 @@ export interface MockBestOf {
   _id: string;
   cardId: string;
   category: Category;
+  // Legacy: top-rate merchant rule and top-totalPct voucher. Kept verbatim so
+  // existing consumers (shopping/food/allrounder + cross-category shared-cap
+  // processor) keep working unchanged.
   bestDirectSwipe: BestDirectSwipe | null;
   bestVoucher: BestVoucher | null;
+  // Pareto-undominated direct candidates (merchant-specific) sorted by rate
+  // desc. Used by the waterfall in engine.ts to model multi-rule cap overflow.
+  directFrontier: BestDirectSwipe[];
+  // Pareto-undominated voucher candidates sorted by totalPercentage desc.
+  voucherFrontier: BestVoucher[];
+  // Category-wide floor rule (merchant === null) when it earns above the card
+  // base rate. Feeds the direct waterfall as a final pre-base layer.
+  baseTier: BestDirectSwipe | null;
   rulesVersion: number;
   computedAt: Date;
 }
@@ -109,6 +123,129 @@ function capNoteFor(rule: MockRule): string | null {
   return `${valueStr} ${metric}/${period}${shared}`;
 }
 
+function buildDirectCandidate(
+  r: MockRule,
+  card: MockCard,
+): BestDirectSwipe {
+  const pct = r.reward.direct_swipe_percentage;
+  return {
+    merchant: r.merchant,
+    percentage: pct,
+    fallbackPercentage: card.rewards.base_reward_rate,
+    cappedSpendPerPeriodInr: perPeriodSpendForCap(r, card, pct),
+    rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
+    capPeriod: r.caps.reward_cap?.period ?? null,
+    capNote: capNoteFor(r),
+    capScope: r.caps.reward_cap?.scope ?? null,
+    sharedCapGroup: r.shared_cap_group,
+  };
+}
+
+function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
+  const rw = r.reward;
+  const total =
+    rw.voucher_discount_percentage +
+    rw.voucher_reward_percentage -
+    rw.convenience_fee_percentage;
+  return {
+    merchant: r.merchant as Merchant,
+    breakdown: {
+      discount: rw.voucher_discount_percentage,
+      reward: rw.voucher_reward_percentage,
+      fee: rw.convenience_fee_percentage,
+    },
+    totalPercentage: total,
+    caps: {
+      monthlyPurchaseInr: r.caps.voucher_monthly_purchase_limit_inr,
+      maxVoucherInr: r.caps.max_voucher_size_inr,
+      perBooking: r.caps.vouchers_per_booking,
+      rewardSpendPerPeriodInr: perPeriodSpendForCap(
+        r,
+        card,
+        rw.voucher_reward_percentage,
+      ),
+    },
+    sharedCapGroup: r.shared_cap_group,
+    rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
+    capPeriod: r.caps.reward_cap?.period ?? null,
+    fallbackPercentage: card.rewards.base_reward_rate,
+  };
+}
+
+// Pareto-prune direct candidates:
+// - Same shared_cap_group key: lower-rate is dominated (one pool, top rate
+//   always drains it first — lower rate adds zero).
+// - Different (or null) shared groups: independent pools, kept unless strictly
+//   dominated on (rate, per-period reward cap) at the same cap period.
+function pruneDirectFrontier(
+  candidates: BestDirectSwipe[],
+): BestDirectSwipe[] {
+  const sharedReps = new Map<string, BestDirectSwipe>();
+  const unshared: BestDirectSwipe[] = [];
+  for (const c of candidates) {
+    if (c.sharedCapGroup) {
+      const key = sharedCapGroupKey(c.sharedCapGroup);
+      const cur = sharedReps.get(key);
+      if (!cur || c.percentage > cur.percentage) sharedReps.set(key, c);
+    } else {
+      unshared.push(c);
+    }
+  }
+  const unsharedFrontier = unshared.filter((c) => {
+    return !unshared.some((o) => {
+      if (o === c) return false;
+      if (o.capPeriod !== c.capPeriod) return false;
+      const oCap = o.rewardCapPerPeriodValueInr ?? Number.POSITIVE_INFINITY;
+      const cCap = c.rewardCapPerPeriodValueInr ?? Number.POSITIVE_INFINITY;
+      return (
+        o.percentage >= c.percentage &&
+        oCap >= cCap &&
+        (o.percentage > c.percentage || oCap > cCap)
+      );
+    });
+  });
+  return [...sharedReps.values(), ...unsharedFrontier].sort(
+    (a, b) => b.percentage - a.percentage,
+  );
+}
+
+// Pareto-prune vouchers across (totalPercentage, monthlyPurchaseInr,
+// maxVoucherInr × perBooking, rewardCapPerPeriodValueInr). null caps treated as
+// infinity. Each surviving voucher is optimal in at least one cap regime.
+function pruneVoucherFrontier(candidates: BestVoucher[]): BestVoucher[] {
+  const score = (v: BestVoucher) => ({
+    pct: v.totalPercentage,
+    monthly: v.caps.monthlyPurchaseInr ?? Number.POSITIVE_INFINITY,
+    perBookingVol:
+      (v.caps.maxVoucherInr ?? Number.POSITIVE_INFINITY) *
+      (v.caps.perBooking ?? Number.POSITIVE_INFINITY),
+    rewardCap: v.rewardCapPerPeriodValueInr ?? Number.POSITIVE_INFINITY,
+  });
+  return candidates
+    .filter((c) => {
+      const cs = score(c);
+      return !candidates.some((o) => {
+        if (o === c) return false;
+        const os = score(o);
+        if (
+          os.pct < cs.pct ||
+          os.monthly < cs.monthly ||
+          os.perBookingVol < cs.perBookingVol ||
+          os.rewardCap < cs.rewardCap
+        ) {
+          return false;
+        }
+        return (
+          os.pct > cs.pct ||
+          os.monthly > cs.monthly ||
+          os.perBookingVol > cs.perBookingVol ||
+          os.rewardCap > cs.rewardCap
+        );
+      });
+    })
+    .sort((a, b) => b.totalPercentage - a.totalPercentage);
+}
+
 export function computeBestOfForCard(
   card: MockCard,
   allRules: MockRule[],
@@ -124,63 +261,37 @@ export function computeBestOfForCard(
   for (const category of categories) {
     const rulesInCat = cardRules.filter((r) => r.category === category);
 
-    let bestDirect: BestDirectSwipe | null = null;
+    // Split direct candidates: merchant-specific rules feed the frontier; the
+    // single best `merchant === null` rule (category floor) becomes baseTier.
+    const merchantDirect: BestDirectSwipe[] = [];
+    let baseTier: BestDirectSwipe | null = null;
     for (const r of rulesInCat) {
-      if (!r.merchant) continue;
       const pct = r.reward.direct_swipe_percentage;
       if (pct <= baseRate) continue;
-      if (!bestDirect || pct > bestDirect.percentage) {
-        bestDirect = {
-          merchant: r.merchant,
-          percentage: pct,
-          fallbackPercentage: baseRate,
-          cappedSpendPerPeriodInr: perPeriodSpendForCap(r, card, pct),
-          rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
-          capPeriod: r.caps.reward_cap?.period ?? null,
-          capNote: capNoteFor(r),
-          capScope: r.caps.reward_cap?.scope ?? null,
-          sharedCapGroup: r.shared_cap_group,
-        };
+      const candidate = buildDirectCandidate(r, card);
+      if (r.merchant === null) {
+        if (!baseTier || pct > baseTier.percentage) baseTier = candidate;
+      } else {
+        merchantDirect.push(candidate);
       }
     }
 
-    let bestVoucher: BestVoucher | null = null;
+    const directFrontier = pruneDirectFrontier(merchantDirect);
+    // Legacy bestDirectSwipe: top-rate merchant rule. Matches old behavior
+    // exactly because pruning preserves the top-rate rule.
+    const bestDirect = directFrontier[0] ?? null;
+
+    const voucherCandidates: BestVoucher[] = [];
     for (const r of rulesInCat) {
       if (!r.merchant) continue;
-      const rw = r.reward;
-      if (rw.voucher_reward_percentage <= 0) continue;
-      const total =
-        rw.voucher_discount_percentage +
-        rw.voucher_reward_percentage -
-        rw.convenience_fee_percentage;
-      if (!bestVoucher || total > bestVoucher.totalPercentage) {
-        bestVoucher = {
-          merchant: r.merchant,
-          breakdown: {
-            discount: rw.voucher_discount_percentage,
-            reward: rw.voucher_reward_percentage,
-            fee: rw.convenience_fee_percentage,
-          },
-          totalPercentage: total,
-          caps: {
-            monthlyPurchaseInr: r.caps.voucher_monthly_purchase_limit_inr,
-            maxVoucherInr: r.caps.max_voucher_size_inr,
-            perBooking: r.caps.vouchers_per_booking,
-            rewardSpendPerPeriodInr: perPeriodSpendForCap(
-              r,
-              card,
-              rw.voucher_reward_percentage,
-            ),
-          },
-          sharedCapGroup: r.shared_cap_group,
-          rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
-          capPeriod: r.caps.reward_cap?.period ?? null,
-          fallbackPercentage: baseRate,
-        };
-      }
+      if (r.reward.voucher_reward_percentage <= 0) continue;
+      voucherCandidates.push(buildVoucherCandidate(r, card));
     }
+    const voucherFrontier = pruneVoucherFrontier(voucherCandidates);
+    // Legacy bestVoucher: top totalPercentage, preserved by sort order.
+    const bestVoucher = voucherFrontier[0] ?? null;
 
-    if (!bestDirect && !bestVoucher) continue;
+    if (!bestDirect && !bestVoucher && !baseTier) continue;
 
     results.push({
       _id: `bestof_${card._id.replace(/^card_/, "")}_${category}`,
@@ -188,6 +299,9 @@ export function computeBestOfForCard(
       category,
       bestDirectSwipe: bestDirect,
       bestVoucher,
+      directFrontier,
+      voucherFrontier,
+      baseTier,
       rulesVersion,
       computedAt,
     });
