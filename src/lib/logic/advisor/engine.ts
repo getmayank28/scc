@@ -1,11 +1,5 @@
+import { CATEGORIES, type Category, type MockCard } from "./cards";
 import {
-  CATEGORIES,
-  type Category,
-  MOCK_CARDS,
-  type MockCard,
-} from "./cards";
-import {
-  MOCK_BEST_OF,
   type BestDirectSwipe,
   type BestVoucher,
   type MockBestOf,
@@ -643,8 +637,8 @@ function computeForexCost(
 
 export function recommendTravelCard(
   input: TravelCardPhaseOneInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
 ): TravelEngineResult {
   const travel = travelCardPhaseOneRecommendation(input);
   const index = buildBestOfIndex(bestOfList);
@@ -842,8 +836,8 @@ function applySharedCapGroupsMulti(
 
 export function recommendTravelCardAdvanced(
   input: TravelCardPhaseTwoInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
 ): TravelEngineAdvancedResult {
   const travel = travelCardPhaseTwoRecommendation(input);
   const index = buildBestOfIndex(bestOfList);

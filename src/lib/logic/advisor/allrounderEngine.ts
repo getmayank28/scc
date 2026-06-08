@@ -1,6 +1,6 @@
-import { CATEGORIES, MOCK_CARDS, type Category, type MockCard } from "./cards";
-import { MOCK_BEST_OF, computeBestOfForCard, type MockBestOf } from "./bestOf";
-import { MERCHANTS, MOCK_RULES, type Merchant, type MockRule } from "./rules";
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import { computeBestOfForCard, type MockBestOf } from "./bestOf";
+import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
 
 // ============================================================================
@@ -752,9 +752,9 @@ function scoreCardsForDistribution(
 
 export function recommendAllRounderCardPhaseOne(
   input: AllRounderPhaseOneInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): AllRounderEngineResult {
   const phaseOne = allRounderPhaseOne(input);
   const scoring = scoreCardsForDistribution(phaseOne, cards, bestOfList, rules);
@@ -863,9 +863,9 @@ export function allRounderPhaseTwo(
 
 export function recommendAllRounderCardPhaseTwo(
   input: AllRounderPhaseTwoInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): AllRounderEnginePhaseTwoResult {
   const phaseTwo = allRounderPhaseTwo(input);
   const scoring = scoreCardsForDistribution(phaseTwo, cards, bestOfList, rules);

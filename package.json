@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:advisor": "npx tsx --env-file=.env.local scripts/seed-advisor.ts",
+    "smoke:recommend": "npx tsx --env-file=.env.local scripts/smoke-recommend.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.37.2",

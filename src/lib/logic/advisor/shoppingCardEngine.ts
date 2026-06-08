@@ -1,6 +1,6 @@
-import { CATEGORIES, MOCK_CARDS, type Category, type MockCard } from "./cards";
-import { MOCK_BEST_OF, computeBestOfForCard, type MockBestOf } from "./bestOf";
-import { MERCHANTS, MOCK_RULES, type Merchant, type MockRule } from "./rules";
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import { computeBestOfForCard, type MockBestOf } from "./bestOf";
+import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
 
 // ============================================================================
@@ -475,9 +475,9 @@ function scoreCard(
 
 export function recommendShoppingCardPhaseOne(
   input: ShoppingCardPhaseOneInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): ShoppingCardEngineResult {
   const spend = buildShoppingSpendBreakdown(input);
   const index = buildBestOfIndex(bestOfList);
@@ -671,9 +671,9 @@ function scoreCardTwo(
 
 export function recommendShoppingCardPhaseTwo(
   input: ShoppingCardPhaseTwoInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): ShoppingCardEngineResultTwo {
   const spend = buildShoppingSpendBreakdownTwo(input);
   const index = buildBestOfIndex(bestOfList);

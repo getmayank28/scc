@@ -1,16 +1,12 @@
-import { type Category, MOCK_CARDS, type MockCard } from "./cards";
+import { type Category, type MockCard } from "./cards";
 import {
-  MOCK_RULES,
   sharedCapGroupKey,
-  validateSharedCapGroups,
   type CapPeriod,
   type CapScope,
   type Merchant,
   type MockRule,
   type SharedCapGroup,
 } from "./rules";
-
-validateSharedCapGroups(MOCK_RULES);
 
 export interface BestDirectSwipe {
   // null only on the category-floor rule (baseTier). All frontier rules have
@@ -309,7 +305,3 @@ export function computeBestOfForCard(
 
   return results;
 }
-
-export const MOCK_BEST_OF: MockBestOf[] = MOCK_CARDS.flatMap((card) =>
-  computeBestOfForCard(card, MOCK_RULES, 1, new Date("2024-01-01")),
-);

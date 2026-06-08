@@ -1,6 +1,6 @@
-import { CATEGORIES, MOCK_CARDS, type Category, type MockCard } from "./cards";
-import { MOCK_BEST_OF, computeBestOfForCard, type MockBestOf } from "./bestOf";
-import { MERCHANTS, MOCK_RULES, type Merchant, type MockRule } from "./rules";
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import { computeBestOfForCard, type MockBestOf } from "./bestOf";
+import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
 
 // ============================================================================
@@ -369,9 +369,9 @@ function scoreCard(
 
 export function recommendFoodCardPhaseOne(
   input: FoodCardPhaseOneInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): FoodCardEngineResult {
   const spend = buildFoodSpendBreakdown(input);
   const index = buildBestOfIndex(bestOfList);
@@ -601,9 +601,9 @@ export interface FoodCardEngineResultTwo {
 
 export function recommendFoodCardPhaseTwo(
   input: FoodCardPhaseTwoInput,
-  cards: MockCard[] = MOCK_CARDS,
-  bestOfList: MockBestOf[] = MOCK_BEST_OF,
-  rules: MockRule[] = MOCK_RULES,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
 ): FoodCardEngineResultTwo {
   const spend = buildFoodSpendBreakdownTwo(input);
   const index = buildBestOfIndex(bestOfList);
