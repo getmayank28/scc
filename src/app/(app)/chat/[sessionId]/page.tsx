@@ -36,7 +36,7 @@ export default function ChatbotUI() {
   const {
     handleSendMessage,
     handleKeyPressSendMessage,
-    handleMessageFormatting,
+    handleAssistantSocketMessage,
   } = useChatActions();
 
   const { lastMessage, isSocketLoading } = useAppWebSocketConnection();
@@ -57,7 +57,7 @@ export default function ChatbotUI() {
       console.error("Invalid JSON from socket:", lastMessage.data);
       return;
     }
-    handleMessageFormatting(parsed);
+    handleAssistantSocketMessage(parsed);
   }, [lastMessage]);
 
   useEffect(() => {

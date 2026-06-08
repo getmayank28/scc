@@ -40,21 +40,19 @@ const useChatActions = () => {
   } = useChatState();
   const { sendMessageToSocket } = useAppWebSocketConnection();
 
-  const handleMessageFormatting = (
+  const handleAssistantSocketMessage = (
     message: BaseMessage | HistoryMessage | SessionMessage,
   ) => {
-    if (
-      message.type !== "history" &&
-      message.type !== "session" &&
-      message.source === "assistant"
-    ) {
-      addAssistantMessage(message);
-      return;
-    }
-
     if (message.type === "history") {
       loadHistory(message.messages);
       return;
+    }
+
+    if (
+      (message.type === "TextMessage" || message.type === "FinalMessage") &&
+      message.source === "assistant"
+    ) {
+      addAssistantMessage(message);
     }
   };
 
@@ -241,7 +239,7 @@ const useChatActions = () => {
   return {
     handleSendMessage,
     handleKeyPressSendMessage,
-    handleMessageFormatting,
+    handleAssistantSocketMessage,
   };
 };
 

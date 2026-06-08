@@ -91,7 +91,8 @@ const ApplyCard = () => {
       message: `tell me everything about ${selected.name}`,
       token,
     });
-    const content = joinTextMessagesByMid(data?.data?.messages);
+    const messages = data?.data?.messages?.filter((ele:{type:'TextMessage'|'SlotMessage'}) => ele?.type === 'TextMessage')
+    const content = joinTextMessagesByMid(messages);
     // @ts-expect-error mixed shape returned by bot
     const selectedMessage = content?.find((msg) => msg?.type === MESSAGE_TYPE.TEXT);
     setCardDetails(selectedMessage as BaseMessage);
