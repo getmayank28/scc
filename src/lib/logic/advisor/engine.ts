@@ -3,8 +3,9 @@ import {
   type BestDirectSwipe,
   type BestVoucher,
   type MockBestOf,
+  type SharedCapPool,
 } from "./bestOf";
-import { type CapPeriod, sharedCapGroupKey } from "./rules";
+import { type CapPeriod, type DirectSwipeSchedule } from "./rules";
 
 const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
   monthly: 12,
@@ -123,13 +124,25 @@ function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
   return index;
 }
 
-// Pool key for waterfall cap accounting. Rules sharing a cap group draw from
-// one pool; everything else gets its own private pool.
-function directPoolKey(c: BestDirectSwipe): string {
-  if (c.sharedCapGroup) return `shared::${sharedCapGroupKey(c.sharedCapGroup)}`;
-  return `unshared::${c.merchant ?? "base"}::${c.percentage}::${
-    c.cappedSpendPerPeriodInr ?? "null"
-  }`;
+// The single pool a direct candidate draws from, for waterfall cap accounting.
+// A `combined` candidate draws from the shared pool keyed by its group; every
+// other candidate gets a private pool. In both cases the budget is the rule's
+// own reward cap (combined members are validated to agree on it).
+interface CandidatePool {
+  key: string;
+  capPeriod: CapPeriod | null;
+}
+
+function directCandidatePool(c: BestDirectSwipe): CandidatePool {
+  if (c.sharedCapPool) {
+    return { key: `shared::${c.sharedCapPool.key}`, capPeriod: c.sharedCapPool.capPeriod };
+  }
+  return {
+    key: `unshared::${c.merchant ?? "base"}::${c.percentage}::${
+      c.cappedSpendPerPeriodInr ?? "null"
+    }`,
+    capPeriod: c.capPeriod,
+  };
 }
 
 interface DirectWaterfallResult {
@@ -137,45 +150,129 @@ interface DirectWaterfallResult {
   primary: BestDirectSwipe | null;
 }
 
-// Drain spend top-down through the direct frontier (highest rate first),
-// respecting per-rule and shared-pool caps. Anything not absorbed by a rule
-// finally falls to the card's base reward rate.
-function directWaterfallInr(
+// Annual spend threshold for a tier's per-period floor, annualized the same way
+// reward caps are (so tier thresholds and caps stay consistent). A 0 floor maps
+// to 0 (the first tier always applies from the bottom).
+function tierAnnualThreshold(
+  perPeriodInr: number,
+  schedule: DirectSwipeSchedule,
+  bookingsPerYear: number,
+): number {
+  return (
+    tripAwareAnnualCapInr(perPeriodInr, schedule.period, bookingsPerYear) ?? 0
+  );
+}
+
+// "whole" mode: the highest tier whose annual threshold the spend reaches sets
+// one rate applied to ALL the spend.
+function resolveWholeRate(
+  schedule: DirectSwipeSchedule,
   spend: number,
-  directFrontier: BestDirectSwipe[],
-  baseTier: BestDirectSwipe | null,
+  bookingsPerYear: number,
+): number {
+  let rate = schedule.tiers[0]?.rate ?? 0;
+  for (const t of schedule.tiers) {
+    const threshold = tierAnnualThreshold(
+      t.min_spend_per_period_inr,
+      schedule,
+      bookingsPerYear,
+    );
+    if (spend >= threshold) rate = t.rate;
+  }
+  return rate;
+}
+
+// "marginal" mode: each spend slice [tier_k, tier_k+1) earns tier_k's rate. The
+// rule's reward_cap (if any) ceilings the accelerated reward in spend order;
+// once it's exhausted, the remaining spend earns the base rate.
+function marginalTieredInr(
+  c: BestDirectSwipe,
+  spend: number,
+  baseRate: number,
+  bookingsPerYear: number,
+): number {
+  const schedule = c.schedule!;
+  const tiers = schedule.tiers;
+  const annualCap =
+    tripAwareAnnualCapInr(
+      c.rewardCapPerPeriodValueInr,
+      c.capPeriod,
+      bookingsPerYear,
+    ) ?? Number.POSITIVE_INFINITY;
+
+  let total = 0;
+  let rewardSoFar = 0;
+  let baseSpend = 0;
+  let capReached = false;
+  for (let i = 0; i < tiers.length; i++) {
+    const lo = tierAnnualThreshold(
+      tiers[i].min_spend_per_period_inr,
+      schedule,
+      bookingsPerYear,
+    );
+    const hi =
+      i + 1 < tiers.length
+        ? tierAnnualThreshold(
+            tiers[i + 1].min_spend_per_period_inr,
+            schedule,
+            bookingsPerYear,
+          )
+        : Number.POSITIVE_INFINITY;
+    const slice = Math.max(0, Math.min(spend, hi) - lo);
+    if (slice <= 0) continue;
+
+    if (capReached) {
+      baseSpend += slice;
+      continue;
+    }
+    const rate = tiers[i].rate;
+    const capHeadroom = annualCap - rewardSoFar;
+    const maxSliceByCap = rate > 0 ? (capHeadroom * 100) / rate : slice;
+    const accelSlice = Math.min(slice, maxSliceByCap);
+    const earned = (accelSlice * rate) / 100;
+    total += earned;
+    rewardSoFar += earned;
+    baseSpend += slice - accelSlice;
+    if (accelSlice < slice) capReached = true;
+  }
+  total += (baseSpend * baseRate) / 100;
+  return total;
+}
+
+// Flat waterfall: drain spend top-down through the candidates (highest rate
+// first), respecting per-rule and shared-pool caps; leftover falls to base.
+function flatWaterfallInr(
+  spend: number,
+  candidates: BestDirectSwipe[],
   baseRate: number,
   bookingsPerYear: number,
 ): DirectWaterfallResult {
-  const candidates: BestDirectSwipe[] = [...directFrontier];
-  if (baseTier) candidates.push(baseTier);
-  candidates.sort((a, b) => b.percentage - a.percentage);
+  const sorted = [...candidates].sort((a, b) => b.percentage - a.percentage);
 
+  // Resolve each pool's annual reward budget once (first candidate to claim the
+  // key sets it; shared-pool members agree on their reward cap by validation).
   const poolCapReward = new Map<string, number>();
-  const poolUsedReward = new Map<string, number>();
-  for (const c of candidates) {
-    const k = directPoolKey(c);
-    if (!poolCapReward.has(k)) {
-      const annual = tripAwareAnnualCapInr(
-        c.rewardCapPerPeriodValueInr,
-        c.capPeriod,
-        bookingsPerYear,
-      );
-      poolCapReward.set(k, annual ?? Number.POSITIVE_INFINITY);
-    }
+  for (const c of sorted) {
+    const pool = directCandidatePool(c);
+    if (poolCapReward.has(pool.key)) continue;
+    const annual = tripAwareAnnualCapInr(
+      c.rewardCapPerPeriodValueInr,
+      pool.capPeriod,
+      bookingsPerYear,
+    );
+    poolCapReward.set(pool.key, annual ?? Number.POSITIVE_INFINITY);
   }
+  const poolUsedReward = new Map<string, number>();
 
   let remaining = spend;
   let totalInr = 0;
   let primary: BestDirectSwipe | null = null;
 
-  for (const c of candidates) {
+  for (const c of sorted) {
     if (remaining <= 0) break;
     if (c.percentage <= 0) continue;
-    const k = directPoolKey(c);
-    const used = poolUsedReward.get(k) ?? 0;
-    const cap = poolCapReward.get(k)!;
-    const headroom = cap - used;
+    const pool = directCandidatePool(c);
+    const headroom = poolCapReward.get(pool.key)! - (poolUsedReward.get(pool.key) ?? 0);
     if (headroom <= 0) continue;
     const maxSpend = (headroom * 100) / c.percentage;
     const absorbed = Math.min(remaining, maxSpend);
@@ -183,12 +280,52 @@ function directWaterfallInr(
     const earned = (absorbed * c.percentage) / 100;
     totalInr += earned;
     remaining -= absorbed;
-    poolUsedReward.set(k, used + earned);
+    poolUsedReward.set(pool.key, (poolUsedReward.get(pool.key) ?? 0) + earned);
     if (!primary) primary = c;
   }
 
   totalInr += (remaining * baseRate) / 100;
   return { totalInr, primary };
+}
+
+// Resolve the direct frontier including spend-tiered rules:
+//   - flat rules + "whole" tiers (pre-resolved to a single rate) go through the
+//     flat waterfall, exactly as before;
+//   - each "marginal" tiered rule is evaluated piecewise over the full category
+//     spend (it covers all of it), and the best-earning structure is chosen.
+// With no tiered rules present this reduces to the flat waterfall verbatim.
+function directWaterfallInr(
+  spend: number,
+  directFrontier: BestDirectSwipe[],
+  baseTier: BestDirectSwipe | null,
+  baseRate: number,
+  bookingsPerYear: number,
+): DirectWaterfallResult {
+  const all: BestDirectSwipe[] = [...directFrontier];
+  if (baseTier) all.push(baseTier);
+
+  // "whole" tiers depend only on total spend → resolve to a flat-rate copy.
+  const resolved = all.map((c) =>
+    c.schedule && c.schedule.mode === "whole"
+      ? {
+          ...c,
+          percentage: resolveWholeRate(c.schedule, spend, bookingsPerYear),
+          schedule: null,
+        }
+      : c,
+  );
+
+  const marginal = resolved.filter(
+    (c) => c.schedule && c.schedule.mode === "marginal",
+  );
+  const flat = resolved.filter((c) => !c.schedule);
+
+  let best = flatWaterfallInr(spend, flat, baseRate, bookingsPerYear);
+  for (const m of marginal) {
+    const totalInr = marginalTieredInr(m, spend, baseRate, bookingsPerYear);
+    if (totalInr > best.totalInr) best = { totalInr, primary: m };
+  }
+  return best;
 }
 
 interface VoucherWaterfallResult {
@@ -428,6 +565,11 @@ function buildSegment(
   };
 }
 
+interface ParticipantPool {
+  key: string;
+  budgetAnnualInr: number;
+}
+
 interface SharedCapParticipant {
   segment: "domestic" | "international";
   category: Category;
@@ -438,7 +580,28 @@ interface SharedCapParticipant {
   baseRate: number;
   discount: number;
   fee: number;
-  rewardCapAnnualValueInr: number;
+  pool: ParticipantPool;
+}
+
+// Resolve the combined pool (with annual budget) a candidate participates in.
+// Only `combined` candidates carry a `sharedCapPool`; the budget derives from
+// the rule's own reward cap. Returns null when there is no pool or no cap.
+function annualParticipantPool(
+  candidate: {
+    sharedCapPool: SharedCapPool | null;
+    rewardCapPerPeriodValueInr: number | null;
+  },
+  trips: number,
+): ParticipantPool | null {
+  const p = candidate.sharedCapPool;
+  if (!p) return null;
+  const annual = tripAwareAnnualCapInr(
+    candidate.rewardCapPerPeriodValueInr,
+    p.capPeriod,
+    trips,
+  );
+  if (annual === null) return null;
+  return { key: p.key, budgetAnnualInr: annual };
 }
 
 function collectSharedCapParticipants(
@@ -456,13 +619,9 @@ function collectSharedCapParticipants(
 
     if (cat.source === "voucher") {
       const v = bestOf.bestVoucher;
-      if (!v || !v.sharedCapGroup) continue;
-      const rewardCapAnnualValueInr = tripAwareAnnualCapInr(
-        v.rewardCapPerPeriodValueInr,
-        v.capPeriod,
-        tripsPerYearForGroup,
-      );
-      if (rewardCapAnnualValueInr === null) continue;
+      if (!v) continue;
+      const pool = annualParticipantPool(v, tripsPerYearForGroup);
+      if (!pool) continue;
       // cat.cappedAnnualSpendInr was set to the voucher purchase cap in
       // computeCategoryReturn — reuse rather than recomputing voucherAnnualCap.
       const coveredSpend =
@@ -479,17 +638,13 @@ function collectSharedCapParticipants(
         baseRate: v.fallbackPercentage,
         discount: v.breakdown.discount,
         fee: v.breakdown.fee,
-        rewardCapAnnualValueInr,
+        pool,
       });
     } else {
       const d = bestOf.bestDirectSwipe;
-      if (!d || !d.sharedCapGroup) continue;
-      const rewardCapAnnualValueInr = tripAwareAnnualCapInr(
-        d.rewardCapPerPeriodValueInr,
-        d.capPeriod,
-        tripsPerYearForGroup,
-      );
-      if (rewardCapAnnualValueInr === null) continue;
+      if (!d) continue;
+      const pool = annualParticipantPool(d, tripsPerYearForGroup);
+      if (!pool) continue;
       out.push({
         segment: segLabel,
         category: cat.category,
@@ -500,11 +655,45 @@ function collectSharedCapParticipants(
         baseRate: d.fallbackPercentage,
         discount: 0,
         fee: 0,
-        rewardCapAnnualValueInr,
+        pool,
       });
     }
   }
   return out;
+}
+
+// Re-allocate each combined pool's annual budget across the categories that
+// share it, top-down by rate. Returns overrides keyed by `${segLabel}::${cat}`.
+// Lone members of a pool are left untouched (their per-category cap was already
+// applied upstream); only genuinely shared pools (>1 member) are re-allocated.
+function reallocateSharedPools(
+  participants: SharedCapParticipant[],
+  segLabelFor: (p: SharedCapParticipant) => string,
+  overrides: Map<string, number>,
+): void {
+  const remaining = new Map<string, number>();
+  const memberCount = new Map<string, number>();
+  for (const p of participants) {
+    memberCount.set(p.pool.key, (memberCount.get(p.pool.key) ?? 0) + 1);
+    const prev = remaining.get(p.pool.key);
+    remaining.set(
+      p.pool.key,
+      prev === undefined ? p.pool.budgetAnnualInr : Math.min(prev, p.pool.budgetAnnualInr),
+    );
+  }
+
+  const toProcess = participants.filter(
+    (p) => (memberCount.get(p.pool.key) ?? 0) > 1,
+  );
+  toProcess.sort((a, b) => b.rate - a.rate);
+
+  for (const m of toProcess) {
+    const potential = (m.coveredSpend * m.rate) / 100;
+    const cap = remaining.get(m.pool.key) ?? Number.POSITIVE_INFINITY;
+    const accelerated = Math.min(potential, cap);
+    overrides.set(`${segLabelFor(m)}::${m.category}`, participantReturn(m, accelerated));
+    remaining.set(m.pool.key, Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated));
+  }
 }
 
 function participantReturn(
@@ -552,39 +741,7 @@ function applySharedCapGroups(
       index,
       trips,
     );
-    const byGroup = new Map<string, SharedCapParticipant[]>();
-    for (const p of participants) {
-      const cat =
-        seg[p.category as keyof Pick<SegmentReturn, "flights" | "hotels" | "other">];
-      const bestOf = index.get(`${cardId}::${cat.category}`);
-      const group =
-        cat.source === "voucher"
-          ? bestOf?.bestVoucher?.sharedCapGroup
-          : bestOf?.bestDirectSwipe?.sharedCapGroup;
-      if (!group) continue;
-      const key = sharedCapGroupKey(group);
-      const list = byGroup.get(key) ?? [];
-      list.push(p);
-      byGroup.set(key, list);
-    }
-
-    for (const members of byGroup.values()) {
-      if (members.length <= 1) continue;
-      const B = members[0].rewardCapAnnualValueInr;
-      if (B <= 0) continue;
-
-      const sorted = [...members].sort((a, b) => b.rate - a.rate);
-      let remaining = B;
-      for (const m of sorted) {
-        const potential = (m.coveredSpend * m.rate) / 100;
-        const accelerated = Math.min(potential, remaining);
-        overrides.set(
-          `${m.segment}::${m.category}`,
-          participantReturn(m, accelerated),
-        );
-        remaining = Math.max(0, remaining - accelerated);
-      }
-    }
+    reallocateSharedPools(participants, (p) => p.segment, overrides);
   };
 
   processSegment("domestic", domestic, domesticTrips);
@@ -757,49 +914,14 @@ function applySharedCapGroupsMulti(
     if (s.segment.totalSpend <= 0) continue;
     const participants = collectSharedCapParticipants(
       cardId,
-      // segment field on participants is unused here; we key overrides by the
-      // segment label assigned below.
+      // segment field on participants is unused here; overrides are keyed by
+      // this entry's label. Pools are scoped per segment (own remaining map).
       "domestic",
       s.segment,
       index,
       s.tripsForGroup,
     );
-    const labeled = participants.map((p) => ({ ...p, segLabel: s.label }));
-
-    const byGroup = new Map<
-      string,
-      (SharedCapParticipant & { segLabel: typeof s.label })[]
-    >();
-    for (const p of labeled) {
-      const cat = s.segment[p.category as "flights" | "hotels" | "other"];
-      const bestOf = index.get(`${cardId}::${cat.category}`);
-      const group =
-        cat.source === "voucher"
-          ? bestOf?.bestVoucher?.sharedCapGroup
-          : bestOf?.bestDirectSwipe?.sharedCapGroup;
-      if (!group) continue;
-      const key = sharedCapGroupKey(group);
-      const list = byGroup.get(key) ?? [];
-      list.push(p);
-      byGroup.set(key, list);
-    }
-
-    for (const members of byGroup.values()) {
-      if (members.length <= 1) continue;
-      const B = members[0].rewardCapAnnualValueInr;
-      if (B <= 0) continue;
-      const sorted = [...members].sort((a, b) => b.rate - a.rate);
-      let remaining = B;
-      for (const m of sorted) {
-        const potential = (m.coveredSpend * m.rate) / 100;
-        const accelerated = Math.min(potential, remaining);
-        overrides.set(
-          `${m.segLabel}::${m.category}`,
-          participantReturn(m, accelerated),
-        );
-        remaining = Math.max(0, remaining - accelerated);
-      }
-    }
+    reallocateSharedPools(participants, () => s.label, overrides);
   }
 
   const apply = (

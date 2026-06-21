@@ -109,7 +109,6 @@ async function main() {
           shared_cap_group: mr.shared_cap_group,
           valid_from: mr.valid_from,
           valid_until: mr.valid_until,
-          notes: mr.notes,
           is_active: mr.is_active,
         },
       },

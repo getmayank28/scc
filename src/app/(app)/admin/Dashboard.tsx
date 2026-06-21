@@ -9,6 +9,7 @@ import Giftors from "./Giftors/page";
 import Portals from "./Portals/page";
 import WhatsAppAdmin from "./WhatsApp/page";
 import EmailAdmin from "./Email/page";
+import RulesUpload from "./advisor/RulesUpload";
 
 const tabs = [
   {
@@ -42,6 +43,10 @@ const tabs = [
   {
     label: "Email",
     value: "email",
+  },
+  {
+    label: "Rules upload",
+    value: "rules-upload",
   },
 ];
 
@@ -78,6 +83,9 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "email" && <EmailAdmin />
+      }
+      {
+        selectedValue === "rules-upload" && <RulesUpload />
       }
     </div>
   );

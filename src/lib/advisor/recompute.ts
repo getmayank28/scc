@@ -3,7 +3,7 @@ import CardRuleModel, { type CardRuleDoc } from "@/models/CardRule";
 import CardBestOfModel from "@/models/CardBestOf";
 import { computeBestOfForCard } from "@/lib/logic/advisor/bestOf";
 import type { MockCard } from "@/lib/logic/advisor/cards";
-import type { MockRule } from "@/lib/logic/advisor/rules";
+import { toSharedCapGroup, type MockRule } from "@/lib/logic/advisor/rules";
 
 type LeanCard = Omit<CardDoc, keyof Document> & Record<string, unknown>;
 type LeanCardRule = Omit<CardRuleDoc, keyof Document> & Record<string, unknown>;
@@ -30,6 +30,8 @@ function toMockCard(doc: LeanCard): MockCard {
     is_active: doc.is_active as boolean,
     excluded_categories:
       doc.excluded_categories as MockCard["excluded_categories"],
+    transfer_partners:
+      (doc.transfer_partners as MockCard["transfer_partners"]) ?? null,
   };
 }
 
@@ -41,10 +43,16 @@ function toMockRule(doc: LeanCardRule): MockRule {
     merchant: doc.merchant as MockRule["merchant"],
     reward: doc.reward as MockRule["reward"],
     caps: doc.caps as MockRule["caps"],
-    shared_cap_group: doc.shared_cap_group as MockRule["shared_cap_group"],
+    shared_cap_group: toSharedCapGroup(doc.shared_cap_group),
+    fuel_surcharge_applicable: (doc.fuel_surcharge_applicable as number) ?? 0,
+    max_fuel_transaction_limit: (doc.max_fuel_transaction_limit as number) ?? 0,
+    redemption_mode:
+      (doc.redemption_mode as MockRule["redemption_mode"]) ?? "both",
+    voucher_validity_in_months:
+      (doc.voucher_validity_in_months as number | null) ?? null,
+    gv_coins_percentage: (doc.gv_coins_percentage as number) ?? 0,
     valid_from: doc.valid_from as Date,
     valid_until: doc.valid_until as Date | null,
-    notes: doc.notes as string | null,
     is_active: doc.is_active as boolean,
   };
 }

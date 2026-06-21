@@ -1,12 +1,22 @@
 import { type Category, type MockCard } from "./cards";
 import {
   sharedCapGroupKey,
+  CARD_LEVEL_CAP,
   type CapPeriod,
   type CapScope,
+  type DirectSwipeSchedule,
   type Merchant,
   type MockRule,
   type SharedCapGroup,
 } from "./rules";
+
+// The combined pool a candidate belongs to. The budget always derives from the
+// candidate's own reward_cap (`rewardCapPerPeriodValueInr`); this just carries
+// the shared pool key and its period.
+export interface SharedCapPool {
+  key: string;
+  capPeriod: CapPeriod | null;
+}
 
 export interface BestDirectSwipe {
   // null only on the category-floor rule (baseTier). All frontier rules have
@@ -20,6 +30,10 @@ export interface BestDirectSwipe {
   capNote: string | null;
   capScope: CapScope | null;
   sharedCapGroup: SharedCapGroup | null;
+  sharedCapPool: SharedCapPool | null;
+  // Spend-tiered direct-swipe schedule (null = flat `percentage`). When set, the
+  // engine resolves the effective rate against the spend that reaches this rule.
+  schedule: DirectSwipeSchedule | null;
 }
 
 export interface BestVoucher {
@@ -33,6 +47,7 @@ export interface BestVoucher {
     rewardSpendPerPeriodInr: number | null;
   };
   sharedCapGroup: SharedCapGroup | null;
+  sharedCapPool: SharedCapPool | null;
   rewardCapPerPeriodValueInr: number | null;
   capPeriod: CapPeriod | null;
   fallbackPercentage: number;
@@ -102,9 +117,22 @@ function perPeriodValueForCap(rule: MockRule, card: MockCard): number | null {
 
 function describeSharedCapGroup(group: SharedCapGroup): string {
   const parts: string[] = [];
-  if (group.multiplier !== null) parts.push(`${group.multiplier}X`);
-  if (group.merchant !== null) parts.push(group.merchant);
+  if (group.multiplier != null) parts.push(`${group.multiplier}X`);
+  if (group.merchant === CARD_LEVEL_CAP) parts.push("card-wide");
+  else if (group.merchant != null) parts.push(group.merchant);
   return parts.length > 0 ? parts.join(" ") : "shared pool";
+}
+
+// The combined pool a rule belongs to, if any. Only `combined` groups pool with
+// other rules; `standalone` (and groupless) rules keep a private cap (null). The
+// budget always derives from the rule's own reward_cap in the engine.
+function sharedCapPoolFor(r: MockRule): SharedCapPool | null {
+  const g = r.shared_cap_group;
+  if (!g || g.capType !== "combined") return null;
+  return {
+    key: sharedCapGroupKey(g),
+    capPeriod: r.caps.reward_cap?.period ?? null,
+  };
 }
 
 function capNoteFor(rule: MockRule): string | null {
@@ -113,17 +141,38 @@ function capNoteFor(rule: MockRule): string | null {
   const valueStr = cap.value.toLocaleString("en-IN");
   const metric = METRIC_LABEL[cap.metric];
   const period = PERIOD_LABEL[cap.period];
-  const shared = rule.shared_cap_group
-    ? ` combined across ${describeSharedCapGroup(rule.shared_cap_group)}`
-    : "";
+  const g = rule.shared_cap_group;
+  const shared =
+    g && g.capType === "combined"
+      ? ` combined across ${describeSharedCapGroup(g)}`
+      : "";
   return `${valueStr} ${metric}/${period}${shared}`;
+}
+
+// Normalize a schedule: keep it only when it has tiers; sort ascending so the
+// engine can slice/threshold deterministically.
+function scheduleFor(r: MockRule): DirectSwipeSchedule | null {
+  const s = r.reward.direct_swipe_schedule;
+  if (!s || !s.tiers || s.tiers.length === 0) return null;
+  return {
+    mode: s.mode,
+    period: s.period,
+    tiers: [...s.tiers].sort(
+      (a, b) => a.min_spend_per_period_inr - b.min_spend_per_period_inr,
+    ),
+  };
 }
 
 function buildDirectCandidate(
   r: MockRule,
   card: MockCard,
 ): BestDirectSwipe {
-  const pct = r.reward.direct_swipe_percentage;
+  const schedule = scheduleFor(r);
+  // Headline rate: the top tier's rate for a tiered rule, else the flat rate.
+  // Used only for frontier sorting/display; the engine resolves the real rate.
+  const pct = schedule
+    ? Math.max(...schedule.tiers.map((t) => t.rate))
+    : r.reward.direct_swipe_percentage;
   return {
     merchant: r.merchant,
     percentage: pct,
@@ -134,6 +183,8 @@ function buildDirectCandidate(
     capNote: capNoteFor(r),
     capScope: r.caps.reward_cap?.scope ?? null,
     sharedCapGroup: r.shared_cap_group,
+    sharedCapPool: sharedCapPoolFor(r),
+    schedule,
   };
 }
 
@@ -162,6 +213,7 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
       ),
     },
     sharedCapGroup: r.shared_cap_group,
+    sharedCapPool: sharedCapPoolFor(r),
     rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
     capPeriod: r.caps.reward_cap?.period ?? null,
     fallbackPercentage: card.rewards.base_reward_rate,
@@ -176,11 +228,21 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
 function pruneDirectFrontier(
   candidates: BestDirectSwipe[],
 ): BestDirectSwipe[] {
+  // Tiered candidates earn a spend-dependent rate, so the flat-rate Pareto
+  // domination below doesn't apply to them — keep them all, and exclude them
+  // from dominating flat candidates. The engine resolves their real return.
+  const tiered = candidates.filter((c) => c.schedule);
+  const flat = candidates.filter((c) => !c.schedule);
+
+  // Collapse candidates that belong to the exact same set of pools: they all
+  // draw from identical budgets, so the top-rate one drains them first and the
+  // rest add zero. Candidates with differing pool membership are independent
+  // and kept. Candidates in no pool fall through to the unshared frontier.
   const sharedReps = new Map<string, BestDirectSwipe>();
   const unshared: BestDirectSwipe[] = [];
-  for (const c of candidates) {
-    if (c.sharedCapGroup) {
-      const key = sharedCapGroupKey(c.sharedCapGroup);
+  for (const c of flat) {
+    if (c.sharedCapPool) {
+      const key = c.sharedCapPool.key;
       const cur = sharedReps.get(key);
       if (!cur || c.percentage > cur.percentage) sharedReps.set(key, c);
     } else {
@@ -200,7 +262,7 @@ function pruneDirectFrontier(
       );
     });
   });
-  return [...sharedReps.values(), ...unsharedFrontier].sort(
+  return [...tiered, ...sharedReps.values(), ...unsharedFrontier].sort(
     (a, b) => b.percentage - a.percentage,
   );
 }
@@ -262,9 +324,10 @@ export function computeBestOfForCard(
     const merchantDirect: BestDirectSwipe[] = [];
     let baseTier: BestDirectSwipe | null = null;
     for (const r of rulesInCat) {
-      const pct = r.reward.direct_swipe_percentage;
-      if (pct <= baseRate) continue;
       const candidate = buildDirectCandidate(r, card);
+      // candidate.percentage is the flat rate, or a tiered rule's top-tier rate.
+      const pct = candidate.percentage;
+      if (pct <= baseRate) continue;
       if (r.merchant === null) {
         if (!baseTier || pct > baseTier.percentage) baseTier = candidate;
       } else {

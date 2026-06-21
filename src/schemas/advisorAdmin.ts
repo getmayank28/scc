@@ -102,10 +102,12 @@ export const cardUpdateSchema = cardCreateSchema.omit({ advisorKey: true }).part
 
 const sharedCapGroupSchema = z
   .object({
-    multiplier: z.number().nullable(),
-    merchant: z.string().nullable(),
+    multiplier: z.number().nullable().optional(),
+    merchant: z.string().nullable().optional(),
+    capType: z.enum(["combined", "standalone"]),
   })
-  .nullable();
+  .nullable()
+  .default(null);
 
 const rewardCapSchema = z
   .object({
@@ -116,6 +118,22 @@ const rewardCapSchema = z
   })
   .nullable();
 
+const directSwipeScheduleSchema = z
+  .object({
+    mode: z.enum(["marginal", "whole"]),
+    period: z.enum(CAP_PERIOD_VALUES),
+    tiers: z
+      .array(
+        z.object({
+          min_spend_per_period_inr: z.number().nonnegative(),
+          rate: z.number(),
+        }),
+      )
+      .min(1),
+  })
+  .nullable()
+  .optional();
+
 export const ruleCreateSchema = z.object({
   ruleKey: z.string().min(1),
   cardAdvisorKey: z.string().min(1),
@@ -123,6 +141,7 @@ export const ruleCreateSchema = z.object({
   merchant: z.string().nullable(),
   reward: z.object({
     direct_swipe_percentage: z.number().nonnegative(),
+    direct_swipe_schedule: directSwipeScheduleSchema,
     voucher_discount_percentage: z.number().nonnegative(),
     voucher_reward_percentage: z.number().nonnegative(),
     convenience_fee_percentage: z.number().nonnegative(),

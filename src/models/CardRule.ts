@@ -5,6 +5,7 @@ import type {
   CapPeriod,
   CapMetric,
   CapScope,
+  DirectSwipeSchedule,
   SharedCapGroup,
 } from "@/lib/logic/advisor/rules";
 
@@ -18,6 +19,7 @@ export interface CardRuleDoc extends Document {
   merchant: Merchant | null;
   reward: {
     direct_swipe_percentage: number;
+    direct_swipe_schedule?: DirectSwipeSchedule | null;
     voucher_discount_percentage: number;
     voucher_reward_percentage: number;
     convenience_fee_percentage: number;
@@ -34,6 +36,11 @@ export interface CardRuleDoc extends Document {
     vouchers_per_booking: number | null;
   };
   shared_cap_group: SharedCapGroup | null;
+  fuel_surcharge_applicable: number;
+  max_fuel_transaction_limit: number;
+  redemption_mode: "online" | "offline" | "both";
+  voucher_validity_in_months: number | null;
+  gv_coins_percentage: number;
   valid_from: Date;
   valid_until: Date | null;
   notes: string | null;
@@ -51,6 +58,11 @@ const CardRuleSchema = new Schema<CardRuleDoc>(
     reward: { type: Schema.Types.Mixed, required: true },
     caps: { type: Schema.Types.Mixed, required: true },
     shared_cap_group: { type: Schema.Types.Mixed, default: null },
+    fuel_surcharge_applicable: { type: Number, default: 0 },
+    max_fuel_transaction_limit: { type: Number, default: 0 },
+    redemption_mode: { type: String, default: "both" },
+    voucher_validity_in_months: { type: Number, default: null },
+    gv_coins_percentage: { type: Number, default: 0 },
     valid_from: { type: Date, required: true },
     valid_until: { type: Date, default: null },
     notes: { type: String, default: null },
