@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import WhatsAppMessage, { WhatsAppStatus } from "@/models/WhatsAppMessage";
+import { issueChatToken } from "@/lib/utils/chatToken";
+import { joinTextMessagesByMid } from "@/lib/utils/content";
+
+// Studio bot that powers the WhatsApp conversational replies.
+// Mirrors the `whatsAppBotCommunication` RTK mutation in src/store/api.ts,
+// re-implemented with fetch because RTK hooks can't run in a server route.
+const WHATSAPP_BOT_URL = "https://studio.zijus.com/api/fisensewhatsapp-5768";
 
 // Gupshup webhook receiver.
 // Configure this URL in the Gupshup dashboard:
@@ -89,8 +96,7 @@ async function handleMessageEvent(body: GupshupPayload) {
   const rawCode = inner?.code ?? p.code;
   const rawReason = inner?.reason ?? p.reason;
   const errorCode = rawCode != null ? String(rawCode) : undefined;
-  const errorReason =
-    typeof rawReason === "string" ? rawReason : undefined;
+  const errorReason = typeof rawReason === "string" ? rawReason : undefined;
 
   const historyEntry = {
     status,
@@ -183,11 +189,139 @@ async function sendAutoReplyTemplate(
   }
 }
 
+// WhatsApp supports a lighter markdown than the bot emits: single `*` for
+// bold (the bot uses `**`). Normalise so replies render correctly.
+function toWhatsAppMarkdown(text: string): string {
+  return text.replace(/\*\*(.+?)\*\*/g, "*$1*");
+}
+
+type StudioMessage = {
+  m_id: string;
+  content: string;
+  ts: string;
+  type?: string;
+};
+
+// Ask the studio bot for a reply to the user's message and return the joined
+// text. Returns undefined if the bot errors or has nothing to say.
+async function getWhatsAppBotReply(
+  message: string,
+  userId?: string,
+): Promise<string | undefined> {
+  const token = issueChatToken({ userId: userId ?? "" });
+
+  const res = await fetch(WHATSAPP_BOT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ messages: [{ content: message }] }),
+  });
+
+  if (!res.ok) {
+    console.error(
+      "[whatsapp-webhook] bot reply http error:",
+      res.status,
+      await res.text().catch(() => ""),
+    );
+    return undefined;
+  }
+
+  // Raw fetch returns the body directly; RTK wraps it, hence the extra `.data`
+  // seen in the client. Accept either shape to be safe.
+  const data = (await res.json()) as {
+    messages?: StudioMessage[];
+    data?: { messages?: StudioMessage[] };
+  };
+
+  // The bot streams its answer back as multiple TextMessage chunks.
+  // joinTextMessagesByMid stitches chunks sharing an m_id back together; we
+  // then concatenate the groups so the whole reply becomes a single text.
+  const rawMessages = data?.data?.messages ?? data?.messages ?? [];
+  const textMessages = rawMessages.filter((m) => m?.type === "TextMessage");
+  const content = joinTextMessagesByMid(textMessages);
+  const reply = content
+    .map((m) => m?.content)
+    .filter(Boolean)
+    .join("\n\n")
+    .trim();
+  return reply || undefined;
+}
+
+// Send a free-form text (session) message via Gupshup — used instead of a
+// template so we can deliver the bot's dynamic reply. Only valid inside the
+// 24h customer-care window, which an inbound message always opens.
+async function sendTextMessage(
+  destination: string,
+  text: string,
+): Promise<boolean> {
+  const params = new URLSearchParams({
+    channel: "whatsapp",
+    source: process.env.GUPSHUP_SOURCE_NUMBER!,
+    destination,
+    "src.name": process.env.GUPSHUP_APP_NAME!,
+    message: JSON.stringify({ type: "text", text }),
+  });
+
+  const res = await fetch("https://api.gupshup.io/wa/api/v1/msg", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      apikey: process.env.GUPSHUP_API_KEY!,
+    },
+    body: params.toString(),
+  });
+
+  const respText = await res.text();
+  let data: Record<string, unknown> = {};
+  try {
+    data = JSON.parse(respText);
+  } catch {
+    /* non-JSON response — keep raw text */
+  }
+
+  const now = new Date();
+  if (res.ok && data.messageId) {
+    await WhatsAppMessage.create({
+      gsId: data.messageId as string,
+      direction: "outbound",
+      status: "enqueued",
+      source: process.env.GUPSHUP_SOURCE_NUMBER!,
+      destination,
+      messageType: "text",
+      text,
+      statusHistory: [{ status: "enqueued", at: now }],
+      raw: data,
+    });
+    return true;
+  }
+
+  const errorCode = data.statusCode as string | undefined;
+  const errorReason = (data.details ?? data.message) as string | undefined;
+  await WhatsAppMessage.create({
+    direction: "outbound",
+    status: "failed",
+    source: process.env.GUPSHUP_SOURCE_NUMBER!,
+    destination,
+    messageType: "text",
+    text,
+    errorCode,
+    errorReason,
+    statusHistory: [
+      { status: "failed", at: now, code: errorCode, reason: errorReason },
+    ],
+    raw: Object.keys(data).length ? data : respText,
+  });
+  return false;
+}
+
 async function handleInboundMessage(body: GupshupPayload) {
   const p = body.payload ?? {};
   const externalId = p.id ?? p.gsId;
   const senderPhone = p.sender?.phone ?? p.source;
   const senderName = p.sender?.name;
+  const inboundText = extractText(p);
 
   await WhatsAppMessage.create({
     externalId,
@@ -198,7 +332,7 @@ async function handleInboundMessage(body: GupshupPayload) {
     senderPhone,
     senderName,
     messageType: p.type,
-    text: extractText(p),
+    text: inboundText,
     providerTimestamp: toDate(body.timestamp),
     statusHistory: [
       { status: "received", at: toDate(body.timestamp) ?? new Date() },
@@ -207,14 +341,30 @@ async function handleInboundMessage(body: GupshupPayload) {
   });
 
   // Gupshup delivers the inbound webhook to every configured callback URL
-  // (prod and stage), so guard the auto-reply to a single environment to
-  // avoid sending the template twice to the same sender.
+  // (prod and stage), so guard the reply to a single environment to avoid
+  // responding twice to the same sender.
   if (senderPhone && process.env.VERCEL_ENV === "production") {
     try {
-      const firstName = senderName?.trim().split(/\s+/)[0] || "there";
-      await sendAutoReplyTemplate(senderPhone, AUTO_REPLY_TEMPLATE_ID, [
-        firstName,
-      ]);
+      // Get a contextual reply from the studio bot and send it as free-form
+      // text. Fall back to the generic template if the bot has no answer or
+      // the text send fails, so the user is never left without a response.
+      let replied = false;
+      if (inboundText) {
+        const botReply = await getWhatsAppBotReply(inboundText);
+        if (botReply) {
+          replied = await sendTextMessage(
+            senderPhone,
+            toWhatsAppMarkdown(botReply),
+          );
+        }
+      }
+
+      if (!replied) {
+        const firstName = senderName?.trim().split(/\s+/)[0] || "there";
+        await sendAutoReplyTemplate(senderPhone, AUTO_REPLY_TEMPLATE_ID, [
+          firstName,
+        ]);
+      }
     } catch (err) {
       console.error("[whatsapp-webhook] auto-reply failed:", err);
     }
