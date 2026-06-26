@@ -30,7 +30,7 @@ const NETWORK_VALUES = [
 const REWARD_TYPE_VALUES = ["points", "cashback", "miles"] as const;
 const WELCOME_BENEFIT_TYPE_VALUES = ["points", "voucher", "cashback", "miles"] as const;
 const LOUNGE_PROGRAM_VALUES = ["issuer", "priority_pass", "dreamfolks", "loungekey"] as const;
-const CAP_PERIOD_VALUES = ["monthly", "quarterly", "annually"] as const;
+const CAP_PERIOD_VALUES = ["daily", "monthly", "quarterly", "annually"] as const;
 const CAP_METRIC_VALUES = ["points", "inr", "cashback"] as const;
 const CAP_SCOPE_VALUES = ["merchant", "category", "card"] as const;
 

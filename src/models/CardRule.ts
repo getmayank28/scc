@@ -44,6 +44,7 @@ export interface CardRuleDoc extends Document {
   valid_from: Date;
   valid_until: Date | null;
   notes: string | null;
+  partner?: string | null;
   is_active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -66,6 +67,7 @@ const CardRuleSchema = new Schema<CardRuleDoc>(
     valid_from: { type: Date, required: true },
     valid_until: { type: Date, default: null },
     notes: { type: String, default: null },
+    partner: { type: String, default: null },
     is_active: { type: Boolean, required: true },
   },
   { timestamps: true },

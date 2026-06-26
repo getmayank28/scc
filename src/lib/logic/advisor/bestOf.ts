@@ -1,7 +1,9 @@
 import { type Category, type MockCard } from "./cards";
 import {
   sharedCapGroupKey,
+  groupFallbackRate,
   CARD_LEVEL_CAP,
+  TOTAL_LEVEL_CAP,
   type CapPeriod,
   type CapScope,
   type DirectSwipeSchedule,
@@ -81,6 +83,7 @@ const METRIC_LABEL = {
 } as const;
 
 const PERIOD_LABEL: Record<CapPeriod, string> = {
+  daily: "day",
   monthly: "month",
   quarterly: "quarter",
   annually: "year",
@@ -119,6 +122,7 @@ function describeSharedCapGroup(group: SharedCapGroup): string {
   const parts: string[] = [];
   if (group.multiplier != null) parts.push(`${group.multiplier}X`);
   if (group.merchant === CARD_LEVEL_CAP) parts.push("card-wide");
+  else if (group.merchant === TOTAL_LEVEL_CAP) parts.push("card-total (0 beyond cap)");
   else if (group.merchant != null) parts.push(group.merchant);
   return parts.length > 0 ? parts.join(" ") : "shared pool";
 }
@@ -176,7 +180,10 @@ function buildDirectCandidate(
   return {
     merchant: r.merchant,
     percentage: pct,
-    fallbackPercentage: card.rewards.base_reward_rate,
+    fallbackPercentage: groupFallbackRate(
+      r.shared_cap_group,
+      card.rewards.base_reward_rate,
+    ),
     cappedSpendPerPeriodInr: perPeriodSpendForCap(r, card, pct),
     rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
     capPeriod: r.caps.reward_cap?.period ?? null,
@@ -216,7 +223,10 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
     sharedCapPool: sharedCapPoolFor(r),
     rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
     capPeriod: r.caps.reward_cap?.period ?? null,
-    fallbackPercentage: card.rewards.base_reward_rate,
+    fallbackPercentage: groupFallbackRate(
+      r.shared_cap_group,
+      card.rewards.base_reward_rate,
+    ),
   };
 }
 

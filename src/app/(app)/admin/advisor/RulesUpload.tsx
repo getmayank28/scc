@@ -45,7 +45,7 @@ const REASON_LABELS: Record<string, string> = {
   bad_shared_cap_group: "Bad shared_cap_group",
   unknown_redemption_mode: "redemption_mode must be online / offline / both",
   unknown_slug: "Card slug not found in advisor cards",
-  duplicate: "Duplicate (slug, category, merchant) — superseded by a later row",
+  duplicate: "Duplicate (slug, category, merchant, partner) — superseded by a later row",
 };
 
 const COLUMNS: { name: string; required: boolean; desc: string }[] = [
@@ -64,14 +64,15 @@ const COLUMNS: { name: string; required: boolean; desc: string }[] = [
   { name: "max_fuel_transaction_limit", required: false, desc: "Max fuel transaction limit (₹). Defaults to 0." },
   { name: "redemption_mode", required: false, desc: 'One of online / offline / both. Defaults to both.' },
   { name: "gv_coins_percentage", required: false, desc: "GV coins %. Defaults to 0." },
-  { name: "shared_cap_group", required: false, desc: 'Single token "multiplier:merchant:capType" (parts in any order, e.g. 10:amazon:combined, 10:card:combined, 5:standalone). Use the literal "card" in the merchant slot for a card-level pool. capType is "combined" (pools across rules sharing the multiplier/merchant on the card) or "standalone"; defaults to combined. Blank = none.' },
-  { name: "reward_cap_period", required: false, desc: "monthly / quarterly / annually. Defaults to monthly when a reward_cap_value is set." },
+  { name: "shared_cap_group", required: false, desc: 'Single token "multiplier:merchant:capType" (parts in any order, e.g. 10:amazon:combined, 10:card:combined, 5:standalone). Use the literal "card" in the merchant slot for a card-level pool, or "total" for a card-total pool that earns 0 once its cap is exhausted (instead of the card base rate). capType is "combined" (pools across rules sharing the multiplier/merchant on the card) or "standalone"; defaults to combined. Blank = none.' },
+  { name: "reward_cap_period", required: false, desc: "daily / monthly / quarterly / annually. Defaults to monthly when a reward_cap_value is set." },
   { name: "reward_cap_metric", required: false, desc: "points / inr / cashback. Defaults to points when a reward_cap_value is set." },
   { name: "reward_cap_value", required: false, desc: "The cap amount. The reward cap is only created when this is set; blank = no cap." },
   { name: "reward_cap_scope", required: false, desc: "merchant / category / card. Defaults to card when a reward_cap_value is set." },
   { name: "direct_swipe_schedule_mode", required: false, desc: 'marginal / whole. Defaults to marginal when a schedule value is set.' },
-  { name: "direct_swipe_schedule_period", required: false, desc: "monthly / quarterly / annually. Defaults to monthly when a schedule value is set." },
+  { name: "direct_swipe_schedule_period", required: false, desc: "daily / monthly / quarterly / annually. Defaults to monthly when a schedule value is set." },
   { name: "direct_swipe_schedule_value", required: false, desc: 'Comma-separated "rate:minSpend" tiers, lowest starting at 0 — e.g. "3:0,10:20000" (3% up to ₹20k/period, 10% beyond). Blank = flat direct_swipe_percentage.' },
+  { name: "partner", required: false, desc: "Free-form partner label, e.g. a co-brand or network partner. Blank = none." },
 ];
 
 const RulesUpload = () => {

@@ -5,9 +5,14 @@ import {
   type MockBestOf,
   type SharedCapPool,
 } from "./bestOf";
-import { type CapPeriod, type DirectSwipeSchedule } from "./rules";
+import {
+  isTotalCapGroup,
+  type CapPeriod,
+  type DirectSwipeSchedule,
+} from "./rules";
 
 const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
+  daily: 365,
   monthly: 12,
   quarterly: 4,
   annually: 1,
@@ -452,11 +457,17 @@ export function computeCategoryReturn(
   const voucherFrontier = bestOf?.voucherFrontier ?? [];
   const baseTier = bestOf?.baseTier ?? null;
 
+  // When the category's catch-all (the merchant-null base tier) is a `total`
+  // group, spend that overflows its cap earns nothing — so the waterfall's
+  // trailing floor is 0 instead of the card base rate. Every other case keeps
+  // the card base rate.
+  const floorRate = isTotalCapGroup(baseTier?.sharedCapGroup) ? 0 : baseRate;
+
   const directResult = directWaterfallInr(
     spend,
     directFrontier,
     baseTier,
-    baseRate,
+    floorRate,
     bookingsPerYear,
   );
 
@@ -467,7 +478,7 @@ export function computeCategoryReturn(
           voucherFrontier,
           directFrontier,
           baseTier,
-          baseRate,
+          floorRate,
           bookingsPerYear,
         )
       : null;
@@ -519,7 +530,7 @@ export function computeCategoryReturn(
   return withEffectiveRate({
     category,
     spend,
-    effectivePercentage: baseRate,
+    effectivePercentage: floorRate,
     source: "fallback",
     merchant: null,
     capNote: null,

@@ -116,11 +116,11 @@ export async function POST(req: Request) {
     }
   }
 
-  // ---- de-dupe by identity (slug, category, merchant); last occurrence wins ----
+  // ---- de-dupe by identity (slug, category, merchant, partner); last occurrence wins ----
   // Earlier rows for the same identity are DROPPED (reported in failedRows so the
   // admin can see exactly which rows were superseded), not silently collapsed.
   const identityOf = (r: NormalizedRule) =>
-    `${r.cardSlug}__${r.category}__${r.merchant ?? "_base"}`;
+    `${r.cardSlug}__${r.category}__${r.merchant ?? "_base"}__${r.partner ?? "_nopartner"}`;
   const dedupMap = new Map<
     string,
     { rule: NormalizedRule; raw: Record<string, unknown>; row: number }
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         prev.raw,
         prev.row,
         "duplicate",
-        `Duplicate (slug, category, merchant) — superseded by row ${v.row}`,
+        `Duplicate (slug, category, merchant, partner) — superseded by row ${v.row}`,
       );
     }
     dedupMap.set(id, v);
@@ -180,16 +180,16 @@ export async function POST(req: Request) {
     const unknownSlugRows = [...unknownSlugRowCounts.values()].reduce((a, b) => a + b, 0);
 
     // ---- per-rule upsert (NO card wipe) ----
-    // Identity = (slug, category, merchant) -> ruleKey. The rows are already
-    // de-duped by that identity above, so every op in a card's batch is a
-    // distinct ruleKey. An existing combo is overwritten; a new combo inserted;
-    // the card's other rules are untouched.
+    // Identity = (slug, category, merchant, partner) -> ruleKey. The rows are
+    // already de-duped by that identity above, so every op in a card's batch is
+    // a distinct ruleKey. An existing combo is overwritten; a new combo
+    // inserted; the card's other rules are untouched.
     let inserted = 0; // newly created (upserted)
     let replaced = 0; // matched an existing rule combo and overwrote it
     const cardsAffected: string[] = [];
     for (const [advisorKey, rules] of byCard) {
       const ops = rules.map((r) => {
-        const ruleKey = ruleKeyFor(advisorKey, r.category, r.merchant);
+        const ruleKey = ruleKeyFor(advisorKey, r.category, r.merchant, r.partner);
         const { ruleKey: _k, ...rest } = ruleToDoc(r, advisorKey, ruleKey);
         void _k;
         return {

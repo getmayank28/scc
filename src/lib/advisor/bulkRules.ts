@@ -27,6 +27,7 @@ import {
   type SharedCapGroup,
   type SharedCapType,
   CARD_LEVEL_CAP,
+  TOTAL_LEVEL_CAP,
 } from "@/lib/logic/advisor/rules";
 
 const CATEGORY_SET = new Set<string>(Object.values(CATEGORIES));
@@ -34,7 +35,7 @@ const MERCHANT_SET = new Set<string>(Object.values(MERCHANTS));
 
 // Allowed enum members, mirrored from the rules.ts unions. Kept as Sets for O(1)
 // membership; if a union gains a member, add it here too.
-const CAP_PERIODS = new Set<CapPeriod>(["monthly", "quarterly", "annually"]);
+const CAP_PERIODS = new Set<CapPeriod>(["daily", "monthly", "quarterly", "annually"]);
 const CAP_METRICS = new Set<CapMetric>(["points", "inr", "cashback"]);
 const CAP_SCOPES = new Set<CapScope>(["merchant", "category", "card"]);
 const TIER_MODES = new Set<DirectSwipeTierMode>(["marginal", "whole"]);
@@ -78,6 +79,7 @@ export interface RawRuleRow {
   direct_swipe_schedule_mode?: Cell;
   direct_swipe_schedule_period?: Cell;
   direct_swipe_schedule_value?: Cell;
+  partner?: Cell;
 }
 
 export interface NormalizedRule {
@@ -108,6 +110,7 @@ export interface NormalizedRule {
   redemption_mode: RedemptionMode;
   voucher_validity_in_months: number | null;
   gv_coins_percentage: number;
+  partner: string | null;
 }
 
 export type DropCode =
@@ -154,6 +157,7 @@ export const TEMPLATE_COLUMNS = [
   "direct_swipe_schedule_mode",
   "direct_swipe_schedule_period",
   "direct_swipe_schedule_value",
+  "partner",
 ] as const;
 
 // Header aliases -> canonical field. Compared after normalizeKey(). The exact
@@ -193,13 +197,18 @@ function parseNum(
 const CAP_TYPE_NAMES = new Set<string>([...CAP_TYPES]);
 
 // Parse the optional shared_cap_group cell into a single group (or null). The
-// cell is one token "multiplier:merchant:capType" — parts in any order, split on
+// cell is one token "multiplier:scope:capType" — parts in any order, split on
 // :, | or /. Each part is classified: "combined"/"standalone" -> capType,
-// numeric -> multiplier, the literal "card" -> a card-level pool, otherwise a
-// (validated) merchant. capType defaults to "combined". Blank -> null.
+// numeric -> multiplier, the literal "card" -> a card-level pool, the literal
+// "total" -> a card-total pool (earns 0 once its cap is exhausted, not the base
+// rate), otherwise a (validated) merchant OR category — both land in the
+// `merchant` slot as an opaque pool key. capType defaults to "combined".
+// Blank -> null.
 //   ""                  -> null
-//   "10:amazon:combined"-> { multiplier: 10, merchant: "amazon", capType: "combined" }
+//   "10:amazon:combined"  -> { multiplier: 10, merchant: "amazon", capType: "combined" }
+//   "1:utilities:combined"-> { multiplier: 1, merchant: "utilities", capType: "combined" }
 //   "10:card:combined"  -> { multiplier: 10, merchant: "card", capType: "combined" }
+//   "1:total:combined"  -> { multiplier: 1, merchant: "total", capType: "combined" }
 //   "5:standalone"      -> { multiplier: 5, merchant: null, capType: "standalone" }
 function parseSharedCapGroup(
   raw: Cell,
@@ -228,14 +237,19 @@ function parseSharedCapGroup(
       merchant = CARD_LEVEL_CAP;
       continue;
     }
-    if (!MERCHANT_SET.has(m)) {
-      return { error: `shared_cap_group: unknown merchant "${p}"` };
+    if (m === TOTAL_LEVEL_CAP) {
+      // Card-total pool: pools like "card" but earns 0 once the cap is exhausted.
+      merchant = TOTAL_LEVEL_CAP;
+      continue;
     }
-    merchant = m as Merchant;
+    if (!MERCHANT_SET.has(m) && !CATEGORY_SET.has(m)) {
+      return { error: `shared_cap_group: unknown merchant or category "${p}"` };
+    }
+    merchant = m as SharedCapGroup["merchant"];
   }
   if (multiplier === null && merchant === null && capType === null) {
     return {
-      error: `shared_cap_group "${s}" must contain a multiplier, merchant, and/or capType (e.g. "10:amazon:combined")`,
+      error: `shared_cap_group "${s}" must contain a multiplier, merchant/category, and/or capType (e.g. "10:amazon:combined")`,
     };
   }
   return { multiplier, merchant, capType: capType ?? "combined" };
@@ -434,6 +448,9 @@ export function normalizeRow(
   const scg = parseSharedCapGroup(raw.shared_cap_group);
   if (scg && "error" in scg) return fail("bad_shared_cap_group", scg.error);
 
+  // ---- partner (optional free-form text, default null) ----
+  const partner = isBlank(raw.partner) ? null : String(raw.partner).trim();
+
   return {
     ok: true,
     rule: {
@@ -460,20 +477,22 @@ export function normalizeRow(
       redemption_mode,
       voucher_validity_in_months: nullables.voucher_validity_in_months,
       gv_coins_percentage: nums.gv_coins_percentage,
+      partner,
     },
   };
 }
 
-// Deterministic rule identity within a card: (card, category, merchant). Two
-// uploads of the same combo produce the same key, so the upload UPSERTS by it —
-// an existing rule is replaced in place; a new combo is inserted; the card's
-// other rules are left untouched.
+// Deterministic rule identity within a card: (card, category, merchant,
+// partner). Two uploads of the same combo produce the same key, so the upload
+// UPSERTS by it — an existing rule is replaced in place; a new combo is
+// inserted; the card's other rules are left untouched.
 export function ruleKeyFor(
   cardAdvisorKey: string,
   category: Category,
   merchant: Merchant | null,
+  partner: string | null,
 ): string {
-  return `${cardAdvisorKey}__${category}__${merchant ?? "_base"}`;
+  return `${cardAdvisorKey}__${category}__${merchant ?? "_base"}__${partner ?? "_nopartner"}`;
 }
 
 // Build the CardRule document body from a normalized rule. valid_from defaults to
@@ -508,6 +527,7 @@ export function ruleToDoc(
     redemption_mode: rule.redemption_mode,
     voucher_validity_in_months: rule.voucher_validity_in_months,
     gv_coins_percentage: rule.gv_coins_percentage,
+    partner: rule.partner,
     valid_from: new Date(),
     valid_until: null,
     is_active: true,
