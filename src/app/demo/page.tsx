@@ -15,14 +15,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import {
-  recommendTravelCard,
-  recommendTravelCardAdvanced,
-  type CardTravelReturn,
-  type CategoryReturn,
-  type SegmentReturn,
-  type TravelEngineAdvancedResult,
-  type TravelEngineResult,
+import type {
+  CardTravelReturn,
+  CategoryReturn,
+  SegmentReturn,
+  TravelEngineAdvancedResult,
+  TravelEngineResult,
 } from "@/lib/logic/advisor/engine";
 import type {
   TravelMix,
@@ -30,8 +28,6 @@ import type {
 } from "@/lib/logic/advisor/travel";
 import {
   ALL_ROUNDER_CATEGORIES,
-  recommendAllRounderCardPhaseOne,
-  recommendAllRounderCardPhaseTwo,
   type AllRounderBucket,
   type AllRounderCategory,
   type AllRounderEnginePhaseTwoResult,
@@ -40,30 +36,27 @@ import {
   type CardAllRounderReturn,
   type SubBucketReturn,
 } from "@/lib/logic/advisor/allrounderEngine";
-import {
-  recommendFoodCardPhaseOne,
-  recommendFoodCardPhaseTwo,
-  type CardFoodReturn,
-  type FoodCardEngineResult,
-  type FoodCardEngineResultTwo,
-  type FoodDeliveryPlatformPreferenceTwo,
-  type FoodDiningPlatformPreference,
-  type FoodPlatformPreference,
-  type FoodStreamReturn,
-  type FoodSubReturn,
+import type {
+  CardFoodReturn,
+  FoodCardEngineResult,
+  FoodCardEngineResultTwo,
+  FoodDeliveryPlatformPreferenceTwo,
+  FoodDiningPlatformPreference,
+  FoodPlatformPreference,
+  FoodStreamReturn,
+  FoodSubReturn,
 } from "@/lib/logic/advisor/foodCardEngine";
-import {
-  recommendShoppingCardPhaseOne,
-  recommendShoppingCardPhaseTwo,
-  type CardShoppingReturn,
-  type CardShoppingReturnTwo,
-  type ShoppingCardEngineResult,
-  type ShoppingCardEngineResultTwo,
-  type ShoppingOnlinePlatform,
-  type ShoppingPreference,
-  type ShoppingStreamReturn,
-  type ShoppingSubReturn,
+import type {
+  CardShoppingReturn,
+  CardShoppingReturnTwo,
+  ShoppingCardEngineResult,
+  ShoppingCardEngineResultTwo,
+  ShoppingOnlinePlatform,
+  ShoppingPreference,
+  ShoppingStreamReturn,
+  ShoppingSubReturn,
 } from "@/lib/logic/advisor/shoppingCardEngine";
+import { fetchRecommend } from "@/lib/advisor/client";
 
 const TRAVEL_MIX_OPTIONS: { label: string; value: TravelMix }[] = [
   { label: "Only domestic", value: "only_domestic" },
@@ -207,20 +200,29 @@ function InitialTravelForm() {
   const [avgSpendPerTrip, setAvgSpendPerTrip] = useState("400000");
   const [travelMix, setTravelMix] = useState<TravelMix>("mostly_domestic");
   const [result, setResult] = useState<TravelEngineResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const trips = Number(tripsPerYear);
     const spend = Number(avgSpendPerTrip);
     if (!Number.isFinite(trips) || trips <= 0) return;
     if (!Number.isFinite(spend) || spend <= 0) return;
 
-    setResult(
-      recommendTravelCard({
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<TravelEngineResult>("travel/phase1", {
         tripsPerYear: trips,
         avgSpendPerTrip: spend,
         travelMix,
-      }),
-    );
+      });
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -270,9 +272,15 @@ function InitialTravelForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend best travel card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend best travel card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -334,6 +342,8 @@ function AdvancedTravelForm() {
     "maximumRewards",
   ]);
   const [result, setResult] = useState<TravelEngineAdvancedResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const togglePriority = (p: TravelPriority, checked: boolean) => {
     setPriorities((prev) =>
@@ -341,7 +351,7 @@ function AdvancedTravelForm() {
     );
   };
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const trips = Number(tripsPerYear);
     const spend = Number(avgSpendPerTrip);
     const intlTrips = Number(totalInternationalTrip);
@@ -354,16 +364,23 @@ function AdvancedTravelForm() {
     if (!Number.isFinite(intlSpend) || intlSpend < 0) return;
     if (!Number.isFinite(extra) || extra < 0) return;
 
-    setResult(
-      recommendTravelCardAdvanced({
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<TravelEngineAdvancedResult>("travel", {
         tripsPerYear: trips,
         avgSpendPerTrip: spend,
         totalInternationalTrip: intlTrips,
         avgInternationalSpendPerTrip: intlSpend,
         additionalFlightSpend: extra,
         travelPriority: priorities,
-      }),
-    );
+      });
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -456,9 +473,15 @@ function AdvancedTravelForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend best travel card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend best travel card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -642,6 +665,8 @@ function AllRounderPhaseOneForm() {
     "onlineShopping",
   ]);
   const [result, setResult] = useState<AllRounderEngineResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const toggleCategory = (cat: AllRounderCategory, checked: boolean) => {
     setSelected((prev) => {
@@ -653,19 +678,29 @@ function AllRounderPhaseOneForm() {
     });
   };
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const T = Number(monthlyTotal);
     const O = Number(monthlyOnline);
     if (!Number.isFinite(T) || T <= 0) return;
     if (!Number.isFinite(O) || O < 0) return;
 
-    setResult(
-      recommendAllRounderCardPhaseOne({
-        averageTotalMonthlySpend: T,
-        averageOnlineMonthlySpend: O,
-        mostSpendCategory: selected,
-      }),
-    );
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<AllRounderEngineResult>(
+        "allrounder/phase1",
+        {
+          averageTotalMonthlySpend: T,
+          averageOnlineMonthlySpend: O,
+          mostSpendCategory: selected,
+        },
+      );
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -724,9 +759,15 @@ function AllRounderPhaseOneForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend all-rounder card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend all-rounder card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -839,11 +880,13 @@ function AllRounderPhaseTwoForm() {
   const [result, setResult] = useState<AllRounderEnginePhaseTwoResult | null>(
     null,
   );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const setField = (key: PhaseTwoField["key"], value: string) =>
     setDeclared((prev) => ({ ...prev, [key]: value }));
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const T = Number(monthlyTotal);
     const O = Number(monthlyOnline);
     if (!Number.isFinite(T) || T <= 0) return;
@@ -857,13 +900,23 @@ function AllRounderPhaseTwoForm() {
       return acc;
     }, {} as Record<PhaseTwoField["key"], number>);
 
-    setResult(
-      recommendAllRounderCardPhaseTwo({
-        averageTotalMonthlySpend: T,
-        averageOnlineMonthlySpend: O,
-        ...numericDeclared,
-      }),
-    );
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<AllRounderEnginePhaseTwoResult>(
+        "allrounder",
+        {
+          averageTotalMonthlySpend: T,
+          averageOnlineMonthlySpend: O,
+          ...numericDeclared,
+        },
+      );
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -910,9 +963,15 @@ function AllRounderPhaseTwoForm() {
         ))}
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend all-rounder card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend all-rounder card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -1088,20 +1147,29 @@ function FoodCardPhaseOneForm() {
   const [diningFreq, setDiningFreq] = useState("4");
   const [platform, setPlatform] = useState<FoodPlatformPreference>("both");
   const [result, setResult] = useState<FoodCardEngineResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const d = Number(deliveryFreq);
     const o = Number(diningFreq);
     if (!Number.isFinite(d) || d < 0) return;
     if (!Number.isFinite(o) || o < 0) return;
 
-    setResult(
-      recommendFoodCardPhaseOne({
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<FoodCardEngineResult>("food/phase1", {
         onlineFoodDeliveryFrequency: d,
         diningOutFrequency: o,
         foodDeliveryPlatformPreference: platform,
-      }),
-    );
+      });
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1165,9 +1233,15 @@ function FoodCardPhaseOneForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend food card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend food card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -1287,8 +1361,10 @@ function FoodCardPhaseTwoForm() {
   const [diningPlatform, setDiningPlatform] =
     useState<FoodDiningPlatformPreference>("swiggy_dineout");
   const [result, setResult] = useState<FoodCardEngineResultTwo | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const d = Number(deliveryFreq);
     const o = Number(diningFreq);
     const dAvg = Number(deliveryAvg);
@@ -1298,16 +1374,23 @@ function FoodCardPhaseTwoForm() {
     if (!Number.isFinite(dAvg) || dAvg < 0) return;
     if (!Number.isFinite(oAvg) || oAvg < 0) return;
 
-    setResult(
-      recommendFoodCardPhaseTwo({
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<FoodCardEngineResultTwo>("food", {
         onlineFoodDeliveryFrequency: d,
         diningOutFrequency: o,
         onlineFoodDeliveryAverageSpend: dAvg,
         diningOutAverageSpend: oAvg,
         foodDeliveryPlatformPreference: deliveryPlatform,
         diningOutPlatformPreference: diningPlatform,
-      }),
-    );
+      });
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1422,9 +1505,15 @@ function FoodCardPhaseTwoForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend food card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend food card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -1631,6 +1720,8 @@ function ShoppingCardPhaseOneForm() {
     "amazon",
   ]);
   const [result, setResult] = useState<ShoppingCardEngineResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const togglePlatform = (p: ShoppingOnlinePlatform, checked: boolean) => {
     setPlatforms((prev) =>
@@ -1638,17 +1729,27 @@ function ShoppingCardPhaseOneForm() {
     );
   };
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const monthly = Number(monthlySpend);
     if (!Number.isFinite(monthly) || monthly < 0) return;
 
-    setResult(
-      recommendShoppingCardPhaseOne({
-        monthlySpend: monthly,
-        shoppingPreference: preference,
-        preferredOnlinePlatform: platforms,
-      }),
-    );
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<ShoppingCardEngineResult>(
+        "shopping/phase1",
+        {
+          monthlySpend: monthly,
+          shoppingPreference: preference,
+          preferredOnlinePlatform: platforms,
+        },
+      );
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1710,9 +1811,15 @@ function ShoppingCardPhaseOneForm() {
         </div>
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend shopping card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend shopping card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
@@ -1826,6 +1933,8 @@ function ShoppingCardPhaseTwoForm() {
   const [result, setResult] = useState<ShoppingCardEngineResultTwo | null>(
     null,
   );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const togglePlatform = (p: ShoppingOnlinePlatform, checked: boolean) => {
     setPlatforms((prev) =>
@@ -1833,7 +1942,7 @@ function ShoppingCardPhaseTwoForm() {
     );
   };
 
-  const onCalculate = () => {
+  const onCalculate = async () => {
     const monthly = Number(monthlySpend);
     const online = Number(onlineShoppingSpend);
     const utility = Number(utilitySpend);
@@ -1841,15 +1950,22 @@ function ShoppingCardPhaseTwoForm() {
     if (!Number.isFinite(online) || online < 0) return;
     if (hasUtility && (!Number.isFinite(utility) || utility < 0)) return;
 
-    setResult(
-      recommendShoppingCardPhaseTwo({
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetchRecommend<ShoppingCardEngineResultTwo>("shopping", {
         monthlySpend: monthly,
         preferredOnlinePlatform: platforms,
         totalOnlineShoppingMonthlySpend: online,
         additionalUtilityBills: hasUtility,
         additionalUtilityBillsMonthlySpend: hasUtility ? utility : 0,
-      }),
-    );
+      });
+      setResult(r);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Recommendation failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -1929,9 +2045,15 @@ function ShoppingCardPhaseTwoForm() {
         )}
       </div>
 
-      <Button onClick={onCalculate} className="w-full md:w-auto">
-        Recommend shopping card
+      <Button
+        onClick={onCalculate}
+        disabled={loading}
+        className="w-full md:w-auto"
+      >
+        {loading ? "Calculating…" : "Recommend shopping card"}
       </Button>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
 
       {result && (
         <div className="space-y-6">
