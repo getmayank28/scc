@@ -578,6 +578,7 @@ export const MERCHANTS = {
   SWIGGY_DINEOUT: "swiggy_dineout",
   ZOMATO_DISTRICT: "zomato_district",
   SMARTBUY: "smartbuy",
+  IDFC_FIRST_MOBILE_APP: "idfc_first_mobile_app",
 } as const;
 
 export type Merchant = (typeof MERCHANTS)[keyof typeof MERCHANTS];
