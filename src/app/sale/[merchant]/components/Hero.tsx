@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "motion/react";
 import { ShieldCheck, Sparkles } from "lucide-react";
 import type { MerchantConfig } from "../data/merchants";
@@ -34,13 +35,31 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
         >
           <motion.div
             variants={item}
-            className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary-orange/30 bg-primary-orange/10 px-4 py-1.5 text-sm text-primary-orange lg:mx-0"
+            className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary-orange/30 bg-primary-orange/10 py-1.5 pl-1.5 pr-4 text-sm text-primary-orange lg:mx-0"
           >
-            <span className="relative flex size-2">
-              <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
-              <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />
+            {merchant.logo ? (
+              <span className="flex size-6 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm">
+                <Image
+                  src={merchant.logo}
+                  alt={merchant.label}
+                  width={18}
+                  height={18}
+                  className="size-4.5 object-contain"
+                />
+              </span>
+            ) : (
+              <span className="relative ml-1.5 flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
+                <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />
+              </span>
+            )}
+            <span className="inline-flex items-center gap-1.5">
+              {merchant.saleName} is Live {merchant.emoji}
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
+                <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />
+              </span>
             </span>
-            {merchant.saleName} is Live {merchant.emoji}
           </motion.div>
 
           <motion.h1
@@ -48,7 +67,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
             className="font-satoshi text-4xl font-medium leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl"
           >
             Stop guessing which
-            <br className="hidden sm:block" /> card to use.
+            <br className="hidden sm:block" /> card to use
           </motion.h1>
 
           <motion.p
@@ -56,8 +75,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
             className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg lg:mx-0"
           >
             We compare your credit cards against every live {merchant.label}{" "}
-            offer and recommend the one that saves you the most —{" "}
-            <span className="text-white">down to the exact rupee.</span>
+            offer and recommend the one that saves you the most
           </motion.p>
 
           <motion.div
@@ -65,10 +83,6 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
             className="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
           >
             <SaleCTA source="hero">Check My Best Card</SaleCTA>
-            <span className="inline-flex items-center gap-1.5 text-sm text-white/50">
-              <ShieldCheck className="size-4 text-primary-success" />
-              Secure sign in · 30 seconds
-            </span>
           </motion.div>
 
           <motion.div
@@ -90,7 +104,35 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
           initial="hidden"
           animate="show"
           transition={{ delay: reduced ? 0 : 0.35 }}
+          className="relative mt-10 mb-14 lg:my-0"
         >
+          {merchant.logo && (
+            <motion.div
+              className="absolute -top-4 right-2 z-20 flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-xl shadow-black/40"
+              initial={reduced ? false : { opacity: 0, y: -12, rotate: 6 }}
+              animate={{ opacity: 1, y: 0, rotate: 5 }}
+              transition={{ delay: reduced ? 0 : 0.7, type: "spring", stiffness: 200, damping: 16 }}
+            >
+              <Image
+                src={merchant.logo}
+                alt={merchant.label}
+                width={26}
+                height={26}
+                className="size-6 rounded-md object-contain"
+              />
+              <span className="flex flex-col leading-tight">
+                <span
+                  className="text-sm font-bold"
+                  style={{ color: merchant.brandColor ?? "#2874F0" }}
+                >
+                  {merchant.label}
+                </span>
+                <span className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
+                  Sale offers
+                </span>
+              </span>
+            </motion.div>
+          )}
           <CreditCardVisual />
         </motion.div>
       </div>

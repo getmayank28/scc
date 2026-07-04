@@ -41,4 +41,5 @@ export const PUBLIC_ROUTES = [
   "/landing",
   "/choose-card",
   "/user-info",
+  "/sale/flipkart",
 ];

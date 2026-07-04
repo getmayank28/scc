@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import {
@@ -75,7 +76,7 @@ export function SavingsEstimator({
   };
 
   return (
-    <section className="relative bg-background-primary px-5 py-20 sm:px-8">
+    <section className="relative bg-background-primary px-5 py-14 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-5xl">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary-orange">
@@ -90,7 +91,7 @@ export function SavingsEstimator({
           </p>
         </Reveal>
 
-        <Reveal className="mt-10 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm sm:p-8">
+        <Reveal className="mt-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm sm:mt-10 sm:p-8">
           {/* category chips */}
           <motion.div
             variants={reduced ? staticShow : stagger(0.04)}
@@ -109,7 +110,7 @@ export function SavingsEstimator({
                   onClick={() => selectCategory(c.id)}
                   aria-pressed={active}
                   className={cn(
-                    "flex flex-col items-center gap-2 rounded-2xl border px-2 py-3.5 text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary-orange/60",
+                    "flex flex-row items-center justify-center gap-2 rounded-2xl border px-3 py-3 text-xs font-medium transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary-orange/60",
                     active
                       ? "border-primary-orange/50 bg-primary-orange/10 text-white"
                       : "border-white/10 bg-transparent text-white/60 hover:border-white/25 hover:text-white"
@@ -117,7 +118,7 @@ export function SavingsEstimator({
                 >
                   <Icon
                     className={cn(
-                      "size-5 transition-colors",
+                      "hidden size-5 shrink-0 transition-colors sm:block",
                       active ? "text-primary-orange" : "text-white/50"
                     )}
                   />
@@ -128,15 +129,15 @@ export function SavingsEstimator({
           </motion.div>
 
           {/* amount control */}
-          <div className="mt-8">
+          <div className="mt-6 sm:mt-8">
             <div className="flex items-end justify-between">
               <label className="text-sm text-white/60">Purchase amount</label>
-              <div className="font-satoshi text-2xl font-medium text-white tabular-nums">
+              <div className="font-satoshi text-xl font-medium text-white tabular-nums sm:text-2xl">
                 {inr(amount)}
               </div>
             </div>
             <Slider
-              className="mt-4"
+              className="mt-3 sm:mt-4"
               value={[amount]}
               min={ESTIMATOR_MIN}
               max={ESTIMATOR_MAX}
@@ -150,59 +151,77 @@ export function SavingsEstimator({
             </div>
           </div>
 
-          {/* headline result */}
-          <div className="mt-8 rounded-2xl border border-primary-success/20 bg-primary-success/[0.06] p-5 text-center">
-            <p className="text-sm text-white/60">
-              Best public {merchant.label} offer on this purchase
-            </p>
-            <div className="mt-1 flex items-center justify-center gap-1 font-satoshi text-4xl font-medium text-secondary-success sm:text-5xl">
-              <span className="text-2xl text-secondary-success/70">up to</span>
-              <AnimatedAmount value={best} reduced={reduced} />
+          {/* results: best public offer (left) + per-bank benefit cards (right) */}
+          <div className="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] items-stretch gap-3 sm:mt-8 sm:gap-4 lg:grid-cols-2">
+            {/* headline result */}
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-primary-success/20 bg-primary-success/[0.06] p-4 text-center sm:p-6">
+              <p className="inline-flex items-center justify-center gap-1.5 text-xs text-white/60 sm:text-sm">
+                {merchant.logo && (
+                  <span className="flex size-5 items-center justify-center overflow-hidden rounded-full bg-white">
+                    <Image
+                      src={merchant.logo}
+                      alt={merchant.label}
+                      width={14}
+                      height={14}
+                      className="size-3.5 object-contain"
+                    />
+                  </span>
+                )}
+                Best public {merchant.label} offer on this purchase
+              </p>
+              <div className="mt-1 flex items-baseline justify-center gap-1 font-satoshi text-3xl font-medium text-secondary-success sm:mt-2 sm:text-5xl">
+                <span className="text-lg text-secondary-success/70 sm:text-2xl">up to</span>
+                <AnimatedAmount value={best} reduced={reduced} />
+              </div>
+            </div>
+
+            {/* per-bank breakdown */}
+            <div className="min-w-0 space-y-2 sm:space-y-2.5">
+              <AnimatePresence mode="popLayout">
+                {results.map((r) => (
+                  <motion.div
+                    key={r.bank}
+                    layout={!reduced}
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? undefined : { opacity: 0 }}
+                    className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-3.5"
+                  >
+                    {/* proportional fill */}
+                    <motion.div
+                      aria-hidden
+                      className="absolute inset-y-0 left-0 bg-primary-orange/10"
+                      initial={false}
+                      animate={{ width: `${best > 0 ? (r.savings / best) * 100 : 0}%` }}
+                      transition={{ type: "spring", stiffness: 200, damping: 30 }}
+                    />
+                    <div className="relative flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-white sm:text-base">
+                          {r.bank}
+                        </p>
+                        <p className="text-[11px] text-white/50 sm:text-xs">
+                          {KIND_LABEL[r.kind]}
+                        </p>
+                      </div>
+                      <p className="shrink-0 text-sm font-semibold text-white tabular-nums sm:text-base">
+                        {inr(r.savings)}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
             </div>
           </div>
 
-          {/* per-bank breakdown */}
-          <div className="mt-5 space-y-2.5">
-            <AnimatePresence mode="popLayout">
-              {results.map((r) => (
-                <motion.div
-                  key={r.bank}
-                  layout={!reduced}
-                  initial={reduced ? false : { opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={reduced ? undefined : { opacity: 0 }}
-                  className="relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3.5"
-                >
-                  {/* proportional fill */}
-                  <motion.div
-                    aria-hidden
-                    className="absolute inset-y-0 left-0 bg-primary-orange/10"
-                    initial={false}
-                    animate={{ width: `${best > 0 ? (r.savings / best) * 100 : 0}%` }}
-                    transition={{ type: "spring", stiffness: 200, damping: 30 }}
-                  />
-                  <div className="relative flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-white">{r.bank}</p>
-                      <p className="text-xs text-white/50">{KIND_LABEL[r.kind]}</p>
-                    </div>
-                    <p className="font-semibold text-white tabular-nums">
-                      {inr(r.savings)}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
           {/* payoff */}
-          <div className="mt-7 flex flex-col items-center gap-4 rounded-2xl border border-dashed border-primary-orange/30 bg-primary-orange/[0.04] p-5 text-center">
-            <p className="inline-flex items-center gap-2 text-sm text-white/80">
-              <Lock className="size-4 text-primary-orange" />
-              These are the best offers that exist — not yet matched to you.
+          <div className="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary-orange/30 bg-primary-orange/[0.04] px-4 py-3.5 text-center sm:mt-6 sm:flex-row sm:justify-between sm:px-5 sm:py-4 sm:text-left">
+            <p className="inline-flex items-center gap-2 text-xs text-white/80 sm:text-sm">
+              <Lock className="size-4 shrink-0 text-primary-orange max-md:hidden" />
+              These are the best offers that exist but not yet matched to you.
             </p>
-            <SaleCTA source="estimator" size="lg">
-              Sign in to see which of your cards qualify
+            <SaleCTA source="estimator" size="lg" className="shrink-0" showArrow={false}>
+              Sign in to match your cards
             </SaleCTA>
           </div>
         </Reveal>
