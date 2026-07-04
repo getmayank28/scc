@@ -43,6 +43,7 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
   const isBlockedRoute =
     PUBLIC_ROUTES?.includes(pathname) ||
     isVerifyRoute ||
+    pathname.startsWith("/sale") ||
     pathname.includes("/chat");
   const isAuthBlockedRoute = pathname.includes("/chat");
 

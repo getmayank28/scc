@@ -19,6 +19,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const isHiddenRoute =
     pathname?.includes("/chat") ||
+    pathname?.startsWith("/sale") ||
     [
       "/",
       "/about",

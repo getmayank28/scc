@@ -127,7 +127,8 @@ export default function SpendOptimizerDesktop({
     const message = `<I have ${selectedCards?.length} cards, use these card slug_id for identity ${cardSlugs}  my category is ${formData?.category}, my transaction_amount is ${formData?.amount}, this is my merchant_name ${formData?.merchant}, this transaction spend_mode is ${formData?.transactionMode}, which credit card I should use for maximum benefits only for this transaction`;
     setOpenModal(true);
     const data = await communicateToBot({ message, token });
-    const content = joinTextMessagesByMid(data?.data?.messages);
+    const messages = data?.data?.messages?.filter((ele:{type:'TextMessage'|'SlotMessage'}) => ele?.type === 'TextMessage')
+    const content = joinTextMessagesByMid(messages);
     const msg = content?.find(msg => msg?.m_id && msg?.content)?.content || ''
     const finalData = JSON.parse(convertBoldMarkdownToHtml(msg))
 
