@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import { Check, ChevronsUpDown, CreditCard, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface CardOption {
   slug: string;
@@ -134,7 +133,7 @@ export function CardCombobox({
           />
         </div>
 
-        <ScrollArea className="max-h-64">
+        <div className="max-h-64 overflow-y-auto overscroll-contain">
           <div id="card-combobox-list" ref={listRef} role="listbox" className="p-1.5">
             {results.length === 0 ? (
               <p className="px-3 py-6 text-center text-sm text-white/40">
@@ -173,7 +172,7 @@ export function CardCombobox({
               })
             )}
           </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -6,6 +6,7 @@ import type { MerchantConfig } from "../data/merchants";
 import { inr } from "../utils/format";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { Reveal } from "../animations/Reveal";
+import { SaleBackground } from "../animations/SaleBackground";
 import { SaleCTA } from "./SaleCTA";
 
 /**
@@ -23,14 +24,16 @@ export function LockedRecommendation({
   const reduced = usePrefersReducedMotion();
 
   return (
-    <section className="relative bg-background-primary px-5 py-20 sm:px-8">
-      <div className="mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-2">
+    <section className="relative overflow-hidden bg-background-primary px-5 py-20 sm:px-8">
+      <SaleBackground />
+
+      <div className="relative z-10 mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-2">
         <Reveal>
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary-orange">
             One card wins this sale
           </p>
           <h2 className="mt-3 font-satoshi text-3xl font-medium text-white sm:text-4xl">
-            Your best card is ready — it just needs a name.
+            Your best card is ready. It just needs a name.
           </h2>
           <p className="mt-4 text-white/60">
             We&apos;ve already lined up every live {merchant.label} offer. The

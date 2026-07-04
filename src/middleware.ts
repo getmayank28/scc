@@ -16,6 +16,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Public sale landing pages — viewable without signing in.
+  if (url.pathname.startsWith("/sale")) {
+    return NextResponse.next();
+  }
+
   if (
     token &&
     (url.pathname.startsWith(ROUTES.SIGN_IN) ||

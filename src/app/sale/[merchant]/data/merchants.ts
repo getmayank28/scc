@@ -8,6 +8,10 @@ export interface MerchantConfig {
   saleName: string;
   /** Short emoji used as a tasteful, non-branded sale accent. */
   emoji: string;
+  /** Partner logo (public path) used to give the page a native feel. */
+  logo?: string;
+  /** Partner brand colour, for accents that sit alongside the logo. */
+  brandColor?: string;
 }
 
 /**
@@ -20,13 +24,17 @@ export const MERCHANTS: Record<SaleMerchant, MerchantConfig> = {
     key: "flipkart",
     label: "Flipkart",
     saleName: "Flipkart Sale",
-    emoji: "🎉",
+    emoji: "",
+    logo: "/icons/flipkart.png",
+    brandColor: "#2874F0",
   },
   amazon: {
     key: "amazon",
     label: "Amazon",
     saleName: "Amazon Sale",
     emoji: "🛍️",
+    logo: "/icons/amazon.png",
+    brandColor: "#FF9900",
   },
   others: {
     key: "others",
@@ -56,7 +64,12 @@ export const CATEGORIES: PurchaseCategory[] = [
   { id: "mobile", label: "Mobile", defaultAmount: 24000, icon: "Smartphone" },
   { id: "laptop", label: "Laptop", defaultAmount: 68000, icon: "Laptop" },
   { id: "tv", label: "TV", defaultAmount: 45000, icon: "Tv" },
-  { id: "appliances", label: "Appliances", defaultAmount: 32000, icon: "WashingMachine" },
+  {
+    id: "appliances",
+    label: "Appliances",
+    defaultAmount: 32000,
+    icon: "WashingMachine",
+  },
   { id: "fashion", label: "Fashion", defaultAmount: 6000, icon: "Shirt" },
   { id: "furniture", label: "Furniture", defaultAmount: 28000, icon: "Sofa" },
 ];

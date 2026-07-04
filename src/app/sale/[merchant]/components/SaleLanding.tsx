@@ -1,5 +1,7 @@
 "use client";
 
+import { Header } from "@/components/Header";
+import { Footer } from "@/landing/Footer";
 import type { MerchantConfig } from "../data/merchants";
 import type { CardOffer, MerchantOffer } from "../data/savings";
 import { Hero } from "./Hero";
@@ -10,7 +12,6 @@ import { SampleOffers } from "./SampleOffers";
 import { HowItWorks } from "./HowItWorks";
 import { LockedRecommendation } from "./LockedRecommendation";
 import { WhySignIn } from "./WhySignIn";
-import { FinalCTA } from "./FinalCTA";
 
 export interface SaleLandingProps {
   merchant: MerchantConfig;
@@ -34,6 +35,7 @@ export function SaleLanding({
 }: SaleLandingProps) {
   return (
     <main className="min-h-screen bg-background-primary text-white antialiased">
+      <Header />
       <Hero merchant={merchant} />
       <div id="coverage" className="scroll-mt-4">
         <CoverageStats merchant={merchant} liveOfferCount={liveOfferCount} />
@@ -53,12 +55,10 @@ export function SaleLanding({
       <div id="recommendation" className="scroll-mt-4">
         <LockedRecommendation merchant={merchant} potentialSaving={potentialSaving} />
       </div>
-      <div id="why" className="scroll-mt-4">
+      {/* <div id="why" className="scroll-mt-4">
         <WhySignIn />
-      </div>
-      <div id="unlock" className="scroll-mt-4">
-        <FinalCTA merchant={merchant} />
-      </div>
+      </div> */}
+      <Footer />
     </main>
   );
 }

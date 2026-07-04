@@ -41,7 +41,7 @@ export function CoverageStats({
         <Reveal
           as="container"
           containerVariants={reduced ? staticShow : stagger(0.08)}
-          className="mt-12 grid gap-4 sm:grid-cols-3"
+          className="mt-12 grid grid-cols-3 gap-3 sm:gap-4"
         >
           {COVERAGE_STATS.map((stat) => (
             <StatCard
@@ -54,7 +54,7 @@ export function CoverageStats({
           <StatCard
             value={liveOfferCount}
             suffix="+"
-            label={`Live ${merchant.label} offers`}
+            label="Live offers"
             highlight
           />
         </Reveal>
@@ -62,7 +62,7 @@ export function CoverageStats({
         <Reveal
           as="container"
           containerVariants={reduced ? staticShow : stagger(0.05)}
-          className="mt-6 flex flex-wrap justify-center gap-2.5"
+          className="mt-6 hidden flex-wrap justify-center gap-2.5 sm:flex"
         >
           {COVERAGE_FEATURES.map((feature) => (
             <motion.span
@@ -98,19 +98,19 @@ function StatCard({
       whileHover={reduced ? undefined : { y: -4 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className={[
-        "rounded-2xl border p-6 text-center backdrop-blur-sm transition-colors",
+        "rounded-2xl border p-3 text-center backdrop-blur-sm transition-colors sm:p-6",
         highlight
           ? "border-primary-orange/30 bg-primary-orange/[0.08]"
           : "border-white/10 bg-white/[0.03] hover:border-white/20",
       ].join(" ")}
     >
-      <div className="flex items-baseline justify-center font-satoshi text-4xl font-medium text-white sm:text-5xl">
+      <div className="flex items-baseline justify-center font-satoshi text-2xl font-medium text-white sm:text-4xl lg:text-5xl">
         <CountUp value={value} />
         <span className={highlight ? "text-primary-orange" : "text-white/70"}>
           {suffix}
         </span>
       </div>
-      <p className="mt-2 text-sm text-white/60">{label}</p>
+      <p className="mt-1.5 text-xs text-white/60 sm:mt-2 sm:text-sm">{label}</p>
     </motion.div>
   );
 }

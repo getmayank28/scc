@@ -76,8 +76,8 @@ export function CardBreakdown({
   const maxSavings = routes.reduce((m, r) => Math.max(m, r.savings), 0);
 
   return (
-    <section className="relative bg-background-primary px-5 py-20 sm:px-8">
-      <div className="mx-auto max-w-3xl">
+    <section className="relative bg-background-primary px-5 py-14 sm:px-8 sm:py-20">
+      <div className="mx-auto max-w-5xl">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary-orange">
             Card breakdown
@@ -91,7 +91,7 @@ export function CardBreakdown({
           </p>
         </Reveal>
 
-        <Reveal className="mt-10 rounded-3xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm sm:p-8">
+        <Reveal className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm sm:mt-10 sm:p-8">
           {/* card picker */}
           <label className="mb-2 block text-sm text-white/60">
             Select a credit card
@@ -130,42 +130,10 @@ export function CardBreakdown({
             />
           </div>
 
-          {/* best route banner */}
-          <AnimatePresence mode="wait">
-            {best ? (
-              <motion.div
-                key={`${slug}-best-${best.key}`}
-                initial={reduced ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduced ? undefined : { opacity: 0 }}
-                className="mt-7 flex items-center gap-3 rounded-2xl border border-primary-success/25 bg-primary-success/[0.07] p-4"
-              >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-success/15 text-secondary-success">
-                  <Trophy className="size-5" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs uppercase tracking-wide text-white/50">
-                    Best way to pay
-                  </p>
-                  <p className="truncate font-medium text-white">{best.label}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-satoshi text-2xl font-medium text-secondary-success tabular-nums">
-                    {inr(best.savings)}
-                  </p>
-                  <p className="text-xs text-white/50">you save</p>
-                </div>
-              </motion.div>
-            ) : card ? (
-              <p className="mt-7 rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-center text-sm text-white/50">
-                No unlocked savings at this amount — try a higher spend to meet
-                offer thresholds.
-              </p>
-            ) : null}
-          </AnimatePresence>
-
-          {/* all routes */}
-          <div className="mt-4 space-y-2.5">
+          {/* results: route options (left) + best way to pay (right) */}
+          <div className="mt-6 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 sm:mt-7 sm:gap-4 lg:grid-cols-2 lg:items-start">
+            {/* all routes — left (below the summary on mobile) */}
+            <div className="order-2 min-w-0 space-y-2 sm:space-y-2.5 lg:order-1">
             <AnimatePresence initial={false} mode="popLayout">
               {routes.map((route) => {
                 const Icon = ROUTE_ICON[route.key];
@@ -178,7 +146,7 @@ export function CardBreakdown({
                     animate={{ opacity: 1, y: 0 }}
                     exit={reduced ? undefined : { opacity: 0 }}
                     className={cn(
-                      "relative overflow-hidden rounded-2xl border p-4",
+                      "relative overflow-hidden rounded-2xl border p-3 sm:p-4",
                       isBest
                         ? "border-primary-success/30 bg-primary-success/[0.04]"
                         : "border-white/10 bg-white/[0.02]"
@@ -197,22 +165,24 @@ export function CardBreakdown({
                       }}
                       transition={{ type: "spring", stiffness: 200, damping: 30 }}
                     />
-                    <div className="relative flex items-center gap-3">
+                    <div className="relative flex items-center gap-2.5 sm:gap-3">
                       <span
                         className={cn(
-                          "flex size-10 shrink-0 items-center justify-center rounded-xl",
+                          "flex size-9 shrink-0 items-center justify-center rounded-xl sm:size-10",
                           isBest
                             ? "bg-primary-success/15 text-secondary-success"
                             : "bg-primary-orange/10 text-primary-orange"
                         )}
                       >
-                        <Icon className="size-5" />
+                        <Icon className="size-4.5 sm:size-5" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium text-white">{route.label}</p>
+                          <p className="truncate text-sm font-medium text-white sm:text-base">
+                            {route.label}
+                          </p>
                           {route.pct !== undefined && (
-                            <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-white/60">
+                            <span className="shrink-0 rounded-full bg-white/[0.06] px-2 py-0.5 text-[11px] text-white/60">
                               {route.pct}%
                             </span>
                           )}
@@ -221,9 +191,9 @@ export function CardBreakdown({
                           {route.detail}
                         </p>
                       </div>
-                      <div className="text-right">
+                      <div className="shrink-0 text-right">
                         {route.eligible ? (
-                          <p className="font-semibold text-white tabular-nums">
+                          <p className="text-sm font-semibold text-white tabular-nums sm:text-base">
                             {inr(route.savings)}
                           </p>
                         ) : (
@@ -235,7 +205,7 @@ export function CardBreakdown({
                       </div>
                     </div>
                     {route.requirement && (
-                      <p className="relative mt-2 pl-13 text-xs text-primary-orange/80">
+                      <p className="relative mt-2 pl-11 text-xs text-primary-orange/80 sm:pl-13">
                         {route.requirement}
                       </p>
                     )}
@@ -243,15 +213,54 @@ export function CardBreakdown({
                 );
               })}
             </AnimatePresence>
+            </div>
+
+            {/* best way to pay — right on desktop, on top on mobile */}
+            <div className="order-1 min-w-0 lg:order-2 lg:sticky lg:top-6">
+              <AnimatePresence mode="wait">
+                {best ? (
+                  <motion.div
+                    key={`${slug}-best-${best.key}`}
+                    initial={reduced ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? undefined : { opacity: 0 }}
+                    className="flex items-center gap-3 rounded-2xl border border-primary-success/25 bg-primary-success/[0.07] p-4 text-left sm:flex-col sm:gap-3 sm:p-6 sm:text-center"
+                  >
+                    <span className=" hidden max-md:flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary-success/15 text-secondary-success sm:size-12">
+                      <Trophy className="size-5 sm:size-6 " />
+                    </span>
+                    <div className="min-w-0 flex-1 sm:flex-none">
+                      <p className="text-[11px] uppercase tracking-wide text-white/50 sm:text-xs">
+                        Best way to pay
+                      </p>
+                      <p className="truncate font-medium text-white sm:mt-1">
+                        {best.label}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right sm:text-center">
+                      <p className="font-satoshi text-xl font-medium text-secondary-success tabular-nums sm:text-3xl">
+                        {inr(best.savings)}
+                      </p>
+                      <p className="text-[11px] text-white/50 sm:text-xs">you save</p>
+                    </div>
+                  </motion.div>
+                ) : card ? (
+                  <p className="rounded-2xl border border-white/10 bg-white/[0.02] p-4 text-center text-sm text-white/50 sm:p-6">
+                    No unlocked savings at this amount — try a higher spend to
+                    meet offer thresholds.
+                  </p>
+                ) : null}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* payoff */}
-          <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary-orange/30 bg-primary-orange/[0.04] p-5 text-center">
-            <p className="inline-flex items-center gap-2 text-sm text-white/80">
-              <CreditCard className="size-4 text-primary-orange" />
+          <div className="mt-5 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-primary-orange/30 bg-primary-orange/[0.04] px-4 py-3.5 text-center sm:mt-6 sm:flex-row sm:justify-between sm:px-5 sm:py-4 sm:text-left">
+            <p className="inline-flex items-center gap-2 text-xs text-white/80 sm:text-sm">
+              <CreditCard className="size-4 shrink-0 text-primary-orange max-md:hidden" />
               Own more than one card? We&apos;ll pick the winner across all of them.
             </p>
-            <SaleCTA source="card-breakdown" size="lg">
+            <SaleCTA source="card-breakdown" size="lg" className="shrink-0" showArrow={false}>
               Compare all my cards
             </SaleCTA>
           </div>
