@@ -29,7 +29,7 @@ export function SaleCTA({
   children,
   className,
   size = "xl",
-  href = "/sign-in",
+  href = "/sign-in?callbackUrl=%2Fsale%2Fcontinue",
   source,
   showArrow = true,
   block = false,

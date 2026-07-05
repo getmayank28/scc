@@ -66,7 +66,15 @@ const SignInSection = ({
         });
       } else {
         trackEvent(EventName.SIGNIN_SUCCEEDED, { method: "credentials" });
-        router.push("/home");
+        // Honour a post-login destination when one was passed in (e.g. the sale
+        // funnel routes here via ?callbackUrl=/sale/continue). Only same-origin
+        // relative paths are allowed, to avoid an open-redirect.
+        const callbackUrl = new URLSearchParams(window.location.search).get(
+          "callbackUrl"
+        );
+        const destination =
+          callbackUrl && callbackUrl.startsWith("/") ? callbackUrl : "/home";
+        router.push(destination);
         router.refresh();
       }
     } catch (error) {

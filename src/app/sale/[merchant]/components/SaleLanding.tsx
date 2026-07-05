@@ -37,15 +37,15 @@ export function SaleLanding({
     <main className="min-h-screen bg-background-primary text-white antialiased">
       <Header />
       <Hero merchant={merchant} />
-      <div id="coverage" className="scroll-mt-4">
-        <CoverageStats merchant={merchant} liveOfferCount={liveOfferCount} />
-      </div>
-      <div id="estimator" className="scroll-mt-4">
-        <SavingsEstimator merchant={merchant} offers={offers} />
-      </div>
       <div id="card-breakdown" className="scroll-mt-4">
         <CardBreakdown merchant={merchant} cards={cards} />
       </div>
+      <div id="coverage" className="scroll-mt-4">
+        <CoverageStats merchant={merchant} liveOfferCount={liveOfferCount} />
+      </div>
+      {/* <div id="estimator" className="scroll-mt-4">
+        <SavingsEstimator merchant={merchant} offers={offers} />
+      </div> */}
       <div id="offers" className="scroll-mt-4">
         <SampleOffers merchant={merchant} />
       </div>
