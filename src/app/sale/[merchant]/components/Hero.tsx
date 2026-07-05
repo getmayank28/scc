@@ -8,7 +8,6 @@ import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { fadeUp, scaleIn, stagger, staticShow } from "../animations/variants";
 import { SaleBackground } from "../animations/SaleBackground";
 import { SaleCTA } from "./SaleCTA";
-import { CreditCardVisual } from "./CreditCardVisual";
 
 /**
  * Above-the-fold hero. Runs the page's entrance sequence: the eyebrow, headline,
@@ -54,7 +53,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
               </span>
             )}
             <span className="inline-flex items-center gap-1.5">
-              {merchant.saleName} is Live {merchant.emoji}
+              {merchant.label} GOAT Sale is Live {merchant.emoji}
               <span className="relative flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />
@@ -66,8 +65,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
             variants={item}
             className="font-satoshi text-4xl font-medium leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl"
           >
-            Stop guessing which
-            <br className="hidden sm:block" /> card to use
+            Check best Offers  <br className="hidden sm:block" /> on your card
           </motion.h1>
 
           <motion.p
@@ -82,7 +80,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
             variants={reduced ? staticShow : scaleIn}
             className="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
           >
-            <SaleCTA source="hero">Check My Best Card</SaleCTA>
+            <SaleCTA href="#card-breakdown" source="hero">Check My Best Card</SaleCTA>
           </motion.div>
 
           <motion.div
@@ -98,17 +96,21 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
           </motion.div>
         </motion.div>
 
-        {/* visual column */}
+        {/* visual column — official Flipkart GOAT Sale poster */}
         <motion.div
           variants={reduced ? staticShow : scaleIn}
           initial="hidden"
           animate="show"
           transition={{ delay: reduced ? 0 : 0.35 }}
-          className="relative mt-10 mb-14 lg:my-0"
+          className="relative mt-10 mb-6 lg:my-0"
         >
+          {/* brand glow — Flipkart blue blended into the sale orange */}
+          <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_50%_40%,rgba(40,116,240,0.4),rgba(255,120,40,0.18)_55%,transparent_75%)] blur-2xl" />
+
+          {/* Flipkart brand chip */}
           {merchant.logo && (
             <motion.div
-              className="absolute -top-4 right-2 z-20 flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-xl shadow-black/40"
+              className="absolute -top-4 right-3 z-20 flex items-center gap-2 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-xl shadow-black/40"
               initial={reduced ? false : { opacity: 0, y: -12, rotate: 6 }}
               animate={{ opacity: 1, y: 0, rotate: 5 }}
               transition={{ delay: reduced ? 0 : 0.7, type: "spring", stiffness: 200, damping: 16 }}
@@ -128,12 +130,32 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
                   {merchant.label}
                 </span>
                 <span className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">
-                  Sale offers
+                  Official offers
                 </span>
               </span>
             </motion.div>
           )}
-          <CreditCardVisual />
+
+          {/* the poster */}
+          <motion.div
+            className="overflow-hidden rounded-3xl border border-white/12 shadow-2xl shadow-black/60 ring-1 ring-primary-orange/20"
+            animate={reduced ? undefined : { y: [0, -8, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Image
+              src="/images/goat-sale-flipkart.webp"
+              alt={`${merchant.label} GOAT Sale is live`}
+              width={900}
+              height={545}
+              priority
+              className="h-auto w-full"
+            />
+          </motion.div>
+
+          {/* trust caption */}
+          <p className="mt-4 text-center text-xs text-white/45">
+            Every {merchant.label} GOAT Sale bank offer, compared in one place.
+          </p>
         </motion.div>
       </div>
 

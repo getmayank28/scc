@@ -1,14 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "motion/react";
 import {
+  ArrowUpRight,
   BadgePercent,
   CalendarClock,
   Coins,
   CreditCard,
   Lock,
+  ShieldCheck,
+  Tag,
   Ticket,
+  Truck,
   Trophy,
   type LucideIcon,
 } from "lucide-react";
@@ -29,6 +34,7 @@ import {
 import { inr } from "../utils/format";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { Reveal } from "../animations/Reveal";
+import { SaleBackground } from "../animations/SaleBackground";
 import { CardCombobox, type CardOption } from "./CardCombobox";
 import { SaleCTA } from "./SaleCTA";
 
@@ -76,22 +82,22 @@ export function CardBreakdown({
   const maxSavings = routes.reduce((m, r) => Math.max(m, r.savings), 0);
 
   return (
-    <section className="relative bg-background-primary px-5 py-14 sm:px-8 sm:py-20">
-      <div className="mx-auto max-w-5xl">
+    <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-background-primary px-5 py-16 sm:px-8 sm:py-24">
+      <SaleBackground />
+
+      <div className="relative z-10 mx-auto w-full max-w-5xl">
         <Reveal className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-primary-orange">
-            Card breakdown
-          </p>
-          <h2 className="mt-3 font-satoshi text-3xl font-medium text-white sm:text-4xl">
-            Know your card? See every way it saves.
+
+          <h2 className="font-satoshi text-4xl font-medium leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+            Know your card?
           </h2>
-          <p className="mt-4 text-white/60">
-            Pick a card, enter your spend, and we&apos;ll break down every public{" "}
-            {merchant.label} route — instant discount, EMI, vouchers and rewards.
+          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
+            Pick a card, enter your spend, and we&apos;ll break down every {" "}
+            {merchant.label} best route for you to save
           </p>
         </Reveal>
 
-        <Reveal className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm sm:mt-10 sm:p-8">
+        <Reveal className="mt-9 rounded-3xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm sm:mt-12 sm:p-8">
           {/* card picker */}
           <label className="mb-2 block text-sm text-white/60">
             Select a credit card
@@ -264,6 +270,66 @@ export function CardBreakdown({
               Compare all my cards
             </SaleCTA>
           </div>
+
+          {/* Flipkart marketing + shop CTA — reassures the visitor this ties
+              back to the real, live sale they can shop right now. Gated to
+              Flipkart since the affiliate link is Flipkart-specific. */}
+          {merchant.key === "flipkart" && (
+          <div className="mt-3 overflow-hidden rounded-2xl border border-[#2874F0]/30 bg-[#2874F0]/[0.08]">
+            <div className="flex flex-col gap-4 p-4 text-center sm:flex-row sm:items-center sm:justify-between sm:p-5 sm:text-left">
+              <div className="flex items-start gap-3">
+                {merchant.logo && (
+                  <span className="hidden size-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm sm:flex">
+                    <Image
+                      src={merchant.logo}
+                      alt={merchant.label}
+                      width={26}
+                      height={26}
+                      className="size-6.5 object-contain"
+                    />
+                  </span>
+                )}
+                <div className="min-w-0">
+                  <p className="font-satoshi text-sm font-semibold text-white sm:text-base">
+                    {merchant.label} GOAT Sale is live now
+                  </p>
+                  <p className="mt-0.5 text-xs text-white/60 sm:text-sm">
+                    Lowest prices of the year on mobiles, electronics &amp;
+                    fashion — your bank offer stacks right on top.
+                  </p>
+                  <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-[11px] text-white/55 sm:justify-start">
+                    <span className="inline-flex items-center gap-1">
+                      <ShieldCheck className="size-3.5 text-[#4d90ff]" />
+                      {merchant.label} Assured
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Truck className="size-3.5 text-[#4d90ff]" />
+                      Free delivery
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Tag className="size-3.5 text-[#4d90ff]" />
+                      Extra bank offers
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <motion.a
+                href="https://fktr.in/04oX9J5"
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                data-cta-source="card-breakdown-flipkart"
+                whileHover={reduced ? undefined : { scale: 1.03 }}
+                whileTap={reduced ? undefined : { scale: 0.97 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="group inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-[#2874F0] px-7 text-sm font-semibold text-white shadow-[0_12px_40px_-12px_rgba(40,116,240,0.9)] transition-colors hover:bg-[#1a63e0] sm:text-base"
+              >
+                Go to {merchant.label}
+                <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </motion.a>
+            </div>
+          </div>
+          )}
         </Reveal>
       </div>
     </section>

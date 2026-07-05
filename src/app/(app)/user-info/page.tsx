@@ -8,7 +8,17 @@ export default function UserInfoPage() {
   const router = useRouter();
 
   const handleSuccess = () => {
-    router.push(ROUTES.LOGGED_IN_HOME);
+    // Honour a post-onboarding destination when one was passed in (the sale
+    // funnel routes new users here with ?callbackUrl=/profile). Same-origin
+    // relative paths only, to avoid an open-redirect; default stays /home.
+    const callbackUrl = new URLSearchParams(window.location.search).get(
+      "callbackUrl"
+    );
+    router.push(
+      callbackUrl && callbackUrl.startsWith("/")
+        ? callbackUrl
+        : ROUTES.LOGGED_IN_HOME
+    );
   };
 
   return (

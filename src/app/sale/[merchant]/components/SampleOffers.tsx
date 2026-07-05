@@ -94,7 +94,7 @@ function OfferCard({ offer }: { offer: SampleOffer }) {
       </p>
 
       <Link
-        href="/sign-in"
+        href="/sign-in?callbackUrl=%2Fsale%2Fcontinue"
         data-cta-source="sample-offer"
         className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-orange transition-colors hover:text-primary-orange/80 sm:mt-4 sm:text-sm"
       >

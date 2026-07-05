@@ -1,6 +1,6 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { HoveredLink, Menu } from "@/components/ui/navbar-menu";
+import { HoveredLink, Menu, MenuItem } from "@/components/ui/navbar-menu";
 import { ROUTES } from "@/lib/constants/routes";
 import { useState } from "react";
 import Image from "next/image";
@@ -37,6 +37,32 @@ const Header = ({ className }: { className?: string }) => {
                 Home
               </HoveredLink>
             )}
+
+            {/* Live sale — dropdown to the active sale landing pages */}
+            <div className="relative">
+              <MenuItem setActive={setActive} active={active} item="Sale">
+                <div className="flex flex-col space-y-3 text-sm">
+                  <HoveredLink
+                    href="/sale/flipkart"
+                    className="flex items-center gap-2 font-semibold max-md:text-[14px]"
+                  >
+                    <Image
+                      width={18}
+                      height={18}
+                      src="/icons/flipkart.png"
+                      alt="Flipkart"
+                      className="rounded-sm"
+                    />
+                    Flipkart GOAT Sale
+                  </HoveredLink>
+                </div>
+              </MenuItem>
+              <span className="pointer-events-none absolute -right-2.5 -top-1 flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
+                <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />
+              </span>
+            </div>
+
             <HoveredLink
               href={ROUTES.ABOUT}
               className="max-md:text-[14px] max-md:font-semibold"

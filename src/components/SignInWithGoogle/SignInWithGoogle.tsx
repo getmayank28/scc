@@ -17,7 +17,12 @@ const SignInWithGoogle = () => {
     setIsLoading(true)
     trackEvent(EventName.SIGNIN_GOOGLE_CLICKED, {});
     trackEvent(EventName.SIGNIN_SUBMITTED, { method: "google" });
-    signIn("google")
+    // Carry a same-origin post-login destination through the OAuth round-trip
+    // (the sale funnel passes ?callbackUrl=/sale/continue).
+    const callbackUrl = new URLSearchParams(window.location.search).get(
+      "callbackUrl"
+    );
+    signIn("google", callbackUrl?.startsWith("/") ? { callbackUrl } : undefined);
   }
   return (
     <div className="mt-6">
