@@ -6,8 +6,11 @@ export const dynamic = "force-dynamic";
 
 /**
  * GET /api/admin/whatsapp?direction=outbound|inbound&page=1&limit=50
+ *   &status=<status>&templateId=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD
  *
  * Returns WhatsApp messages for the admin dashboard.
+ * The status / templateId / date-range filters are optional and may be
+ * combined independently.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -22,10 +25,27 @@ export async function GET(req: NextRequest) {
     );
     const skip = (page - 1) * limit;
 
+    const status = searchParams.get("status")?.trim();
+    const templateId = searchParams.get("templateId")?.trim();
+    const from = searchParams.get("from")?.trim();
+    const to = searchParams.get("to")?.trim();
+
     const filter: Record<string, unknown> = {
       direction,
-      status: { $ne: "other" },
+      // A specific status filter overrides the default "hide other" rule.
+      status: status ? status : { $ne: "other" },
     };
+
+    if (templateId) {
+      filter.templateId = templateId;
+    }
+
+    if (from || to) {
+      const createdAt: Record<string, Date> = {};
+      if (from) createdAt.$gte = new Date(`${from}T00:00:00.000`);
+      if (to) createdAt.$lte = new Date(`${to}T23:59:59.999`);
+      filter.createdAt = createdAt;
+    }
 
     const [messages, total] = await Promise.all([
       WhatsAppMessage.find(filter)

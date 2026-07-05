@@ -33,15 +33,34 @@ const subtabs = [
   { label: "Inbound", value: "inbound" },
 ];
 
+const STATUS_TABS = [
+  { label: "All", value: "" },
+  { label: "Enqueued", value: "enqueued" },
+  { label: "Sent", value: "sent" },
+  { label: "Delivered", value: "delivered" },
+  { label: "Read", value: "read" },
+  { label: "Failed", value: "failed" },
+];
+
 const WhatsAppAdmin = () => {
   const [direction, setDirection] = useState<"outbound" | "inbound">(
     "outbound",
   );
   const [page, setPage] = useState(1);
+  const [status, setStatus] = useState("");
+  const [templateId, setTemplateId] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  const isOutbound = direction === "outbound";
 
   const { data, isLoading } = useGetWhatsAppMessagesQuery({
     direction,
     page,
+    status: isOutbound ? status || undefined : undefined,
+    templateId: isOutbound ? templateId.trim() || undefined : undefined,
+    from: isOutbound ? from || undefined : undefined,
+    to: isOutbound ? to || undefined : undefined,
   });
 
   const messages: Message[] = data?.data ?? [];
@@ -59,6 +78,79 @@ const WhatsAppAdmin = () => {
           setPage(1);
         }}
       />
+
+      {isOutbound && (
+        <div className="flex flex-col gap-3">
+          <TabBar
+            value={status}
+            tabs={STATUS_TABS}
+            onChange={(v) => {
+              setStatus(v);
+              setPage(1);
+            }}
+          />
+
+          <div className="flex flex-wrap items-end gap-4">
+            <label className="flex flex-col gap-1 text-xs text-white/60">
+              Template ID
+              <input
+                type="text"
+                value={templateId}
+                placeholder="Filter by template ID"
+                onChange={(e) => {
+                  setTemplateId(e.target.value);
+                  setPage(1);
+                }}
+                className="w-64 rounded border border-brown-border bg-brown-sidebar px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs text-white/60">
+              From
+              <input
+                type="date"
+                value={from}
+                max={to || undefined}
+                onChange={(e) => {
+                  setFrom(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded border border-brown-border bg-brown-sidebar px-3 py-2 text-sm text-white focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs text-white/60">
+              To
+              <input
+                type="date"
+                value={to}
+                min={from || undefined}
+                onChange={(e) => {
+                  setTo(e.target.value);
+                  setPage(1);
+                }}
+                className="rounded border border-brown-border bg-brown-sidebar px-3 py-2 text-sm text-white focus:outline-none"
+              />
+            </label>
+
+            {(status || templateId || from || to) && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setStatus("");
+                  setTemplateId("");
+                  setFrom("");
+                  setTo("");
+                  setPage(1);
+                }}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       {isLoading && <p className="text-white">Loading...</p>}
 
