@@ -187,12 +187,20 @@ export const admin = api.injectEndpoints({
       query: ({
         direction,
         page,
+        status,
+        templateId,
+        from,
+        to,
       }: {
         direction: "outbound" | "inbound";
         page: number;
+        status?: string;
+        templateId?: string;
+        from?: string;
+        to?: string;
       }) => ({
         url: "admin/whatsapp",
-        params: { direction, page, limit: 50 },
+        params: { direction, page, limit: 50, status, templateId, from, to },
       }),
       providesTags: ["WhatsApp"],
     }),
