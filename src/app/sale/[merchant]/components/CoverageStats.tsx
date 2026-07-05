@@ -52,7 +52,7 @@ export function CoverageStats({
             />
           ))}
           <StatCard
-            value={liveOfferCount}
+            value={500}
             suffix="+"
             label="Live offers"
             highlight

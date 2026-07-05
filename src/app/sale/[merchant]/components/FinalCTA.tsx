@@ -39,7 +39,7 @@ export function FinalCTA({ merchant }: { merchant: MerchantConfig }) {
         </p>
 
         <div className="mt-9 flex justify-center">
-          <SaleCTA source="final" size="xl">
+          <SaleCTA source="final" size="xl" merchant={merchant.key}>
             Unlock my best card
           </SaleCTA>
         </div>

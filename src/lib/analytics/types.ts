@@ -79,6 +79,14 @@ export enum EventName {
   CARD_INFO_ADVISOR_FIND_OUT_CLICKED = "card_info.advisor_find_out_clicked",
   CARD_INFO_ADVISOR_DISMISSED = "card_info.advisor_dismissed",
 
+  // ── Sale Landing (merchant sale page) ──
+  SALE_VIEWED = "sale_landing.viewed",
+  SALE_CTA_CLICKED = "sale_landing.cta_clicked",
+  SALE_CARD_SELECTED = "sale_landing.card_selected",
+  SALE_BREAKDOWN_RESULT_VIEWED = "sale_landing.breakdown_result_viewed",
+  SALE_SHOP_CLICKED = "sale_landing.shop_clicked",
+  SALE_SAMPLE_OFFER_CLICKED = "sale_landing.sample_offer_clicked",
+
   // ── Sign Up (new customer) ──
   SIGNUP_PAGE_VIEWED = "signup.page_viewed",
   SIGNUP_USERNAME_CHECK_RESULT = "signup.username_check_result",
@@ -285,6 +293,51 @@ interface CardInfoSearchProperties extends BaseProperties {
   bankName: string;
 }
 
+// ── Sale Landing ─────────────────────────────────────────────────────
+// Pre-sign-in merchant sale funnel: page view → calculator engagement →
+// conversion CTA (into sign-in) / outbound shop click.
+
+interface SaleViewedProperties extends BaseProperties {
+  merchant: string;
+  liveOfferCount?: number;
+}
+
+interface SaleCtaClickedProperties extends BaseProperties {
+  /** Where on the page the CTA lives — "hero", "card-breakdown", "locked", "final". */
+  source: string;
+  merchant?: string;
+}
+
+interface SaleCardSelectedProperties extends BaseProperties {
+  merchant: string;
+  cardSlug: string;
+  cardName: string;
+  bankName: string;
+}
+
+interface SaleBreakdownResultViewedProperties extends BaseProperties {
+  merchant: string;
+  cardSlug: string;
+  cardName: string;
+  bankName: string;
+  amount: number;
+  bestRoute: string | null;
+  bestSavings: number | null;
+  routeCount: number;
+}
+
+interface SaleShopClickedProperties extends BaseProperties {
+  merchant: string;
+  /** Which shop CTA — e.g. "card-breakdown-flipkart". */
+  source: string;
+}
+
+interface SaleSampleOfferClickedProperties extends BaseProperties {
+  merchant: string;
+  bankName: string;
+  offerTitle: string;
+}
+
 // ── Auth ─────────────────────────────────────────────────────────────
 // Auth-funnel events. `method` distinguishes credentials/google/etc.,
 // `reason` carries a normalized error code for failure events so the
@@ -429,6 +482,14 @@ export interface EventPropertiesMap {
   [EventName.CARD_INFO_ADVISOR_POPUP_SHOWN]: BaseProperties;
   [EventName.CARD_INFO_ADVISOR_FIND_OUT_CLICKED]: BaseProperties;
   [EventName.CARD_INFO_ADVISOR_DISMISSED]: BaseProperties;
+
+  // Sale Landing
+  [EventName.SALE_VIEWED]: SaleViewedProperties;
+  [EventName.SALE_CTA_CLICKED]: SaleCtaClickedProperties;
+  [EventName.SALE_CARD_SELECTED]: SaleCardSelectedProperties;
+  [EventName.SALE_BREAKDOWN_RESULT_VIEWED]: SaleBreakdownResultViewedProperties;
+  [EventName.SALE_SHOP_CLICKED]: SaleShopClickedProperties;
+  [EventName.SALE_SAMPLE_OFFER_CLICKED]: SaleSampleOfferClickedProperties;
 
   // Sign Up
   [EventName.SIGNUP_PAGE_VIEWED]: BaseProperties;

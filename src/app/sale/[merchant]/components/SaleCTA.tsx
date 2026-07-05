@@ -5,6 +5,8 @@ import { motion } from "motion/react";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 
 interface SaleCTAProps {
@@ -13,8 +15,10 @@ interface SaleCTAProps {
   size?: "lg" | "xl";
   /** Where the CTA sends the not-signed-in visitor. */
   href?: string;
-  /** Marker for analytics without coupling to the tracker. */
+  /** Marker for analytics — identifies which CTA on the page was clicked. */
   source?: string;
+  /** Merchant key, forwarded to the CTA-click event for funnel breakdown. */
+  merchant?: string;
   showArrow?: boolean;
   /** Stretch to the container width (mobile full-width CTAs). */
   block?: boolean;
@@ -31,10 +35,12 @@ export function SaleCTA({
   size = "xl",
   href = "/sign-in?callbackUrl=%2Fsale%2Fcontinue",
   source,
+  merchant,
   showArrow = true,
   block = false,
 }: SaleCTAProps) {
   const reduced = usePrefersReducedMotion();
+  const { track } = useAnalytics();
 
   return (
     <motion.div
@@ -52,7 +58,16 @@ export function SaleCTA({
           className
         )}
       >
-        <Link href={href} data-cta-source={source}>
+        <Link
+          href={href}
+          data-cta-source={source}
+          onClick={() =>
+            track(EventName.SALE_CTA_CLICKED, {
+              source: source ?? "unknown",
+              merchant,
+            })
+          }
+        >
           {/* shine sweep */}
           {!reduced && (
             <motion.span

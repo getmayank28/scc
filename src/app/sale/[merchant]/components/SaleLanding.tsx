@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/landing/Footer";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 import type { MerchantConfig } from "../data/merchants";
 import type { CardOffer, MerchantOffer } from "../data/savings";
 import { Hero } from "./Hero";
@@ -33,6 +36,12 @@ export function SaleLanding({
   liveOfferCount,
   potentialSaving,
 }: SaleLandingProps) {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(EventName.SALE_VIEWED, { merchant: merchant.key, liveOfferCount });
+  }, [track, merchant.key, liveOfferCount]);
+
   return (
     <main className="min-h-screen bg-background-primary text-white antialiased">
       <Header />

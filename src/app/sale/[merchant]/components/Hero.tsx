@@ -21,10 +21,10 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
   const item = reduced ? staticShow : fadeUp;
 
   return (
-    <section className="relative flex min-h-[100svh] items-center overflow-hidden bg-background-primary px-5 pb-16 pt-24 sm:px-8">
+    <section className="relative flex min-h-[85svh] items-center overflow-hidden bg-background-primary px-5 pb-10 pt-20 sm:min-h-[100svh] sm:px-8 sm:pb-16 sm:pt-24">
       <SaleBackground />
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-7 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr]">
         {/* copy column */}
         <motion.div
           variants={container}
@@ -34,7 +34,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
         >
           <motion.div
             variants={item}
-            className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-primary-orange/30 bg-primary-orange/10 py-1.5 pl-1.5 pr-4 text-sm text-primary-orange lg:mx-0"
+            className="mx-auto mb-4 hidden items-center gap-2 rounded-full border border-primary-orange/30 bg-primary-orange/10 py-1.5 pl-1.5 pr-4 text-sm text-primary-orange sm:mb-6 sm:inline-flex lg:mx-0"
           >
             {merchant.logo ? (
               <span className="flex size-6 items-center justify-center overflow-hidden rounded-full bg-white shadow-sm">
@@ -70,7 +70,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
 
           <motion.p
             variants={item}
-            className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg lg:mx-0"
+            className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/70 sm:mt-6 sm:text-lg lg:mx-0"
           >
             We compare your credit cards against every live {merchant.label}{" "}
             offer and recommend the one that saves you the most
@@ -78,14 +78,14 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
 
           <motion.div
             variants={reduced ? staticShow : scaleIn}
-            className="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:items-start"
+            className="mt-6 flex flex-col items-center gap-3 sm:mt-9 sm:flex-row lg:items-start"
           >
-            <SaleCTA href="#card-breakdown" source="hero">Check My Best Card</SaleCTA>
+            <SaleCTA href="#card-breakdown" source="hero" merchant={merchant.key}>Check My Best Card</SaleCTA>
           </motion.div>
 
           <motion.div
             variants={item}
-            className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/50 lg:justify-start"
+            className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-white/50 sm:mt-8 lg:justify-start"
           >
             <span className="inline-flex items-center gap-1.5">
               <Sparkles className="size-4 text-primary-orange" />
@@ -102,7 +102,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
           initial="hidden"
           animate="show"
           transition={{ delay: reduced ? 0 : 0.35 }}
-          className="relative mt-10 mb-6 lg:my-0"
+          className="relative mt-6 mb-2 sm:mt-10 sm:mb-6 lg:my-0"
         >
           {/* brand glow — Flipkart blue blended into the sale orange */}
           <div className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-[radial-gradient(circle_at_50%_40%,rgba(40,116,240,0.4),rgba(255,120,40,0.18)_55%,transparent_75%)] blur-2xl" />
@@ -163,7 +163,7 @@ export function Hero({ merchant }: { merchant: MerchantConfig }) {
       {!reduced && (
         <motion.div
           aria-hidden
-          className="absolute inset-x-0 bottom-6 mx-auto flex w-full justify-center"
+          className="absolute inset-x-0 bottom-6 mx-auto hidden w-full justify-center sm:flex"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.4 }}
