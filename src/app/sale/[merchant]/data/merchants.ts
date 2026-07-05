@@ -89,8 +89,8 @@ export interface CoverageStat {
 }
 
 export const COVERAGE_STATS: CoverageStat[] = [
-  { value: 40, suffix: "+", label: "Banks covered" },
-  { value: 300, suffix: "+", label: "Credit cards" },
+  { value: 16, suffix: "+", label: "Banks covered" },
+  { value: 350, suffix: "+", label: "Credit cards" },
 ];
 
 export const COVERAGE_FEATURES = [

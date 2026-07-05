@@ -41,7 +41,7 @@ export function LockedRecommendation({
             single card that saves you the most.
           </p>
           <div className="mt-7 hidden lg:block">
-            <SaleCTA source="locked">Unlock my best card</SaleCTA>
+            <SaleCTA source="locked" merchant={merchant.key}>Unlock my best card</SaleCTA>
           </div>
         </Reveal>
 
@@ -90,7 +90,7 @@ export function LockedRecommendation({
           </motion.div>
 
           <div className="mt-7 lg:hidden">
-            <SaleCTA source="locked" block>
+            <SaleCTA source="locked" merchant={merchant.key} block>
               Unlock my best card
             </SaleCTA>
           </div>

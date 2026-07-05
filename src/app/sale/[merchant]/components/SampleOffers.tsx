@@ -7,6 +7,8 @@ import type { LucideIcon } from "lucide-react";
 import { SAMPLE_OFFERS, type SampleOffer } from "../data/sampleOffers";
 import type { SavingKind } from "../data/savings";
 import type { MerchantConfig } from "../data/merchants";
+import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
+import { EventName } from "@/lib/analytics/types";
 import { usePrefersReducedMotion } from "../hooks/usePrefersReducedMotion";
 import { fadeUp, stagger, staticShow } from "../animations/variants";
 import { Reveal } from "../animations/Reveal";
@@ -43,7 +45,11 @@ export function SampleOffers({ merchant }: { merchant: MerchantConfig }) {
           className="mt-8 grid grid-cols-2 gap-3 sm:mt-12 sm:gap-4 lg:grid-cols-4"
         >
           {SAMPLE_OFFERS.map((offer) => (
-            <OfferCard key={`${offer.bank}-${offer.title}`} offer={offer} />
+            <OfferCard
+              key={`${offer.bank}-${offer.title}`}
+              offer={offer}
+              merchant={merchant.key}
+            />
           ))}
         </Reveal>
       </div>
@@ -51,8 +57,15 @@ export function SampleOffers({ merchant }: { merchant: MerchantConfig }) {
   );
 }
 
-function OfferCard({ offer }: { offer: SampleOffer }) {
+function OfferCard({
+  offer,
+  merchant,
+}: {
+  offer: SampleOffer;
+  merchant: string;
+}) {
   const reduced = usePrefersReducedMotion();
+  const { track } = useAnalytics();
   const Icon = KIND_ICON[offer.kind];
 
   return (
@@ -96,6 +109,13 @@ function OfferCard({ offer }: { offer: SampleOffer }) {
       <Link
         href="/sign-in?callbackUrl=%2Fsale%2Fcontinue"
         data-cta-source="sample-offer"
+        onClick={() =>
+          track(EventName.SALE_SAMPLE_OFFER_CLICKED, {
+            merchant,
+            bankName: offer.bank,
+            offerTitle: offer.title,
+          })
+        }
         className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-primary-orange transition-colors hover:text-primary-orange/80 sm:mt-4 sm:text-sm"
       >
         Learn more
