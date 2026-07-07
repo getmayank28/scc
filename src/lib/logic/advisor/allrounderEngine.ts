@@ -739,7 +739,9 @@ function scoreCardsForDistribution(
           annualTotal > 0 ? (annualReturnInr / annualTotal) * 100 : 0,
       };
     })
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
+    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
+    // Surface only the best 3 cards by annual return (both phases).
+    .slice(0, 3);
 
   return {
     byCard,

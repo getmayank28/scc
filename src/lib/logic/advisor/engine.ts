@@ -854,11 +854,14 @@ export function recommendTravelCard(
     })
     .sort((a, b) => b.netReturnInr - a.netReturnInr);
 
+  // Phase 1 surfaces only the top 3 cards by net return.
+  const topCards = byCard.slice(0, 3);
+
   return {
     input,
     travel,
-    byCard,
-    best: byCard[0] ?? null,
+    byCard: topCards,
+    best: topCards[0] ?? null,
   };
 }
 
@@ -1057,7 +1060,9 @@ export function recommendTravelCardAdvanced(
         netReturnInr: grossReturnInr - forex.totalCostInr,
       };
     })
-    .sort((a, b) => b.netReturnInr - a.netReturnInr);
+    .sort((a, b) => b.netReturnInr - a.netReturnInr)
+    // Surface only the best 3 cards by net return.
+    .slice(0, 3);
 
   return {
     input,

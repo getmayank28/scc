@@ -97,11 +97,39 @@ async function hydrate(): Promise<void> {
       .lean<LeanBestOf[]>(),
   ]);
 
-  snapshot = {
-    cards: cardDocs.map(toMockCard),
-    rules: ruleDocs.map(toMockRule),
-    bestOf: bestOfDocs.map((d) => d.payload as MockBestOf),
-  };
+  const cards = cardDocs.map(toMockCard);
+  const bestOf = bestOfDocs.map((d) => d.payload as MockBestOf);
+
+  // Staleness check (see CardDoc.rulesVersion): each card bumps rulesVersion on
+  // any rule write, and recompute stamps that version into the bestOf payload.
+  // A mismatch means the precompute cache lags the live rules — the engine would
+  // silently score against stale returns. We keep serving (stale-but-close beats
+  // dropping to base-rate-only), but warn loudly so it gets recomputed. Fix with
+  // `npm run bestof:recompute` or POST /api/admin/advisor/recompute.
+  const cardVersion = new Map(
+    cardDocs.map((d) => [
+      d.advisorKey as string,
+      (d.rulesVersion as number) ?? 1,
+    ]),
+  );
+  const stale = bestOf.filter((b) => {
+    const live = cardVersion.get(b.cardId);
+    return live !== undefined && live !== b.rulesVersion;
+  });
+  if (stale.length > 0) {
+    const sample = stale
+      .slice(0, 10)
+      .map(
+        (b) =>
+          `${b.cardId}/${b.category} (bestOf v${b.rulesVersion} != card v${cardVersion.get(b.cardId)})`,
+      );
+    console.warn(
+      `[AdvisorCache] ${stale.length} stale CardBestOf payload(s); ` +
+        `run 'npm run bestof:recompute'. e.g. ${sample.join(", ")}`,
+    );
+  }
+
+  snapshot = { cards, rules: ruleDocs.map(toMockRule), bestOf };
   fetchedAt = Date.now();
 }
 
