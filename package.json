@@ -9,6 +9,7 @@
     "lint": "next lint",
     "seed:advisor": "npx tsx --env-file=.env.local scripts/seed-advisor.ts",
     "seed:cards": "npx tsx --env-file=.env.local scripts/seed-cards.ts",
+    "bestof:recompute": "npx tsx --env-file=.env.local scripts/recompute-bestof.ts",
     "smoke:recommend": "npx tsx --env-file=.env.local scripts/smoke-recommend.ts"
   },
   "dependencies": {

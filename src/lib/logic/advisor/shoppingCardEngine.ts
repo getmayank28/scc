@@ -485,7 +485,9 @@ export function recommendShoppingCardPhaseOne(
   const byCard = cards
     .filter((c) => c.is_active)
     .map((card) => scoreCard(card, spend, index, rules))
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
+    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
+    // Surface only the best 3 cards by annual return.
+    .slice(0, 3);
 
   return {
     input,
@@ -681,7 +683,9 @@ export function recommendShoppingCardPhaseTwo(
   const byCard = cards
     .filter((c) => c.is_active)
     .map((card) => scoreCardTwo(card, spend, index, rules))
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr);
+    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
+    // Surface only the best 3 cards by annual return.
+    .slice(0, 3);
 
   return { input, spend, byCard, best: byCard[0] ?? null };
 }
