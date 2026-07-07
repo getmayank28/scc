@@ -2175,14 +2175,14 @@ export default function Demo9Page() {
           <TabsTrigger value="all-rounder-two">
           Rounder 2
           </TabsTrigger>
-          <TabsTrigger value="food-one">Food 1</TabsTrigger>
+          {/* <TabsTrigger value="food-one">Food 1</TabsTrigger>
           <TabsTrigger value="food-two">Food 2</TabsTrigger>
           <TabsTrigger value="shopping-one">
             Shopping 1
           </TabsTrigger>
           <TabsTrigger value="shopping-two">
             Shopping 2
-          </TabsTrigger>
+          </TabsTrigger> */}
         </TabsList>
         <TabsContent value="initial" className="mt-6">
           <InitialTravelForm />
