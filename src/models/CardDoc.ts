@@ -16,6 +16,9 @@ export interface CardDoc extends Document {
   name: string;
   slug: string;
   bankSlug: string;
+  issuer: string[];
+  product_type: string;
+  invitation_only: boolean;
   network: CardNetwork[];
   eligibility: {
     min_salary_inr: number;
@@ -30,6 +33,7 @@ export interface CardDoc extends Document {
     annual_gst_inr: number;
     waiver_spend_inr: number;
     joining_waiver_spend_inr: number;
+    joining_fee_waiver_days: number | null;
     is_lifetime_free: boolean;
   };
   forex_markup_percentage: number;
@@ -53,6 +57,9 @@ export interface CardDoc extends Document {
   };
   ideal_for: string[];
   not_ideal_for: string[];
+  miles_and_hotel_transfer_available: boolean;
+  miles_and_hotel_partners: string[];
+  max_value_on_transfer: string[];
   is_active: boolean;
   excluded_categories: Category[];
   // Bumped on any rule write for this card; used to detect stale CardBestOf
@@ -73,6 +80,9 @@ const CardAdvisorSchema = new Schema<CardDoc>(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, trim: true },
     bankSlug: { type: String, required: true, trim: true, index: true },
+    issuer: { type: [String], default: [] },
+    product_type: { type: String, default: "cc", trim: true },
+    invitation_only: { type: Boolean, default: false },
     network: { type: [String], default: [] },
     eligibility: { type: Schema.Types.Mixed, required: true },
     fees: { type: Schema.Types.Mixed, required: true },
@@ -83,6 +93,9 @@ const CardAdvisorSchema = new Schema<CardDoc>(
     lounge: { type: Schema.Types.Mixed, required: true },
     ideal_for: { type: [String], default: [] },
     not_ideal_for: { type: [String], default: [] },
+    miles_and_hotel_transfer_available: { type: Boolean, default: false },
+    miles_and_hotel_partners: { type: [String], default: [] },
+    max_value_on_transfer: { type: [String], default: [] },
     is_active: { type: Boolean, required: true, index: true },
     excluded_categories: { type: [String], default: [] },
     rulesVersion: { type: Number, required: true, default: 1 },
