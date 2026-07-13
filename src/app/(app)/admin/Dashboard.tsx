@@ -10,6 +10,8 @@ import Portals from "./Portals/page";
 import WhatsAppAdmin from "./WhatsApp/page";
 import EmailAdmin from "./Email/page";
 import RulesUpload from "./advisor/RulesUpload";
+import CardsUpload from "./advisor/CardsUpload";
+import MilestonesUpload from "./advisor/MilestonesUpload";
 
 const tabs = [
   {
@@ -47,6 +49,14 @@ const tabs = [
   {
     label: "Rules upload",
     value: "rules-upload",
+  },
+  {
+    label: "Cards upload",
+    value: "cards-upload",
+  },
+  {
+    label: "Milestones upload",
+    value: "milestones-upload",
   },
 ];
 
@@ -86,6 +96,12 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "rules-upload" && <RulesUpload />
+      }
+      {
+        selectedValue === "cards-upload" && <CardsUpload />
+      }
+      {
+        selectedValue === "milestones-upload" && <MilestonesUpload />
       }
     </div>
   );
