@@ -19,18 +19,22 @@ export const foodCard = [
       {
         label: "Rarely or never",
         value: "Rarely or never",
+        engineValue: 1,
       },
       {
         label: "1–2 times a week",
         value: "1–2 times a week",
+        engineValue: 6,
       },
       {
         label: "3–5 times a week",
         value: "3–5 times a week",
+        engineValue: 16,
       },
       {
         label: "Almost daily",
         value: "Almost daily",
+        engineValue: 25,
       },
     ],
   },
@@ -45,18 +49,22 @@ export const foodCard = [
       {
         label: "1–2 times a month",
         value: "1–2 times a month",
+        engineValue: 2,
       },
       {
         label: "3–5 times a month",
         value: "3–5 times a month",
+        engineValue: 4,
       },
       {
         label: "1-2 times Every week or more",
         value: "1-2 times Every week or more",
+        engineValue: 6,
       },
       {
         label: "3+ times Every week or more",
         value: "3+ times Every week or more",
+        engineValue: 14,
       },
     ],
   },
@@ -113,18 +121,22 @@ export const foodCard = [
       {
         label: "Zomato",
         value: "Zomato",
+        engineValue: "zomato",
       },
       {
         label: "Swiggy",
         value: "Swiggy",
+        engineValue: "swiggy",
       },
       {
         label: "I use both equally",
         value: "I use both equally",
+        engineValue: "others",
       },
       {
         label: "No strong preference",
         value: "No strong preference",
+        engineValue: "others",
       },
     ],
   },
@@ -170,18 +182,22 @@ export const foodCard = [
           {
             label: "Swiggy Dine out",
             value: "Swiggy Dine out",
+            engineValue: "swiggy_dineout",
           },
           {
             label: "District",
             value: "District",
+            engineValue: "zomato_district",
           },
           {
             label: "Eazy Dinner",
             value: "Eazy Dinner",
+            engineValue: "eazydiner",
           },
           {
             label: "Others",
             value: "Others than Swiggy Dine out, District and Eazy Dinner",
+            engineValue: "others",
           },
         ],
       },
@@ -196,14 +212,17 @@ export const foodCard = [
           {
             label: "Swiggy",
             value: "Swiggy",
+            engineValue: "swiggy",
           },
           {
             label: "Zomato",
             value: "Zomato",
+            engineValue: "zomato",
           },
           {
             label: "Others",
             value: "Other than swiggy and Zomato",
+            engineValue: "others",
           },
         ],
       },

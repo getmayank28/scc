@@ -15,9 +15,16 @@ export function containsMarkdownTable(message: string): boolean {
 }
 
 export function isCardRecommendationResponse(txt: string) {
-  if (!txt || !txt.startsWith("```json")) {
+  if (!txt) return false;
+
+  const trimmed = txt.trimStart();
+  // A card recommendation is either a ```json fenced block (our local inject)
+  // or a raw JSON object (the socket's follow-up replies). Anything else is
+  // plain chat text.
+  if (!trimmed.startsWith("```json") && !trimmed.startsWith("{")) {
     return false;
   }
+
   const text = safeParseJson(txt);
   let data;
 
@@ -27,6 +34,9 @@ export function isCardRecommendationResponse(txt: string) {
     return false;
   }
   if (!data || typeof data !== "object") return false;
+  // Guard against payloads without a cards array (e.g. plain JSON that isn't a
+  // recommendation) — `.every` would otherwise throw on undefined.
+  if (!Array.isArray(data.cards)) return false;
 
   const result = data.cards.every(
     (card: BotRecommendationCreditCardProps) =>
