@@ -471,13 +471,14 @@ export function normalizeCardRow(
 }
 
 // Build the CardDoc document body from a normalized card. advisorKey is the
-// upsert key and is NOT part of the $set (it lives in the filter). bankSlug is
-// required by the schema but not supplied by the sheet — default to "".
+// upsert key and is NOT part of the $set (it lives in the filter). bankName is
+// required by the schema but not supplied by the sheet — default to "";
+// bankId is optional and left unset (defaults to null).
 export function cardToDoc(card: NormalizedCard) {
   return {
     name: card.name,
     slug: card.slug,
-    bankSlug: "",
+    bankName: "",
     product_type: card.product_type,
     invitation_only: card.invitation_only,
     issuer: card.issuer,

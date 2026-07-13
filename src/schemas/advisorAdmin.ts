@@ -53,7 +53,8 @@ export const cardCreateSchema = z.object({
   advisorKey: z.string().min(1),
   name: z.string().min(1),
   slug: z.string().min(1),
-  bankSlug: z.string().min(1),
+  bankName: z.string().min(1),
+  bankId: z.string().min(1),
   network: z.array(z.enum(NETWORK_VALUES)).default([]),
   eligibility: z.object({
     min_salary_inr: z.number().nonnegative(),

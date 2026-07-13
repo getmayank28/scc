@@ -15,7 +15,8 @@ export interface CardDoc extends Document {
   cardId?: Types.ObjectId | null;
   name: string;
   slug: string;
-  bankSlug: string;
+  bankName: string;
+  bankId?: Types.ObjectId | null;
   issuer: string[];
   product_type: string;
   invitation_only: boolean;
@@ -79,7 +80,13 @@ const CardAdvisorSchema = new Schema<CardDoc>(
     },
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, trim: true },
-    bankSlug: { type: String, required: true, trim: true, index: true },
+    bankName: { type: String, required: true, trim: true, index: true },
+    bankId: {
+      type: Schema.Types.ObjectId,
+      ref: "Bank",
+      default: null,
+      index: true,
+    },
     issuer: { type: [String], default: [] },
     product_type: { type: String, default: "cc", trim: true },
     invitation_only: { type: Boolean, default: false },

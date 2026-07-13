@@ -16,7 +16,7 @@ function toMockCard(doc: LeanCard): MockCard {
     _id: doc.advisorKey as string,
     name: doc.name as string,
     slug: doc.slug as string,
-    bankId: doc.bankSlug as string,
+    bankId: doc.bankName as string,
     network: doc.network as MockCard["network"],
     eligibility: doc.eligibility as MockCard["eligibility"],
     fees: doc.fees as MockCard["fees"],

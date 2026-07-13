@@ -37,7 +37,7 @@ function toMockCard(doc: LeanCard): MockCard {
     _id: doc.advisorKey as string,
     name: doc.name as string,
     slug: doc.slug as string,
-    bankId: doc.bankSlug as string,
+    bankId: doc.bankName as string,
     network: doc.network as MockCard["network"],
     eligibility: doc.eligibility as MockCard["eligibility"],
     fees: doc.fees as MockCard["fees"],
@@ -84,7 +84,7 @@ async function hydrate(): Promise<void> {
   const [cardDocs, ruleDocs, bestOfDocs] = await Promise.all([
     CardAdvisorModel.find({ is_active: true })
       .select(
-        "advisorKey name slug bankSlug network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active excluded_categories rulesVersion",
+        "advisorKey name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>(),
     CardRuleModel.find({ is_active: true })
