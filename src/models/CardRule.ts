@@ -9,12 +9,12 @@ import type {
   SharedCapGroup,
 } from "@/lib/logic/advisor/rules";
 
-// One document per reward rule. `cardAdvisorKey` matches CardAdvisor.advisorKey
-// — we join by string id rather than ObjectId because the precompute (bestOf)
-// and engine code both use the stable string key.
+// One document per reward rule. `cardSlug` matches Card.slug — we join by the
+// stable string slug rather than ObjectId because the precompute (bestOf) and
+// engine code both use it.
 export interface CardRuleDoc extends Document {
   ruleKey: string;
-  cardAdvisorKey: string;
+  cardSlug: string;
   category: Category;
   merchant: Merchant | null;
   reward: {
@@ -53,7 +53,7 @@ export interface CardRuleDoc extends Document {
 const CardRuleSchema = new Schema<CardRuleDoc>(
   {
     ruleKey: { type: String, required: true, unique: true, index: true },
-    cardAdvisorKey: { type: String, required: true, index: true },
+    cardSlug: { type: String, required: true, index: true },
     category: { type: String, required: true },
     merchant: { type: String, default: null },
     reward: { type: Schema.Types.Mixed, required: true },
@@ -74,7 +74,7 @@ const CardRuleSchema = new Schema<CardRuleDoc>(
 );
 
 // Covers the recompute query: load all active rules for a (card, category) pair.
-CardRuleSchema.index({ cardAdvisorKey: 1, category: 1, is_active: 1 });
+CardRuleSchema.index({ cardSlug: 1, category: 1, is_active: 1 });
 
 const CardRuleModel =
   (mongoose.models.CardRule as mongoose.Model<CardRuleDoc>) ||

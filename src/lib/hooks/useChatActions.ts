@@ -30,7 +30,6 @@ const useChatActions = () => {
     inputValue,
     messages,
     enableTypingLoader,
-    setShowContinueJourneyMessage,
   } = useChatContext();
   const {
     addUserMessage,
@@ -185,19 +184,26 @@ const useChatActions = () => {
       questionId: journeyCurrentQuestion?.m_id,
       questionType: journeyCurrentQuestion?.type,
       botContent: journeyCurrentQuestion?.botContent,
+      // Keep the raw per-field FORM values so the local recommendation-input
+      // assembler can read typed values (the concatenated content loses them).
+      ...(journeyCurrentQuestion?.type === MESSAGE_TYPE.FORM &&
+      typeof value === "object"
+        ? { formValues: value }
+        : {}),
     };
 
     // Add user message first
     addUserMessage(userMsg as BaseMessage);
 
     if (isSubmit) {
+      // Phase-1 (early) recommendation. The fine-tune prompt is added
+      // explicitly once the cards render (see injectLocalAssistantMessage).
       buttonGroupInputActions[
         journeyCurrentQuestion?.submit as InputButtonGroupActionTypes
       ]?.({
         updatedMessageState: [...messages, userMsg],
         action: HISTORY_ACTIONS.EARLY_RECOMMENDATION,
       });
-      setShowContinueJourneyMessage(true);
       return;
     }
 

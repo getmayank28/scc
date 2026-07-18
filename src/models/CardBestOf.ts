@@ -6,7 +6,7 @@ import type { MockBestOf } from "@/lib/logic/advisor/bestOf";
 // MockBestOf shape (frontiers + legacy bestDirectSwipe/bestVoucher + baseTier),
 // stored opaquely so the engine code consumes it unchanged.
 export interface CardBestOfDoc extends Document {
-  cardAdvisorKey: string;
+  cardSlug: string;
   category: Category;
   rulesVersion: number;
   payload: MockBestOf;
@@ -17,7 +17,7 @@ export interface CardBestOfDoc extends Document {
 
 const CardBestOfSchema = new Schema<CardBestOfDoc>(
   {
-    cardAdvisorKey: { type: String, required: true, index: true },
+    cardSlug: { type: String, required: true, index: true },
     category: { type: String, required: true },
     rulesVersion: { type: Number, required: true },
     payload: { type: Schema.Types.Mixed, required: true },
@@ -26,7 +26,7 @@ const CardBestOfSchema = new Schema<CardBestOfDoc>(
   { timestamps: true },
 );
 
-CardBestOfSchema.index({ cardAdvisorKey: 1, category: 1 }, { unique: true });
+CardBestOfSchema.index({ cardSlug: 1, category: 1 }, { unique: true });
 
 const CardBestOfModel =
   (mongoose.models.CardBestOf as mongoose.Model<CardBestOfDoc>) ||

@@ -63,7 +63,12 @@ export type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];
 
 export type CardNetwork = "visa" | "mastercard" | "amex" | "rupay" | "diners";
 export type RewardType = "points" | "cashback" | "miles";
-export type WelcomeBenefitType = "points" | "voucher" | "cashback" | "miles";
+export type WelcomeBenefitType =
+  | "points"
+  | "voucher"
+  | "cashback"
+  | "miles"
+  | "membership";
 export type LoungeProgram =
   | "issuer"
   | "priority_pass"

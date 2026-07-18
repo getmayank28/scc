@@ -1,6 +1,6 @@
 // Seed the advisor collections (CardAdvisor, CardRule, CardBestOf) from the
 // in-memory MOCK_CARDS / MOCK_RULES. Idempotent — re-running upserts existing
-// docs by their stable string ids (advisorKey / ruleKey).
+// docs by their stable string ids (slug / ruleKey).
 //
 // Usage:
 //   npm run seed:advisor
@@ -11,7 +11,7 @@
 
 import mongoose from "mongoose";
 import dbConnect from "../src/lib/utils/dbConnet";
-import CardAdvisorModel from "../src/models/CardDoc";
+import CardAdvisorModel from "../src/models/Card";
 import CardRuleModel from "../src/models/CardRule";
 import { MOCK_CARDS } from "../src/lib/logic/advisor/cards";
 import { MOCK_RULES, validateSharedCapGroups } from "../src/lib/logic/advisor/rules";
@@ -60,13 +60,12 @@ async function main() {
       continue;
     }
     await CardAdvisorModel.updateOne(
-      { advisorKey: mc._id },
+      { slug: mc._id },
       {
         $set: {
-          advisorKey: mc._id,
           name: mc.name,
           slug: mc.slug,
-          bankSlug: mc.bankId,
+          bankName: mc.bankId,
           network: mc.network,
           eligibility: mc.eligibility,
           fees: mc.fees,
@@ -101,7 +100,7 @@ async function main() {
       {
         $set: {
           ruleKey: mr._id,
-          cardAdvisorKey: mr.cardId,
+          cardSlug: mr.cardId,
           category: mr.category,
           merchant: mr.merchant,
           reward: mr.reward,

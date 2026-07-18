@@ -31,6 +31,11 @@ interface Slots {
   label: string;
   value: string;
   variant?: string;
+  // The typed value the local recommendation engine expects for this option
+  // (a number for spend/count ranges, or a schema enum string). Declared on the
+  // slot so the FE assembler reads it directly — no string parsing/normalization.
+  // Falls back to `value` when omitted (e.g. options already carrying a number).
+  engineValue?: string | number;
 }
 
 interface Slider {
@@ -68,6 +73,10 @@ export interface BaseMessage {
   custom_metadata?: Record<string, string>[];
   thread?: number;
   selectedValue?: string | number;
+  // Raw per-field values for a FORM answer, keyed by the inner input's m_id.
+  // Preserved so the recommendation-input assembler can read typed values that
+  // the concatenated `content` string would otherwise lose.
+  formValues?: Record<string, string | number>;
 }
 
 export interface SessionMessage {

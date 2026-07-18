@@ -28,7 +28,7 @@ const NETWORK_VALUES = [
 ] as const;
 
 const REWARD_TYPE_VALUES = ["points", "cashback", "miles"] as const;
-const WELCOME_BENEFIT_TYPE_VALUES = ["points", "voucher", "cashback", "miles"] as const;
+const WELCOME_BENEFIT_TYPE_VALUES = ["points", "voucher", "cashback", "miles", "membership"] as const;
 const LOUNGE_PROGRAM_VALUES = ["issuer", "priority_pass", "dreamfolks", "loungekey"] as const;
 const CAP_PERIOD_VALUES = ["daily", "monthly", "quarterly", "annually"] as const;
 const CAP_METRIC_VALUES = ["points", "inr", "cashback"] as const;
@@ -50,10 +50,10 @@ const loungeAccessSchema = z.object({
 });
 
 export const cardCreateSchema = z.object({
-  advisorKey: z.string().min(1),
   name: z.string().min(1),
   slug: z.string().min(1),
-  bankSlug: z.string().min(1),
+  bankName: z.string().min(1),
+  bankId: z.string().min(1),
   network: z.array(z.enum(NETWORK_VALUES)).default([]),
   eligibility: z.object({
     min_salary_inr: z.number().nonnegative(),
@@ -97,8 +97,8 @@ export const cardCreateSchema = z.object({
   excluded_categories: z.array(z.enum(CATEGORY_VALUES)).default([]),
 });
 
-// PUT accepts the same shape minus advisorKey (which is the path param).
-export const cardUpdateSchema = cardCreateSchema.omit({ advisorKey: true }).partial();
+// PUT accepts the same shape minus slug (which is the path param / identity).
+export const cardUpdateSchema = cardCreateSchema.omit({ slug: true }).partial();
 
 const sharedCapGroupSchema = z
   .object({
@@ -136,7 +136,7 @@ const directSwipeScheduleSchema = z
 
 export const ruleCreateSchema = z.object({
   ruleKey: z.string().min(1),
-  cardAdvisorKey: z.string().min(1),
+  cardSlug: z.string().min(1),
   category: z.enum(CATEGORY_VALUES),
   merchant: z.string().nullable(),
   reward: z.object({

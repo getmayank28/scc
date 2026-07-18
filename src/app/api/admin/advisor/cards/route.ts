@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { cardCreateSchema } from "@/schemas/advisorAdmin";
 import { AdvisorCache } from "@/lib/advisor/cache";
 
@@ -22,7 +22,7 @@ export async function GET() {
   }
 }
 
-// POST — create a new advisor card. Caller must supply `advisorKey`; we don't
+// POST — create a new advisor card. Caller must supply `slug`; we don't
 // auto-generate it because rules reference it as a stable string id.
 export async function POST(req: Request) {
   const denied = await requireAdmin();
@@ -43,10 +43,10 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const existing = await CardAdvisorModel.findOne({
-      advisorKey: parsed.data.advisorKey,
+      slug: parsed.data.slug,
     }).lean();
     if (existing) {
-      return ApiResponse.error("advisorKey already exists", 409);
+      return ApiResponse.error("slug already exists", 409);
     }
     const created = await CardAdvisorModel.create({
       ...parsed.data,

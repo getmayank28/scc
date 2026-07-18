@@ -2,7 +2,7 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardRuleModel from "@/models/CardRule";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { ruleUpdateSchema } from "@/schemas/advisorAdmin";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
@@ -28,7 +28,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
 }
 
 // PUT — partial update. Re-runs bestOf recompute for whichever card now owns
-// the rule (handles the edge case of changing cardAdvisorKey).
+// the rule (handles the edge case of changing cardSlug).
 export async function PUT(req: Request, ctx: RouteContext) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -59,15 +59,15 @@ export async function PUT(req: Request, ctx: RouteContext) {
     if (!updated) return ApiResponse.error("Rule not found", 404);
 
     const affectedCards = new Set<string>();
-    affectedCards.add(before.cardAdvisorKey);
-    affectedCards.add(updated.cardAdvisorKey);
+    affectedCards.add(before.cardSlug);
+    affectedCards.add(updated.cardSlug);
 
-    for (const cardKey of affectedCards) {
+    for (const cardSlug of affectedCards) {
       await CardAdvisorModel.updateOne(
-        { advisorKey: cardKey },
+        { slug: cardSlug },
         { $inc: { rulesVersion: 1 } },
       );
-      await recomputeBestOfForCard(cardKey);
+      await recomputeBestOfForCard(cardSlug);
     }
     AdvisorCache.invalidate();
     return ApiResponse.success("updated", 200, updated);
@@ -88,10 +88,10 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     if (!deleted) return ApiResponse.error("Rule not found", 404);
 
     await CardAdvisorModel.updateOne(
-      { advisorKey: deleted.cardAdvisorKey },
+      { slug: deleted.cardSlug },
       { $inc: { rulesVersion: 1 } },
     );
-    await recomputeBestOfForCard(deleted.cardAdvisorKey);
+    await recomputeBestOfForCard(deleted.cardSlug);
     AdvisorCache.invalidate();
     return ApiResponse.success("deleted", 200);
   } catch (err) {

@@ -24,7 +24,9 @@ function ChatCard(props: BotRecommendationCreditCardProps
     }
   }, [props?.id]);
 
-  const applyLink = data?.data;
+  // Prefer the resolved redirect URL; fall back to any applyLink supplied in
+  // the payload (socket recommendations carry real URLs, local cards send "").
+  const applyLink = data?.data || props?.applyLink || "";
 
 
 

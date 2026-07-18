@@ -69,30 +69,37 @@ export const shoppingCard = [
       {
         label: "Amazon",
         value: "Amazon",
+        engineValue: "amazon",
       },
       {
         label: "Flipkart",
         value: "Flipkart",
+        engineValue: "flipkart",
       },
       {
         label: "Myntra ",
         value: "Myntra ",
+        engineValue: "myntra",
       },
       {
         label: "Ajio",
         value: "Ajio",
+        engineValue: "ajio",
       },
       {
         label: "Nyka",
         value: "Nyka",
+        engineValue: "nykaa",
       },
       {
         label: "Tata Neu/Tata CliQ",
         value: "Tata Neu/Tata CliQ",
+        engineValue: "tata_neu_cliq",
       },
       {
         label: "I shop across many paltform",
         value: "I shop across many paltform",
+        engineValue: "multiple_platform",
       }
     ],
   },

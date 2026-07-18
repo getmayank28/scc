@@ -2,31 +2,32 @@ import * as XLSX from "xlsx";
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
-import CardRuleModel from "@/models/CardRule";
+import CardMilestoneModel from "@/models/CardMilestone";
 import CardAdvisorModel from "@/models/Card";
-import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 import {
   mapHeader,
   normalizeRow,
-  ruleToDoc,
-  ruleKeyFor,
+  milestoneToDoc,
+  milestoneKeyFor,
   TEMPLATE_COLUMNS,
-  type RawRuleRow,
+  type RawMilestoneRow,
   type RowError,
-  type NormalizedRule,
-} from "@/lib/advisor/bulkRules";
+  type NormalizedMilestone,
+} from "@/lib/advisor/bulkMilestones";
 
 export const runtime = "nodejs";
 
-// POST — bulk upload rules from an .xlsx/.csv file (multipart form, field "file").
+// POST — bulk upload card milestones from an .xlsx/.csv file (multipart form,
+// field "file").
 //
-// Behaviour: PER-RULE UPSERT (no card wipe). Each row is upserted by its
-// (card, category, merchant) identity — an existing rule for that combo is
-// overwritten in place, a new combo is inserted, and every other rule on the
-// card is left untouched. Duplicate combos within one file collapse (last wins).
-// After import each affected card's bestOf cache is recomputed and the read
-// cache invalidated.
+// Behaviour: PER-MILESTONE UPSERT (no card wipe). Each row is upserted by its
+// (card, milestone_type, spend_threshold_inr) identity — an existing milestone
+// for that combo is overwritten in place, a new combo is inserted, and every
+// other milestone on the card is left untouched. Duplicate combos within one
+// file collapse (last wins). Milestones do not feed the bestOf frontier, so no
+// recompute is run; the advisor read cache is invalidated so fresh reads pick
+// up the new rows.
 export async function POST(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -56,7 +57,7 @@ export async function POST(req: Request) {
     physicalDataRows = range ? Math.max(0, range.e.r - range.s.r) : 0;
     matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "" });
   } catch (err) {
-    console.error("[admin/rules/bulk] parse failed:", err);
+    console.error("[admin/milestones/bulk] parse failed:", err);
     return ApiResponse.error("Could not parse the file as a spreadsheet", 400);
   }
 
@@ -67,9 +68,9 @@ export async function POST(req: Request) {
   // ---- map headers -> canonical fields ----
   const headerRow = matrix[0].map((c) => String(c ?? ""));
   const colMap = headerRow.map(mapHeader); // index -> field | null
-  if (!colMap.includes("slug") || !colMap.includes("category")) {
+  if (!colMap.includes("slug_id")) {
     return ApiResponse.error(
-      "Header row must include at least: slug, category",
+      "Header row must include at least: slug_id",
       400,
     );
   }
@@ -98,9 +99,13 @@ export async function POST(req: Request) {
 
   // ---- normalize each data row ----
   const errors: RowError[] = [];
-  // Keep the original raw cells + sheet row alongside each valid rule, so a row
-  // later rejected for an unknown slug can still be written to the error report.
-  const valid: { rule: NormalizedRule; raw: Record<string, unknown>; row: number }[] = [];
+  // Keep the original raw cells + sheet row alongside each valid milestone, so a
+  // row later rejected for an unknown slug can still be written to the report.
+  const valid: {
+    milestone: NormalizedMilestone;
+    raw: Record<string, unknown>;
+    row: number;
+  }[] = [];
   for (let i = 1; i < matrix.length; i++) {
     const cells = matrix[i];
     const raw: Record<string, unknown> = {};
@@ -108,32 +113,32 @@ export async function POST(req: Request) {
       if (field) raw[field] = cells[idx];
     });
     const sheetRow = i + 1; // 1-based incl. header
-    const res = normalizeRow(raw as RawRuleRow, sheetRow);
-    if (res.ok) valid.push({ rule: res.rule, raw, row: sheetRow });
+    const res = normalizeRow(raw as RawMilestoneRow, sheetRow);
+    if (res.ok) valid.push({ milestone: res.milestone, raw, row: sheetRow });
     else {
       errors.push(res.error);
       pushFailed(raw, res.error.row, res.error.code, res.error.message);
     }
   }
 
-  // ---- de-dupe by identity (slug, category, merchant, partner); last occurrence wins ----
+  // ---- de-dupe by identity (slug, milestone_type, spend_threshold); last wins ----
   // Earlier rows for the same identity are DROPPED (reported in failedRows so the
   // admin can see exactly which rows were superseded), not silently collapsed.
-  const identityOf = (r: NormalizedRule) =>
-    `${r.cardSlug}__${r.category}__${r.merchant ?? "_base"}__${r.partner ?? "_nopartner"}`;
+  const identityOf = (m: NormalizedMilestone) =>
+    `${m.cardSlug}__${m.milestone_type ?? "_notype"}__${m.spend_threshold_inr ?? "_nothreshold"}`;
   const dedupMap = new Map<
     string,
-    { rule: NormalizedRule; raw: Record<string, unknown>; row: number }
+    { milestone: NormalizedMilestone; raw: Record<string, unknown>; row: number }
   >();
   for (const v of valid) {
-    const id = identityOf(v.rule);
+    const id = identityOf(v.milestone);
     const prev = dedupMap.get(id);
     if (prev) {
       pushFailed(
         prev.raw,
         prev.row,
         "duplicate",
-        `Duplicate (slug, category, merchant, partner) — superseded by row ${v.row}`,
+        `Duplicate (slug_id, milestone_type, spend_threshold_inr) — superseded by row ${v.row}`,
       );
     }
     dedupMap.set(id, v);
@@ -145,7 +150,7 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
 
-    const slugs = [...new Set(deduped.map((v) => v.rule.cardSlug))];
+    const slugs = [...new Set(deduped.map((v) => v.milestone.cardSlug))];
     const cards = await CardAdvisorModel.find({
       slug: { $in: slugs },
     })
@@ -158,44 +163,48 @@ export async function POST(req: Request) {
     const unknownSlugs = slugs.filter((s) => !knownSlugs.has(s));
     const unknownSlugRowCounts = new Map<string, number>();
 
-    // Group importable rules by card slug.
-    const byCard = new Map<string, NormalizedRule[]>();
+    // Group importable milestones by card slug.
+    const byCard = new Map<string, NormalizedMilestone[]>();
     for (const v of deduped) {
-      if (!knownSlugs.has(v.rule.cardSlug)) {
+      if (!knownSlugs.has(v.milestone.cardSlug)) {
         unknownSlugRowCounts.set(
-          v.rule.cardSlug,
-          (unknownSlugRowCounts.get(v.rule.cardSlug) ?? 0) + 1,
+          v.milestone.cardSlug,
+          (unknownSlugRowCounts.get(v.milestone.cardSlug) ?? 0) + 1,
         );
         pushFailed(
           v.raw,
           v.row,
           "unknown_slug",
-          `Unknown card slug "${v.rule.cardSlug}" — not found in advisor cards`,
+          `Unknown card slug "${v.milestone.cardSlug}" — not found in advisor cards`,
         );
         continue;
       }
-      const arr = byCard.get(v.rule.cardSlug) ?? [];
-      arr.push(v.rule);
-      byCard.set(v.rule.cardSlug, arr);
+      const arr = byCard.get(v.milestone.cardSlug) ?? [];
+      arr.push(v.milestone);
+      byCard.set(v.milestone.cardSlug, arr);
     }
     const unknownSlugRows = [...unknownSlugRowCounts.values()].reduce((a, b) => a + b, 0);
 
-    // ---- per-rule upsert (NO card wipe) ----
-    // Identity = (slug, category, merchant, partner) -> ruleKey. The rows are
-    // already de-duped by that identity above, so every op in a card's batch is
-    // a distinct ruleKey. An existing combo is overwritten; a new combo
-    // inserted; the card's other rules are untouched.
+    // ---- per-milestone upsert (NO card wipe) ----
+    // Identity = (slug, milestone_type, spend_threshold) -> milestoneKey. The
+    // rows are already de-duped by that identity above, so every op in a card's
+    // batch is a distinct milestoneKey. An existing combo is overwritten; a new
+    // combo inserted; the card's other milestones are untouched.
     let inserted = 0; // newly created (upserted)
-    let replaced = 0; // matched an existing rule combo and overwrote it
+    let replaced = 0; // matched an existing milestone combo and overwrote it
     const cardsAffected: string[] = [];
-    for (const [cardSlug, rules] of byCard) {
-      const ops = rules.map((r) => {
-        const ruleKey = ruleKeyFor(cardSlug, r.category, r.merchant, r.partner);
-        const { ruleKey: _k, ...rest } = ruleToDoc(r, cardSlug, ruleKey);
+    for (const [cardSlug, milestones] of byCard) {
+      const ops = milestones.map((m) => {
+        const milestoneKey = milestoneKeyFor(
+          cardSlug,
+          m.milestone_type,
+          m.spend_threshold_inr,
+        );
+        const { milestoneKey: _k, ...rest } = milestoneToDoc(m, cardSlug, milestoneKey);
         void _k;
         return {
           updateOne: {
-            filter: { ruleKey },
+            filter: { milestoneKey },
             update: { $set: rest },
             upsert: true,
           },
@@ -203,21 +212,18 @@ export async function POST(req: Request) {
       });
 
       if (ops.length) {
-        const res = await CardRuleModel.bulkWrite(ops, { ordered: false });
+        const res = await CardMilestoneModel.bulkWrite(ops, { ordered: false });
         const newlyInserted = res.upsertedCount ?? 0;
         inserted += newlyInserted;
-        // Anything that wasn't a fresh insert matched an existing rule combo.
+        // Anything that wasn't a fresh insert matched an existing milestone combo.
         replaced += ops.length - newlyInserted;
       }
 
-      await CardAdvisorModel.updateOne(
-        { slug: cardSlug },
-        { $inc: { rulesVersion: 1 } },
-      );
-      await recomputeBestOfForCard(cardSlug);
       cardsAffected.push(cardSlug);
     }
 
+    // Milestones don't feed the bestOf frontier, so no recompute is needed —
+    // just invalidate the read cache so fresh reads see the new rows.
     if (cardsAffected.length) AdvisorCache.invalidate();
 
     // ---- reconcile counts so every dropped row is accounted for ----
@@ -245,7 +251,7 @@ export async function POST(req: Request) {
 
     return ApiResponse.success("Upload processed", 200, {
       rowsInFile: physicalDataRows, // data rows (excl. header), incl. blanks
-      inserted, // new (slug,category,merchant) combos created
+      inserted, // new (slug, milestone_type, spend_threshold) combos created
       replaced, // existing combos overwritten in place
       written: inserted + replaced,
       duplicateDropped, // earlier rows superseded by a same-identity later row
@@ -260,7 +266,7 @@ export async function POST(req: Request) {
       failedRowsTruncated: failedRows.length >= FAILED_CAP,
     });
   } catch (err) {
-    console.error("[admin/rules/bulk] import failed:", err);
-    return ApiResponse.error("Failed to import rules", 500);
+    console.error("[admin/milestones/bulk] import failed:", err);
+    return ApiResponse.error("Failed to import milestones", 500);
   }
 }

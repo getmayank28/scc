@@ -1,6 +1,6 @@
 // Inject the in-memory MOCK_CARDS into the CardDoc collection (CardAdvisor
 // model). Idempotent — upserts existing docs by their stable string id
-// (advisorKey, matches MockCard._id). Unlike seed-advisor, this only touches
+// (slug, matches MockCard._id). Unlike seed-advisor, this only touches
 // cards; it does not write rules or recompute bestOf payloads.
 //
 // Usage:
@@ -12,7 +12,7 @@
 
 import mongoose from "mongoose";
 import dbConnect from "../src/lib/utils/dbConnet";
-import CardAdvisorModel from "../src/models/CardDoc";
+import CardAdvisorModel from "../src/models/Card";
 import { MOCK_CARDS } from "../src/lib/logic/advisor/cards";
 
 function readFlag(name: string): boolean {
@@ -29,7 +29,7 @@ async function main() {
   await dbConnect();
 
   if (wipe && !dryRun) {
-    console.log("[seed-cards] --wipe: clearing CardAdvisor collection");
+    console.log("[seed-cards] --wipe: clearing advisor card rows");
     await CardAdvisorModel.deleteMany({});
   }
 
@@ -41,13 +41,12 @@ async function main() {
       continue;
     }
     await CardAdvisorModel.updateOne(
-      { advisorKey: mc._id },
+      { slug: mc._id },
       {
         $set: {
-          advisorKey: mc._id,
           name: mc.name,
           slug: mc.slug,
-          bankSlug: mc.bankId,
+          bankName: mc.bankId,
           network: mc.network,
           eligibility: mc.eligibility,
           fees: mc.fees,
