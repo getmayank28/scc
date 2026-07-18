@@ -487,24 +487,24 @@ export function normalizeRow(
 // UPSERTS by it — an existing rule is replaced in place; a new combo is
 // inserted; the card's other rules are left untouched.
 export function ruleKeyFor(
-  cardAdvisorKey: string,
+  cardSlug: string,
   category: Category,
   merchant: Merchant | null,
   partner: string | null,
 ): string {
-  return `${cardAdvisorKey}__${category}__${merchant ?? "_base"}__${partner ?? "_nopartner"}`;
+  return `${cardSlug}__${category}__${merchant ?? "_base"}__${partner ?? "_nopartner"}`;
 }
 
 // Build the CardRule document body from a normalized rule. valid_from defaults to
 // today; valid_until is null and is_active true (not uploadable yet).
 export function ruleToDoc(
   rule: NormalizedRule,
-  cardAdvisorKey: string,
+  cardSlug: string,
   ruleKey: string,
 ) {
   return {
     ruleKey,
-    cardAdvisorKey,
+    cardSlug,
     category: rule.category,
     merchant: rule.merchant,
     reward: {

@@ -15,7 +15,7 @@
 
 import mongoose from "mongoose";
 import dbConnect from "../src/lib/utils/dbConnet";
-import CardAdvisorModel from "../src/models/CardDoc";
+import CardAdvisorModel from "../src/models/Card";
 import { recomputeBestOfForCard } from "../src/lib/advisor/recompute";
 
 function readValueFlag(name: string): string | null {
@@ -31,14 +31,14 @@ async function main() {
   await dbConnect();
 
   const filter = singleKey
-    ? { advisorKey: singleKey }
+    ? { slug: singleKey }
     : activeOnly
       ? { is_active: true }
       : {};
 
   const cards = await CardAdvisorModel.find(filter)
-    .select("advisorKey rulesVersion")
-    .lean<{ advisorKey: string; rulesVersion?: number }[]>();
+    .select("slug rulesVersion")
+    .lean<{ slug: string; rulesVersion?: number }[]>();
 
   console.log(
     `[recompute-bestof] recomputing ${cards.length} card(s)` +
@@ -50,14 +50,14 @@ async function main() {
   let failed = 0;
   for (const c of cards) {
     try {
-      const { written } = await recomputeBestOfForCard(c.advisorKey);
+      const { written } = await recomputeBestOfForCard(c.slug);
       totalWritten += written;
       console.log(
-        `  ${c.advisorKey}  v${c.rulesVersion ?? 1}  ->  ${written} row(s)`,
+        `  ${c.slug}  v${c.rulesVersion ?? 1}  ->  ${written} row(s)`,
       );
     } catch (err) {
       failed++;
-      console.error(`  ${c.advisorKey}  FAILED:`, err);
+      console.error(`  ${c.slug}  FAILED:`, err);
     }
   }
 

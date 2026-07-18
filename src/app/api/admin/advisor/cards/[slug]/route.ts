@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import CardRuleModel from "@/models/CardRule";
 import CardBestOfModel from "@/models/CardBestOf";
 import { cardUpdateSchema } from "@/schemas/advisorAdmin";
@@ -9,16 +9,16 @@ import { AdvisorCache } from "@/lib/advisor/cache";
 
 export const runtime = "nodejs";
 
-type RouteContext = { params: Promise<{ advisorKey: string }> };
+type RouteContext = { params: Promise<{ slug: string }> };
 
 export async function GET(_req: Request, ctx: RouteContext) {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const { advisorKey } = await ctx.params;
+  const { slug } = await ctx.params;
 
   try {
     await dbConnect();
-    const card = await CardAdvisorModel.findOne({ advisorKey }).lean();
+    const card = await CardAdvisorModel.findOne({ slug }).lean();
     if (!card) return ApiResponse.error("Card not found", 404);
     return ApiResponse.success("ok", 200, card);
   } catch (err) {
@@ -32,7 +32,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
 export async function PUT(req: Request, ctx: RouteContext) {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const { advisorKey } = await ctx.params;
+  const { slug } = await ctx.params;
 
   let body: unknown;
   try {
@@ -49,7 +49,7 @@ export async function PUT(req: Request, ctx: RouteContext) {
   try {
     await dbConnect();
     const updated = await CardAdvisorModel.findOneAndUpdate(
-      { advisorKey },
+      { slug },
       { $set: parsed.data, $inc: { rulesVersion: 1 } },
       { new: true, runValidators: true },
     );
@@ -67,15 +67,15 @@ export async function PUT(req: Request, ctx: RouteContext) {
 export async function DELETE(_req: Request, ctx: RouteContext) {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const { advisorKey } = await ctx.params;
+  const { slug } = await ctx.params;
 
   try {
     await dbConnect();
-    const card = await CardAdvisorModel.findOneAndDelete({ advisorKey });
+    const card = await CardAdvisorModel.findOneAndDelete({ slug });
     if (!card) return ApiResponse.error("Card not found", 404);
     await Promise.all([
-      CardRuleModel.deleteMany({ cardAdvisorKey: advisorKey }),
-      CardBestOfModel.deleteMany({ cardAdvisorKey: advisorKey }),
+      CardRuleModel.deleteMany({ cardSlug: slug }),
+      CardBestOfModel.deleteMany({ cardSlug: slug }),
     ]);
     AdvisorCache.invalidate();
     return ApiResponse.success("deleted", 200);

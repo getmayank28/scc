@@ -2,14 +2,14 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardRuleModel from "@/models/CardRule";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { ruleCreateSchema } from "@/schemas/advisorAdmin";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 
 export const runtime = "nodejs";
 
-// GET — list rules. Optional ?cardAdvisorKey filter for the common case.
+// GET — list rules. Optional ?cardSlug filter for the common case.
 export async function GET(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -17,8 +17,8 @@ export async function GET(req: Request) {
   try {
     await dbConnect();
     const { searchParams } = new URL(req.url);
-    const cardAdvisorKey = searchParams.get("cardAdvisorKey");
-    const filter = cardAdvisorKey ? { cardAdvisorKey } : {};
+    const cardSlug = searchParams.get("cardSlug");
+    const filter = cardSlug ? { cardSlug } : {};
     const rules = await CardRuleModel.find(filter).lean();
     return ApiResponse.success("ok", 200, rules);
   } catch (err) {
@@ -48,10 +48,10 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const cardExists = await CardAdvisorModel.exists({
-      advisorKey: parsed.data.cardAdvisorKey,
+      slug: parsed.data.cardSlug,
     });
     if (!cardExists) {
-      return ApiResponse.error("cardAdvisorKey does not exist", 400);
+      return ApiResponse.error("cardSlug does not exist", 400);
     }
     const ruleExists = await CardRuleModel.exists({ ruleKey: parsed.data.ruleKey });
     if (ruleExists) return ApiResponse.error("ruleKey already exists", 409);
@@ -62,10 +62,10 @@ export async function POST(req: Request) {
       parsed.data as Parameters<typeof CardRuleModel.create>[0],
     );
     await CardAdvisorModel.updateOne(
-      { advisorKey: parsed.data.cardAdvisorKey },
+      { slug: parsed.data.cardSlug },
       { $inc: { rulesVersion: 1 } },
     );
-    await recomputeBestOfForCard(parsed.data.cardAdvisorKey);
+    await recomputeBestOfForCard(parsed.data.cardSlug);
     AdvisorCache.invalidate();
     return ApiResponse.success("created", 201, created);
   } catch (err) {

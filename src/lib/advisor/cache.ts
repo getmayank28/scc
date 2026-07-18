@@ -1,4 +1,4 @@
-import CardAdvisorModel, { type CardDoc } from "@/models/CardDoc";
+import CardAdvisorModel, { type CardDoc } from "@/models/Card";
 import CardRuleModel, { type CardRuleDoc } from "@/models/CardRule";
 import CardBestOfModel, { type CardBestOfDoc } from "@/models/CardBestOf";
 import dbConnect from "@/lib/utils/dbConnet";
@@ -34,7 +34,7 @@ type LeanBestOf = Omit<CardBestOfDoc, keyof Document> & Record<string, unknown>;
 
 function toMockCard(doc: LeanCard): MockCard {
   return {
-    _id: doc.advisorKey as string,
+    _id: doc.slug as string,
     name: doc.name as string,
     slug: doc.slug as string,
     bankId: doc.bankName as string,
@@ -59,7 +59,7 @@ function toMockCard(doc: LeanCard): MockCard {
 function toMockRule(doc: LeanRule): MockRule {
   return {
     _id: doc.ruleKey as string,
-    cardId: doc.cardAdvisorKey as string,
+    cardId: doc.cardSlug as string,
     category: doc.category as MockRule["category"],
     merchant: doc.merchant as MockRule["merchant"],
     reward: doc.reward as MockRule["reward"],
@@ -84,16 +84,16 @@ async function hydrate(): Promise<void> {
   const [cardDocs, ruleDocs, bestOfDocs] = await Promise.all([
     CardAdvisorModel.find({ is_active: true })
       .select(
-        "advisorKey name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active excluded_categories rulesVersion",
+        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>(),
     CardRuleModel.find({ is_active: true })
       .select(
-        "ruleKey cardAdvisorKey category merchant reward caps shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until notes is_active",
+        "ruleKey cardSlug category merchant reward caps shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until notes is_active",
       )
       .lean<LeanRule[]>(),
     CardBestOfModel.find({})
-      .select("cardAdvisorKey category rulesVersion payload")
+      .select("cardSlug category rulesVersion payload")
       .lean<LeanBestOf[]>(),
   ]);
 
@@ -107,10 +107,7 @@ async function hydrate(): Promise<void> {
   // dropping to base-rate-only), but warn loudly so it gets recomputed. Fix with
   // `npm run bestof:recompute` or POST /api/admin/advisor/recompute.
   const cardVersion = new Map(
-    cardDocs.map((d) => [
-      d.advisorKey as string,
-      (d.rulesVersion as number) ?? 1,
-    ]),
+    cardDocs.map((d) => [d.slug as string, (d.rulesVersion as number) ?? 1]),
   );
   const stale = bestOf.filter((b) => {
     const live = cardVersion.get(b.cardId);

@@ -1,15 +1,16 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// One document per spend-triggered milestone tier. `cardAdvisorKey` matches
-// CardAdvisor.advisorKey — joined by string id (same convention as CardRule)
-// so the recommendation engine can look up milestones without an ObjectId ref.
+// One document per spend-triggered milestone tier. `cardSlug` matches Card.slug
+// — joined by the stable string slug (same convention as CardRule) so the
+// recommendation engine can look up milestones without an ObjectId ref.
 export interface CardMilestoneDoc extends Document {
   milestoneKey: string;
-  cardAdvisorKey: string;
+  cardSlug: string;
   milestone_type: string | null;
   milestone_period:
     | "one_time"
     | "daily"
+    | "monthly"
     | "quarterly"
     | "halfyearly"
     | "annually"
@@ -32,7 +33,7 @@ export interface CardMilestoneDoc extends Document {
 const CardMilestoneSchema = new Schema<CardMilestoneDoc>(
   {
     milestoneKey: { type: String, required: true, unique: true, index: true },
-    cardAdvisorKey: { type: String, required: true, index: true },
+    cardSlug: { type: String, required: true, index: true },
     milestone_type: { type: String, default: null },
     milestone_period: { type: String, default: null },
     spend_threshold_inr: { type: Number, default: null },
@@ -47,7 +48,7 @@ const CardMilestoneSchema = new Schema<CardMilestoneDoc>(
 
 // Covers the recommendation-engine query: load all active milestones for a
 // card, ordered by tier.
-CardMilestoneSchema.index({ cardAdvisorKey: 1, is_active: 1, tier_order: 1 });
+CardMilestoneSchema.index({ cardSlug: 1, is_active: 1, tier_order: 1 });
 
 const CardMilestoneModel =
   (mongoose.models.CardMilestone as mongoose.Model<CardMilestoneDoc>) ||

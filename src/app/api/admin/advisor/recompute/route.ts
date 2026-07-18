@@ -1,7 +1,7 @@
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 // to catch up without waiting for the next admin write.
 //
 // Query params:
-//   ?advisorKey=<key>   recompute one card only
+//   ?slug=<slug>        recompute one card only
 //   (no params)         recompute every active card (slow on large datasets)
 export async function POST(req: Request) {
   const denied = await requireAdmin();
@@ -21,18 +21,23 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const { searchParams } = new URL(req.url);
-    const advisorKey = searchParams.get("advisorKey");
+    // `advisorKey` kept as a fallback for older callers; slug is the canonical id.
+    const slug =
+      searchParams.get("slug") ?? searchParams.get("advisorKey");
 
-    if (advisorKey) {
-      const { written } = await recomputeBestOfForCard(advisorKey);
+    if (slug) {
+      const { written } = await recomputeBestOfForCard(slug);
       AdvisorCache.invalidate();
-      return ApiResponse.success("ok", 200, { advisorKey, written });
+      return ApiResponse.success("ok", 200, { slug, written });
     }
 
-    const cards = await CardAdvisorModel.find({}).select("advisorKey").lean();
+    const cards = await CardAdvisorModel.find({})
+      .select("slug")
+      .lean();
     let totalWritten = 0;
     for (const c of cards) {
-      const { written } = await recomputeBestOfForCard(c.advisorKey);
+      if (!c.slug) continue;
+      const { written } = await recomputeBestOfForCard(c.slug);
       totalWritten += written;
     }
     AdvisorCache.invalidate();

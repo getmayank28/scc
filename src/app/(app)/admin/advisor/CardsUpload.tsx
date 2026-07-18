@@ -38,7 +38,7 @@ const REASON_LABELS: Record<string, string> = {
   bad_number: "A numeric cell is not a number",
   unknown_category: "Unknown category in categories / excluded_categories",
   unknown_reward_type: "rewards.reward_type must be points / cashback / miles",
-  unknown_welcome_type: "welcome_benefit.type must be points / voucher / cashback / miles",
+  unknown_welcome_type: "welcome_benefit.type must be points / voucher / cashback / miles / membership",
   bad_lounge: "Bad lounge column (period / program / a numeric cell)",
   duplicate: "Duplicate card_id — superseded by a later row",
 };
@@ -46,7 +46,7 @@ const REASON_LABELS: Record<string, string> = {
 // The expected columns, in template order. `required` marks the identity fields;
 // everything else is optional and defaults sensibly.
 const COLUMNS: { name: string; required: boolean; desc: string }[] = [
-  { name: "card_id", required: true, desc: "Unique card id. Used as BOTH the advisorKey (upsert identity) and the slug, e.g. hdfc-regalia-gold." },
+  { name: "card_id", required: true, desc: "Unique card id. Used as the slug (upsert identity), e.g. hdfc-regalia-gold." },
   { name: "name", required: true, desc: "Display name of the card, e.g. HDFC Regalia Gold." },
   { name: "product_type", required: false, desc: "Product type. Defaults to cc." },
   { name: "invitation_only", required: false, desc: "true / false / yes / no / 1 / 0. Defaults to false." },
@@ -70,7 +70,7 @@ const COLUMNS: { name: string; required: boolean; desc: string }[] = [
   { name: "rewards.reward_type", required: false, desc: "One of points / cashback / miles. Defaults to points." },
   { name: "categories", required: false, desc: "Earn categories, | or , separated (snake_case, e.g. dining|fuel). Each must be a known category." },
   { name: "excluded_categories", required: false, desc: "Excluded categories, | or , separated. Each must be a known category." },
-  { name: "welcome_benefit.type", required: false, desc: "points / voucher / cashback / miles. Blank = no welcome benefit (the other welcome_benefit.* cells are then ignored)." },
+  { name: "welcome_benefit.type", required: false, desc: "points / voucher / cashback / miles / membership. Blank = no welcome benefit (the other welcome_benefit.* cells are then ignored)." },
   { name: "welcome_benefit.value_inr", required: false, desc: "Welcome benefit value (₹). Defaults to 0." },
   { name: "welcome_benefit.condition", required: false, desc: "Free-text condition for the welcome benefit." },
   { name: "welcome_benefit.expires_in_months", required: false, desc: "Welcome benefit expiry in months. Defaults to 0." },
@@ -91,8 +91,8 @@ const COLUMNS: { name: string; required: boolean; desc: string }[] = [
   { name: "lounge.international.membershipRequired", required: false, desc: "Membership required for international lounge. Blank = none (null)." },
   { name: "lounge.international.program", required: false, desc: "issuer / priority_pass / dreamfolks / loungekey. Defaults to issuer." },
   { name: "lounge.international.display", required: false, desc: "Display text for international lounge access." },
-  { name: "ideal_for", required: false, desc: "Who the card is ideal for, | or , separated." },
-  { name: "not_ideal_for", required: false, desc: "Who the card is not ideal for, | or , separated." },
+  { name: "ideal_for", required: false, desc: "Who the card is ideal for. Each entry is a full sentence; separate entries with || (double pipe)." },
+  { name: "not_ideal_for", required: false, desc: "Who the card is not ideal for. Each entry is a full sentence; separate entries with || (double pipe)." },
   { name: "miles_and_hotel_transfer_available", required: false, desc: "true / false. Defaults to false." },
   { name: "miles_and_hotel_partners", required: false, desc: "Transfer partners, | or , separated." },
   { name: "max_value_on_transfer", required: false, desc: "Max value on transfer note(s), | or , separated." },
@@ -166,8 +166,9 @@ const CardsUpload = () => {
         "lounge.international.annualCap": 6,
         "lounge.international.program": "priority_pass",
         "lounge.international.display": "6 international lounge visits / year",
-        ideal_for: "Frequent travellers|Dining spenders",
-        not_ideal_for: "Rent payers",
+        ideal_for:
+          "Ideal for frequent travellers who value 12 domestic lounge visits a year.||Great for dining spenders earning 4X points on restaurants.",
+        not_ideal_for: "Not ideal for those who spend mostly on rent and utilities.",
         miles_and_hotel_transfer_available: "true",
         miles_and_hotel_partners: "Air India|Marriott",
         max_value_on_transfer: "Up to 1:1 on select partners",

@@ -1,4 +1,4 @@
-import CardAdvisorModel, { type CardDoc } from "@/models/CardDoc";
+import CardAdvisorModel, { type CardDoc } from "@/models/Card";
 import CardRuleModel, { type CardRuleDoc } from "@/models/CardRule";
 import CardBestOfModel from "@/models/CardBestOf";
 import { computeBestOfForCard } from "@/lib/logic/advisor/bestOf";
@@ -9,11 +9,11 @@ type LeanCard = Omit<CardDoc, keyof Document> & Record<string, unknown>;
 type LeanCardRule = Omit<CardRuleDoc, keyof Document> & Record<string, unknown>;
 
 // Adapt the Mongoose doc back to the plain MockCard shape the engine consumes.
-// _id is renamed from advisorKey (the stable string id) so existing engine code
-// that reads `card._id` keeps working unchanged.
+// _id is set from slug (the stable string id) so existing engine code that reads
+// `card._id` keeps working unchanged.
 function toMockCard(doc: LeanCard): MockCard {
   return {
-    _id: doc.advisorKey as string,
+    _id: doc.slug as string,
     name: doc.name as string,
     slug: doc.slug as string,
     bankId: doc.bankName as string,
@@ -38,7 +38,7 @@ function toMockCard(doc: LeanCard): MockCard {
 function toMockRule(doc: LeanCardRule): MockRule {
   return {
     _id: doc.ruleKey as string,
-    cardId: doc.cardAdvisorKey as string,
+    cardId: doc.cardSlug as string,
     category: doc.category as MockRule["category"],
     merchant: doc.merchant as MockRule["merchant"],
     reward: doc.reward as MockRule["reward"],
@@ -61,18 +61,18 @@ function toMockRule(doc: LeanCardRule): MockRule {
 // card across all (or specified) categories, then upsert the cache rows.
 // Idempotent: running twice produces the same result.
 export async function recomputeBestOfForCard(
-  cardAdvisorKey: string,
+  cardSlug: string,
 ): Promise<{ written: number }> {
   const [cardDoc, ruleDocs] = await Promise.all([
-    CardAdvisorModel.findOne({ advisorKey: cardAdvisorKey }).lean<LeanCard>(),
+    CardAdvisorModel.findOne({ slug: cardSlug }).lean<LeanCard>(),
     CardRuleModel.find({
-      cardAdvisorKey,
+      cardSlug,
       is_active: true,
     }).lean<LeanCardRule[]>(),
   ]);
 
   if (!cardDoc) {
-    throw new Error(`CardAdvisor not found: ${cardAdvisorKey}`);
+    throw new Error(`Card not found: ${cardSlug}`);
   }
 
   const card = toMockCard(cardDoc);
@@ -84,14 +84,14 @@ export async function recomputeBestOfForCard(
 
   if (results.length === 0) {
     // Card has no qualifying rules — clear any stale cache rows.
-    await CardBestOfModel.deleteMany({ cardAdvisorKey });
+    await CardBestOfModel.deleteMany({ cardSlug });
     return { written: 0 };
   }
 
   await CardBestOfModel.bulkWrite(
     results.map((r) => ({
       updateOne: {
-        filter: { cardAdvisorKey, category: r.category },
+        filter: { cardSlug, category: r.category },
         update: {
           $set: {
             rulesVersion,
@@ -107,7 +107,7 @@ export async function recomputeBestOfForCard(
   // Drop categories that no longer appear in `results` (e.g. last rule deactivated).
   const keptCategories = new Set(results.map((r) => r.category));
   await CardBestOfModel.deleteMany({
-    cardAdvisorKey,
+    cardSlug,
     category: { $nin: Array.from(keptCategories) },
   });
 

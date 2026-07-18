@@ -9,10 +9,10 @@
 // the failed-row report) and not written to the DB; the rest of the file still
 // imports.
 //
-// Identity: `card_id` is BOTH the advisorKey (upsert key) AND the slug. Each row
-// is upserted by advisorKey — an existing card is overwritten in place, a new one
-// inserted. Required columns: card_id, name. Everything else is optional and
-// falls back to a sensible default.
+// Identity: `card_id` IS the slug (upsert key). Each row is upserted by slug —
+// an existing card is overwritten in place, a new one inserted. Required
+// columns: card_id, name. Everything else is optional and falls back to a
+// sensible default.
 
 import { CATEGORIES, type Category } from "@/lib/logic/advisor/cards";
 import type {
@@ -30,6 +30,7 @@ const WELCOME_TYPES = new Set<WelcomeBenefitType>([
   "voucher",
   "cashback",
   "miles",
+  "membership",
 ]);
 const LOUNGE_PROGRAMS = new Set<LoungeProgram>([
   "issuer",
@@ -129,7 +130,6 @@ type Cell = string | number | boolean | null | undefined;
 export type RawCardRow = Partial<Record<ColumnName, Cell>>;
 
 export interface NormalizedCard {
-  advisorKey: string;
   name: string;
   slug: string;
   product_type: string;
@@ -221,6 +221,17 @@ function parseList(raw: Cell): string[] {
   if (isBlank(raw)) return [];
   return String(raw)
     .split(/[|,]/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+// Split an ideal_for / not_ideal_for cell on "||" only. Each token is a full
+// sentence that may itself contain commas and single pipes, so we must not
+// split on those. Blank -> [].
+function parseSentenceList(raw: Cell): string[] {
+  if (isBlank(raw)) return [];
+  return String(raw)
+    .split("||")
     .map((x) => x.trim())
     .filter(Boolean);
 }
@@ -419,8 +430,7 @@ export function normalizeCardRow(
   return {
     ok: true,
     card: {
-      advisorKey: cardId,
-      slug: cardId, // card_id IS both advisorKey and slug
+      slug: cardId, // card_id IS the slug
       name,
       product_type: String(raw.product_type ?? "").trim() || "cc",
       invitation_only: parseBool(raw.invitation_only),
@@ -456,8 +466,8 @@ export function normalizeCardRow(
         domestic: (domestic as LoungeAccess | null) ?? null,
         international: (international as LoungeAccess | null) ?? null,
       },
-      ideal_for: parseList(raw.ideal_for),
-      not_ideal_for: parseList(raw.not_ideal_for),
+      ideal_for: parseSentenceList(raw.ideal_for),
+      not_ideal_for: parseSentenceList(raw.not_ideal_for),
       miles_and_hotel_transfer_available: parseBool(
         raw.miles_and_hotel_transfer_available,
       ),
@@ -470,15 +480,16 @@ export function normalizeCardRow(
   };
 }
 
-// Build the CardDoc document body from a normalized card. advisorKey is the
-// upsert key and is NOT part of the $set (it lives in the filter). bankName is
-// required by the schema but not supplied by the sheet — default to "";
-// bankId is optional and left unset (defaults to null).
+// Build the CardDoc document body from a normalized card. slug is the upsert
+// key and IS part of the $set (it also lives in the filter). bankName is
+// not a dedicated sheet column — fall back to the first issuer when present so
+// downstream (giftors/redirect) has something to key on; bankId is optional and
+// left unset (defaults to null).
 export function cardToDoc(card: NormalizedCard) {
   return {
     name: card.name,
     slug: card.slug,
-    bankName: "",
+    bankName: card.issuer[0] ?? "",
     product_type: card.product_type,
     invitation_only: card.invitation_only,
     issuer: card.issuer,

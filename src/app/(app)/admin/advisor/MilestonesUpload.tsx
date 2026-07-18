@@ -37,7 +37,7 @@ const REASON_LABELS: Record<string, string> = {
   blank_row: "Blank rows (no data)",
   missing_slug: "Missing slug_id",
   unknown_period:
-    "Bad milestone_period (one_time / daily / quarterly / halfyearly / annually)",
+    "Bad milestone_period (one_time / daily / monthly / quarterly / halfyearly / annually)",
   unknown_benefit_type:
     "Bad benefit_type (points / cashback / membership / voucher)",
   bad_number: "A numeric cell is not a number",
@@ -47,11 +47,11 @@ const REASON_LABELS: Record<string, string> = {
 };
 
 const COLUMNS: { name: string; required: boolean; desc: string }[] = [
-  { name: "slug_id", required: true, desc: "Card slug → cardAdvisorKey, e.g. idfc-first-mayura--idfc. Used to find the card." },
+  { name: "slug_id", required: true, desc: "Card slug → cardSlug, e.g. idfc-first-mayura--idfc. Used to find the card." },
   { name: "card_name", required: false, desc: "Human-readable card name. Read for reference only — not stored on the milestone." },
   { name: "crad_id", required: false, desc: "Card id from the source sheet. Read for reference only — not stored on the milestone." },
   { name: "milestone_type", required: false, desc: "Free-text milestone label, e.g. annual_spend, joining. Part of the upsert identity (blank allowed)." },
-  { name: "milestone_period", required: false, desc: "One of one_time / daily / quarterly / halfyearly / annually. Blank = none." },
+  { name: "milestone_period", required: false, desc: "One of one_time / daily / monthly / quarterly / halfyearly / annually. Blank = none." },
   { name: "spend_threshold_inr", required: false, desc: "Spend needed to unlock this milestone (₹). Part of the upsert identity. Blank = none." },
   { name: "tier_order", required: false, desc: "Sequence within a mutual_exclusivity_group (1, 2, 3…) — which tier is 'higher'. Blank = none." },
   { name: "mutual_exclusivity_group", required: false, desc: "Tiers sharing this key are alternatives — a higher tier replaces the lower instead of stacking. Blank = none." },

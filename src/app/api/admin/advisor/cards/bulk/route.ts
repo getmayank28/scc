@@ -2,7 +2,7 @@ import * as XLSX from "xlsx";
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 import {
@@ -20,8 +20,8 @@ export const runtime = "nodejs";
 
 // POST — bulk upload cards from an .xlsx/.csv file (multipart form, field "file").
 //
-// Behaviour: UPSERT by advisorKey (= card_id). Each row is upserted — an existing
-// card with that advisorKey is overwritten in place, a new one is inserted.
+// Behaviour: UPSERT by slug (= card_id). Each row is upserted — an existing
+// card with that slug is overwritten in place, a new one is inserted.
 // Duplicate card_ids within one file collapse (last wins; the earlier row is
 // reported as dropped). After import each affected card's bestOf cache is
 // recomputed and the read cache invalidated.
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     }
   }
 
-  // ---- de-dupe by advisorKey; last occurrence wins ----
+  // ---- de-dupe by slug; last occurrence wins ----
   // Earlier rows for the same card_id are DROPPED (reported so the admin can see
   // which rows were superseded).
   const dedupMap = new Map<
@@ -117,25 +117,25 @@ export async function POST(req: Request) {
     { card: NormalizedCard; raw: Record<string, unknown>; row: number }
   >();
   for (const v of valid) {
-    const prev = dedupMap.get(v.card.advisorKey);
+    const prev = dedupMap.get(v.card.slug);
     if (prev) {
       pushFailed(
         prev.raw,
         prev.row,
         "duplicate",
-        `Duplicate card_id "${v.card.advisorKey}" — superseded by row ${v.row}`,
+        `Duplicate card_id "${v.card.slug}" — superseded by row ${v.row}`,
       );
     }
-    dedupMap.set(v.card.advisorKey, v);
+    dedupMap.set(v.card.slug, v);
   }
   const deduped = [...dedupMap.values()];
   const duplicateDropped = valid.length - deduped.length;
 
-  // ---- upsert by advisorKey ----
+  // ---- upsert by slug ----
   try {
     await dbConnect();
 
-    // Which advisorKeys already exist (so we can report inserted vs replaced
+    // Which slugs already exist (so we can report inserted vs replaced
     // deterministically — bulkWrite's upsertedCount alone is enough, but we
     // also want the affected-cards list).
     let inserted = 0;
@@ -145,12 +145,14 @@ export async function POST(req: Request) {
     if (deduped.length) {
       const ops = deduped.map((v) => ({
         updateOne: {
-          filter: { advisorKey: v.card.advisorKey },
+          filter: { slug: v.card.slug },
           // On a fresh insert, seed rulesVersion; on update, leave it (rules
           // aren't touched here). setOnInsert avoids resetting it on replace.
+          // slug is already in the $set via cardToDoc, so setOnInsert only
+          // needs rulesVersion.
           update: {
             $set: cardToDoc(v.card),
-            $setOnInsert: { advisorKey: v.card.advisorKey, rulesVersion: 1 },
+            $setOnInsert: { rulesVersion: 1 },
           },
           upsert: true,
         },
@@ -164,14 +166,14 @@ export async function POST(req: Request) {
       // reflected in the advisor's read model.
       for (const v of deduped) {
         try {
-          await recomputeBestOfForCard(v.card.advisorKey);
+          await recomputeBestOfForCard(v.card.slug);
         } catch (err) {
           console.error(
-            `[admin/cards/bulk] recompute failed for ${v.card.advisorKey}:`,
+            `[admin/cards/bulk] recompute failed for ${v.card.slug}:`,
             err,
           );
         }
-        cardsAffected.push(v.card.advisorKey);
+        cardsAffected.push(v.card.slug);
       }
     }
 

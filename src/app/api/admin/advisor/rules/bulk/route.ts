@@ -3,7 +3,7 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardRuleModel from "@/models/CardRule";
-import CardAdvisorModel from "@/models/CardDoc";
+import CardAdvisorModel from "@/models/Card";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 import {
@@ -141,26 +141,27 @@ export async function POST(req: Request) {
   const deduped = [...dedupMap.values()];
   const duplicateDropped = valid.length - deduped.length;
 
-  // ---- resolve slugs -> advisorKey ----
+  // ---- resolve slugs against known cards ----
   try {
     await dbConnect();
 
     const slugs = [...new Set(deduped.map((v) => v.rule.cardSlug))];
-    const cards = await CardAdvisorModel.find({ slug: { $in: slugs } })
-      .select("advisorKey slug")
-      .lean<{ advisorKey: string; slug: string }[]>();
-    const slugToKey = new Map(cards.map((c) => [c.slug, c.advisorKey]));
+    const cards = await CardAdvisorModel.find({
+      slug: { $in: slugs },
+    })
+      .select("slug")
+      .lean<{ slug: string }[]>();
+    const knownSlugs = new Set(cards.map((c) => c.slug));
 
     // Unknown card slug: count every affected ROW (not just the distinct slug),
     // and tally per-slug so the admin can see exactly which cards are missing.
-    const unknownSlugs = slugs.filter((s) => !slugToKey.has(s));
+    const unknownSlugs = slugs.filter((s) => !knownSlugs.has(s));
     const unknownSlugRowCounts = new Map<string, number>();
 
-    // Group importable rules by advisorKey.
+    // Group importable rules by card slug.
     const byCard = new Map<string, NormalizedRule[]>();
     for (const v of deduped) {
-      const key = slugToKey.get(v.rule.cardSlug);
-      if (!key) {
+      if (!knownSlugs.has(v.rule.cardSlug)) {
         unknownSlugRowCounts.set(
           v.rule.cardSlug,
           (unknownSlugRowCounts.get(v.rule.cardSlug) ?? 0) + 1,
@@ -173,9 +174,9 @@ export async function POST(req: Request) {
         );
         continue;
       }
-      const arr = byCard.get(key) ?? [];
+      const arr = byCard.get(v.rule.cardSlug) ?? [];
       arr.push(v.rule);
-      byCard.set(key, arr);
+      byCard.set(v.rule.cardSlug, arr);
     }
     const unknownSlugRows = [...unknownSlugRowCounts.values()].reduce((a, b) => a + b, 0);
 
@@ -187,10 +188,10 @@ export async function POST(req: Request) {
     let inserted = 0; // newly created (upserted)
     let replaced = 0; // matched an existing rule combo and overwrote it
     const cardsAffected: string[] = [];
-    for (const [advisorKey, rules] of byCard) {
+    for (const [cardSlug, rules] of byCard) {
       const ops = rules.map((r) => {
-        const ruleKey = ruleKeyFor(advisorKey, r.category, r.merchant, r.partner);
-        const { ruleKey: _k, ...rest } = ruleToDoc(r, advisorKey, ruleKey);
+        const ruleKey = ruleKeyFor(cardSlug, r.category, r.merchant, r.partner);
+        const { ruleKey: _k, ...rest } = ruleToDoc(r, cardSlug, ruleKey);
         void _k;
         return {
           updateOne: {
@@ -210,11 +211,11 @@ export async function POST(req: Request) {
       }
 
       await CardAdvisorModel.updateOne(
-        { advisorKey },
+        { slug: cardSlug },
         { $inc: { rulesVersion: 1 } },
       );
-      await recomputeBestOfForCard(advisorKey);
-      cardsAffected.push(advisorKey);
+      await recomputeBestOfForCard(cardSlug);
+      cardsAffected.push(cardSlug);
     }
 
     if (cardsAffected.length) AdvisorCache.invalidate();

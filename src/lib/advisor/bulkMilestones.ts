@@ -24,6 +24,7 @@ export function normalizeKey(raw: string): string {
 type MilestonePeriod =
   | "one_time"
   | "daily"
+  | "monthly"
   | "quarterly"
   | "halfyearly"
   | "annually";
@@ -32,6 +33,7 @@ type BenefitType = "points" | "cashback" | "membership" | "voucher";
 const MILESTONE_PERIODS = new Set<MilestonePeriod>([
   "one_time",
   "daily",
+  "monthly",
   "quarterly",
   "halfyearly",
   "annually",
@@ -49,6 +51,8 @@ const PERIOD_ALIASES: Record<string, MilestonePeriod> = {
   onetime: "one_time",
   once: "one_time",
   daily: "daily",
+  monthly: "monthly",
+  month: "monthly",
   quarterly: "quarterly",
   quarter: "quarterly",
   halfyearly: "halfyearly",
@@ -243,22 +247,22 @@ export function normalizeRow(
 // combo is inserted; the card's other milestones are left untouched. null cells
 // collapse to a stable sentinel so blank thresholds still key deterministically.
 export function milestoneKeyFor(
-  cardAdvisorKey: string,
+  cardSlug: string,
   milestone_type: string | null,
   spend_threshold_inr: number | null,
 ): string {
-  return `${cardAdvisorKey}__${milestone_type ?? "_notype"}__${spend_threshold_inr ?? "_nothreshold"}`;
+  return `${cardSlug}__${milestone_type ?? "_notype"}__${spend_threshold_inr ?? "_nothreshold"}`;
 }
 
 // Build the CardMilestone document body from a normalized milestone.
 export function milestoneToDoc(
   milestone: NormalizedMilestone,
-  cardAdvisorKey: string,
+  cardSlug: string,
   milestoneKey: string,
 ) {
   return {
     milestoneKey,
-    cardAdvisorKey,
+    cardSlug,
     milestone_type: milestone.milestone_type,
     milestone_period: milestone.milestone_period,
     spend_threshold_inr: milestone.spend_threshold_inr,
