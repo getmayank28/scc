@@ -9,6 +9,7 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   AlertTriangle,
+  RefreshCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Typography from "@/components/Typography/Typography";
@@ -79,8 +80,47 @@ const RulesUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [recomputing, setRecomputing] = useState(false);
   const [result, setResult] = useState<UploadResult | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Full rebuild of the bestOf cache: wipes the whole CardBestOf collection and
+  // recomputes every card from the current rules. Use after out-of-band rule
+  // edits (direct DB changes) where a plain re-upload won't cover every card.
+  const handleRecompute = async () => {
+    if (
+      !window.confirm(
+        "Delete the entire Best Of collection and recompute it from scratch for every card? This runs against the live DB and can take a minute.",
+      )
+    ) {
+      return;
+    }
+    setRecomputing(true);
+    try {
+      const res = await fetch("/api/admin/advisor/recompute?fresh=true", {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        toast.error(json.message ?? "Recompute failed");
+        return;
+      }
+      const r = json.result as {
+        deleted: number;
+        cards: number;
+        totalWritten: number;
+        failed: number;
+      };
+      toast.success(
+        `Best Of rebuilt: ${r.deleted} deleted, ${r.totalWritten} written across ${r.cards} card(s)` +
+          (r.failed ? `, ${r.failed} failed` : ""),
+      );
+    } catch {
+      toast.error("Recompute failed, please try again");
+    } finally {
+      setRecomputing(false);
+    }
+  };
 
   // Download every dropped row (original columns + reason) as an .xlsx so it can
   // be fixed and re-uploaded. xlsx is dynamically imported to keep it out of the
@@ -163,6 +203,32 @@ const RulesUpload = () => {
 
   return (
     <div className="flex flex-col gap-6 max-w-3xl text-white">
+
+      {/* Manual full rebuild of the bestOf cache */}
+      <div className="rounded-xl border border-brown-border bg-brown-sidebar p-4 flex items-center gap-4 flex-wrap">
+        <RefreshCcw className="w-8 h-8 text-primary-orange shrink-0" />
+        <div className="flex-1 min-w-[200px]">
+          <Typography variant="p" className="font-medium text-sm text-white">
+            Recompute Best Of
+          </Typography>
+          <Typography variant="p" className="text-xs text-white/55 mt-0.5">
+            Deletes the entire Best Of collection and recomputes it from scratch
+            for every card. Use after editing rules directly in the DB.
+          </Typography>
+        </div>
+        <Button
+          variant="outline"
+          onClick={handleRecompute}
+          disabled={recomputing}
+        >
+          {recomputing ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCcw className="w-4 h-4" />
+          )}
+          Recompute Best Of
+        </Button>
+      </div>
       <div>
         <Typography variant="h3" className="font-semibold text-white">
           Bulk upload advisor rules
@@ -240,6 +306,7 @@ const RulesUpload = () => {
           Upload &amp; import
         </Button>
       </div>
+
 
       {/* Result */}
       {result && (

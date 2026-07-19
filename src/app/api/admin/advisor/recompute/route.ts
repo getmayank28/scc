@@ -2,6 +2,7 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { requireAdmin } from "@/lib/advisor/adminAuth";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardAdvisorModel from "@/models/Card";
+import CardBestOfModel from "@/models/CardBestOf";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
 
@@ -13,7 +14,10 @@ export const runtime = "nodejs";
 //
 // Query params:
 //   ?slug=<slug>        recompute one card only
-//   (no params)         recompute every active card (slow on large datasets)
+//   ?fresh=true         wipe the ENTIRE CardBestOf collection first, then
+//                       recompute every card from scratch (drops any orphan
+//                       rows left by deleted cards). Ignored when ?slug is set.
+//   (no params)         recompute every card in place (upsert; no wipe)
 export async function POST(req: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -31,19 +35,37 @@ export async function POST(req: Request) {
       return ApiResponse.success("ok", 200, { slug, written });
     }
 
+    const fresh = searchParams.get("fresh") === "true";
+    let deleted = 0;
+    if (fresh) {
+      // Full rebuild: drop the whole collection so nothing stale survives, then
+      // repopulate from the current cards + rules.
+      const res = await CardBestOfModel.deleteMany({});
+      deleted = res.deletedCount ?? 0;
+    }
+
     const cards = await CardAdvisorModel.find({})
       .select("slug")
       .lean();
     let totalWritten = 0;
+    let failed = 0;
     for (const c of cards) {
       if (!c.slug) continue;
-      const { written } = await recomputeBestOfForCard(c.slug);
-      totalWritten += written;
+      try {
+        const { written } = await recomputeBestOfForCard(c.slug);
+        totalWritten += written;
+      } catch (err) {
+        failed++;
+        console.error(`[admin/recompute] ${c.slug} failed:`, err);
+      }
     }
     AdvisorCache.invalidate();
     return ApiResponse.success("ok", 200, {
+      fresh,
+      deleted,
       cards: cards.length,
       totalWritten,
+      failed,
     });
   } catch (err) {
     console.error("[admin/recompute POST] failed:", err);
