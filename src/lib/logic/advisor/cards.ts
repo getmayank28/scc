@@ -150,6 +150,10 @@ export interface MockCard {
   not_ideal_for: string[];
   is_active: boolean;
 
+  // Invite-only cards are never recommended. Optional so the MOCK_CARDS
+  // fixture stays untouched; undefined means openly available.
+  invitation_only?: boolean;
+
   // Categories where the card's base reward rate does NOT apply. Specific
   // merchant rules still earn at their declared rate; spend that doesn't match
   // any merchant rule earns 0% (instead of falling back to the base rate).

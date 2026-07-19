@@ -1,4 +1,8 @@
 import z from "zod";
+import {
+  EMPLOYMENT_TYPE_VALUES,
+  INCOME_RANGE_VALUES,
+} from "@/schemas/userInfoSchema";
 
 // Reject NaN/Infinity early so the engines don't have to defend against them.
 const nonNegativeNumber = z
@@ -11,6 +15,13 @@ const positiveInt = z
   .int("must be an integer")
   .nonnegative("must be >= 0");
 
+// Optional user profile for the eligibility filter (Step 1 of the scoring
+// pipeline). Absent fields skip the income filter — fully backward compatible.
+const profileFields = {
+  employmentType: z.enum(EMPLOYMENT_TYPE_VALUES).optional(),
+  salaryRange: z.enum(INCOME_RANGE_VALUES).optional(),
+};
+
 // ── Phase 1 schemas ─────────────────────────────────────────────────────────
 
 export const travelRecommendPhaseOneInputSchema = z.object({
@@ -22,6 +33,7 @@ export const travelRecommendPhaseOneInputSchema = z.object({
     "mostly_international",
   ]),
   avgSpendPerTrip: nonNegativeNumber,
+  ...profileFields,
 });
 
 export const shoppingRecommendPhaseOneInputSchema = z.object({
@@ -40,12 +52,14 @@ export const shoppingRecommendPhaseOneInputSchema = z.object({
       ]),
     )
     .default([]),
+  ...profileFields,
 });
 
 export const foodRecommendPhaseOneInputSchema = z.object({
   onlineFoodDeliveryFrequency: nonNegativeNumber,
   diningOutFrequency: nonNegativeNumber,
   foodDeliveryPlatformPreference: z.enum(["swiggy", "zomato", "both", "none"]),
+  ...profileFields,
 });
 
 export const allrounderRecommendPhaseOneInputSchema = z.object({
@@ -63,6 +77,7 @@ export const allrounderRecommendPhaseOneInputSchema = z.object({
       ]),
     )
     .default([]),
+  ...profileFields,
 });
 
 // ── Phase 2 schemas ─────────────────────────────────────────────────────────
@@ -76,6 +91,7 @@ export const travelRecommendInputSchema = z.object({
   travelPriority: z
     .array(z.enum(["loungeAccess", "lowForex", "maximumRewards"]))
     .default([]),
+  ...profileFields,
 });
 
 export const shoppingRecommendInputSchema = z.object({
@@ -96,6 +112,7 @@ export const shoppingRecommendInputSchema = z.object({
   totalOnlineShoppingMonthlySpend: nonNegativeNumber,
   additionalUtilityBills: z.boolean(),
   additionalUtilityBillsMonthlySpend: nonNegativeNumber,
+  ...profileFields,
 });
 
 export const foodRecommendInputSchema = z.object({
@@ -110,6 +127,7 @@ export const foodRecommendInputSchema = z.object({
     "eazydiner",
     "others",
   ]),
+  ...profileFields,
 });
 
 export const allrounderRecommendInputSchema = z.object({
@@ -121,4 +139,5 @@ export const allrounderRecommendInputSchema = z.object({
   monthlyOnlineShopping: nonNegativeNumber,
   monthlyFuel: nonNegativeNumber,
   monthlyRentInsuranceFees: nonNegativeNumber,
+  ...profileFields,
 });

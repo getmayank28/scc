@@ -57,6 +57,8 @@ import type {
   ShoppingSubReturn,
 } from "@/lib/logic/advisor/shoppingCardEngine";
 import { fetchRecommend } from "@/lib/advisor/client";
+import type { CardScoreBreakdown } from "@/lib/logic/advisor/scoring";
+import { ProfileFields, useProfileFields } from "./ProfileFields";
 
 const TRAVEL_MIX_OPTIONS: { label: string; value: TravelMix }[] = [
   { label: "Only domestic", value: "only_domestic" },
@@ -75,6 +77,52 @@ const inr = (value: number) =>
   `₹${Math.round(value).toLocaleString("en-IN")}`;
 
 const pct = (value: number) => `${value.toFixed(2)}%`;
+
+// Final-return math shared by every result card: spend return + achieved
+// milestones − (waiver-aware) annual fee.
+function ScoreBreakdownBlock({
+  spendReturnInr,
+  result,
+}: {
+  spendReturnInr: number;
+  result: CardScoreBreakdown;
+}) {
+  return (
+    <div className="rounded-lg border border-white/10 p-4 text-sm space-y-1">
+      <div className="font-semibold">Final return breakdown</div>
+      <div className="flex justify-between">
+        <span>Spend return</span>
+        <span className="text-green-500">+{inr(spendReturnInr)}</span>
+      </div>
+      <div className="flex justify-between">
+        <span>Milestone benefits</span>
+        <span className="text-green-500">+{inr(result.milestoneReturnInr)}</span>
+      </div>
+      {result.achievedMilestones.map((m) => (
+        <div
+          key={m.milestoneKey}
+          className="flex justify-between text-xs text-muted-foreground pl-4"
+        >
+          <span>
+            {m.period} · spend ≥ {inr(m.spendThresholdInr)} ×{" "}
+            {m.occurrencesPerYear}
+          </span>
+          <span>+{inr(m.annualValueInr)}</span>
+        </div>
+      ))}
+      <div className="flex justify-between">
+        <span>Annual fee{result.feeWaived ? " (waived)" : ""}</span>
+        <span className={result.feeInr > 0 ? "text-red-400" : ""}>
+          {result.feeInr > 0 ? `−${inr(result.feeInr)}` : "₹0"}
+        </span>
+      </div>
+      <div className="flex justify-between font-semibold pt-2 mt-1 border-t border-white/10">
+        <span>Final return</span>
+        <span className="text-green-500">{inr(result.finalReturnInr)}</span>
+      </div>
+    </div>
+  );
+}
 
 function CategoryRow({ row }: { row: CategoryReturn }) {
   return (
@@ -142,9 +190,9 @@ function CardResultCard({
           <h3 className="text-lg font-semibold">{result.cardName}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Net return</div>
+          <div className="text-xs text-muted-foreground">Final return</div>
           <div className="text-xl font-bold text-green-500">
-            {inr(result.netReturnInr)}
+            {inr(result.finalReturnInr)}
           </div>
         </div>
       </div>
@@ -191,6 +239,11 @@ function CardResultCard({
         <span>Net</span>
         <span className="text-green-500">{inr(result.netReturnInr)}</span>
       </div>
+
+      <ScoreBreakdownBlock
+        spendReturnInr={result.netReturnInr}
+        result={result}
+      />
     </div>
   );
 }
@@ -202,6 +255,7 @@ function InitialTravelForm() {
   const [result, setResult] = useState<TravelEngineResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const onCalculate = async () => {
     const trips = Number(tripsPerYear);
@@ -216,6 +270,7 @@ function InitialTravelForm() {
         tripsPerYear: trips,
         avgSpendPerTrip: spend,
         travelMix,
+        ...profile.profileBody,
       });
       setResult(r);
     } catch (e) {
@@ -270,6 +325,8 @@ function InitialTravelForm() {
             </SelectContent>
           </Select>
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <Button
@@ -312,9 +369,9 @@ function InitialTravelForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Net annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.netReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>
               </div>
             </div>
@@ -344,6 +401,7 @@ function AdvancedTravelForm() {
   const [result, setResult] = useState<TravelEngineAdvancedResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const togglePriority = (p: TravelPriority, checked: boolean) => {
     setPriorities((prev) =>
@@ -374,6 +432,7 @@ function AdvancedTravelForm() {
         avgInternationalSpendPerTrip: intlSpend,
         additionalFlightSpend: extra,
         travelPriority: priorities,
+        ...profile.profileBody,
       });
       setResult(r);
     } catch (e) {
@@ -448,6 +507,8 @@ function AdvancedTravelForm() {
             onChange={(e) => setAdditionalFlightSpend(e.target.value)}
           />
         </div>
+
+        <ProfileFields {...profile} />
 
         <div className="space-y-2 md:col-span-3">
           <Label className="text-white font-semibold">Travel priorities</Label>
@@ -530,9 +591,9 @@ function AdvancedTravelForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Net annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.netReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>
               </div>
             </div>
@@ -639,9 +700,9 @@ function AllRounderCardResult({
           <h3 className="text-lg font-semibold">{result.cardName}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xs text-muted-foreground">Final return</div>
           <div className="text-xl font-bold text-green-500">
-            {inr(result.annualReturnInr)}
+            {inr(result.finalReturnInr)}
           </div>
           <div className="text-xs text-muted-foreground">
             {pct(result.effectiveRatePercentage)} effective
@@ -653,6 +714,11 @@ function AllRounderCardResult({
           <BucketBlock key={b.bucket} bucket={b} />
         ))}
       </div>
+
+      <ScoreBreakdownBlock
+        spendReturnInr={result.annualReturnInr}
+        result={result}
+      />
     </div>
   );
 }
@@ -667,6 +733,7 @@ function AllRounderPhaseOneForm() {
   const [result, setResult] = useState<AllRounderEngineResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const toggleCategory = (cat: AllRounderCategory, checked: boolean) => {
     setSelected((prev) => {
@@ -693,6 +760,7 @@ function AllRounderPhaseOneForm() {
           averageTotalMonthlySpend: T,
           averageOnlineMonthlySpend: O,
           mostSpendCategory: selected,
+          ...profile.profileBody,
         },
       );
       setResult(r);
@@ -730,6 +798,8 @@ function AllRounderPhaseOneForm() {
             onChange={(e) => setMonthlyOnline(e.target.value)}
           />
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <div className="space-y-2">
@@ -817,9 +887,9 @@ function AllRounderPhaseOneForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
@@ -882,6 +952,7 @@ function AllRounderPhaseTwoForm() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const setField = (key: PhaseTwoField["key"], value: string) =>
     setDeclared((prev) => ({ ...prev, [key]: value }));
@@ -909,6 +980,7 @@ function AllRounderPhaseTwoForm() {
           averageTotalMonthlySpend: T,
           averageOnlineMonthlySpend: O,
           ...numericDeclared,
+          ...profile.profileBody,
         },
       );
       setResult(r);
@@ -946,6 +1018,8 @@ function AllRounderPhaseTwoForm() {
             onChange={(e) => setMonthlyOnline(e.target.value)}
           />
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -1021,9 +1095,9 @@ function AllRounderPhaseTwoForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
@@ -1125,9 +1199,9 @@ function FoodCardResult({
           <h3 className="text-lg font-semibold">{result.cardName}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xs text-muted-foreground">Final return</div>
           <div className="text-xl font-bold text-green-500">
-            {inr(result.annualReturnInr)}
+            {inr(result.finalReturnInr)}
           </div>
           <div className="text-xs text-muted-foreground">
             {pct(result.effectiveRatePercentage)} effective
@@ -1138,6 +1212,11 @@ function FoodCardResult({
         <FoodStreamBlock title="Online delivery" stream={result.delivery} />
         <FoodStreamBlock title="Offline dining" stream={result.dining} />
       </div>
+
+      <ScoreBreakdownBlock
+        spendReturnInr={result.annualReturnInr}
+        result={result}
+      />
     </div>
   );
 }
@@ -1149,6 +1228,7 @@ function FoodCardPhaseOneForm() {
   const [result, setResult] = useState<FoodCardEngineResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const onCalculate = async () => {
     const d = Number(deliveryFreq);
@@ -1163,6 +1243,7 @@ function FoodCardPhaseOneForm() {
         onlineFoodDeliveryFrequency: d,
         diningOutFrequency: o,
         foodDeliveryPlatformPreference: platform,
+        ...profile.profileBody,
       });
       setResult(r);
     } catch (e) {
@@ -1231,6 +1312,8 @@ function FoodCardPhaseOneForm() {
             </SelectContent>
           </Select>
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <Button
@@ -1312,9 +1395,9 @@ function FoodCardPhaseOneForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
@@ -1363,6 +1446,7 @@ function FoodCardPhaseTwoForm() {
   const [result, setResult] = useState<FoodCardEngineResultTwo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const onCalculate = async () => {
     const d = Number(deliveryFreq);
@@ -1384,6 +1468,7 @@ function FoodCardPhaseTwoForm() {
         diningOutAverageSpend: oAvg,
         foodDeliveryPlatformPreference: deliveryPlatform,
         diningOutPlatformPreference: diningPlatform,
+        ...profile.profileBody,
       });
       setResult(r);
     } catch (e) {
@@ -1503,6 +1588,8 @@ function FoodCardPhaseTwoForm() {
             </SelectContent>
           </Select>
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <Button
@@ -1597,9 +1684,9 @@ function FoodCardPhaseTwoForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
@@ -1696,9 +1783,9 @@ function ShoppingCardResult({
           <h3 className="text-lg font-semibold">{result.cardName}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xs text-muted-foreground">Final return</div>
           <div className="text-xl font-bold text-green-500">
-            {inr(result.annualReturnInr)}
+            {inr(result.finalReturnInr)}
           </div>
           <div className="text-xs text-muted-foreground">
             {pct(result.effectiveRatePercentage)} effective
@@ -1709,6 +1796,11 @@ function ShoppingCardResult({
         <ShoppingStreamBlock title="Online shopping" stream={result.online} />
         <ShoppingStreamBlock title="Offline shopping" stream={result.offline} />
       </div>
+
+      <ScoreBreakdownBlock
+        spendReturnInr={result.annualReturnInr}
+        result={result}
+      />
     </div>
   );
 }
@@ -1722,6 +1814,7 @@ function ShoppingCardPhaseOneForm() {
   const [result, setResult] = useState<ShoppingCardEngineResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const togglePlatform = (p: ShoppingOnlinePlatform, checked: boolean) => {
     setPlatforms((prev) =>
@@ -1742,6 +1835,7 @@ function ShoppingCardPhaseOneForm() {
           monthlySpend: monthly,
           shoppingPreference: preference,
           preferredOnlinePlatform: platforms,
+          ...profile.profileBody,
         },
       );
       setResult(r);
@@ -1786,6 +1880,8 @@ function ShoppingCardPhaseOneForm() {
             </SelectContent>
           </Select>
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <div className="space-y-2">
@@ -1867,9 +1963,9 @@ function ShoppingCardPhaseOneForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
@@ -1902,9 +1998,9 @@ function ShoppingCardPhaseTwoResult({
           <h3 className="text-lg font-semibold">{result.cardName}</h3>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">Annual return</div>
+          <div className="text-xs text-muted-foreground">Final return</div>
           <div className="text-xl font-bold text-green-500">
-            {inr(result.annualReturnInr)}
+            {inr(result.finalReturnInr)}
           </div>
           <div className="text-xs text-muted-foreground">
             {pct(result.effectiveRatePercentage)} effective
@@ -1918,6 +2014,11 @@ function ShoppingCardPhaseTwoResult({
           <ShoppingStreamBlock title="Utility bills" stream={result.utility} />
         )}
       </div>
+
+      <ScoreBreakdownBlock
+        spendReturnInr={result.annualReturnInr}
+        result={result}
+      />
     </div>
   );
 }
@@ -1935,6 +2036,7 @@ function ShoppingCardPhaseTwoForm() {
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const profile = useProfileFields();
 
   const togglePlatform = (p: ShoppingOnlinePlatform, checked: boolean) => {
     setPlatforms((prev) =>
@@ -1959,6 +2061,7 @@ function ShoppingCardPhaseTwoForm() {
         totalOnlineShoppingMonthlySpend: online,
         additionalUtilityBills: hasUtility,
         additionalUtilityBillsMonthlySpend: hasUtility ? utility : 0,
+        ...profile.profileBody,
       });
       setResult(r);
     } catch (e) {
@@ -1996,6 +2099,8 @@ function ShoppingCardPhaseTwoForm() {
             onChange={(e) => setOnlineShoppingSpend(e.target.value)}
           />
         </div>
+
+        <ProfileFields {...profile} />
       </div>
 
       <div className="space-y-2">
@@ -2133,9 +2238,9 @@ function ShoppingCardPhaseTwoForm() {
               </div>
               <div className="text-2xl font-bold">{result.best.cardName}</div>
               <div className="text-sm text-muted-foreground">
-                Annual return:{" "}
+                Final annual return:{" "}
                 <span className="text-green-500 font-semibold">
-                  {inr(result.best.annualReturnInr)}
+                  {inr(result.best.finalReturnInr)}
                 </span>{" "}
                 ({pct(result.best.effectiveRatePercentage)} effective)
               </div>
