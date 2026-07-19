@@ -2,6 +2,12 @@ import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
 
 // ============================================================================
 // Phase 1 — channel & platform-based shopping card recommendation
@@ -214,7 +220,7 @@ export interface ShoppingStreamReturn {
   returnInr: number;
 }
 
-export interface CardShoppingReturn {
+export interface CardShoppingReturn extends CardScoreBreakdown {
   cardId: string;
   cardName: string;
   online: ShoppingStreamReturn;
@@ -444,6 +450,7 @@ function scoreCard(
   spend: ShoppingSpendBreakdown,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): CardShoppingReturn {
   const online = evaluateStream(
     buildOnlineSpecs(spend.onlineAllocation),
@@ -470,6 +477,12 @@ function scoreCard(
     annualReturnInr,
     effectiveRatePercentage:
       annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+    ...finalizeCardScore(
+      card,
+      annualReturnInr,
+      annualSpend,
+      options?.milestonesBySlug?.get(card._id),
+    ),
   };
 }
 
@@ -478,15 +491,15 @@ export function recommendShoppingCardPhaseOne(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): ShoppingCardEngineResult {
   const spend = buildShoppingSpendBreakdown(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const byCard = cards
-    .filter((c) => c.is_active)
-    .map((card) => scoreCard(card, spend, index, rules))
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
-    // Surface only the best 3 cards by annual return.
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map((card) => scoreCard(card, spend, index, rules, options))
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return.
     .slice(0, 3);
 
   return {
@@ -626,6 +639,7 @@ function scoreCardTwo(
   spend: ShoppingSpendBreakdownTwo,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): CardShoppingReturnTwo {
   const online = evaluateStream(
     buildOnlineSpecs(spend.onlineAllocation),
@@ -668,6 +682,12 @@ function scoreCardTwo(
     annualReturnInr,
     effectiveRatePercentage:
       annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+    ...finalizeCardScore(
+      card,
+      annualReturnInr,
+      annualSpend,
+      options?.milestonesBySlug?.get(card._id),
+    ),
   };
 }
 
@@ -676,15 +696,15 @@ export function recommendShoppingCardPhaseTwo(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): ShoppingCardEngineResultTwo {
   const spend = buildShoppingSpendBreakdownTwo(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const byCard = cards
-    .filter((c) => c.is_active)
-    .map((card) => scoreCardTwo(card, spend, index, rules))
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
-    // Surface only the best 3 cards by annual return.
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map((card) => scoreCardTwo(card, spend, index, rules, options))
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return.
     .slice(0, 3);
 
   return { input, spend, byCard, best: byCard[0] ?? null };

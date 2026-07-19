@@ -42,10 +42,11 @@ function formatInr(value: number): string {
   return `₹${INR.format(Math.max(0, Math.round(value)))}`;
 }
 
-// Travel returns net INR (after forex cost); the other engines expose
-// annualReturnInr. Normalise to a single "annual return" number so relative
-// loss and the return-on-spend rate can be computed uniformly.
+// Every engine row now carries finalReturnInr (spend return + milestones −
+// fees) — prefer it so the chat ranks the same way the engines sort. Fall back
+// to the older per-engine metrics for any payload predating the field.
 function annualReturn(card: AnyCardReturn): number {
+  if (typeof card.finalReturnInr === "number") return card.finalReturnInr;
   return "netReturnInr" in card ? card.netReturnInr : card.annualReturnInr;
 }
 

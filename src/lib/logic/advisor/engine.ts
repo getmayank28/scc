@@ -33,6 +33,12 @@ function tripAwareAnnualCapInr(
   return perPeriodInr * activePeriods;
 }
 import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
+import {
   travelCardPhaseOneRecommendation,
   travelCardPhaseTwoRecommendation,
   type CategorySplit,
@@ -94,7 +100,7 @@ export interface ForexReturn {
   totalCostInr: number;
 }
 
-export interface CardTravelReturn {
+export interface CardTravelReturn extends CardScoreBreakdown {
   cardId: string;
   cardName: string;
   domestic: SegmentReturn;
@@ -807,12 +813,12 @@ export function recommendTravelCard(
   input: TravelCardPhaseOneInput,
   cards: MockCard[],
   bestOfList: MockBestOf[],
+  options?: EngineScoringOptions,
 ): TravelEngineResult {
   const travel = travelCardPhaseOneRecommendation(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const byCard = cards
-    .filter((card) => card.is_active)
+  const byCard = filterEligibleCards(cards, options?.profile)
     .map<CardTravelReturn>((card) => {
       const rawDomestic = buildSegment(
         travel.categorySpend.domestic,
@@ -841,6 +847,8 @@ export function recommendTravelCard(
       );
       const grossReturnInr =
         domestic.totalReturnInr + international.totalReturnInr;
+      const netReturnInr = grossReturnInr - forex.totalCostInr;
+      const annualSpendInr = domestic.totalSpend + international.totalSpend;
       return {
         cardId: card._id,
         cardName: card.name,
@@ -849,12 +857,18 @@ export function recommendTravelCard(
         extraFlights: null,
         forex,
         grossReturnInr,
-        netReturnInr: grossReturnInr - forex.totalCostInr,
+        netReturnInr,
+        ...finalizeCardScore(
+          card,
+          netReturnInr,
+          annualSpendInr,
+          options?.milestonesBySlug?.get(card._id),
+        ),
       };
     })
-    .sort((a, b) => b.netReturnInr - a.netReturnInr);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
 
-  // Phase 1 surfaces only the top 3 cards by net return.
+  // Phase 1 surfaces only the top 3 cards by final return.
   const topCards = byCard.slice(0, 3);
 
   return {
@@ -974,11 +988,12 @@ export function recommendTravelCardAdvanced(
   input: TravelCardPhaseTwoInput,
   cards: MockCard[],
   bestOfList: MockBestOf[],
+  options?: EngineScoringOptions,
 ): TravelEngineAdvancedResult {
   const travel = travelCardPhaseTwoRecommendation(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const activeCards = cards.filter((c) => c.is_active);
+  const activeCards = filterEligibleCards(cards, options?.profile);
   const filtered = filterCardsByPriority(activeCards, input.travelPriority, {
     tripsPerYear: input.tripsPerYear,
     internationalPercentage: travel.split.internationalPercentage,
@@ -1048,6 +1063,11 @@ export function recommendTravelCardAdvanced(
         domestic.totalReturnInr +
         international.totalReturnInr +
         (extraFlights?.totalReturnInr ?? 0);
+      const netReturnInr = grossReturnInr - forex.totalCostInr;
+      const annualSpendInr =
+        domestic.totalSpend +
+        international.totalSpend +
+        (extraFlights?.totalSpend ?? 0);
 
       return {
         cardId: card._id,
@@ -1057,11 +1077,17 @@ export function recommendTravelCardAdvanced(
         extraFlights,
         forex,
         grossReturnInr,
-        netReturnInr: grossReturnInr - forex.totalCostInr,
+        netReturnInr,
+        ...finalizeCardScore(
+          card,
+          netReturnInr,
+          annualSpendInr,
+          options?.milestonesBySlug?.get(card._id),
+        ),
       };
     })
-    .sort((a, b) => b.netReturnInr - a.netReturnInr)
-    // Surface only the best 3 cards by net return.
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return.
     .slice(0, 3);
 
   return {

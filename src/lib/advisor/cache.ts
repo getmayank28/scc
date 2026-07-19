@@ -1,10 +1,14 @@
 import CardAdvisorModel, { type CardDoc } from "@/models/Card";
 import CardRuleModel, { type CardRuleDoc } from "@/models/CardRule";
 import CardBestOfModel, { type CardBestOfDoc } from "@/models/CardBestOf";
+import CardMilestoneModel, {
+  type CardMilestoneDoc,
+} from "@/models/CardMilestone";
 import dbConnect from "@/lib/utils/dbConnet";
 import type { MockCard } from "@/lib/logic/advisor/cards";
 import { toSharedCapGroup, type MockRule } from "@/lib/logic/advisor/rules";
 import type { MockBestOf } from "@/lib/logic/advisor/bestOf";
+import type { MockMilestone } from "@/lib/logic/advisor/scoring";
 
 // Process-local cache of advisor data. Vercel keeps function instances warm for
 // minutes at a time, so this Map survives across many invocations. On a cold
@@ -22,6 +26,7 @@ interface Snapshot {
   cards: MockCard[];
   rules: MockRule[];
   bestOf: MockBestOf[];
+  milestonesBySlug: Map<string, MockMilestone[]>;
 }
 
 let snapshot: Snapshot | null = null;
@@ -31,6 +36,8 @@ let inflight: Promise<void> | null = null;
 type LeanCard = Omit<CardDoc, keyof Document> & Record<string, unknown>;
 type LeanRule = Omit<CardRuleDoc, keyof Document> & Record<string, unknown>;
 type LeanBestOf = Omit<CardBestOfDoc, keyof Document> & Record<string, unknown>;
+type LeanMilestone = Omit<CardMilestoneDoc, keyof Document> &
+  Record<string, unknown>;
 
 function toMockCard(doc: LeanCard): MockCard {
   return {
@@ -49,6 +56,7 @@ function toMockCard(doc: LeanCard): MockCard {
     ideal_for: doc.ideal_for as string[],
     not_ideal_for: doc.not_ideal_for as string[],
     is_active: doc.is_active as boolean,
+    invitation_only: (doc.invitation_only as boolean) ?? false,
     excluded_categories:
       doc.excluded_categories as MockCard["excluded_categories"],
     transfer_partners:
@@ -81,10 +89,10 @@ function toMockRule(doc: LeanRule): MockRule {
 async function hydrate(): Promise<void> {
   await dbConnect();
 
-  const [cardDocs, ruleDocs, bestOfDocs] = await Promise.all([
+  const [cardDocs, ruleDocs, bestOfDocs, milestoneDocs] = await Promise.all([
     CardAdvisorModel.find({ is_active: true })
       .select(
-        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active excluded_categories rulesVersion",
+        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>(),
     CardRuleModel.find({ is_active: true })
@@ -95,6 +103,11 @@ async function hydrate(): Promise<void> {
     CardBestOfModel.find({})
       .select("cardSlug category rulesVersion payload")
       .lean<LeanBestOf[]>(),
+    CardMilestoneModel.find({ is_active: true })
+      .select(
+        "milestoneKey cardSlug milestone_type milestone_period spend_threshold_inr tier_order mutual_exclusivity_group benefit_type benefit_value_inr",
+      )
+      .lean<LeanMilestone[]>(),
   ]);
 
   const cards = cardDocs.map(toMockCard);
@@ -126,7 +139,27 @@ async function hydrate(): Promise<void> {
     );
   }
 
-  snapshot = { cards, rules: ruleDocs.map(toMockRule), bestOf };
+  const milestonesBySlug = new Map<string, MockMilestone[]>();
+  for (const d of milestoneDocs) {
+    const m: MockMilestone = {
+      milestoneKey: d.milestoneKey as string,
+      cardSlug: d.cardSlug as string,
+      milestone_type: (d.milestone_type as string | null) ?? null,
+      milestone_period:
+        (d.milestone_period as MockMilestone["milestone_period"]) ?? null,
+      spend_threshold_inr: (d.spend_threshold_inr as number | null) ?? null,
+      tier_order: (d.tier_order as number | null) ?? null,
+      mutual_exclusivity_group:
+        (d.mutual_exclusivity_group as string | null) ?? null,
+      benefit_type: (d.benefit_type as MockMilestone["benefit_type"]) ?? null,
+      benefit_value_inr: (d.benefit_value_inr as number | null) ?? null,
+    };
+    const list = milestonesBySlug.get(m.cardSlug);
+    if (list) list.push(m);
+    else milestonesBySlug.set(m.cardSlug, [m]);
+  }
+
+  snapshot = { cards, rules: ruleDocs.map(toMockRule), bestOf, milestonesBySlug };
   fetchedAt = Date.now();
 }
 
@@ -173,6 +206,10 @@ export const AdvisorCache = {
 
   bestOf(): MockBestOf[] {
     return snapshot?.bestOf ?? [];
+  },
+
+  milestonesBySlug(): Map<string, MockMilestone[]> {
+    return snapshot?.milestonesBySlug ?? new Map();
   },
 
   // Force invalidate (e.g. immediately after an admin write in the same

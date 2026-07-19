@@ -2,6 +2,12 @@ import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
 
 // ============================================================================
 // Phase 1 — calibrated spend distribution
@@ -346,7 +352,7 @@ export interface BucketReturn {
   totalReturnInr: number;
 }
 
-export interface CardAllRounderReturn {
+export interface CardAllRounderReturn extends CardScoreBreakdown {
   cardId: string;
   cardName: string;
   buckets: Record<AllRounderBucket, BucketReturn>;
@@ -700,12 +706,12 @@ function scoreCardsForDistribution(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): DistributionScoring {
   const index = buildIndex(bestOfList);
   const annualTotal = distribution.monthlyTotal * 12;
 
-  const byCard = cards
-    .filter((c) => c.is_active)
+  const byCard = filterEligibleCards(cards, options?.profile)
     .map<CardAllRounderReturn>((card) => {
       const buckets = emptyBucketMap<BucketReturn>(
         // placeholder; immediately overwritten below
@@ -737,10 +743,16 @@ function scoreCardsForDistribution(
         annualReturnInr,
         effectiveRatePercentage:
           annualTotal > 0 ? (annualReturnInr / annualTotal) * 100 : 0,
+        ...finalizeCardScore(
+          card,
+          annualReturnInr,
+          annualTotal,
+          options?.milestonesBySlug?.get(card._id),
+        ),
       };
     })
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
-    // Surface only the best 3 cards by annual return (both phases).
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return (both phases).
     .slice(0, 3);
 
   return {
@@ -757,9 +769,16 @@ export function recommendAllRounderCardPhaseOne(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): AllRounderEngineResult {
   const phaseOne = allRounderPhaseOne(input);
-  const scoring = scoreCardsForDistribution(phaseOne, cards, bestOfList, rules);
+  const scoring = scoreCardsForDistribution(
+    phaseOne,
+    cards,
+    bestOfList,
+    rules,
+    options,
+  );
   return { input, phaseOne, ...scoring };
 }
 
@@ -868,8 +887,15 @@ export function recommendAllRounderCardPhaseTwo(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): AllRounderEnginePhaseTwoResult {
   const phaseTwo = allRounderPhaseTwo(input);
-  const scoring = scoreCardsForDistribution(phaseTwo, cards, bestOfList, rules);
+  const scoring = scoreCardsForDistribution(
+    phaseTwo,
+    cards,
+    bestOfList,
+    rules,
+    options,
+  );
   return { input, phaseTwo, ...scoring };
 }

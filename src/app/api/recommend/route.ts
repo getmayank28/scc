@@ -73,24 +73,27 @@ export async function POST(req: Request) {
     const cards = AdvisorCache.cards();
     const bestOf = AdvisorCache.bestOf();
     const rules = AdvisorCache.rules();
+    // Chat doesn't collect employment/income yet, so no profile filter here —
+    // milestones and fees still shape the ranking.
+    const options = { milestonesBySlug: AdvisorCache.milestonesBySlug() };
 
     let result: EngineResult;
     switch (category) {
       case "travel":
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendTravelCardAdvanced(parsed.data as any, cards, bestOf);
+        result = recommendTravelCardAdvanced(parsed.data as any, cards, bestOf, options);
         break;
       case "food":
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendFoodCardPhaseTwo(parsed.data as any, cards, bestOf, rules);
+        result = recommendFoodCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
       case "shopping":
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendShoppingCardPhaseTwo(parsed.data as any, cards, bestOf, rules);
+        result = recommendShoppingCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
       case "allrounder":
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendAllRounderCardPhaseTwo(parsed.data as any, cards, bestOf, rules);
+        result = recommendAllRounderCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
     }
 

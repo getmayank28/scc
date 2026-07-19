@@ -24,6 +24,13 @@ export async function POST(req: Request) {
       parsed.data,
       AdvisorCache.cards(),
       AdvisorCache.bestOf(),
+      {
+        profile: {
+          employmentType: parsed.data.employmentType,
+          salaryRange: parsed.data.salaryRange,
+        },
+        milestonesBySlug: AdvisorCache.milestonesBySlug(),
+      },
     );
     return ApiResponse.success("ok", 200, result);
   } catch (err) {

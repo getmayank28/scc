@@ -2,6 +2,12 @@ import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
 
 // ============================================================================
 // Phase 1 — frequency-based food card recommendation
@@ -135,7 +141,7 @@ export interface FoodStreamReturn {
   returnInr: number;
 }
 
-export interface CardFoodReturn {
+export interface CardFoodReturn extends CardScoreBreakdown {
   cardId: string;
   cardName: string;
   delivery: FoodStreamReturn;
@@ -327,6 +333,7 @@ function scoreCardFromStreams(
   diningSpecs: FoodSubSpec[],
   index: Map<string, MockBestOf>,
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): CardFoodReturn {
   const delivery = evaluateStream(
     deliverySpecs,
@@ -347,6 +354,12 @@ function scoreCardFromStreams(
     annualReturnInr,
     effectiveRatePercentage:
       annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+    ...finalizeCardScore(
+      card,
+      annualReturnInr,
+      annualSpend,
+      options?.milestonesBySlug?.get(card._id),
+    ),
   };
 }
 
@@ -355,6 +368,7 @@ function scoreCard(
   spend: FoodSpendBreakdown,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): CardFoodReturn {
   return scoreCardFromStreams(
     card,
@@ -364,6 +378,7 @@ function scoreCard(
     buildDiningSpecs(spend),
     index,
     rules,
+    options,
   );
 }
 
@@ -372,15 +387,15 @@ export function recommendFoodCardPhaseOne(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): FoodCardEngineResult {
   const spend = buildFoodSpendBreakdown(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const byCard = cards
-    .filter((c) => c.is_active)
-    .map((card) => scoreCard(card, spend, index, rules))
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
-    // Surface only the best 3 cards by annual return.
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map((card) => scoreCard(card, spend, index, rules, options))
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return.
     .slice(0, 3);
 
   return {
@@ -606,12 +621,12 @@ export function recommendFoodCardPhaseTwo(
   cards: MockCard[],
   bestOfList: MockBestOf[],
   rules: MockRule[],
+  options?: EngineScoringOptions,
 ): FoodCardEngineResultTwo {
   const spend = buildFoodSpendBreakdownTwo(input);
   const index = buildBestOfIndex(bestOfList);
 
-  const byCard = cards
-    .filter((c) => c.is_active)
+  const byCard = filterEligibleCards(cards, options?.profile)
     .map((card) =>
       scoreCardFromStreams(
         card,
@@ -621,10 +636,11 @@ export function recommendFoodCardPhaseTwo(
         buildDiningSpecsTwo(spend),
         index,
         rules,
+        options,
       ),
     )
-    .sort((a, b) => b.annualReturnInr - a.annualReturnInr)
-    // Surface only the best 3 cards by annual return.
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
+    // Surface only the best 3 cards by final return.
     .slice(0, 3);
 
   return { input, spend, byCard, best: byCard[0] ?? null };
