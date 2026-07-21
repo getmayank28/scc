@@ -210,9 +210,7 @@ type SubAllocationSpec =
 
 type ConcreteSpec = Exclude<
   SubAllocationSpec,
-  | { kind: "merchant-pair" }
-  | { kind: "top-n" }
-  | { kind: "category-average" }
+  { kind: "merchant-pair" } | { kind: "top-n" } | { kind: "category-average" }
 >;
 
 interface BucketRecipe {
@@ -751,9 +749,9 @@ function scoreCardsForDistribution(
         ),
       };
     })
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return (both phases).
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return (both phases).
+  // .slice(0, 3);
 
   return {
     byCard,
@@ -835,9 +833,7 @@ function declaredFromPhaseTwoInput(
 //   - declared ≤ T: keep declared as-is, dump the residual into `others`.
 //   - declared > T: scale every declared category by T/declared (no others).
 // Edge case: declared sum is 0 — treat everything as `others`.
-function distributeFromDeclared(
-  input: AllRounderPhaseTwoInput,
-): {
+function distributeFromDeclared(input: AllRounderPhaseTwoInput): {
   totals: Record<AllRounderBucket, number>;
   declared: Record<AllRounderCategory, number>;
   declaredTotal: number;
