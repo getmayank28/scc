@@ -245,9 +245,12 @@ function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
   return index;
 }
 
-// Merchant-scoped best-of: reruns best-of against just the merchant's rules.
-// Returns undefined when the card has no rule for that merchant — caller
-// then falls back to the card's base rate.
+// Merchant-scoped best-of: reruns best-of against the merchant's rules PLUS the
+// category-wide (merchant === null) rules. The merchant rules feed the direct
+// frontier; the best category rule becomes the baseTier, so spend not covered by
+// a merchant accelerator falls back to the category rate before the card base
+// rate. Returns undefined only when the card has neither — caller then drops to
+// the card's base rate.
 function merchantBestOf(
   card: MockCard,
   category: Category,
@@ -258,7 +261,7 @@ function merchantBestOf(
     (r) =>
       r.cardId === card._id &&
       r.category === category &&
-      r.merchant === merchant &&
+      (r.merchant === merchant || r.merchant === null) &&
       r.is_active,
   );
   if (subset.length === 0) return undefined;
@@ -287,7 +290,10 @@ function buildOnlineSpecs(
             merchant: a.merchant,
           }
         : {
-            kind: "fallback",
+            // "others" bucket: no specific merchant, but still routes through
+            // best-of so a category-wide (merchant === null) rule applies before
+            // the card base rate. Falls to base rate when no category rule.
+            kind: "category-best",
             label: a.label,
             spend: a.spend,
             category: CATEGORIES.ONLINE_SHOPPING,
@@ -358,7 +364,9 @@ function buildOfflineSpecs(
     specs.push({
       kind: "category-best",
       label: `${
-        OFFLINE_CATEGORY_LABELS[cat as (typeof OFFLINE_CATEGORY_CANDIDATES)[number]]
+        OFFLINE_CATEGORY_LABELS[
+          cat as (typeof OFFLINE_CATEGORY_CANDIDATES)[number]
+        ]
       } (${rankLabel} offline)`,
       spend: alloc.spend * OFFLINE_TOP_SHARES[i],
       category: cat,
@@ -498,9 +506,9 @@ export function recommendShoppingCardPhaseOne(
 
   const byCard = filterEligibleCards(cards, options?.profile)
     .map((card) => scoreCard(card, spend, index, rules, options))
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return.
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
 
   return {
     input,
@@ -571,10 +579,9 @@ export function buildShoppingSpendBreakdownTwo(
   const annualOnline = annualTotal * online;
   const annualOffline = annualTotal * offline;
 
-  const utilityAnnualTotal =
-    input.additionalUtilityBills
-      ? Math.max(0, input.additionalUtilityBillsMonthlySpend) * MONTHS_PER_YEAR
-      : 0;
+  const utilityAnnualTotal = input.additionalUtilityBills
+    ? Math.max(0, input.additionalUtilityBillsMonthlySpend) * MONTHS_PER_YEAR
+    : 0;
   const utility =
     utilityAnnualTotal > 0
       ? {
@@ -703,9 +710,9 @@ export function recommendShoppingCardPhaseTwo(
 
   const byCard = filterEligibleCards(cards, options?.profile)
     .map((card) => scoreCardTwo(card, spend, index, rules, options))
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return.
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
 
   return { input, spend, byCard, best: byCard[0] ?? null };
 }

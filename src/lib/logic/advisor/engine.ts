@@ -79,7 +79,8 @@ function withEffectiveRate(
 ): CategoryReturn {
   return {
     ...cat,
-    effectiveRateAfterCap: cat.spend > 0 ? (cat.returnInr / cat.spend) * 100 : 0,
+    effectiveRateAfterCap:
+      cat.spend > 0 ? (cat.returnInr / cat.spend) * 100 : 0,
   };
 }
 
@@ -146,7 +147,10 @@ interface CandidatePool {
 
 function directCandidatePool(c: BestDirectSwipe): CandidatePool {
   if (c.sharedCapPool) {
-    return { key: `shared::${c.sharedCapPool.key}`, capPeriod: c.sharedCapPool.capPeriod };
+    return {
+      key: `shared::${c.sharedCapPool.key}`,
+      capPeriod: c.sharedCapPool.capPeriod,
+    };
   }
   return {
     key: `unshared::${c.merchant ?? "base"}::${c.percentage}::${
@@ -283,7 +287,8 @@ function flatWaterfallInr(
     if (remaining <= 0) break;
     if (c.percentage <= 0) continue;
     const pool = directCandidatePool(c);
-    const headroom = poolCapReward.get(pool.key)! - (poolUsedReward.get(pool.key) ?? 0);
+    const headroom =
+      poolCapReward.get(pool.key)! - (poolUsedReward.get(pool.key) ?? 0);
     if (headroom <= 0) continue;
     const maxSpend = (headroom * 100) / c.percentage;
     const absorbed = Math.min(remaining, maxSpend);
@@ -379,7 +384,8 @@ function voucherWaterfallInr(
       v.capPeriod,
       bookingsPerYear,
     );
-    const acceleratedV = rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
+    const acceleratedV =
+      rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
     const overflowV = absorbed - acceleratedV;
 
     const earned =
@@ -695,7 +701,9 @@ function reallocateSharedPools(
     const prev = remaining.get(p.pool.key);
     remaining.set(
       p.pool.key,
-      prev === undefined ? p.pool.budgetAnnualInr : Math.min(prev, p.pool.budgetAnnualInr),
+      prev === undefined
+        ? p.pool.budgetAnnualInr
+        : Math.min(prev, p.pool.budgetAnnualInr),
     );
   }
 
@@ -708,8 +716,14 @@ function reallocateSharedPools(
     const potential = (m.coveredSpend * m.rate) / 100;
     const cap = remaining.get(m.pool.key) ?? Number.POSITIVE_INFINITY;
     const accelerated = Math.min(potential, cap);
-    overrides.set(`${segLabelFor(m)}::${m.category}`, participantReturn(m, accelerated));
-    remaining.set(m.pool.key, Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated));
+    overrides.set(
+      `${segLabelFor(m)}::${m.category}`,
+      participantReturn(m, accelerated),
+    );
+    remaining.set(
+      m.pool.key,
+      Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated),
+    );
   }
 }
 
@@ -869,7 +883,8 @@ export function recommendTravelCard(
     .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
 
   // Phase 1 surfaces only the top 3 cards by final return.
-  const topCards = byCard.slice(0, 3);
+  const topCards = byCard;
+  // .slice(0, 3);
 
   return {
     input,
@@ -909,7 +924,8 @@ function filterCardsByPriority(
       if (p === "maximumRewards") continue;
       if (p === "lowForex") {
         // Forex filter only applies when foreign travel exceeds the threshold.
-        if (ctx.internationalPercentage <= LOW_FOREX_MIN_INTL_PERCENTAGE) continue;
+        if (ctx.internationalPercentage <= LOW_FOREX_MIN_INTL_PERCENTAGE)
+          continue;
         const effectiveForex =
           card.forex_markup_percentage * LOW_FOREX_GST_MULTIPLIER;
         if (effectiveForex > LOW_FOREX_MAX_WITH_GST_PERCENTAGE) return false;
@@ -1051,7 +1067,9 @@ export function recommendTravelCardAdvanced(
 
       const domestic = adjusted.domestic ?? rawDomestic;
       const international = adjusted.international ?? rawInternational;
-      const extraFlights = rawExtra ? adjusted.extraFlights ?? rawExtra : null;
+      const extraFlights = rawExtra
+        ? (adjusted.extraFlights ?? rawExtra)
+        : null;
 
       const forex = computeForexCost(
         travel.forex.applicableSpend,
@@ -1086,9 +1104,9 @@ export function recommendTravelCardAdvanced(
         ),
       };
     })
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return.
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
 
   return {
     input,

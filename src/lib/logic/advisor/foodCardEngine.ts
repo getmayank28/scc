@@ -166,9 +166,12 @@ function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
   return index;
 }
 
-// Merchant-scoped best-of: reruns the best-of computation against just the
-// merchant's rules. Returns undefined when the card has no rule for that
-// merchant — caller falls back to base rate.
+// Merchant-scoped best-of: reruns the best-of computation against the merchant's
+// rules PLUS the category-wide (merchant === null) rules. Merchant rules feed the
+// direct frontier; the best category rule becomes the baseTier, so spend not
+// covered by a merchant accelerator falls back to the category rate before the
+// card base rate. Returns undefined only when the card has neither — caller then
+// drops to the card's base rate.
 function merchantBestOf(
   card: MockCard,
   category: Category,
@@ -179,7 +182,7 @@ function merchantBestOf(
     (r) =>
       r.cardId === card._id &&
       r.category === category &&
-      r.merchant === merchant &&
+      (r.merchant === merchant || r.merchant === null) &&
       r.is_active,
   );
   if (subset.length === 0) return undefined;
@@ -394,9 +397,9 @@ export function recommendFoodCardPhaseOne(
 
   const byCard = filterEligibleCards(cards, options?.profile)
     .map((card) => scoreCard(card, spend, index, rules, options))
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return.
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
 
   return {
     input,
@@ -639,9 +642,9 @@ export function recommendFoodCardPhaseTwo(
         options,
       ),
     )
-    .sort((a, b) => b.finalReturnInr - a.finalReturnInr)
-    // Surface only the best 3 cards by final return.
-    .slice(0, 3);
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
 
   return { input, spend, byCard, best: byCard[0] ?? null };
 }
