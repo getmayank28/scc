@@ -206,6 +206,12 @@ type SubAllocationSpec =
       kind: "fallback";
       label: string;
       share: number;
+      // Category whose exclusion list governs this fallback leg. Defaults to the
+      // bucket's `BUCKET_FALLBACK_CATEGORY` when unset — set it only when a leg's
+      // spend maps to a different category than the bucket default (e.g. the
+      // offline dining leg of foodAndDining resolves against OFFLINE_FOOD_DINING
+      // while the bucket's online leg uses ONLINE_FOOD_DINING).
+      category?: Category;
     };
 
 type ConcreteSpec = Exclude<
@@ -249,7 +255,7 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
         kind: "merchant-pair",
         label: "Food delivery",
         share: 1.0,
-        category: CATEGORIES.DINING,
+        category: CATEGORIES.ONLINE_FOOD_DINING,
         merchants: [MERCHANTS.SWIGGY, MERCHANTS.ZOMATO],
         topShare: 0.7,
         tailShare: 0.3,
@@ -260,6 +266,7 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
         kind: "fallback",
         label: "Dining offline",
         share: 1.0,
+        category: CATEGORIES.OFFLINE_FOOD_DINING,
       },
     ],
   },
@@ -414,7 +421,7 @@ const CATEGORY_DISPLAY_LABELS: Partial<Record<Category, string>> = {
   [CATEGORIES.FLIGHTS]: "Flights",
   [CATEGORIES.HOTELS]: "Hotels",
   [CATEGORIES.FOREX]: "Forex",
-  [CATEGORIES.DINING]: "Dining",
+  [CATEGORIES.ONLINE_FOOD_DINING]: "Dining",
   [CATEGORIES.FUEL]: "Fuel",
   [CATEGORIES.GROCERY]: "Grocery",
   [CATEGORIES.ONLINE_SHOPPING]: "Online Shopping",
@@ -572,7 +579,7 @@ function expandSpec(
 // rent/insurance/fees, others) map to OTHER, which no card excludes today.
 const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
   travel: CATEGORIES.OTHER,
-  foodAndDining: CATEGORIES.DINING,
+  foodAndDining: CATEGORIES.ONLINE_FOOD_DINING,
   onlineShopping: CATEGORIES.ONLINE_SHOPPING,
   utilityBills: CATEGORIES.UTILITIES,
   fuel: CATEGORIES.FUEL,
@@ -580,12 +587,8 @@ const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
   others: CATEGORIES.OTHER,
 };
 
-function effectiveFallbackRate(
-  card: MockCard,
-  bucket: AllRounderBucket,
-): number {
-  const cat = BUCKET_FALLBACK_CATEGORY[bucket];
-  if (card.excluded_categories?.includes(cat)) return 0;
+function effectiveFallbackRate(card: MockCard, category: Category): number {
+  if (card.excluded_categories?.includes(category)) return 0;
   return card.rewards.base_reward_rate;
 }
 
@@ -595,14 +598,19 @@ function evaluateSpec(
   card: MockCard,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
-  fallbackRate: number,
+  bucketFallbackCategory: Category,
 ): SubBucketReturn {
   const spend = parentPot * spec.share;
 
-  // Fallback specs short-circuit through `fallbackRate` (which already honors
-  // the card's category exclusions). No cap handling — these represent spend
-  // that doesn't match any merchant rule.
+  // Fallback specs short-circuit through the base reward rate, honoring the
+  // card's exclusion list for the leg's category (`spec.category` when the leg
+  // maps to a category distinct from the bucket default, else the bucket's).
+  // No cap handling — these represent spend that doesn't match any merchant rule.
   if (spec.kind === "fallback") {
+    const fallbackRate = effectiveFallbackRate(
+      card,
+      spec.category ?? bucketFallbackCategory,
+    );
     return {
       label: spec.label,
       share: spec.share,
@@ -666,14 +674,18 @@ function evaluateBucket(
   const recipe = RECIPES[bucket];
   const onlinePot = alloc.online * 12;
   const offlinePot = alloc.offline * 12;
-  const fallbackRate = effectiveFallbackRate(card, bucket);
+  const bucketFallbackCategory = BUCKET_FALLBACK_CATEGORY[bucket];
 
   const onlineSubs = recipe.online
     .flatMap((s) => expandSpec(s, card, rules))
-    .map((s) => evaluateSpec(s, onlinePot, card, index, rules, fallbackRate));
+    .map((s) =>
+      evaluateSpec(s, onlinePot, card, index, rules, bucketFallbackCategory),
+    );
   const offlineSubs = recipe.offline
     .flatMap((s) => expandSpec(s, card, rules))
-    .map((s) => evaluateSpec(s, offlinePot, card, index, rules, fallbackRate));
+    .map((s) =>
+      evaluateSpec(s, offlinePot, card, index, rules, bucketFallbackCategory),
+    );
 
   const onlineReturn = onlineSubs.reduce((acc, s) => acc + s.returnInr, 0);
   const offlineReturn = offlineSubs.reduce((acc, s) => acc + s.returnInr, 0);

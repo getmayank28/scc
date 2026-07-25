@@ -2,7 +2,6 @@ export const CATEGORIES = {
   FLIGHTS: "flights",
   HOTELS: "hotels",
   FOREX: "forex",
-  DINING: "dining",
   FUEL: "fuel",
   GROCERY: "grocery",
   ONLINE_SHOPPING: "online_shopping",
@@ -297,7 +296,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Air India",
         "Hotel partners (11 transfer partners in India total)",
       ],
-      max_value_note: "Singapore Airlines KrisFlyer — Delhi to Singapore economy for ~20K KrisFlyer miles (40K MR points)",
+      max_value_note:
+        "Singapore Airlines KrisFlyer — Delhi to Singapore economy for ~20K KrisFlyer miles (40K MR points)",
     },
     not_ideal_for: [
       "Users in Tier-2/3 cities (limited Amex acceptance)",
@@ -342,7 +342,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_10000_within_90d",
       expires_in_months: 12,
-      display: "₹500 cashback on spending ₹10,000 within 90 days of card issuance",
+      display:
+        "₹500 cashback on spending ₹10,000 within 90 days of card issuance",
     },
     lounge: { domestic: null, international: null },
     ideal_for: [
@@ -361,7 +362,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "+ 6 more (shares same MR pool, 11 partners)",
       ],
-      max_value_note: "Singapore Airlines KrisFlyer — short-haul redemptions; limited value due to low earn rate (1 MR per ₹50 base, capped 10X categories)",
+      max_value_note:
+        "Singapore Airlines KrisFlyer — short-haul redemptions; limited value due to low earn rate (1 MR per ₹50 base, capped 10X categories)",
     },
     not_ideal_for: [
       "Frequent travellers needing lounge access (none offered)",
@@ -417,7 +419,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "12/year (max 3/quarter) at domestic airport lounges across India",
+        display:
+          "12/year (max 3/quarter) at domestic airport lounges across India",
       },
       international: {
         visitsPerPeriod: 2,
@@ -449,7 +452,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "+ 6 more (11 MR transfer partners)",
       ],
-      max_value_note: "Accor Live Limitless & Taj via MR Platinum Travel Collection; milestone vouchers worth ₹12,000/year on ₹50K/month spend",
+      max_value_note:
+        "Accor Live Limitless & Taj via MR Platinum Travel Collection; milestone vouchers worth ₹12,000/year on ₹50K/month spend",
     },
     not_ideal_for: [
       "International travellers expecting free Priority Pass visits (usage fee charged per visit)",
@@ -543,7 +547,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Delta SkyMiles",
         "+ 9 more (18+ MR global partners)",
       ],
-      max_value_note: "Fine Hotels & Resorts — avg ₹44,300 value/booking ($100 credit + room upgrade at 1,000+ properties); Marriott Bonvoy & Hilton Honors for ultra-premium hotel redemptions",
+      max_value_note:
+        "Fine Hotels & Resorts — avg ₹44,300 value/booking ($100 credit + room upgrade at 1,000+ properties); Marriott Bonvoy & Hilton Honors for ultra-premium hotel redemptions",
     },
     not_ideal_for: [
       "Cost-sensitive users (₹66K fee + 3.5% forex)",
@@ -631,7 +636,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "+ 6 more (11 MR transfer partners)",
       ],
-      max_value_note: "Marriott Bonvoy (1:1 ratio — best redemption); Taj Experiences e-Gift Card ₹10,000 on ₹4L annual spend; Taj Stay voucher ₹10,000 + 22,500 bonus pts on ₹7L annual spend",
+      max_value_note:
+        "Marriott Bonvoy (1:1 ratio — best redemption); Taj Experiences e-Gift Card ₹10,000 on ₹4L annual spend; Taj Stay voucher ₹10,000 + 22,500 bonus pts on ₹7L annual spend",
     },
     not_ideal_for: [
       "Users who won't reach ₹4L+ annual spend to unlock key milestones",
@@ -696,7 +702,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "+ 6 more (11 MR transfer partners)",
       ],
-      max_value_note: "Singapore Airlines KrisFlyer; Hotel Collection ($100 credit + room upgrade at 400+ hotels incl. Hilton, Hyatt, IHG on 2-night stays); Taj vouchers via MR redemption",
+      max_value_note:
+        "Singapore Airlines KrisFlyer; Hotel Collection ($100 credit + room upgrade at 400+ hotels incl. Hilton, Hyatt, IHG on 2-night stays); Taj vouchers via MR redemption",
     },
     not_ideal_for: [
       "Frequent flyers needing airport lounge access (none in India)",
@@ -742,7 +749,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "invite_only",
       expires_in_months: 12,
-      display: "Bespoke welcome gift package (details undisclosed; invite-only card)",
+      display:
+        "Bespoke welcome gift package (details undisclosed; invite-only card)",
     },
     lounge: {
       domestic: {
@@ -789,7 +797,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Delta SkyMiles",
         "+ more (18+ partners)",
       ],
-      max_value_note: "No points cap on any category incl. fuel, insurance & utilities (6 MR pts per ₹200 spent); Marriott Bonvoy & Hilton Honors for ultra-luxury suite redemptions; bespoke concierge-led redemptions",
+      max_value_note:
+        "No points cap on any category incl. fuel, insurance & utilities (6 MR pts per ₹200 spent); Marriott Bonvoy & Hilton Honors for ultra-luxury suite redemptions; bespoke concierge-led redemptions",
     },
     not_ideal_for: [
       "Not publicly available — invite-only for existing Amex Platinum cardholders with exceptional spend history",
@@ -1070,7 +1079,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Club Vistara",
         "Hotel partners via HDFC SmartBuy (airmile conversion via netbanking)",
       ],
-      max_value_note: "SmartBuy platform: 1 RP = ₹1 for flights/hotels; Air Mile conversion 1 RP = 1 Airmile; max 33% effective return on SmartBuy with 10X bonus points",
+      max_value_note:
+        "SmartBuy platform: 1 RP = ₹1 for flights/hotels; Air Mile conversion 1 RP = 1 Airmile; max 33% effective return on SmartBuy with 10X bonus points",
     },
     not_ideal_for: [
       "International users outside Diners Club-accepted merchants",
@@ -1115,7 +1125,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1,000 CashPoints (worth ₹1,000 as statement credit) on joining fee payment",
+      display:
+        "1,000 CashPoints (worth ₹1,000 as statement credit) on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -1278,7 +1289,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "Hotel partners via HDFC SmartBuy (10+ airline & hotel partners)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹1 for flights/hotels (10X on SmartBuy = up to 33% return); Air Mile conversion 1 RP = 1 Airmile; ITC Hotels: 3-nights-pay-for-2 + 1+1 buffet; Club Marriott: up to 20% off dining/stays",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹1 for flights/hotels (10X on SmartBuy = up to 33% return); Air Mile conversion 1 RP = 1 Airmile; ITC Hotels: 3-nights-pay-for-2 + 1+1 buffet; Club Marriott: up to 20% off dining/stays",
     },
     not_ideal_for: [
       "Not publicly available (invite-only by HDFC)",
@@ -1550,7 +1562,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Club Vistara",
         "Hotel partners via SmartBuy (airmile 1:1 conversion)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹1 for flights/hotels; 10X on Harley-Davidson spends; Air Mile conversion 1 RP = 1 Airmile; max 33% return on SmartBuy",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹1 for flights/hotels; 10X on Harley-Davidson spends; Air Mile conversion 1 RP = 1 Airmile; max 33% return on SmartBuy",
     },
     not_ideal_for: [
       "Non-Harley riders (card only issued to H.O.G. members)",
@@ -1637,7 +1650,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways Avios",
         "Hotel partners via SmartBuy (1 RP = ₹0.50 for SmartBuy redemptions)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹0.50 for flights/hotels; 5X on Swiggy/Zomato; BOGO movie tickets on weekends via BookMyShow; quarterly vouchers ₹1,500 on ₹1.5L quarterly spend",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹0.50 for flights/hotels; 5X on Swiggy/Zomato; BOGO movie tickets on weekends via BookMyShow; quarterly vouchers ₹1,500 on ₹1.5L quarterly spend",
     },
     not_ideal_for: [
       "Low spenders who won't hit ₹60K/quarter for lounge access",
@@ -1895,7 +1909,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways Avios",
         "Hotel partners via SmartBuy",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹0.50 for flights/hotels; 10X on travel via SmartBuy; low 2% forex enhances international value",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹0.50 for flights/hotels; 10X on travel via SmartBuy; low 2% forex enhances international value",
     },
     not_ideal_for: [
       "Non-Harley riders (niche co-brand with limited differentiation vs Diners Privilege at lower fee)",
@@ -2035,7 +2050,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Marriott Bonvoy (8,000+ properties incl. St. Regis, JW Marriott, Sheraton, Westin, Le Méridien, Fairfield)",
       ],
-      max_value_note: "Marriott Bonvoy Free Night Award worth 15,000 points (≈₹10K–₹30K/night depending on property); milestone Free Night Awards on higher annual spend; best value for luxury Marriott stays",
+      max_value_note:
+        "Marriott Bonvoy Free Night Award worth 15,000 points (≈₹10K–₹30K/night depending on property); milestone Free Night Awards on higher annual spend; best value for luxury Marriott stays",
     },
     not_ideal_for: [
       "Non-Marriott travellers (rewards exclusively within Marriott ecosystem)",
@@ -2406,7 +2422,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_50000_quarterly",
       expires_in_months: 12,
-      display: "Annual fee waived on ₹50K spend in first 90 days; ₹500 gift voucher on ₹50K quarterly spend (up to ₹2K/year)",
+      display:
+        "Annual fee waived on ₹50K spend in first 90 days; ₹500 gift voucher on ₹50K quarterly spend (up to ₹2K/year)",
     },
     lounge: {
       domestic: {
@@ -2526,7 +2543,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 999,
       condition: "first_upi_txn_plus_10_more",
       expires_in_months: 12,
-      display: "PhonePe gift card ₹499 (50% joining fee) on first RuPay CC UPI transaction + ₹500 as 10 gift cards (₹50 each) on next 10 UPI transactions — full joining fee refunded",
+      display:
+        "PhonePe gift card ₹499 (50% joining fee) on first RuPay CC UPI transaction + ₹500 as 10 gift cards (₹50 each) on next 10 UPI transactions — full joining fee refunded",
     },
     lounge: {
       domestic: {
@@ -2536,7 +2554,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year (2/quarter) — milestone-based: spend ₹75,000 in previous quarter",
+        display:
+          "8/year (2/quarter) — milestone-based: spend ₹75,000 in previous quarter",
       },
       international: null,
     },
@@ -2595,7 +2614,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 499,
       condition: "first_upi_txn_plus_10_more",
       expires_in_months: 12,
-      display: "PhonePe gift card ₹249 (50% joining fee) on first RuPay CC UPI transaction + ₹250 as 10 gift cards (₹25 each) on next 10 UPI transactions — full joining fee refunded",
+      display:
+        "PhonePe gift card ₹249 (50% joining fee) on first RuPay CC UPI transaction + ₹250 as 10 gift cards (₹25 each) on next 10 UPI transactions — full joining fee refunded",
     },
     lounge: {
       domestic: null,
@@ -2657,7 +2677,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "spend_150000_within_90d",
       expires_in_months: 12,
-      display: "Club Marriott Annual Membership + Taj Stay Voucher ₹5,000 on spending ₹1.5L within 90 days (first-time cardholders only w.e.f. Oct 2025)",
+      display:
+        "Club Marriott Annual Membership + Taj Stay Voucher ₹5,000 on spending ₹1.5L within 90 days (first-time cardholders only w.e.f. Oct 2025)",
     },
     lounge: {
       domestic: {
@@ -2667,7 +2688,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — 1,000+ airport lounges in India and worldwide (active cardholders only — requires min 1 txn in previous month)",
+        display:
+          "Unlimited — 1,000+ airport lounges in India and worldwide (active cardholders only — requires min 1 txn in previous month)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -2676,7 +2698,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — included in same 1,000+ global access via Diners Club (no Priority Pass needed)",
+        display:
+          "Unlimited — included in same 1,000+ global access via Diners Club (no Priority Pass needed)",
       },
     },
     ideal_for: [
@@ -2699,7 +2722,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways Avios",
         "Hotel partners via SmartBuy (1 RP = ₹1 for travel on SmartBuy)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹1 for flights/hotels; 5X on business spends (tax, vendor, bill payments); 10X on SmartBuy; 6 golf games/quarter globally; milestone ₹20K travel vouchers on ₹20L annual spend",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹1 for flights/hotels; 5X on business spends (tax, vendor, bill payments); 10X on SmartBuy; 6 golf games/quarter globally; milestone ₹20K travel vouchers on ₹20L annual spend",
     },
     not_ideal_for: [
       "Self-employed only (no salaried variant)",
@@ -2745,7 +2769,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "online_txn_within_30d",
       expires_in_months: 12,
-      display: "Amazon Prime Annual Membership (₹1,500) OR ₹1,500 Amazon voucher + Biz Prime 6-month subscription on 1 online transaction (tax/travel/ads) within 30 days",
+      display:
+        "Amazon Prime Annual Membership (₹1,500) OR ₹1,500 Amazon voucher + Biz Prime 6-month subscription on 1 online transaction (tax/travel/ads) within 30 days",
     },
     lounge: {
       domestic: {
@@ -2755,7 +2780,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "Up to 16/year domestic — 8 base (2/quarter) + 8 milestone (2 additional/quarter on ₹75K quarterly spend); via Visa lounge program",
+        display:
+          "Up to 16/year domestic — 8 base (2/quarter) + 8 milestone (2 additional/quarter on ₹75K quarterly spend); via Visa lounge program",
       },
       international: {
         visitsPerPeriod: 6,
@@ -2787,7 +2813,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways Avios",
         "Hotel partners via SmartBuy (1 RP = ₹1 for flights/hotels)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹1 for flights/hotels; 5X on tax/vendor/bill payments/Google Ads/Reliance Digital; 4 RPs/₹150 base; MMT MyBiz 4% savings on flights/hotels; milestone MakeMyTrip/Reliance Digital voucher ₹2,000",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹1 for flights/hotels; 5X on tax/vendor/bill payments/Google Ads/Reliance Digital; 4 RPs/₹150 base; MMT MyBiz 4% savings on flights/hotels; milestone MakeMyTrip/Reliance Digital voucher ₹2,000",
     },
     not_ideal_for: [
       "Self-employed only",
@@ -2832,7 +2859,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "activate_within_37d",
       expires_in_months: 12,
-      display: "₹250 gift voucher on activating card within 37 days of issuance",
+      display:
+        "₹250 gift voucher on activating card within 37 days of issuance",
     },
     lounge: {
       domestic: null,
@@ -3005,7 +3033,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "spend_800000_anniversary_year",
       expires_in_months: 12,
-      display: "Club Marriott + Times Prime + Amazon Prime + Swiggy One (3 months) + MMT Black on reaching ₹8L spend in anniversary year (milestone-based, not joining benefit)",
+      display:
+        "Club Marriott + Times Prime + Amazon Prime + Swiggy One (3 months) + MMT Black on reaching ₹8L spend in anniversary year (milestone-based, not joining benefit)",
     },
     lounge: {
       domestic: {
@@ -3015,7 +3044,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — 1,300+ airport lounges in India and worldwide (primary & add-on)",
+        display:
+          "Unlimited — 1,300+ airport lounges in India and worldwide (primary & add-on)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -3024,7 +3054,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — included in same 1,300+ global lounge access (Diners Club network)",
+        display:
+          "Unlimited — included in same 1,300+ global lounge access (Diners Club network)",
       },
     },
     ideal_for: [
@@ -3049,7 +3080,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Club Vistara",
         "Hotel partners via SmartBuy (1 RP = ₹1 for SmartBuy flights/hotels)",
       ],
-      max_value_note: "SmartBuy: 1 RP = ₹1 for flights/hotels; 10X on SmartBuy; 6 golf games/quarter globally; 2X on weekend dining; BOGO on BookMyShow; Air Mile conversion 1 RP = 1 Airmile",
+      max_value_note:
+        "SmartBuy: 1 RP = ₹1 for flights/hotels; 10X on SmartBuy; 6 golf games/quarter globally; 2X on weekend dining; BOGO on BookMyShow; Air Mile conversion 1 RP = 1 Airmile",
     },
     not_ideal_for: [
       "DISCONTINUED — no new applications. New applications currently not accepted by HDFC Bank",
@@ -3066,7 +3098,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "HPCL BOBCARD ENERGIE Credit Card",
     slug: "hpcl-bobcard-energie-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 360000,
       min_self_employed_income_inr: 480000,
@@ -3095,7 +3127,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 124,
       condition: "spend_5000_within_60d",
       expires_in_months: 12,
-      display: "500 bonus RPs on spending ₹5,000 within 60 days of card issuance",
+      display:
+        "500 bonus RPs on spending ₹5,000 within 60 days of card issuance",
     },
     lounge: {
       domestic: {
@@ -3105,7 +3138,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year (1/quarter) at domestic airport lounges — milestone-based: spend ₹20,000 in prev quarter (w.e.f. Jan 2025)",
+        display:
+          "4/year (1/quarter) at domestic airport lounges — milestone-based: spend ₹20,000 in prev quarter (w.e.f. Jan 2025)",
       },
       international: null,
     },
@@ -3134,7 +3168,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOB ETERNA Credit Card",
     slug: "bob-eterna-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 1200000,
       min_self_employed_income_inr: 1200000,
@@ -3163,7 +3197,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "spend_50000_within_60d",
       expires_in_months: 12,
-      display: "10,000 RPs (₹2,500 value) on spending ₹50,000 within 60 days + complimentary 6-month FITPASS Pro membership (₹15,000 value); currently LTF for eligible applicants (extended to June 2026)",
+      display:
+        "10,000 RPs (₹2,500 value) on spending ₹50,000 within 60 days + complimentary 6-month FITPASS Pro membership (₹15,000 value); currently LTF for eligible applicants (extended to June 2026)",
     },
     lounge: {
       domestic: {
@@ -3173,7 +3208,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 40000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited at domestic airport lounges (primary + add-on) — milestone-based: spend ₹40,000 in prev quarter (w.e.f. Jan 2025)",
+        display:
+          "Unlimited at domestic airport lounges (primary + add-on) — milestone-based: spend ₹40,000 in prev quarter (w.e.f. Jan 2025)",
       },
       international: null,
     },
@@ -3259,7 +3295,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOB EMPOWER Credit Card",
     slug: "bob-empower-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 240000,
@@ -3321,7 +3357,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOB PREMIER Credit Card",
     slug: "bob-premier-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 300000,
       min_self_employed_income_inr: 480000,
@@ -3350,7 +3386,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 125,
       condition: "spend_5000_within_60d",
       expires_in_months: 12,
-      display: "500 bonus RPs on spending ₹5,000 within 60 days; currently available as Lifetime Free for eligible applicants (LTF offer extended through 2026)",
+      display:
+        "500 bonus RPs on spending ₹5,000 within 60 days; currently available as Lifetime Free for eligible applicants (LTF offer extended through 2026)",
     },
     lounge: {
       domestic: {
@@ -3360,7 +3397,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year (1/quarter) at domestic airport lounges — milestone-based: spend ₹20,000 in prev quarter (w.e.f. Jan 2025)",
+        display:
+          "4/year (1/quarter) at domestic airport lounges — milestone-based: spend ₹20,000 in prev quarter (w.e.f. Jan 2025)",
       },
       international: null,
     },
@@ -3445,7 +3483,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOB TIARA Credit Card",
     slug: "bob-tiara-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 720000,
       min_self_employed_income_inr: 720000,
@@ -3474,7 +3512,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "spend_25000_within_60d",
       expires_in_months: 12,
-      display: "Complimentary Swiggy One (3 months) + FitPass Pro + Amazon Prime + Disney+ Hotstar + Gaana Plus memberships on spending ₹25,000 within 60 days (joining fee waived on same condition)",
+      display:
+        "Complimentary Swiggy One (3 months) + FitPass Pro + Amazon Prime + Disney+ Hotstar + Gaana Plus memberships on spending ₹25,000 within 60 days (joining fee waived on same condition)",
     },
     lounge: {
       domestic: {
@@ -3484,7 +3523,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 40000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited at domestic airport lounges (primary cardholder only) — milestone-based: spend ₹40,000 in prev quarter (w.e.f. Jan 2025)",
+        display:
+          "Unlimited at domestic airport lounges (primary cardholder only) — milestone-based: spend ₹40,000 in prev quarter (w.e.f. Jan 2025)",
       },
       international: null,
     },
@@ -3515,7 +3555,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Snapdeal BOBCARD Credit Card",
     slug: "snapdeal-bobcard-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 300000,
       min_self_employed_income_inr: 480000,
@@ -3544,7 +3584,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "usage_within_30d",
       expires_in_months: 12,
-      display: "Snapdeal vouchers worth ₹500 on card usage within first 30 days; 500 RPs on ₹5,000 spend in 60 days",
+      display:
+        "Snapdeal vouchers worth ₹500 on card usage within first 30 days; 500 RPs on ₹5,000 spend in 60 days",
     },
     lounge: {
       domestic: null,
@@ -3577,7 +3618,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD Easy Credit Card",
     slug: "bobcard-easy-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -3606,7 +3647,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 100,
       condition: "spend_5000_within_60d",
       expires_in_months: 12,
-      display: "500 RPs on spending ₹5,000 within 60 days; currently available as Lifetime Free for eligible applicants",
+      display:
+        "500 RPs on spending ₹5,000 within 60 days; currently available as Lifetime Free for eligible applicants",
     },
     lounge: {
       domestic: null,
@@ -3796,7 +3838,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "spend_20000_within_30d",
       expires_in_months: 12,
-      display: "₹1,000 cashback on downloading HSBC India app + spending ₹20,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; ₹750 voucher for Amazon Pay/Zomato/Swiggy on first activation spend of ₹300+",
+      display:
+        "₹1,000 cashback on downloading HSBC India app + spending ₹20,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; ₹750 voucher for Amazon Pay/Zomato/Swiggy on first activation spend of ₹300+",
     },
     lounge: {
       domestic: {
@@ -3864,7 +3907,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "2 complimentary 1-night breakfast-inclusive stays at Taj/IHCL 5-star hotels across India + 1 night stay at Taj Palaces on card activation; complimentary Taj InnerCircle Platinum NeuPass membership",
+      display:
+        "2 complimentary 1-night breakfast-inclusive stays at Taj/IHCL 5-star hotels across India + 1 night stay at Taj Palaces on card activation; complimentary Taj InnerCircle Platinum NeuPass membership",
     },
     lounge: {
       domestic: {
@@ -3909,7 +3953,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Ginger Hotels",
         "amã Stays & Trails",
       ],
-      max_value_note: "5 RPs/₹100 at Taj/IHCL properties (1.5 RP = ₹1 in HSBC Taj wallet); best value on Taj complimentary night stays",
+      max_value_note:
+        "5 RPs/₹100 at Taj/IHCL properties (1.5 RP = ₹1 in HSBC Taj wallet); best value on Taj complimentary night stays",
     },
     not_ideal_for: [
       "Cost-sensitive users (₹1.1L fee + 3.5% forex with no waiver)",
@@ -3955,7 +4000,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1005,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "2,000 Reward Points on downloading HSBC India app + spending ₹5,000 within 30 days; complimentary 3-month Swiggy One membership on activation; ₹250 Amazon eGift Card on online apply + Video KYC",
+      display:
+        "2,000 Reward Points on downloading HSBC India app + spending ₹5,000 within 30 days; complimentary 3-month Swiggy One membership on activation; ₹250 Amazon eGift Card on online apply + Video KYC",
     },
     lounge: {
       domestic: null,
@@ -3984,7 +4030,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott International",
         "+ 10 more airlines (14+ partners via HSBC Rewards)",
       ],
-      max_value_note: "KrisFlyer typically best value; 6X RPs on hotels/flights/car rentals via HSBC Rewards; ₹250 quarterly cashback on ₹10K contactless fuel spend",
+      max_value_note:
+        "KrisFlyer typically best value; 6X RPs on hotels/flights/car rentals via HSBC Rewards; ₹250 quarterly cashback on ₹10K contactless fuel spend",
     },
     not_ideal_for: [
       "Those needing airport lounge access (none offered)",
@@ -4030,7 +4077,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "₹500 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; complimentary 2-month EazyDiner membership on activation",
+      display:
+        "₹500 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; complimentary 2-month EazyDiner membership on activation",
     },
     lounge: {
       domestic: {
@@ -4156,7 +4204,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott",
         "+ more (20 partners at 1:1 ratio)",
       ],
-      max_value_note: "KrisFlyer/BA Avios for long-haul redemptions; 12X RPs on hotels, 6X on flights via HSBC Travel portal; unlimited lounge access for all cardholders",
+      max_value_note:
+        "KrisFlyer/BA Avios for long-haul redemptions; 12X RPs on hotels, 6X on flights via HSBC Travel portal; unlimited lounge access for all cardholders",
     },
     not_ideal_for: [
       "Non-HSBC Premier banking customers (₹20K annual fee + ₹12K joining fee without waiver)",
@@ -4202,7 +4251,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "₹500 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; complimentary 2-month EazyDiner membership on activation",
+      display:
+        "₹500 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹250 Amazon eGift Voucher on online apply + Video KYC; complimentary 2-month EazyDiner membership on activation",
     },
     lounge: {
       domestic: {
@@ -4245,7 +4295,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Shangri-La",
         "+ more (15 partners via HSBC Rewards)",
       ],
-      max_value_note: "KrisFlyer or BA Avios for high-value redemptions; rare for a lifetime free RuPay card to offer airline/hotel transfer ability; 2 RPs/₹150 on all spends",
+      max_value_note:
+        "KrisFlyer or BA Avios for high-value redemptions; rare for a lifetime free RuPay card to offer airline/hotel transfer ability; 2 RPs/₹150 on all spends",
     },
     not_ideal_for: [
       "Those wanting cashback instead of reward points",
@@ -4292,7 +4343,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "₹1,000 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹3,000 Postcard Hotel voucher; 3-month EazyDiner Prime membership; 3,000 bonus RPs on spending ₹1L in first 90 days",
+      display:
+        "₹1,000 cashback on downloading HSBC India app + spending ₹10,000 within 30 days; ₹3,000 Postcard Hotel voucher; 3-month EazyDiner Prime membership; 3,000 bonus RPs on spending ₹1L in first 90 days",
     },
     lounge: {
       domestic: {
@@ -4350,7 +4402,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Accor",
         "Wyndham Hotels",
       ],
-      max_value_note: "1:1 transfer to KrisFlyer, BA Avios, Qantas & Qatar (all Avios) — best value on long-haul premium redemptions; 4X RPs on flights/travel OTAs/forex = 4% effective; 10,000 bonus RPs on ₹12L annual spend",
+      max_value_note:
+        "1:1 transfer to KrisFlyer, BA Avios, Qantas & Qatar (all Avios) — best value on long-haul premium redemptions; 4X RPs on flights/travel OTAs/forex = 4% effective; 10,000 bonus RPs on ₹12L annual spend",
     },
     not_ideal_for: [
       "Heavy international spenders (3.5% forex markup — negates accelerated travel rewards on foreign currency spends",
@@ -4397,7 +4450,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_issuance",
       expires_in_months: 12,
-      display: "Complimentary Emirates Skywards Blue Tier Membership on card issuance; Blue Tier renewed annually on annual fee payment",
+      display:
+        "Complimentary Emirates Skywards Blue Tier Membership on card issuance; Blue Tier renewed annually on annual fee payment",
     },
     lounge: {
       domestic: {
@@ -4424,7 +4478,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Emirates Skywards (Emirates flights, upgrades, hotel stays & partner redemptions)",
       ],
-      max_value_note: "1.5 Skywards Miles per ₹100 on domestic/international retail; 1 Mile per ₹100 on utility & insurance; miles redeemable for Emirates award tickets & upgrades",
+      max_value_note:
+        "1.5 Skywards Miles per ₹100 on domestic/international retail; 1 Mile per ₹100 on utility & insurance; miles redeemable for Emirates award tickets & upgrades",
     },
     not_ideal_for: [
       "Frequent flyers (consider Sapphiro or Emeralde variants for Silver Tier + more lounge access)",
@@ -4442,7 +4497,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "HPCL Coral Visa/Mastercard Credit Card",
     slug: "hpcl-coral-visa/mastercard-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 240000,
       min_self_employed_income_inr: 300000,
@@ -4503,7 +4558,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Emeralde Credit Card",
     slug: "emeralde-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard","amex"],
+    network: ["visa", "mastercard", "amex"],
     eligibility: {
       min_salary_inr: 1800000,
       min_self_employed_income_inr: 1800000,
@@ -4532,7 +4587,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Joining benefit: TATA CLiQ voucher ₹5,000 (Amex variant) + ICICI Reward Points; monthly fee option available at ₹1,000/month (waived on ₹1L monthly spend)",
+      display:
+        "Joining benefit: TATA CLiQ voucher ₹5,000 (Amex variant) + ICICI Reward Points; monthly fee option available at ₹1,000/month (waived on ₹1L monthly spend)",
     },
     lounge: {
       domestic: {
@@ -4551,7 +4607,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — via Amex/Mastercard/Visa lounge programme + Priority Pass",
+        display:
+          "Unlimited — via Amex/Mastercard/Visa lounge programme + Priority Pass",
       },
     },
     ideal_for: [
@@ -4611,7 +4668,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Signed Manchester United football on card activation; chance to win signed Manchester United jersey monthly (top 100 spenders); 10% off Manchester United merchandise on official online store",
+      display:
+        "Signed Manchester United football on card activation; chance to win signed Manchester United jersey monthly (top 100 spenders); 10% off Manchester United merchandise on official online store",
     },
     lounge: {
       domestic: {
@@ -4681,7 +4739,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_design_choice",
       expires_in_months: 12,
-      display: "Customizable card design — choose from 175+ designs (sports, travel, music, fashion, nature, zodiac, etc.) or upload your own photo",
+      display:
+        "Customizable card design — choose from 175+ designs (sports, travel, music, fashion, nature, zodiac, etc.) or upload your own photo",
     },
     lounge: {
       domestic: {
@@ -4749,7 +4808,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "activation_plus_spend_10000_60d",
       expires_in_months: 12,
-      display: "Hotel voucher worth ₹1,000 on card activation; flight voucher worth ₹2,000 on spending ₹10,000 within 60 days of card activation (on paid joining fee)",
+      display:
+        "Hotel voucher worth ₹1,000 on card activation; flight voucher worth ₹2,000 on spending ₹10,000 within 60 days of card activation (on paid joining fee)",
     },
     lounge: {
       domestic: {
@@ -4759,7 +4819,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/year (2/quarter) at Adani-managed airports — no spend condition",
+        display:
+          "8/year (2/quarter) at Adani-managed airports — no spend condition",
       },
       international: null,
     },
@@ -4880,7 +4941,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 200,
       condition: "first_amazon_order",
       expires_in_months: 12,
-      display: "No joining fee; ₹200 cashback on first Amazon order; 3 months free Amazon Prime for new non-Prime cardholders",
+      display:
+        "No joining fee; ₹200 cashback on first Amazon order; 3 months free Amazon Prime for new non-Prime cardholders",
     },
     lounge: {
       domestic: {
@@ -4920,7 +4982,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Emeralde Private Metal Credit Card",
     slug: "emeralde-private-metal-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -4949,7 +5011,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 12500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "12,500 ICICI Reward Points + complimentary Taj Epicure Plus membership + EazyDiner Prime membership on joining fee payment",
+      display:
+        "12,500 ICICI Reward Points + complimentary Taj Epicure Plus membership + EazyDiner Prime membership on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -5054,7 +5117,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Parakram Select Credit Card",
     slug: "parakram-select-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -5087,7 +5150,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter (milestone: spend ₹75,000 in prev quarter) — domestic",
+        display:
+          "2/quarter (milestone: spend ₹75,000 in prev quarter) — domestic",
       },
       international: {
         visitsPerPeriod: 1,
@@ -5126,7 +5190,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Emirates Skywards ICICI Bank Emeralde Credit Card",
     slug: "emirates-skywards-icici-bank-emeralde-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -5155,7 +5219,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "10,000 Skywards Miles on card activation; complimentary Emirates Skywards Silver Tier membership (renewed each anniversary year)",
+      display:
+        "10,000 Skywards Miles on card activation; complimentary Emirates Skywards Silver Tier membership (renewed each anniversary year)",
     },
     lounge: {
       domestic: {
@@ -5194,7 +5259,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Emirates Skywards (Emirates flights, upgrades, hotel stays & partner redemptions worldwide)",
       ],
-      max_value_note: "2 Skywards Miles per ₹100 spent on domestic + international transactions; Gold Tier on ₹15L annual spend (incl. ₹50K on Emirates bookings)",
+      max_value_note:
+        "2 Skywards Miles per ₹100 spent on domestic + international transactions; Gold Tier on ₹15L annual spend (incl. ₹50K on Emirates bookings)",
     },
     not_ideal_for: [
       "No fee waiver (₹10K annually, non-waivable)",
@@ -5211,7 +5277,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Sapphiro Credit Card",
     slug: "sapphiro-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 960000,
       min_self_employed_income_inr: 900000,
@@ -5240,7 +5306,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 13000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Vouchers worth ₹13,000+ (EaseMyTrip, Tata CLiQ, EazyDiner, Da Milano, Croma) on joining fee payment within 45 days",
+      display:
+        "Vouchers worth ₹13,000+ (EaseMyTrip, Tata CLiQ, EazyDiner, Da Milano, Croma) on joining fee payment within 45 days",
     },
     lounge: {
       domestic: {
@@ -5250,7 +5317,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "4/quarter (domestic) on ₹75K quarterly spend — via DreamFolks or Priority Pass (new cards post Nov 2024)",
+        display:
+          "4/quarter (domestic) on ₹75K quarterly spend — via DreamFolks or Priority Pass (new cards post Nov 2024)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -5259,11 +5327,12 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "dreamfolks",
-        display: "2/year (international) + 2 spa sessions/year — via DreamFolks or Priority Pass",
+        display:
+          "2/year (international) + 2 spa sessions/year — via DreamFolks or Priority Pass",
       },
     },
     ideal_for: [
-      "Best mid-tier ICICI \"Gem Collection\" card at ₹3,500 fee",
+      'Best mid-tier ICICI "Gem Collection" card at ₹3,500 fee',
       "Welcome vouchers worth ₹13,000+ (3.7× joining fee)",
       "4 domestic lounge visits/quarter + 2 international + 2 spa sessions/year",
       "4X on international spends",
@@ -5319,7 +5388,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "fee_plus_spend_5000_45d",
       expires_in_months: 12,
-      display: "2,000 ICICI Reward Points on paying joining fee + spending ₹5,000 within 45 days; ₹100 HP Pay cashback on first HPCL fuel purchase ≥₹1,000",
+      display:
+        "2,000 ICICI Reward Points on paying joining fee + spending ₹5,000 within 45 days; ₹100 HP Pay cashback on first HPCL fuel purchase ≥₹1,000",
     },
     lounge: {
       domestic: {
@@ -5329,7 +5399,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter (milestone: spend ₹75,000 in prev quarter) — domestic",
+        display:
+          "1/quarter (milestone: spend ₹75,000 in prev quarter) — domestic",
       },
       international: null,
     },
@@ -5360,7 +5431,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Emirates Skywards ICICI Bank Sapphiro Credit Card",
     slug: "emirates-skywards-icici-bank-sapphiro-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -5389,7 +5460,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "5,000 Skywards Miles + complimentary Emirates Skywards Silver Tier membership on card activation",
+      display:
+        "5,000 Skywards Miles + complimentary Emirates Skywards Silver Tier membership on card activation",
     },
     lounge: {
       domestic: {
@@ -5408,7 +5480,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "2/year (international) + 2 spa sessions/year at select airports",
+        display:
+          "2/year (international) + 2 spa sessions/year at select airports",
       },
     },
     ideal_for: [
@@ -5425,7 +5498,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Emirates Skywards (Emirates flights, upgrades, hotel stays, excursions & partner benefits worldwide)",
       ],
-      max_value_note: "2 Skywards Miles/₹100 on domestic & international spends; 1 Skywards Mile/₹100 on insurance & utility; Gold Tier upgrade on ₹5L annual spend (renewal condition)",
+      max_value_note:
+        "2 Skywards Miles/₹100 on domestic & international spends; 1 Skywards Mile/₹100 on insurance & utility; Gold Tier upgrade on ₹5L annual spend (renewal condition)",
     },
     not_ideal_for: [
       "No fee waiver",
@@ -5473,7 +5547,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 4000,
       condition: "activation_plus_spend_10000_60d",
       expires_in_months: 12,
-      display: "Hotel voucher ₹2,000 on card activation + flight voucher ₹2,000 on ₹10,000 spend in 60 days = ₹4,000 total (joining benefits via Adani One app)",
+      display:
+        "Hotel voucher ₹2,000 on card activation + flight voucher ₹2,000 on ₹10,000 spend in 60 days = ₹4,000 total (joining benefits via Adani One app)",
     },
     lounge: {
       domestic: {
@@ -5483,7 +5558,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter (domestic, no spend condition) at Adani-managed airports + 2 premium lounge upgrades/quarter",
+        display:
+          "4/quarter (domestic, no spend condition) at Adani-managed airports + 2 premium lounge upgrades/quarter",
       },
       international: {
         visitsPerPeriod: 2,
@@ -5552,7 +5628,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "joining",
       expires_in_months: 12,
-      display: "EaseMyTrip luxury stay gift card ₹10,000 + travel visa benefits (Atlys/OneVasco) ₹10,000 + lifestyle gift cards (Toni & Guy ₹3,100, AAYNA ₹23,000) — all via Times Black app, valid 1 year",
+      display:
+        "EaseMyTrip luxury stay gift card ₹10,000 + travel visa benefits (Atlys/OneVasco) ₹10,000 + lifestyle gift cards (Toni & Guy ₹3,100, AAYNA ₹23,000) — all via Times Black app, valid 1 year",
     },
     lounge: {
       domestic: {
@@ -5604,7 +5681,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Rubyx Credit Card",
     slug: "rubyx-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 600000,
       min_self_employed_income_inr: 550000,
@@ -5633,7 +5710,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Vouchers worth ₹5,000+ (Croma, EaseMyTrip, EazyDiner, Tata CLiQ) on joining fee payment",
+      display:
+        "Vouchers worth ₹5,000+ (Croma, EaseMyTrip, EazyDiner, Tata CLiQ) on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -5676,7 +5754,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Coral Credit Card",
     slug: "coral-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard","amex","rupay"],
+    network: ["visa", "mastercard", "amex", "rupay"],
     eligibility: {
       min_salary_inr: 240000,
       min_self_employed_income_inr: 240000,
@@ -5714,7 +5792,7 @@ export const MOCK_CARDS: MockCard[] = [
       international: null,
     },
     ideal_for: [
-      "Best ICICI entry-level \"Gem Collection\" card at ₹500 fee",
+      'Best ICICI entry-level "Gem Collection" card at ₹500 fee',
       "1 domestic airport lounge/quarter (on ₹75K spend)",
       "8 railway lounge visits/year",
       "BOGO movies twice/month (₹25K quarterly spend from Apr 2026)",
@@ -5743,7 +5821,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Manchester United Signature Credit Card",
     slug: "manchester-united-signature-credit-card-icici-bank",
     bankId: "icici",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 900000,
       min_self_employed_income_inr: 900000,
@@ -5772,7 +5850,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "spend_1000_3txns_3months",
       expires_in_months: 12,
-      display: "Manchester United branded football + holdall on spending ₹1,000 over 3+ transactions in first 3 months; 2,000 ICICI Reward Points as renewal benefit",
+      display:
+        "Manchester United branded football + holdall on spending ₹1,000 over 3+ transactions in first 3 months; 2,000 ICICI Reward Points as renewal benefit",
     },
     lounge: {
       domestic: {
@@ -5816,7 +5895,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "MakeMyTrip ICICI Bank Credit Card Dual Variant",
     slug: "makemytrip-icici-bank-credit-card-dual-variant-icici-bank",
     bankId: "icici",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -5845,7 +5924,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "joining_fee_realisation",
       expires_in_months: 12,
-      display: "₹1,000 MakeMyTrip voucher (valid 1 year) on joining fee realisation; complimentary MMTBLACK Gold Membership (worth ₹7,000) on joining",
+      display:
+        "₹1,000 MakeMyTrip voucher (valid 1 year) on joining fee realisation; complimentary MMTBLACK Gold Membership (worth ₹7,000) on joining",
     },
     lounge: {
       domestic: {
@@ -5855,7 +5935,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter (domestic) — NO spend condition (exempted from ICICI's July 2025 spend-based lounge rule)",
+        display:
+          "2/quarter (domestic) — NO spend condition (exempted from ICICI's July 2025 spend-based lounge rule)",
       },
       international: {
         visitsPerPeriod: 1,
@@ -5896,7 +5977,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Classic Credit Card",
     slug: "idfc-first-classic-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -5925,7 +6006,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_15000_within_90d",
       expires_in_months: 12,
-      display: "₹500 e-gift voucher on spending ₹15,000 within 90 days; 5% cashback (max ₹1,000) on first EMI within 90 days",
+      display:
+        "₹500 e-gift voucher on spending ₹15,000 within 90 days; 5% cashback (max ₹1,000) on first EMI within 90 days",
     },
     lounge: {
       domestic: {
@@ -5935,7 +6017,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
+        display:
+          "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
       },
       international: null,
     },
@@ -5998,7 +6081,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "first_hpcl_txn_60d",
       expires_in_months: 12,
-      display: "₹250 gift voucher on 1st HPCL fuel transaction ≥₹250 within 60 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "₹250 gift voucher on 1st HPCL fuel transaction ≥₹250 within 60 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: null,
@@ -6062,7 +6146,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 12500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "50,000 ICICI RPs (₹12,500–₹50,000 value) + complimentary Club ITC Culinaire Hotel Membership on joining fee payment (for cards issued after Jun 2025); 25,000 RPs on annual fee payment",
+      display:
+        "50,000 ICICI RPs (₹12,500–₹50,000 value) + complimentary Club ITC Culinaire Hotel Membership on joining fee payment (for cards issued after Jun 2025); 25,000 RPs on annual fee payment",
     },
     lounge: {
       domestic: {
@@ -6072,7 +6157,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited — domestic + international airport; 4 guest domestic lounge visits/year; unlimited railway lounge",
+        display:
+          "Unlimited — domestic + international airport; 4 guest domestic lounge visits/year; unlimited railway lounge",
       },
       international: {
         visitsPerPeriod: 999,
@@ -6115,7 +6201,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Millennia Credit Card",
     slug: "idfc-first-millennia-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -6144,7 +6230,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "₹500 e-gift voucher (Amazon, BigBasket, Uber, Lifestyle) on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "₹500 e-gift voucher (Amazon, BigBasket, Uber, Lifestyle) on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: {
@@ -6154,7 +6241,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
+        display:
+          "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
       },
       international: null,
     },
@@ -6220,7 +6308,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_hpcl_txn_60d",
       expires_in_months: 12,
-      display: "₹500 gift voucher on 1st HPCL fuel transaction ≥₹500 within 60 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "₹500 gift voucher on 1st HPCL fuel transaction ≥₹500 within 60 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: {
@@ -6265,7 +6354,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Select Credit Card",
     slug: "idfc-first-select-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -6294,7 +6383,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_15000_within_90d",
       expires_in_months: 12,
-      display: "₹500 e-gift voucher on spending ₹15,000 within 90 days; 5% cashback (max ₹1,000) on first EMI within 90 days",
+      display:
+        "₹500 e-gift voucher on spending ₹15,000 within 90 days; 5% cashback (max ₹1,000) on first EMI within 90 days",
     },
     lounge: {
       domestic: {
@@ -6304,7 +6394,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter domestic airport (on ₹20K monthly spend, from Apr 2026; was 2/quarter); 4/quarter railway lounge (on ₹20K monthly spend)",
+        display:
+          "1/quarter domestic airport (on ₹20K monthly spend, from Apr 2026; was 2/quarter); 4/quarter railway lounge (on ₹20K monthly spend)",
       },
       international: null,
     },
@@ -6340,7 +6431,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Wealth Credit Card",
     slug: "idfc-first-wealth-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 3600000,
       min_self_employed_income_inr: 3600000,
@@ -6369,7 +6460,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "₹1,500 e-gift voucher on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI",
+      display:
+        "₹1,500 e-gift voucher on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI",
     },
     lounge: {
       domestic: {
@@ -6379,7 +6471,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter domestic airport + 4/quarter railway lounge (on ₹20K monthly spend, from Apr 2026; was 2/quarter)",
+        display:
+          "1/quarter domestic airport + 4/quarter railway lounge (on ₹20K monthly spend, from Apr 2026; was 2/quarter)",
       },
       international: {
         visitsPerPeriod: 1,
@@ -6388,7 +6481,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "1/quarter via DreamFolks (on ₹20K monthly spend, from Apr 2026; was 2/quarter)",
+        display:
+          "1/quarter via DreamFolks (on ₹20K monthly spend, from Apr 2026; was 2/quarter)",
       },
     },
     ideal_for: [
@@ -6424,7 +6518,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST WoW Credit Card",
     slug: "idfc-first-wow-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -6519,7 +6613,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1868,
       condition: "joining_benefit",
       expires_in_months: 12,
-      display: "7,500 RPs as joining benefit (2,500 on fee payment + 2,500 on ₹20K spend in 2nd statement + 2,500 on ₹20K spend in 3rd statement) — for cards generated after Sep 2025; ₹500 cashback on 4 transactions ≥₹500 within 60 days (pre-Sep 2025 batch)",
+      display:
+        "7,500 RPs as joining benefit (2,500 on fee payment + 2,500 on ₹20K spend in 2nd statement + 2,500 on ₹20K spend in 3rd statement) — for cards generated after Sep 2025; ₹500 cashback on 4 transactions ≥₹500 within 60 days (pre-Sep 2025 batch)",
     },
     lounge: {
       domestic: {
@@ -6538,7 +6633,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "2/quarter international via DreamFolks (on ₹20K monthly spend)",
+        display:
+          "2/quarter international via DreamFolks (on ₹20K monthly spend)",
       },
     },
     ideal_for: [
@@ -6603,7 +6699,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2988,
       condition: "joining_benefit",
       expires_in_months: 12,
-      display: "12,000 RPs as joining benefit (4,000 on fee payment + 4,000 on ₹20K spend in 2nd cycle + 4,000 on ₹20K spend in 3rd cycle) — for cards generated after Sep 2025",
+      display:
+        "12,000 RPs as joining benefit (4,000 on fee payment + 4,000 on ₹20K spend in 2nd cycle + 4,000 on ₹20K spend in 3rd cycle) — for cards generated after Sep 2025",
     },
     lounge: {
       domestic: {
@@ -6613,7 +6710,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter domestic airport + spa (on ₹20K monthly spend); 4/quarter railway lounge (on ₹20K monthly spend)",
+        display:
+          "4/quarter domestic airport + spa (on ₹20K monthly spend); 4/quarter railway lounge (on ₹20K monthly spend)",
       },
       international: {
         visitsPerPeriod: 4,
@@ -6657,7 +6755,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Swyp EMI Credit Card",
     slug: "idfc-first-swyp-credit-card-idfc-first-bank",
     bankId: "idfc",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 300000,
       min_self_employed_income_inr: 0,
@@ -6686,7 +6784,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "2,000 RPs (₹500) on spending ₹5,000 within 30 days; 1,000 RPs on first EMI conversion within 30 days; 1-year Times Prime membership on ₹30K spend in 90 days; Lenskart Max Gold membership on joining fee payment",
+      display:
+        "2,000 RPs (₹500) on spending ₹5,000 within 30 days; 1,000 RPs on first EMI conversion within 30 days; 1-year Times Prime membership on ₹30K spend in 90 days; Lenskart Max Gold membership on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -6696,7 +6795,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
+        display:
+          "4/quarter railway lounge (on ₹20K monthly spend); no airport lounge",
       },
       international: null,
     },
@@ -6733,7 +6833,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndiGo IDFC FIRST Dual Credit Card",
     slug: "indigo-idfc-first-dual-credit-card--idfc-first-bank",
     bankId: "idfc",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -6762,7 +6862,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "₹5,000 MakeMyTrip/Yatra coupon equivalent + bonus BluChips on joining fee payment (secured variant: joining fee waived, ₹4,999 annual fee from Y2); 5,000 BluChips on joining fee payment",
+      display:
+        "₹5,000 MakeMyTrip/Yatra coupon equivalent + bonus BluChips on joining fee payment (secured variant: joining fee waived, ₹4,999 annual fee from Y2); 5,000 BluChips on joining fee payment",
     },
     lounge: {
       domestic: null,
@@ -6785,7 +6886,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "IndiGo BluChips (redeemable for IndiGo flight bookings via IndiGo website/app; dynamic value)",
       ],
-      max_value_note: "Up to 22 BluChips/₹100 on IndiGo flight bookings (6 base + 16 IndiGo loyalty); 6 BluChips/₹100 on other IndiGo spends; 3 BluChips/₹100 on retail; 1 BluChip/₹100 on utilities/insurance; 1 RP = ₹0.25 for non-IndiGo redemption",
+      max_value_note:
+        "Up to 22 BluChips/₹100 on IndiGo flight bookings (6 base + 16 IndiGo loyalty); 6 BluChips/₹100 on other IndiGo spends; 3 BluChips/₹100 on retail; 1 BluChip/₹100 on utilities/insurance; 1 RP = ₹0.25 for non-IndiGo redemption",
     },
     not_ideal_for: [
       "No airport lounge access (major gap for a ₹5K travel card)",
@@ -6833,7 +6935,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_upi_txn_15d",
       expires_in_months: 12,
-      display: "100% cashback (up to ₹500) on first UPI transaction within 15 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "100% cashback (up to ₹500) on first UPI transaction within 15 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: null,
@@ -6873,7 +6976,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST WOW! Black Credit Card",
     slug: "idfc-first-wow-black-credit-card--idfc-first-bank",
     bankId: "idfc",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -6902,7 +7005,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Welcome benefits worth ₹5,000+ (EazyDiner Prime, Lenskart Gold, MakeMyTrip voucher) on joining fee payment; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "Welcome benefits worth ₹5,000+ (EazyDiner Prime, Lenskart Gold, MakeMyTrip voucher) on joining fee payment; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: {
@@ -6981,7 +7085,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 200,
       condition: "first_4_upi_txns_15d",
       expires_in_months: 12,
-      display: "₹200 cashback (₹50 per txn) on first 4 UPI transactions within 15 days of card issuance",
+      display:
+        "₹200 cashback (₹50 per txn) on first 4 UPI transactions within 15 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -7047,7 +7152,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "1,000 RPs on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "1,000 RPs on spending ₹5,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: {
@@ -7057,7 +7163,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter domestic airport (on ₹20K monthly spend); 2/quarter railway lounge (on ₹20K monthly spend)",
+        display:
+          "1/quarter domestic airport (on ₹20K monthly spend); 2/quarter railway lounge (on ₹20K monthly spend)",
       },
       international: null,
     },
@@ -7122,7 +7229,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "2,000 RPs on spending ₹10,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days; ₹500 off domestic flight on Yatra; ₹500 off MyGlamm purchase ≥₹899",
+      display:
+        "2,000 RPs on spending ₹10,000 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days; ₹500 off domestic flight on Yatra; ₹500 off MyGlamm purchase ≥₹899",
     },
     lounge: {
       domestic: {
@@ -7132,7 +7240,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter domestic airport (on ₹20K monthly spend); 4/quarter railway lounge (on ₹20K monthly spend)",
+        display:
+          "2/quarter domestic airport (on ₹20K monthly spend); 4/quarter railway lounge (on ₹20K monthly spend)",
       },
       international: null,
     },
@@ -7171,7 +7280,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "RBL Bank ShopRite Credit Card",
     slug: "rbl-bank-shoprite-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -7200,7 +7309,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "2,000 bonus RPs on first transaction within 30 days of card issuance",
+      display:
+        "2,000 bonus RPs on first transaction within 30 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -7262,14 +7372,15 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 750,
       condition: "first_txn_plus_spend_10000_60d",
       expires_in_months: 12,
-      display: "2,000 RPs on first transaction + 1,000 RPs on spending ₹10,000 in first 60 days = 3,000 RPs total welcome benefit",
+      display:
+        "2,000 RPs on first transaction + 1,000 RPs on spending ₹10,000 in first 60 days = 3,000 RPs total welcome benefit",
     },
     lounge: {
       domestic: null,
       international: null,
     },
     ideal_for: [
-      "Wednesday-special \"delight\" card at ₹750 fee",
+      'Wednesday-special "delight" card at ₹750 fee',
       "20 RPs/₹100 on groceries on Wednesdays (5%",
       "Max 1,000 pts/month)",
       "10 RPs/₹100 on Domino's/Pizza Hut on Wednesdays (max 1,000 pts/month)",
@@ -7327,7 +7438,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "₹1,000 discount on BookMyShow (4 movie tickets worth ₹250 each, in 2 transactions) on card activation",
+      display:
+        "₹1,000 discount on BookMyShow (4 movie tickets worth ₹250 each, in 2 transactions) on card activation",
     },
     lounge: {
       domestic: null,
@@ -7392,7 +7504,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "joining_plus_first_txn_30d",
       expires_in_months: 12,
-      display: "4,000 bonus RPs on joining fee payment + first transaction within 30 days",
+      display:
+        "4,000 bonus RPs on joining fee payment + first transaction within 30 days",
     },
     lounge: {
       domestic: null,
@@ -7455,7 +7568,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "₹3,000 MakeMyTrip voucher on first transaction within 30 days (offsets full joining fee)",
+      display:
+        "₹3,000 MakeMyTrip voucher on first transaction within 30 days (offsets full joining fee)",
     },
     lounge: {
       domestic: {
@@ -7535,7 +7649,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "10,000 bonus RPs on first transaction within 30 days of card issuance",
+      display:
+        "10,000 bonus RPs on first transaction within 30 days of card issuance",
     },
     lounge: {
       domestic: {
@@ -7606,7 +7721,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "₹1,000 gift voucher (Amazon/Flipkart/Croma/Myntra/Shoppers Stop) on first transaction within 30 days",
+      display:
+        "₹1,000 gift voucher (Amazon/Flipkart/Croma/Myntra/Shoppers Stop) on first transaction within 30 days",
     },
     lounge: {
       domestic: null,
@@ -7670,7 +7786,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "20,000 bonus RPs on first transaction within 30 days of card issuance (= ₹5,000 value — offsets joining fee)",
+      display:
+        "20,000 bonus RPs on first transaction within 30 days of card issuance (= ₹5,000 value — offsets joining fee)",
     },
     lounge: {
       domestic: {
@@ -7689,7 +7806,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership; international lounge visits chargeable at USD 35/visit",
+        display:
+          "Priority Pass membership; international lounge visits chargeable at USD 35/visit",
       },
     },
     ideal_for: [
@@ -7725,7 +7843,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndianOil RBL Bank Credit Card",
     slug: "indianoil-rbl-bank-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -7754,7 +7872,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_iocl_txn_30d",
       expires_in_months: 12,
-      display: "₹500 worth fuel via IOCL on first IOCL fuel transaction ≥₹250 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
+      display:
+        "₹500 worth fuel via IOCL on first IOCL fuel transaction ≥₹250 within 30 days; 5% cashback (max ₹1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: null,
@@ -7815,7 +7934,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 7000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "28,000 bonus RPs on first transaction within 30 days (not applicable for Insignia banking customers who get it free)",
+      display:
+        "28,000 bonus RPs on first transaction within 30 days (not applicable for Insignia banking customers who get it free)",
     },
     lounge: {
       domestic: {
@@ -7834,7 +7954,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "6/year via Priority Pass (complimentary); additional visits charged at USD 27/visit",
+        display:
+          "6/year via Priority Pass (complimentary); additional visits charged at USD 27/visit",
       },
     },
     ideal_for: [
@@ -7867,7 +7988,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndianOil RBL Bank Xtra Credit Card",
     slug: "indianoil-rbl-bank-xtra-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -7896,7 +8017,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "first_iocl_txn_30d",
       expires_in_months: 12,
-      display: "3,000 Fuel Points (₹1,500 value) on first IOCL fuel transaction ≥₹500 within 30 days + 1,000 FPs on ₹75K quarterly milestone",
+      display:
+        "3,000 Fuel Points (₹1,500 value) on first IOCL fuel transaction ≥₹500 within 30 days + 1,000 FPs on ₹75K quarterly milestone",
     },
     lounge: {
       domestic: null,
@@ -7928,7 +8050,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "RBL Bank Play Credit Card",
     slug: "rbl-bank-play-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -7957,7 +8079,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_bms_purchase_30d",
       expires_in_months: 12,
-      display: "₹500 discount on BookMyShow on first BMS purchase within 30 days of card issuance",
+      display:
+        "₹500 discount on BookMyShow on first BMS purchase within 30 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -8021,7 +8144,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_spend_500_30d",
       expires_in_months: 12,
-      display: "500 RPs on first eligible spend ≥₹500 within 30 days (worth ₹500 at IRCTC redemption)",
+      display:
+        "500 RPs on first eligible spend ≥₹500 within 30 days (worth ₹500 at IRCTC redemption)",
     },
     lounge: {
       domestic: {
@@ -8065,7 +8189,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "AU Bank LIT Credit Card",
     slug: "au-bank-lit-credit-card-au-bank",
     bankId: "au",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -8098,7 +8222,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Lounge feature activation (₹49–₹399/quarter)",
         program: "issuer",
-        display: "2/90-day period (requires lounge feature activation at ₹49–₹399/quarter)",
+        display:
+          "2/90-day period (requires lounge feature activation at ₹49–₹399/quarter)",
       },
       international: null,
     },
@@ -8295,7 +8420,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2000,
       condition: "spend_30000_within_60d",
       expires_in_months: 12,
-      display: "Vouchers worth ₹2,000 from partner brands on ₹30,000 retail spend within 60 days of card setup",
+      display:
+        "Vouchers worth ₹2,000 from partner brands on ₹30,000 retail spend within 60 days of card setup",
     },
     lounge: {
       domestic: {
@@ -8379,7 +8505,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_10000_within_60d",
       expires_in_months: 12,
-      display: "₹500 voucher on spending ₹10,000 within first 60 days of card issuance",
+      display:
+        "₹500 voucher on spending ₹10,000 within first 60 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -8445,7 +8572,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "first_pos_txn_60d",
       expires_in_months: 12,
-      display: "₹1,000 voucher on first POS transaction within 60 days; 10,000 bonus RPs on ₹1L retail spend within 60 days (both on card setup)",
+      display:
+        "₹1,000 voucher on first POS transaction within 60 days; 10,000 bonus RPs on ₹1L retail spend within 60 days (both on card setup)",
     },
     lounge: {
       domestic: {
@@ -8658,7 +8786,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "2,000 bonus RPs on spending ₹5,000 within 30 days; complimentary Swiggy One quarterly membership on spending ₹10,000 within 30 days",
+      display:
+        "2,000 bonus RPs on spending ₹5,000 within 30 days; complimentary Swiggy One quarterly membership on spending ₹10,000 within 30 days",
     },
     lounge: {
       domestic: {
@@ -8668,7 +8797,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter domestic airport (card must be purchase-active in quarter)",
+        display:
+          "2/quarter domestic airport (card must be purchase-active in quarter)",
       },
       international: null,
     },
@@ -8792,7 +8922,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "1,000 RPs + Rs.1,000 ixigo money voucher on first transaction within 30 days",
+      display:
+        "1,000 RPs + Rs.1,000 ixigo money voucher on first transaction within 30 days",
     },
     lounge: {
       domestic: {
@@ -8886,7 +9017,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter on Rs.50K quarterly spend (post Apr 2026); 8 railway lounge/year",
+        display:
+          "2/quarter on Rs.50K quarterly spend (post Apr 2026); 8 railway lounge/year",
       },
       international: null,
     },
@@ -8961,7 +9093,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Airport lounge via paid feature (Rs.199/90 days)",
         program: "issuer",
-        display: "Lounge access available as paid customisable feature (Rs.199/90 days for 1/quarter); 2 railway lounge/quarter base",
+        display:
+          "Lounge access available as paid customisable feature (Rs.199/90 days for 1/quarter); 2 railway lounge/quarter base",
       },
       international: null,
     },
@@ -9036,7 +9169,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Airport lounge via paid feature (Rs.199/90 days)",
         program: "issuer",
-        display: "Lounge access available as paid customisable feature (Rs.199/90 days for 1/quarter); 2 railway lounge/quarter base",
+        display:
+          "Lounge access available as paid customisable feature (Rs.199/90 days for 1/quarter); 2 railway lounge/quarter base",
       },
       international: null,
     },
@@ -9188,7 +9322,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Domestic airport lounge access (spend-based conditions apply); 2 railway lounge/quarter",
+        display:
+          "Domestic airport lounge access (spend-based conditions apply); 2 railway lounge/quarter",
       },
       international: null,
     },
@@ -9255,7 +9390,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Milestone-based airport lounge (3 visits on spend milestones); no standard quarterly lounge",
+        display:
+          "Milestone-based airport lounge (3 visits on spend milestones); no standard quarterly lounge",
       },
       international: null,
     },
@@ -9318,7 +9454,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Rs.5,000 MakeMyTrip voucher on card activation within 30 days of issuance",
+      display:
+        "Rs.5,000 MakeMyTrip voucher on card activation within 30 days of issuance",
     },
     lounge: {
       domestic: {
@@ -9403,7 +9540,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Choice of luxury brand vouchers (Taj Hotels, Tata Cliq, Michael Kors) OR 5,000 RPs (worth Rs.5,000) on card activation within 90 days",
+      display:
+        "Choice of luxury brand vouchers (Taj Hotels, Tata Cliq, Michael Kors) OR 5,000 RPs (worth Rs.5,000) on card activation within 90 days",
     },
     lounge: {
       domestic: {
@@ -9491,7 +9629,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 300,
       condition: "first_utility_bill_30d",
       expires_in_months: 12,
-      display: "100% cashback up to Rs.300 on first utility bill payment within 30 days",
+      display:
+        "100% cashback up to Rs.300 on first utility bill payment within 30 days",
     },
     lounge: {
       domestic: null,
@@ -9623,7 +9762,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "3_purchases_within_45d",
       expires_in_months: 12,
-      display: "Rs.1,000 Flipkart gift voucher on 3 purchases within first 45 days",
+      display:
+        "Rs.1,000 Flipkart gift voucher on 3 purchases within first 45 days",
     },
     lounge: {
       domestic: null,
@@ -9688,7 +9828,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 12500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "Choice of Luxe gift card, Postcard Hotels voucher or Yatra voucher worth Rs.12,500 on first transaction within 30 days",
+      display:
+        "Choice of Luxe gift card, Postcard Hotels voucher or Yatra voucher worth Rs.12,500 on first transaction within 30 days",
     },
     lounge: {
       domestic: {
@@ -9698,7 +9839,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited domestic (on Rs.50K spend in prev 3 months for primary + add-on)",
+        display:
+          "Unlimited domestic (on Rs.50K spend in prev 3 months for primary + add-on)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -9707,7 +9849,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass (4 guest visits/year)",
+        display:
+          "Unlimited international via Priority Pass (4 guest visits/year)",
       },
     },
     ideal_for: [
@@ -9736,7 +9879,8 @@ export const MOCK_CARDS: MockCard[] = [
         "ITC Hotels",
         "+ more airline & hotel partners via EDGE Rewards",
       ],
-      max_value_note: "5 EDGE RPs = 2 Partner Miles (5:2 ratio for non-Burgundy; 5:4 for Burgundy customers)",
+      max_value_note:
+        "5 EDGE RPs = 2 Partner Miles (5:2 ratio for non-Burgundy; 5:4 for Burgundy customers)",
     },
     not_ideal_for: [
       "Significantly devalued since 2023-24: monthly milestone benefit discontinued, conversion ratio reduced from 5:4 to 5:2 for non-Burgundy",
@@ -9786,7 +9930,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "Amazon eVoucher worth Rs.500 on first transaction within 30 days",
+      display:
+        "Amazon eVoucher worth Rs.500 on first transaction within 30 days",
     },
     lounge: {
       domestic: null,
@@ -9852,7 +9997,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 6000,
       condition: "first_3_txns_30d",
       expires_in_months: 12,
-      display: "30,000 EDGE RPs on first 3 transactions within 30 days of card issuance",
+      display:
+        "30,000 EDGE RPs on first 3 transactions within 30 days of card issuance",
     },
     lounge: {
       domestic: {
@@ -9953,7 +10099,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass + 12 guest visits/year",
+        display:
+          "Unlimited international via Priority Pass + 12 guest visits/year",
       },
     },
     ideal_for: [
@@ -10167,7 +10314,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "5,000 Award Miles on first transaction within 30 days + 3,000 Award Miles annually on card renewal",
+      display:
+        "5,000 Award Miles on first transaction within 30 days + 3,000 Award Miles annually on card renewal",
     },
     lounge: {
       domestic: {
@@ -10177,7 +10325,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter domestic (16/year on Rs.50K spend in prev 3 months)",
+        display:
+          "4/quarter domestic (16/year on Rs.50K spend in prev 3 months)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -10255,7 +10404,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "first_fuel_txn_30d",
       expires_in_months: 12,
-      display: "1,250 EDGE RPs on first fuel transaction within 30 days (100% cashback up to Rs.250 on fuel)",
+      display:
+        "1,250 EDGE RPs on first fuel transaction within 30 days (100% cashback up to Rs.250 on fuel)",
     },
     lounge: {
       domestic: null,
@@ -10380,7 +10530,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank My Zone Credit Card",
     slug: "axis-bank-my-zone-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -10409,7 +10559,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1499,
       condition: "first_spend_within_30d",
       expires_in_months: 12,
-      display: "Free SonyLIV Premium annual membership (worth Rs.1,499) on first spend within 30 days",
+      display:
+        "Free SonyLIV Premium annual membership (worth Rs.1,499) on first spend within 30 days",
     },
     lounge: {
       domestic: {
@@ -10680,7 +10831,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "movie_cashback",
       expires_in_months: 12,
-      display: "25% cashback on movie tickets up to Rs.1,000/year on first spend",
+      display:
+        "25% cashback on movie tickets up to Rs.1,000/year on first spend",
     },
     lounge: {
       domestic: null,
@@ -10747,7 +10899,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "12,500 EDGE RPs (worth Rs.2,500) on first transaction within 30 days; Priority customers: joining fee waived",
+      display:
+        "12,500 EDGE RPs (worth Rs.2,500) on first transaction within 30 days; Priority customers: joining fee waived",
     },
     lounge: {
       domestic: {
@@ -10862,7 +11015,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Horizon Credit Card",
     slug: "axis-bank-horizon-credit-card--axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -10891,7 +11044,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_1000_30d",
       expires_in_months: 12,
-      display: "5,000 EDGE Miles on first transaction of Rs.1,000+ within 30 days (worth Rs.5,000 via partner transfer)",
+      display:
+        "5,000 EDGE Miles on first transaction of Rs.1,000+ within 30 days (worth Rs.5,000 via partner transfer)",
     },
     lounge: {
       domestic: {
@@ -10901,7 +11055,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/quarter domestic — Visa (32/year); 6/quarter domestic — Mastercard (24/year) — NO spend condition",
+        display:
+          "8/quarter domestic — Visa (32/year); 6/quarter domestic — Mastercard (24/year) — NO spend condition",
       },
       international: {
         visitsPerPeriod: 2,
@@ -10986,7 +11141,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "500 SuperCoins on card activation + 2-month YouTube Premium trial + 2-month Gaana Plus trial + 1-year Lenskart Gold membership + Rs.500 off on Myntra (3 transactions, min Rs.2,999)",
+      display:
+        "500 SuperCoins on card activation + 2-month YouTube Premium trial + 2-month Gaana Plus trial + 1-year Lenskart Gold membership + Rs.500 off on Myntra (3 transactions, min Rs.2,999)",
     },
     lounge: {
       domestic: null,
@@ -11055,7 +11211,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 4000,
       condition: "2_txns_within_30d",
       expires_in_months: 12,
-      display: "SpiceJet flight e-voucher worth Rs.4,000 on 2 transactions within 30 days of card approval + complimentary SpiceClub Gold membership",
+      display:
+        "SpiceJet flight e-voucher worth Rs.4,000 on 2 transactions within 30 days of card approval + complimentary SpiceClub Gold membership",
     },
     lounge: {
       domestic: {
@@ -11132,7 +11289,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "5,000 EDGE RPs worth Rs.1,000 on card activation (offsets joining fee)",
+      display:
+        "5,000 EDGE RPs worth Rs.1,000 on card activation (offsets joining fee)",
     },
     lounge: {
       domestic: null,
@@ -11321,7 +11479,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 300,
       condition: "first_utility_bill_30d",
       expires_in_months: 12,
-      display: "100% cashback up to Rs.300 on first utility bill payment within 30 days",
+      display:
+        "100% cashback up to Rs.300 on first utility bill payment within 30 days",
     },
     lounge: {
       domestic: {
@@ -11469,7 +11628,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2550,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "First Citizen Points worth Rs.300 on first transaction within 30 days + Shoppers Stop vouchers worth Rs.2,250 + complimentary First Citizen Golden Glow membership",
+      display:
+        "First Citizen Points worth Rs.300 on first transaction within 30 days + Shoppers Stop vouchers worth Rs.2,250 + complimentary First Citizen Golden Glow membership",
     },
     lounge: {
       domestic: null,
@@ -11536,7 +11696,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "2_txns_within_30d",
       expires_in_months: 12,
-      display: "SpiceJet flight e-voucher worth Rs.1,500 on 2 transactions within 30 days of card approval + complimentary SpiceClub Silver membership",
+      display:
+        "SpiceJet flight e-voucher worth Rs.1,500 on 2 transactions within 30 days of card approval + complimentary SpiceClub Silver membership",
     },
     lounge: {
       domestic: {
@@ -11614,7 +11775,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_reward_period",
       expires_in_months: 12,
-      display: "Welcome benefit worth Rs.500 (gift card + 2 Stars per Rs.500 in first reward period)",
+      display:
+        "Welcome benefit worth Rs.500 (gift card + 2 Stars per Rs.500 in first reward period)",
     },
     lounge: {
       domestic: null,
@@ -11686,7 +11848,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "Choice of Luxe gift card, PostCard Hotels voucher or Yatra voucher worth Rs.5,000 on first transaction within 30 days",
+      display:
+        "Choice of Luxe gift card, PostCard Hotels voucher or Yatra voucher worth Rs.5,000 on first transaction within 30 days",
     },
     lounge: {
       domestic: {
@@ -11705,7 +11868,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass + complimentary guest visits",
+        display:
+          "Unlimited international via Priority Pass + complimentary guest visits",
       },
     },
     ideal_for: [
@@ -11734,7 +11898,8 @@ export const MOCK_CARDS: MockCard[] = [
         "IHG One Rewards",
         "+ others (Group A: up to 1L EDGE RPs/year; Group B: up to 4L EDGE RPs/year)",
       ],
-      max_value_note: "5 EDGE RPs = 4 Partner Miles/Points (5:4 ratio — exclusive to Burgundy; standard Magnus is 5:2)",
+      max_value_note:
+        "5 EDGE RPs = 4 Partner Miles/Points (5:4 ratio — exclusive to Burgundy; standard Magnus is 5:2)",
     },
     not_ideal_for: [
       "Rs.30,000 annual fee — extremely high",
@@ -11784,7 +11949,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 7500,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "15,000 Award Miles on first transaction within 30 days + 4,000 Award Miles annually on card renewal",
+      display:
+        "15,000 Award Miles on first transaction within 30 days + 4,000 Award Miles annually on card renewal",
     },
     lounge: {
       domestic: {
@@ -11874,7 +12040,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "2 complimentary base fare domestic flight tickets on card activation (via partner booking portal)",
+      display:
+        "2 complimentary base fare domestic flight tickets on card activation (via partner booking portal)",
     },
     lounge: {
       domestic: {
@@ -11950,7 +12117,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Welcome vouchers from top brands (EaseMyTrip, Bath & Body Works, Ixigo, Dominos, Marks & Spencer, Nykaa, MakeMyTrip) on payment of joining fee",
+      display:
+        "Welcome vouchers from top brands (EaseMyTrip, Bath & Body Works, Ixigo, Dominos, Marks & Spencer, Nykaa, MakeMyTrip) on payment of joining fee",
     },
     lounge: {
       domestic: null,
@@ -12021,7 +12189,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "Choice of welcome gift voucher from curated brands: EazyDiner, Bata, Montblanc, Oberoi Hotels, Yatra, Vero Moda, Aldo and others",
+      display:
+        "Choice of welcome gift voucher from curated brands: EazyDiner, Bata, Montblanc, Oberoi Hotels, Yatra, Vero Moda, Aldo and others",
     },
     lounge: {
       domestic: null,
@@ -12042,9 +12211,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Good for those who want on-card payment flexibility at merchant terminal",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "400 RP = 100 KrisFlyer Miles",
     },
     not_ideal_for: [
@@ -12097,7 +12264,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 6000,
       condition: "spend_100000_within_30d",
       expires_in_months: 12,
-      display: "6,000 bonus RPs on spending Rs.1L within first 30 days; Taj Epicure Preferred OR Club ITC Culinaire Select Membership + EazyDiner membership + dining vouchers worth Rs.3,000 every 6 months",
+      display:
+        "6,000 bonus RPs on spending Rs.1L within first 30 days; Taj Epicure Preferred OR Club ITC Culinaire Select Membership + EazyDiner membership + dining vouchers worth Rs.3,000 every 6 months",
     },
     lounge: {
       domestic: {
@@ -12107,7 +12275,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited domestic + unlimited international (12 complimentary guest visits at international lounges/year)",
+        display:
+          "Unlimited domestic + unlimited international (12 complimentary guest visits at international lounges/year)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -12145,7 +12314,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Singapore Airlines (KrisFlyer)",
         "+ other partners via IndusRewards",
       ],
-      max_value_note: "Redemption at 1 RP = Re.1 cash credit; KrisFlyer via IndusRewards portal",
+      max_value_note:
+        "Redemption at 1 RP = Re.1 cash credit; KrisFlyer via IndusRewards portal",
     },
     not_ideal_for: [
       "Invite-only — restricted to IndusInd Pioneer Private banking relationship (very high asset/relationship requirement)",
@@ -12192,7 +12362,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Complimentary welcome vouchers from top brands on card activation",
+      display:
+        "Complimentary welcome vouchers from top brands on card activation",
     },
     lounge: {
       domestic: {
@@ -12202,7 +12373,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 500000, windowMonths: 3 },
         membershipRequired: null,
         program: "loungekey",
-        display: "2/quarter domestic + 2/quarter international = 8/year via LoungeKey (on Rs.5L quarterly spend)",
+        display:
+          "2/quarter domestic + 2/quarter international = 8/year via LoungeKey (on Rs.5L quarterly spend)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -12290,7 +12462,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Paid variant (Rs.45,000 joining): Oberoi hotel e-gift + Luxe gift card worth Rs.5,000; Standard (Rs.5,000 joining): welcome vouchers",
+      display:
+        "Paid variant (Rs.45,000 joining): Oberoi hotel e-gift + Luxe gift card worth Rs.5,000; Standard (Rs.5,000 joining): welcome vouchers",
     },
     lounge: {
       domestic: {
@@ -12300,7 +12473,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 150000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter domestic (4/year — spend criteria from July 2026 quarter: Rs.1.5L prev quarter)",
+        display:
+          "1/quarter domestic (4/year — spend criteria from July 2026 quarter: Rs.1.5L prev quarter)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -12330,9 +12504,7 @@ export const MOCK_CARDS: MockCard[] = [
       "No annual fee from year 2",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "200 RP = 100 KrisFlyer Miles (2:1 ratio)",
     },
     not_ideal_for: [
@@ -12383,7 +12555,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Welcome vouchers from select brands (Postcard Hotel, Montblanc and others) on joining fee payment",
+      display:
+        "Welcome vouchers from select brands (Postcard Hotel, Montblanc and others) on joining fee payment",
     },
     lounge: {
       domestic: null,
@@ -12404,9 +12577,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Joining fee and terms available at IndusInd website",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "400 RP = 100 KrisFlyer Miles",
     },
     not_ideal_for: [
@@ -12473,9 +12644,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Compatible with BHIM, PhonePe, Paytm, Google Pay UPI apps",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "400 RP = 100 KrisFlyer Miles",
     },
     not_ideal_for: [
@@ -12526,7 +12695,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "spend_100000_within_30d",
       expires_in_months: 12,
-      display: "5,000 bonus RPs on Rs.1L spend within first 30 days; Taj Epicure Preferred Membership (year 1) + EazyDiner Prime + Moneycontrol Pro subscription",
+      display:
+        "5,000 bonus RPs on Rs.1L spend within first 30 days; Taj Epicure Preferred Membership (year 1) + EazyDiner Prime + Moneycontrol Pro subscription",
     },
     lounge: {
       domestic: {
@@ -12536,7 +12706,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 500000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/quarter domestic (16/year on Rs.5L quarterly spend — spend criteria from July 2026)",
+        display:
+          "4/quarter domestic (16/year on Rs.5L quarterly spend — spend criteria from July 2026)",
       },
       international: {
         visitsPerPeriod: 4,
@@ -12545,7 +12716,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 500000, windowMonths: 3 },
         membershipRequired: null,
         program: "loungekey",
-        display: "4/quarter international via LoungeKey (16/year on Rs.5L quarterly spend)",
+        display:
+          "4/quarter international via LoungeKey (16/year on Rs.5L quarterly spend)",
       },
     },
     ideal_for: [
@@ -12567,9 +12739,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Rs.10L spend needed for annual fee waiver",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "5 RP = 4 AirMiles; 1 RP = Rs.0.50 cash credit",
     },
     not_ideal_for: [
@@ -12716,9 +12886,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Cash redemption capped 5,000 RPs/month",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)"],
       max_value_note: "4 RP = 1 KrisFlyer Mile; 1 RP = Rs.0.40 cash credit",
     },
     not_ideal_for: [
@@ -12837,7 +13005,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Montblanc welcome voucher OR Qwikcilver (Woohoo) gift card on card activation",
+      display:
+        "Montblanc welcome voucher OR Qwikcilver (Woohoo) gift card on card activation",
     },
     lounge: {
       domestic: {
@@ -12856,7 +13025,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "loungekey",
-        display: "Unlimited international via LoungeKey (850+ lounges, 400+ airports, 120 countries; guest visits USD 35/person)",
+        display:
+          "Unlimited international via LoungeKey (850+ lounges, 400+ airports, 120 countries; guest visits USD 35/person)",
       },
     },
     ideal_for: [
@@ -12880,10 +13050,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Airport pickup/drop",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
-      max_value_note: "200 RP = 100 KrisFlyer Miles (2:1); 1 RP = Re.1 cash credit",
+      partners: ["Singapore Airlines (KrisFlyer)"],
+      max_value_note:
+        "200 RP = 100 KrisFlyer Miles (2:1); 1 RP = Re.1 cash credit",
     },
     not_ideal_for: [
       "Rs.90,000 joining fee — very high",
@@ -12933,7 +13102,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "Choice of welcome gift: Oberoi hotel night stay voucher OR Luxe gift card OR vouchers from Hush Puppies/Bata/Titan/Pantaloons/Raymond",
+      display:
+        "Choice of welcome gift: Oberoi hotel night stay voucher OR Luxe gift card OR vouchers from Hush Puppies/Bata/Titan/Pantaloons/Raymond",
     },
     lounge: {
       domestic: {
@@ -12974,11 +13144,9 @@ export const MOCK_CARDS: MockCard[] = [
       "No annual fee after year 1",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-        "Air India (Maharaja Club)",
-      ],
-      max_value_note: "1 RP = Rs.0.75 cash; KrisFlyer and Air India Maharaja Club conversion via IndusRewards portal",
+      partners: ["Singapore Airlines (KrisFlyer)", "Air India (Maharaja Club)"],
+      max_value_note:
+        "1 RP = Rs.0.75 cash; KrisFlyer and Air India Maharaja Club conversion via IndusRewards portal",
     },
     not_ideal_for: [
       "Rs.14,999 joining fee is high for only 1 lounge/quarter + 1 golf/month",
@@ -13048,7 +13216,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass (unlimited for primary cardholder)",
+        display:
+          "Unlimited international via Priority Pass (unlimited for primary cardholder)",
       },
     },
     ideal_for: [
@@ -13072,10 +13241,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Gold card design with black core plastic",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
-      max_value_note: "200 RP = 100 KrisFlyer Miles (2:1); 1 RP = Re.1 cash credit",
+      partners: ["Singapore Airlines (KrisFlyer)"],
+      max_value_note:
+        "200 RP = 100 KrisFlyer Miles (2:1); 1 RP = Re.1 cash credit",
     },
     not_ideal_for: [
       "Rs.2,00,000 joining fee — highest standard joining fee in Indian credit card market",
@@ -13126,7 +13294,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "Welcome gift vouchers from brands: Oberoi Hotels, Hush Puppies, Luxe Gift Card, Louis Philippe, Charles & Keith (select fee plans only)",
+      display:
+        "Welcome gift vouchers from brands: Oberoi Hotels, Hush Puppies, Luxe Gift Card, Louis Philippe, Charles & Keith (select fee plans only)",
     },
     lounge: {
       domestic: null,
@@ -13150,10 +13319,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Note: airport lounge access completely discontinued effective 7 March 2025",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
-      max_value_note: "1 RP = Re.1 cash credit; KrisFlyer conversion via IndusRewards portal",
+      partners: ["Singapore Airlines (KrisFlyer)"],
+      max_value_note:
+        "1 RP = Re.1 cash credit; KrisFlyer conversion via IndusRewards portal",
     },
     not_ideal_for: [
       "Lounge access FULLY DISCONTINUED from 7 March 2025 — this is a significant devaluation for a Rs.5,000 fee card",
@@ -13205,7 +13373,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 20000,
       condition: "first_spend_within_30d",
       expires_in_months: 12,
-      display: "20,000 bonus Avios on first spend within 30 days; 5,000 Avios on annual fee payment (renewal)",
+      display:
+        "20,000 bonus Avios on first spend within 30 days; 5,000 Avios on annual fee payment (renewal)",
     },
     lounge: {
       domestic: {
@@ -13247,7 +13416,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Qatar Airways (Privilege Club)",
         "British Airways (Executive Club)",
       ],
-      max_value_note: "3 Avios/Rs.200 domestic & other international; 6 Avios/Rs.200 at preferred international destination (POS); 5 Avios/Rs.200 on BA/QR airline bookings; 1 Avios/Rs.200 on utilities/govt/insurance",
+      max_value_note:
+        "3 Avios/Rs.200 domestic & other international; 6 Avios/Rs.200 at preferred international destination (POS); 5 Avios/Rs.200 on BA/QR airline bookings; 1 Avios/Rs.200 on utilities/govt/insurance",
     },
     not_ideal_for: [
       "Fee cut from Rs.40,000 to Rs.10,000 came with benefit devaluation — Qatar Airways Gold membership discontinued",
@@ -13297,7 +13467,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "3-month Zomato Gold membership (free delivery + exclusive dining offers)",
+      display:
+        "3-month Zomato Gold membership (free delivery + exclusive dining offers)",
     },
     lounge: {
       domestic: null,
@@ -13320,9 +13491,7 @@ export const MOCK_CARDS: MockCard[] = [
       "No redemption fee (unique among IndusInd cards)",
     ],
     transfer_partners: {
-      partners: [
-        "Airlines + hotels via IndusMoments",
-      ],
+      partners: ["Airlines + hotels via IndusMoments"],
       max_value_note: "1 RP = Rs.0.35 cash credit; air miles via IndusMoments",
     },
     not_ideal_for: [
@@ -13375,7 +13544,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1495,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Complimentary EazyDiner Prime Annual membership (worth Rs.1,495) + 500 EazyPoints on card activation",
+      display:
+        "Complimentary EazyDiner Prime Annual membership (worth Rs.1,495) + 500 EazyPoints on card activation",
     },
     lounge: {
       domestic: null,
@@ -13446,7 +13616,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1095,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "3-month EazyDiner Prime membership (worth Rs.1,095) + 500 EazyPoints on card activation",
+      display:
+        "3-month EazyDiner Prime membership (worth Rs.1,095) + 500 EazyPoints on card activation",
     },
     lounge: {
       domestic: null,
@@ -13515,7 +13686,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Luxe Gift Card + vouchers from Postcard Hotel, Montblanc, Amazon, Flipkart, Apollo Pharmacy, Uber, Ola, Pantaloons, Bata (on paid joining fee variant)",
+      display:
+        "Luxe Gift Card + vouchers from Postcard Hotel, Montblanc, Amazon, Flipkart, Apollo Pharmacy, Uber, Ola, Pantaloons, Bata (on paid joining fee variant)",
     },
     lounge: {
       domestic: {
@@ -13546,11 +13718,9 @@ export const MOCK_CARDS: MockCard[] = [
       "24x7 concierge",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-        "Air India (Maharaja Club)",
-      ],
-      max_value_note: "400 RP = 100 KrisFlyer Miles; 1 RP = Rs.0.40 cash credit",
+      partners: ["Singapore Airlines (KrisFlyer)", "Air India (Maharaja Club)"],
+      max_value_note:
+        "400 RP = 100 KrisFlyer Miles; 1 RP = Rs.0.40 cash credit",
     },
     not_ideal_for: [
       "Rs.3,000 joining fee for 0.40% effective reward rate — poor value",
@@ -13666,7 +13836,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 25000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Welcome vouchers worth Rs.25,000 from curated brands (Montblanc, luxury hotels, lifestyle brands) on joining fee payment",
+      display:
+        "Welcome vouchers worth Rs.25,000 from curated brands (Montblanc, luxury hotels, lifestyle brands) on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -13707,10 +13878,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Annual fee waived on Rs.10L spend",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-        "+ other partners",
-      ],
+      partners: ["Singapore Airlines (KrisFlyer)", "+ other partners"],
       max_value_note: "1 RP = 1 Air Mile (1:1); 1 RP = Rs.0.75 cash credit",
     },
     not_ideal_for: [
@@ -13761,7 +13929,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "spend_30000_within_60d",
       expires_in_months: 12,
-      display: "White Pass value of Rs.1,500 on spending Rs.30,000 within first 60 days of card setup",
+      display:
+        "White Pass value of Rs.1,500 on spending Rs.30,000 within first 60 days of card setup",
     },
     lounge: {
       domestic: {
@@ -13771,7 +13940,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "8/year domestic via DreamFolks (2/quarter on Rs.75K quarterly spend — w.e.f April 2026)",
+        display:
+          "8/year domestic via DreamFolks (2/quarter on Rs.75K quarterly spend — w.e.f April 2026)",
       },
       international: {
         visitsPerPeriod: 4,
@@ -13818,7 +13988,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Kotak 811 Dream Different Credit Card",
     slug: "kotak-811-dream-different-credit-card-kotak-mahindra-bank",
     bankId: "kotak",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -13847,7 +14017,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 100,
       condition: "spend_5000_within_45d",
       expires_in_months: 12,
-      display: "500 bonus RPs on spending Rs.5,000 within first 45 days of card issuance; 3-month OTTPlay subscription at Re.1 + Rs.250 Woohoo voucher on Rs.1,000 spend within 30 days (limited offer)",
+      display:
+        "500 bonus RPs on spending Rs.5,000 within first 45 days of card issuance; 3-month OTTPlay subscription at Re.1 + Rs.250 Woohoo voucher on Rs.1,000 spend within 30 days (limited offer)",
     },
     lounge: {
       domestic: null,
@@ -13918,7 +14089,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "first_swipe_within_30d",
       expires_in_months: 12,
-      display: "Rs.500 cashback on first swipe within 30 days of card issuance (min single-day transaction Rs.10,000)",
+      display:
+        "Rs.500 cashback on first swipe within 30 days of card issuance (min single-day transaction Rs.10,000)",
     },
     lounge: {
       domestic: null,
@@ -14025,7 +14197,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Kotak League Platinum Credit Card",
     slug: "kotak-league-platinum-credit-card-kotak-mahindra-bank",
     bankId: "kotak",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -14054,7 +14226,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "5,000 RPs (worth Rs.500) on payment of joining fee (paid variant only)",
+      display:
+        "5,000 RPs (worth Rs.500) on payment of joining fee (paid variant only)",
     },
     lounge: {
       domestic: null,
@@ -14129,7 +14302,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 60000, windowMonths: 3 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "8/year via DreamFolks (2/quarter on Rs.60K quarterly spend for LTF variant)",
+        display:
+          "8/year via DreamFolks (2/quarter on Rs.60K quarterly spend for LTF variant)",
       },
       international: null,
     },
@@ -14315,7 +14489,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy",
         "ALL Loyalty Programme (Accor)",
       ],
-      max_value_note: "14 RPs/Rs.150 on Kotak UnBox flights/hotels (travel portal); 2 RPs/Rs.150 on all other eligible spends; 1 RP/Rs.150 on utilities/groceries/insurance/govt/railway (capped 1,000 RPs/cycle on special categories)",
+      max_value_note:
+        "14 RPs/Rs.150 on Kotak UnBox flights/hotels (travel portal); 2 RPs/Rs.150 on all other eligible spends; 1 RP/Rs.150 on utilities/groceries/insurance/govt/railway (capped 1,000 RPs/cycle on special categories)",
     },
     not_ideal_for: [
       "Requires Rs.1 crore Relationship Value with Kotak Bank — very exclusive",
@@ -14370,7 +14545,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "dreamfolks",
-        display: "Unlimited domestic via DreamFolks (spend criteria from April 2026)",
+        display:
+          "Unlimited domestic via DreamFolks (spend criteria from April 2026)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -14449,7 +14625,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "2,500 Air Miles on payment of joining fee (credited within 120 days of card issuance)",
+      display:
+        "2,500 Air Miles on payment of joining fee (credited within 120 days of card issuance)",
     },
     lounge: {
       domestic: {
@@ -14497,7 +14674,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy (3:1)",
         "ALL Loyalty (Accor)",
       ],
-      max_value_note: "5 Air Miles/Rs.100 on Kotak Unbox flights/hotels; 2 Air Miles/Rs.100 on all other eligible spends; 1 Air Mile = Re.1 on Kotak Unbox; partner transfer 2:1 (Marriott 3:1)",
+      max_value_note:
+        "5 Air Miles/Rs.100 on Kotak Unbox flights/hotels; 2 Air Miles/Rs.100 on all other eligible spends; 1 Air Mile = Re.1 on Kotak Unbox; partner transfer 2:1 (Marriott 3:1)",
     },
     not_ideal_for: [
       "5% earn only via Kotak Unbox — travel portal required for best value (no benefit booking directly on airline/OTA)",
@@ -14676,7 +14854,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited domestic + unlimited international (primary + add-on)",
+        display:
+          "Unlimited domestic + unlimited international (primary + add-on)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -14718,7 +14897,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy (3:1)",
         "ALL Loyalty (Accor)",
       ],
-      max_value_note: "10 Air Miles/Rs.100 on Kotak Unbox travel (3 base + 7 accelerated); 3 Air Miles/Rs.100 on all other eligible spends; 2:1 transfer ratio (Marriott 3:1); Air Miles valid 3 years",
+      max_value_note:
+        "10 Air Miles/Rs.100 on Kotak Unbox travel (3 base + 7 accelerated); 3 Air Miles/Rs.100 on all other eligible spends; 2:1 transfer ratio (Marriott 3:1); Air Miles valid 3 years",
     },
     not_ideal_for: [
       "Invite/programme only — exclusively for Kotak Solitaire banking customers (Rs.75L TRV — very high relationship requirement)",
@@ -14738,7 +14918,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Kotak Cashback+ Credit Card",
     slug: "kotak-cashback+-credit-card-kotak-mahindra-bank",
     bankId: "kotak",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -14832,7 +15012,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "spend_500_within_30d",
       expires_in_months: 12,
-      display: "1,000 RPs on spending Rs.500 within first 30 days of card issuance (worth Rs.250)",
+      display:
+        "1,000 RPs on spending Rs.500 within first 30 days of card issuance (worth Rs.250)",
     },
     lounge: {
       domestic: null,
@@ -14913,7 +15094,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "dreamfolks",
-        display: "8/year domestic (2/quarter on Rs.75K quarterly spend — from April 2026)",
+        display:
+          "8/year domestic (2/quarter on Rs.75K quarterly spend — from April 2026)",
       },
       international: {
         visitsPerPeriod: 3,
@@ -15060,7 +15242,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Welcome gift voucher Rs.3,000 from brands: Bata, Hush Puppies, Pantaloons, Shoppers Stop, Yatra",
+      display:
+        "Welcome gift voucher Rs.3,000 from brands: Bata, Hush Puppies, Pantaloons, Shoppers Stop, Yatra",
     },
     lounge: {
       domestic: {
@@ -15070,7 +15253,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/year Set B domestic (2/quarter via Visa lounge programme from Jan 2026)",
+        display:
+          "8/year Set B domestic (2/quarter via Visa lounge programme from Jan 2026)",
       },
       international: {
         visitsPerPeriod: 0,
@@ -15115,7 +15299,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "SBI Card PRIME",
     slug: "sbi-card-prime-sbi-card",
     bankId: "sbi",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -15144,7 +15328,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Welcome e-gift voucher Rs.3,000 from Bata/Hush Puppies, Pantaloons, Yatra, Shoppers Stop or Aditya Birla Fashion",
+      display:
+        "Welcome e-gift voucher Rs.3,000 from Bata/Hush Puppies, Pantaloons, Yatra, Shoppers Stop or Aditya Birla Fashion",
     },
     lounge: {
       domestic: {
@@ -15231,7 +15416,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "20,000 RPs on payment of joining fee within 15 days + complimentary Air India Flying Returns membership",
+      display:
+        "20,000 RPs on payment of joining fee within 15 days + complimentary Air India Flying Returns membership",
     },
     lounge: {
       domestic: {
@@ -15250,7 +15436,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership (complimentary membership; visits may incur fees)",
+        display:
+          "Priority Pass membership (complimentary membership; visits may incur fees)",
       },
     },
     ideal_for: [
@@ -15269,9 +15456,7 @@ export const MOCK_CARDS: MockCard[] = [
       "1% fuel waiver",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Flying Returns)",
-      ],
+      partners: ["Air India (Flying Returns)"],
       max_value_note: "1 RP = 1 Air India Air Mile (1:1 ratio)",
     },
     not_ideal_for: [
@@ -15293,7 +15478,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "SBI Card ELITE",
     slug: "sbi-card-elite-sbi-card",
     bankId: "sbi",
-    network: ["visa","mastercard","amex"],
+    network: ["visa", "mastercard", "amex"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -15322,7 +15507,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Welcome e-gift voucher Rs.5,000 from Yatra, Bata/Hush Puppies, Pantaloons, Shoppers Stop or Aditya Birla Fashion",
+      display:
+        "Welcome e-gift voucher Rs.5,000 from Yatra, Bata/Hush Puppies, Pantaloons, Shoppers Stop or Aditya Birla Fashion",
     },
     lounge: {
       domestic: {
@@ -15410,7 +15596,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1250,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "5,000 RPs on payment of joining fee + complimentary Air India Maharaja Club membership",
+      display:
+        "5,000 RPs on payment of joining fee + complimentary Air India Maharaja Club membership",
     },
     lounge: {
       domestic: {
@@ -15441,9 +15628,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Flexipay EMI",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Flying Returns/Maharaja Club)",
-      ],
+      partners: ["Air India (Flying Returns/Maharaja Club)"],
       max_value_note: "1 RP = 1 Air India Air Mile",
     },
     not_ideal_for: [
@@ -15494,7 +15679,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 350,
       condition: "spend_500_within_45d",
       expires_in_months: 12,
-      display: "350 activation bonus RPs on spending Rs.500 within 45 days of card issuance; 500 RPs on Rs.500 renewal fee payment",
+      display:
+        "350 activation bonus RPs on spending Rs.500 within 45 days of card issuance; 500 RPs on Rs.500 renewal fee payment",
     },
     lounge: {
       domestic: null,
@@ -15534,7 +15720,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "SBI AURUM Credit Card",
     slug: "sbi-aurum-credit-card-sbi-card",
     bankId: "sbi",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 4000000,
       min_self_employed_income_inr: 0,
@@ -15563,7 +15749,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "40,000 AURUM RPs (worth Rs.10,000) on payment of joining fee + 1-year Club Marriott membership + 1-year WSJ + 1-year Mint + 1-year IPV (Inflection Point Ventures) membership",
+      display:
+        "40,000 AURUM RPs (worth Rs.10,000) on payment of joining fee + 1-year Club Marriott membership + 1-year WSJ + 1-year Mint + 1-year IPV (Inflection Point Ventures) membership",
     },
     lounge: {
       domestic: {
@@ -15582,7 +15769,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "dreamfolks",
-        display: "Unlimited international via DreamFolks (primary); 4 complimentary guest international visits/year; airport spa 1/quarter",
+        display:
+          "Unlimited international via DreamFolks (primary); 4 complimentary guest international visits/year; airport spa 1/quarter",
       },
     },
     ideal_for: [
@@ -15616,7 +15804,8 @@ export const MOCK_CARDS: MockCard[] = [
         "InterMiles",
         "Club Marriott (hotel)",
       ],
-      max_value_note: "4 RPs/Rs.100 on all eligible spends; 1 RP = Rs.0.25 (1% effective); milestone up to 3.7% with monthly + annual milestones",
+      max_value_note:
+        "4 RPs/Rs.100 on all eligible spends; 1 RP = Rs.0.25 (1% effective); milestone up to 3.7% with monthly + annual milestones",
     },
     not_ideal_for: [
       "1% base reward rate is exceptionally low for a Rs.10K card — HDFC Infinia (3.33%), ICICI Emeralde Private (3%) far superior",
@@ -15667,7 +15856,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_2000_within_60d",
       expires_in_months: 12,
-      display: "2,000 bonus RPs on spending Rs.2,000 within first 60 days of card issuance",
+      display:
+        "2,000 bonus RPs on spending Rs.2,000 within first 60 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -15804,7 +15994,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 7999,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Noise ColorFit Pulse 4 Pro Smart Watch voucher worth Rs.7,999 on joining fee payment",
+      display:
+        "Noise ColorFit Pulse 4 Pro Smart Watch voucher worth Rs.7,999 on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -15883,7 +16074,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "annual_fee_payment",
       expires_in_months: 12,
-      display: "1,500 RPs on payment of first annual fee (worth Rs.1,500 when redeemed on IRCTC — effectively offsets joining fee)",
+      display:
+        "1,500 RPs on payment of first annual fee (worth Rs.1,500 when redeemed on IRCTC — effectively offsets joining fee)",
     },
     lounge: {
       domestic: null,
@@ -15954,7 +16146,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1 Premium Economy class Vistara e-ticket on joining fee payment + Club Vistara Silver Tier membership",
+      display:
+        "1 Premium Economy class Vistara e-ticket on joining fee payment + Club Vistara Silver Tier membership",
     },
     lounge: {
       domestic: {
@@ -15993,7 +16186,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Air Vistara (Club Vistara / Air India Flying Returns post-merger)",
       ],
-      max_value_note: "4 CV Points/Rs.200; redemption on Vistara/Air India Flying Returns",
+      max_value_note:
+        "4 CV Points/Rs.200; redemption on Vistara/Air India Flying Returns",
     },
     not_ideal_for: [
       "DISCONTINUED — Vistara merged with Air India effective November 2024",
@@ -16042,7 +16236,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1 Economy class Vistara e-ticket on joining fee payment + Club Vistara Base Tier membership",
+      display:
+        "1 Economy class Vistara e-ticket on joining fee payment + Club Vistara Base Tier membership",
     },
     lounge: {
       domestic: {
@@ -16079,9 +16274,7 @@ export const MOCK_CARDS: MockCard[] = [
       "Annual fee Rs.1,499",
     ],
     transfer_partners: {
-      partners: [
-        "Air Vistara (Club Vistara)",
-      ],
+      partners: ["Air Vistara (Club Vistara)"],
       max_value_note: "3 CV Points/Rs.200",
     },
     not_ideal_for: [
@@ -16131,7 +16324,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "12,000 RPs (worth Rs.3,000 redeemable for Titan gift voucher) on joining fee payment",
+      display:
+        "12,000 RPs (worth Rs.3,000 redeemable for Titan gift voucher) on joining fee payment",
     },
     lounge: {
       domestic: {
@@ -16217,7 +16411,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 128,
       condition: "spend_1000_within_30d",
       expires_in_months: 12,
-      display: "Up to 500 bonus RPs on spending Rs.1,000 within first 30 days of card issuance",
+      display:
+        "Up to 500 bonus RPs on spending Rs.1,000 within first 30 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -16404,7 +16599,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BPCL SBI Card",
     slug: "bpcl-sbi-card-sbi-card",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -16500,7 +16695,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "spend_100000_within_60d",
       expires_in_months: 12,
-      display: "5,000 Travel Credits on spending Rs.1L within 60 days of card issuance after joining fee payment (worth Rs.5,000 in airline miles at 1:1)",
+      display:
+        "5,000 Travel Credits on spending Rs.1L within 60 days of card issuance after joining fee payment (worth Rs.5,000 in airline miles at 1:1)",
     },
     lounge: {
       domestic: {
@@ -16510,7 +16706,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter) + 1 extra/Rs.1L spend up to 15 extra/year",
+        display:
+          "8/year domestic (2/quarter) + 1 extra/Rs.1L spend up to 15 extra/year",
       },
       international: {
         visitsPerPeriod: 2,
@@ -16519,7 +16716,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "6/year via Priority Pass (+ 1 extra/Rs.1L spend up to 15 extra/year)",
+        display:
+          "6/year via Priority Pass (+ 1 extra/Rs.1L spend up to 15 extra/year)",
       },
     },
     ideal_for: [
@@ -16557,7 +16755,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Accor 2:1",
         "ITC Hotels 2:1",
       ],
-      max_value_note: "6 Travel Credits/Rs.200 on travel spends (3%); 2 Travel Credits/Rs.200 on all other spends (1%); 1 TC = Re.1 for airline/hotel transfer",
+      max_value_note:
+        "6 Travel Credits/Rs.200 on travel spends (3%); 2 Travel Credits/Rs.200 on all other spends (1%); 1 TC = Re.1 for airline/hotel transfer",
     },
     not_ideal_for: [
       "1% base earn rate on non-travel is modest for a Rs.5K card — HDFC Regalia Gold (2.67%) and Axis Magnus (3.5%) outperform",
@@ -16577,7 +16776,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Tata Neu Infinity SBI Card",
     slug: "tata-neu-infinity-sbi-card--sbi",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -16606,7 +16805,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1499,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1,499 NeuCoins (worth Rs.1,499) on joining fee payment — fully offsets joining fee",
+      display:
+        "1,499 NeuCoins (worth Rs.1,499) on joining fee payment — fully offsets joining fee",
     },
     lounge: {
       domestic: {
@@ -16616,7 +16816,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.75,000 quarterly spend — first quarter waived)",
+        display:
+          "8/year domestic (2/quarter on Rs.75,000 quarterly spend — first quarter waived)",
       },
       international: {
         visitsPerPeriod: 1,
@@ -16664,7 +16865,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Tata Neu Plus SBI Card",
     slug: "tata-neu-plus-sbi-card--sbi",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -16693,7 +16894,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 499,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "499 NeuCoins (worth Rs.499) on joining fee payment — fully offsets joining fee",
+      display:
+        "499 NeuCoins (worth Rs.499) on joining fee payment — fully offsets joining fee",
     },
     lounge: {
       domestic: {
@@ -16772,7 +16974,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Flipkart e-Gift Voucher worth Rs.250 on joining fee payment (within 60 days) + additional Rs.1,000 benefits on first Flipkart transaction within 30 days",
+      display:
+        "Flipkart e-Gift Voucher worth Rs.250 on joining fee payment (within 60 days) + additional Rs.1,000 benefits on first Flipkart transaction within 30 days",
     },
     lounge: {
       domestic: null,
@@ -16812,7 +17015,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "PhonePe SBI Card Select Black",
     slug: "phonepe-sbi-card-select-black--sbi",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -16841,7 +17044,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Rs.1,500 PhonePe Gift Card within 45 days of joining fee payment (fully offsets joining fee)",
+      display:
+        "Rs.1,500 PhonePe Gift Card within 45 days of joining fee payment (fully offsets joining fee)",
     },
     lounge: {
       domestic: {
@@ -16892,7 +17096,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "PhonePe SBI Card Purple",
     slug: "phonepe-sbi-card-purple--sbi",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -16921,7 +17125,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Rs.500 PhonePe Gift Card within 45 days of joining fee payment (fully offsets joining fee)",
+      display:
+        "Rs.500 PhonePe Gift Card within 45 days of joining fee payment (fully offsets joining fee)",
     },
     lounge: {
       domestic: null,
@@ -17060,7 +17265,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "500 RPs (worth Rs.500) on joining fee payment + complimentary OneApollo Gold Tier membership (year 1)",
+      display:
+        "500 RPs (worth Rs.500) on joining fee payment + complimentary OneApollo Gold Tier membership (year 1)",
     },
     lounge: {
       domestic: null,
@@ -17129,7 +17335,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "joining_plus_txn",
       expires_in_months: 12,
-      display: "Apollo 24/7 e-gift voucher Rs.1,500 + complimentary FITPASS PRO membership (1 year) on joining fee payment + 1 retail transaction",
+      display:
+        "Apollo 24/7 e-gift voucher Rs.1,500 + complimentary FITPASS PRO membership (1 year) on joining fee payment + 1 retail transaction",
     },
     lounge: {
       domestic: {
@@ -17181,7 +17388,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Reliance SBI Card Prime",
     slug: "reliance-sbi-card-prime--sbi",
     bankId: "sbi",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -17210,7 +17417,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Reliance Retail voucher Rs.3,000 + discount vouchers worth Rs.11,999 from AJIO, JioMart, Reliance Trends, Azorte, Zivame, Netmeds, Reliance Jewels, Urban Ladder, Cover Story + others (within 45 days of fee payment)",
+      display:
+        "Reliance Retail voucher Rs.3,000 + discount vouchers worth Rs.11,999 from AJIO, JioMart, Reliance Trends, Azorte, Zivame, Netmeds, Reliance Jewels, Urban Ladder, Cover Story + others (within 45 days of fee payment)",
     },
     lounge: {
       domestic: {
@@ -17270,7 +17478,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Reliance SBI Card",
     slug: "reliance-sbi-card-sbi",
     bankId: "sbi",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -17299,7 +17507,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Reliance Retail voucher Rs.500 + discount vouchers worth Rs.3,200 from AJIO, Reliance Trends, Reliance Digital (within 45 days of fee payment)",
+      display:
+        "Reliance Retail voucher Rs.500 + discount vouchers worth Rs.3,200 from AJIO, Reliance Trends, Reliance Digital (within 45 days of fee payment)",
     },
     lounge: {
       domestic: null,
@@ -17371,7 +17580,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "first_spend_within_60d",
       expires_in_months: 12,
-      display: "3,000 KrisFlyer Miles on first spend within 60 days of annual fee payment + complimentary KrisFlyer membership",
+      display:
+        "3,000 KrisFlyer Miles on first spend within 60 days of annual fee payment + complimentary KrisFlyer membership",
     },
     lounge: {
       domestic: {
@@ -17390,7 +17600,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership included (first 2 years; visits charged at USD 27/visit)",
+        display:
+          "Priority Pass membership included (first 2 years; visits charged at USD 27/visit)",
       },
     },
     ideal_for: [
@@ -17415,7 +17626,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Singapore Airlines (KrisFlyer)",
         "Accor Hotels (via KrisFlyer)",
       ],
-      max_value_note: "5 KrisFlyer Miles/Rs.200 on Singapore Airlines Group (SQ, Scoot, Pelago, Kris+, KrisShop); 5 KrisFlyer Miles/Rs.200 on international spends; 2 KrisFlyer Miles/Rs.200 on all other eligible spends",
+      max_value_note:
+        "5 KrisFlyer Miles/Rs.200 on Singapore Airlines Group (SQ, Scoot, Pelago, Kris+, KrisShop); 5 KrisFlyer Miles/Rs.200 on international spends; 2 KrisFlyer Miles/Rs.200 on all other eligible spends",
     },
     not_ideal_for: [
       "International lounge NOT complimentary — Priority Pass visits cost USD 27 each",
@@ -17464,7 +17676,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "spend_500000_within_60d",
       expires_in_months: 12,
-      display: "10,000 KrisFlyer Miles on Rs.5L spend within 60 days of annual fee payment (worth ~Rs.5,000-Rs.25,000 in flights depending on redemption)",
+      display:
+        "10,000 KrisFlyer Miles on Rs.5L spend within 60 days of annual fee payment (worth ~Rs.5,000-Rs.25,000 in flights depending on redemption)",
     },
     lounge: {
       domestic: {
@@ -17508,7 +17721,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Singapore Airlines (KrisFlyer)",
         "Accor Hotels (via KrisFlyer)",
       ],
-      max_value_note: "10 KrisFlyer Miles/Rs.200 on Singapore Airlines Group (SQ, Scoot, Pelago, Kris+, KrisShop); 6 KrisFlyer Miles/Rs.200 on all other eligible spends; bonus 2,000 KrisFlyer birthday miles",
+      max_value_note:
+        "10 KrisFlyer Miles/Rs.200 on Singapore Airlines Group (SQ, Scoot, Pelago, Kris+, KrisShop); 6 KrisFlyer Miles/Rs.200 on all other eligible spends; bonus 2,000 KrisFlyer birthday miles",
     },
     not_ideal_for: [
       "Rs.9,999 fee with NO annual fee waiver option — must pay every year",
@@ -17558,7 +17772,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "spend_100000_within_60d",
       expires_in_months: 12,
-      display: "1,500 Travel Credits within 15 days of reaching Rs.1L spend in first 60 days of card issuance",
+      display:
+        "1,500 Travel Credits within 15 days of reaching Rs.1L spend in first 60 days of card issuance",
     },
     lounge: {
       domestic: {
@@ -17568,7 +17783,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (1/quarter) + 1 extra/Rs.1L spend up to 8 extra/year",
+        display:
+          "4/year domestic (1/quarter) + 1 extra/Rs.1L spend up to 8 extra/year",
       },
       international: {
         visitsPerPeriod: 0,
@@ -17577,7 +17793,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership included (first 2 years; visits charged at USD 27/visit)",
+        display:
+          "Priority Pass membership included (first 2 years; visits charged at USD 27/visit)",
       },
     },
     ideal_for: [
@@ -17613,7 +17830,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Accor 2:1",
         "ITC Hotels 2:1",
       ],
-      max_value_note: "4 Travel Credits/Rs.200 on travel spends (2%); 2 Travel Credits/Rs.200 on all other spends (1%); 1 TC = Re.1 for airline/hotel transfer",
+      max_value_note:
+        "4 Travel Credits/Rs.200 on travel spends (2%); 2 Travel Credits/Rs.200 on all other spends (1%); 1 TC = Re.1 for airline/hotel transfer",
     },
     not_ideal_for: [
       "International lounge NOT complimentary — USD 27 per Priority Pass visit",
@@ -17636,7 +17854,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndiGo SBI Credit Card",
     slug: "indigo-sbi-credit-card--sbi",
     bankId: "sbi",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -17665,7 +17883,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_within_60d",
       expires_in_months: 12,
-      display: "2,500 IndiGo BluChips + 6E Eats voucher on first transaction within 60 days of annual fee payment (2,500 BluChips = Rs.2,500 for IndiGo flight redemption)",
+      display:
+        "2,500 IndiGo BluChips + 6E Eats voucher on first transaction within 60 days of annual fee payment (2,500 BluChips = Rs.2,500 for IndiGo flight redemption)",
     },
     lounge: {
       domestic: {
@@ -17696,10 +17915,9 @@ export const MOCK_CARDS: MockCard[] = [
       "BluChips valid 24 months from last activity",
     ],
     transfer_partners: {
-      partners: [
-        "IndiGo (BluChip loyalty programme)",
-      ],
-      max_value_note: "3 BluChips/Rs.100 on IndiGo (app/web); 2 BluChips/Rs.100 on hotels/lodging/travel MCCs; 1 BluChip/Rs.100 on all other eligible spends; 1 BluChip = Re.1 on IndiGo flights",
+      partners: ["IndiGo (BluChip loyalty programme)"],
+      max_value_note:
+        "3 BluChips/Rs.100 on IndiGo (app/web); 2 BluChips/Rs.100 on hotels/lodging/travel MCCs; 1 BluChip/Rs.100 on all other eligible spends; 1 BluChip = Re.1 on IndiGo flights",
     },
     not_ideal_for: [
       "No international lounge",
@@ -17721,7 +17939,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndiGo SBI Card Elite",
     slug: "indigo-sbi-card-elite--sbi",
     bankId: "sbi",
-    network: ["mastercard","rupay"],
+    network: ["mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -17750,7 +17968,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "first_txn_within_60d",
       expires_in_months: 12,
-      display: "5,000 IndiGo BluChips + 6E Eats voucher on first transaction within 60 days of annual fee payment (5,000 BluChips = Rs.5,000 for IndiGo flight redemption — offsets joining fee)",
+      display:
+        "5,000 IndiGo BluChips + 6E Eats voucher on first transaction within 60 days of annual fee payment (5,000 BluChips = Rs.5,000 for IndiGo flight redemption — offsets joining fee)",
     },
     lounge: {
       domestic: {
@@ -17789,10 +18008,9 @@ export const MOCK_CARDS: MockCard[] = [
       "No annual fee waiver (Rs.10L spend on Paisabazaar — CardTrail says not available)",
     ],
     transfer_partners: {
-      partners: [
-        "IndiGo (BluChip loyalty programme)",
-      ],
-      max_value_note: "7 BluChips/Rs.100 on IndiGo (app/web); 3 BluChips/Rs.100 on hotels/lodging/travel MCCs; 2 BluChips/Rs.100 on all other eligible spends; 1 BluChip = Re.1 on IndiGo flights",
+      partners: ["IndiGo (BluChip loyalty programme)"],
+      max_value_note:
+        "7 BluChips/Rs.100 on IndiGo (app/web); 3 BluChips/Rs.100 on hotels/lodging/travel MCCs; 2 BluChips/Rs.100 on all other eligible spends; 1 BluChip = Re.1 on IndiGo flights",
     },
     not_ideal_for: [
       "Domestic lounge access requires Rs.1L spend in previous quarter — high condition per quarter for a Rs.5K card",
@@ -17841,7 +18059,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 3000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "Welcome e-gift voucher worth Rs.3,000 from Bata/Hush Puppies, Marks & Spencer, Pantaloons, Shoppers Stop, or Yatra (within 15 days of fee payment)",
+      display:
+        "Welcome e-gift voucher worth Rs.3,000 from Bata/Hush Puppies, Marks & Spencer, Pantaloons, Shoppers Stop, or Yatra (within 15 days of fee payment)",
     },
     lounge: {
       domestic: {
@@ -17901,7 +18120,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES PROSPERITY Rewards Credit Card",
     slug: "yes-prosperity-rewards-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -17953,7 +18172,8 @@ export const MOCK_CARDS: MockCard[] = [
         "InterMiles",
         "(Club Vistara discontinued post Air India merger)",
       ],
-      max_value_note: "10 RPs = 1 InterMile; 1 RP = Rs.0.25 for catalogue/travel redemption",
+      max_value_note:
+        "10 RPs = 1 InterMile; 1 RP = Rs.0.25 for catalogue/travel redemption",
     },
     not_ideal_for: [
       "No lounge access",
@@ -18004,7 +18224,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "joining",
       expires_in_months: 12,
-      display: "40,000 YES Rewardz Points on joining (worth up to Rs.10,000 at Rs.0.25/pt — offsets joining fee)",
+      display:
+        "40,000 YES Rewardz Points on joining (worth up to Rs.10,000 at Rs.0.25/pt — offsets joining fee)",
     },
     lounge: {
       domestic: {
@@ -18014,7 +18235,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 100000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "24/year domestic (6/quarter — on Rs.1L previous quarter spend)",
+        display:
+          "24/year domestic (6/quarter — on Rs.1L previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -18023,7 +18245,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass (primary + add-on; 4 guest visits/year free)",
+        display:
+          "Unlimited international via Priority Pass (primary + add-on; 4 guest visits/year free)",
       },
     },
     ideal_for: [
@@ -18046,11 +18269,9 @@ export const MOCK_CARDS: MockCard[] = [
       "24x7 concierge",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles",
-        "+ hotel partners via YES Rewardz portal",
-      ],
-      max_value_note: "36 RPs/Rs.200 on all online spends (4.5% effective); 18 RPs/Rs.200 on offline spends (2.25%); 10 RPs/Rs.200 on select categories; 1 RP = up to Rs.0.25",
+      partners: ["InterMiles", "+ hotel partners via YES Rewardz portal"],
+      max_value_note:
+        "36 RPs/Rs.200 on all online spends (4.5% effective); 18 RPs/Rs.200 on offline spends (2.25%); 10 RPs/Rs.200 on select categories; 1 RP = up to Rs.0.25",
     },
     not_ideal_for: [
       "Lounge requires Rs.1L previous quarter spend — high condition even for super-premium card",
@@ -18071,7 +18292,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank SELECT Credit Card",
     slug: "yes-bank-select-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18104,7 +18325,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (1/quarter on Rs.50,000 previous month spend)",
+        display:
+          "4/year domestic (1/quarter on Rs.50,000 previous month spend)",
       },
       international: null,
     },
@@ -18127,10 +18349,9 @@ export const MOCK_CARDS: MockCard[] = [
       "International lounge via Priority Pass (USD 27/visit — not complimentary)",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles (via YES Rewardz portal)",
-      ],
-      max_value_note: "8 RPs/Rs.200 on online spends (1% effective); 4 RPs/Rs.200 on offline; 2 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 4 RPs = 1 InterMile",
+      partners: ["InterMiles (via YES Rewardz portal)"],
+      max_value_note:
+        "8 RPs/Rs.200 on online spends (1% effective); 4 RPs/Rs.200 on offline; 2 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 4 RPs = 1 InterMile",
     },
     not_ideal_for: [
       "1% effective on online is low vs dedicated cashback cards at same fee",
@@ -18180,7 +18401,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_1000_within_30d",
       expires_in_months: 12,
-      display: "Amazon voucher worth Rs.500 on spending Rs.1,000 within first 30 days of card issuance",
+      display:
+        "Amazon voucher worth Rs.500 on spending Rs.1,000 within first 30 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -18222,7 +18444,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES PROSPERITY NRI Credit Card",
     slug: "yes-prosperity-nri-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18264,7 +18486,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership included (USD 27/visit charges apply)",
+        display:
+          "Priority Pass membership included (USD 27/visit charges apply)",
       },
     },
     ideal_for: [
@@ -18289,7 +18512,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "InterMiles (not available to NRI cardholders per official T&Cs)",
       ],
-      max_value_note: "10 RPs = 1 InterMile; 4 RPs/Rs.200 on select categories; 8 RPs/Rs.200 on other eligible retail",
+      max_value_note:
+        "10 RPs = 1 InterMile; 4 RPs/Rs.200 on select categories; 8 RPs/Rs.200 on other eligible retail",
     },
     not_ideal_for: [
       "International lounge NOT complimentary — USD 27 per visit despite Priority Pass included",
@@ -18309,7 +18533,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank FREO Credit Card",
     slug: "yes-bank-freo-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18374,7 +18598,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES FIRST Preferred Credit Card",
     slug: "yes-first-preferred-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18403,7 +18627,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "first_txn_within_90d",
       expires_in_months: 12,
-      display: "10,000 bonus YES Rewardz Points on first transaction within 90 days of card setup",
+      display:
+        "10,000 bonus YES Rewardz Points on first transaction within 90 days of card setup",
     },
     lounge: {
       domestic: {
@@ -18422,7 +18647,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "4/year via Priority Pass (primary cardholder only; both Visa LoungeKey and Mastercard Priority Pass)",
+        display:
+          "4/year via Priority Pass (primary cardholder only; both Visa LoungeKey and Mastercard Priority Pass)",
       },
     },
     ideal_for: [
@@ -18447,11 +18673,9 @@ export const MOCK_CARDS: MockCard[] = [
       "NFC contactless",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles (via YES Rewardz portal)",
-        "+ hotel partners",
-      ],
-      max_value_note: "8 RPs/Rs.200 on all eligible retail spends; 4 RPs/Rs.200 on select categories; 5X via subscription plan",
+      partners: ["InterMiles (via YES Rewardz portal)", "+ hotel partners"],
+      max_value_note:
+        "8 RPs/Rs.200 on all eligible retail spends; 4 RPs/Rs.200 on select categories; 5X via subscription plan",
     },
     not_ideal_for: [
       "Redemption value only Rs.0.25/pt — 1% effective rate is low",
@@ -18470,7 +18694,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES PROSPERITY Cashback Credit Card",
     slug: "yes-prosperity-cashback-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18499,7 +18723,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "spend_2500_within_30d",
       expires_in_months: 12,
-      display: "Rs.250 cashback on spending Rs.2,500 within first 30 days of card activation",
+      display:
+        "Rs.250 cashback on spending Rs.2,500 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -18582,7 +18807,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "500 POPcoins (worth Rs.500) on card activation + Cleartrip voucher Rs.750 + Cult Sport voucher Rs.500 + 3-month Zomato Gold Mini membership + 6-month PharmEasy Plus membership + 5 free Blinkit deliveries + 2 Rapido rides/month (24 total); total welcome package worth up to Rs.5,000",
+      display:
+        "500 POPcoins (worth Rs.500) on card activation + Cleartrip voucher Rs.750 + Cult Sport voucher Rs.500 + 3-month Zomato Gold Mini membership + 6-month PharmEasy Plus membership + 5 free Blinkit deliveries + 2 Rapido rides/month (24 total); total welcome package worth up to Rs.5,000",
     },
     lounge: {
       domestic: null,
@@ -18626,7 +18852,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank BYOC Credit Card",
     slug: "yes-bank-byoc-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18655,7 +18881,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_1000_within_30d",
       expires_in_months: 12,
-      display: "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days of card issuance",
+      display:
+        "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days of card issuance",
     },
     lounge: {
       domestic: {
@@ -18665,7 +18892,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 35000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (1/quarter on Rs.35,000 previous quarter spend)",
+        display:
+          "4/year domestic (1/quarter on Rs.35,000 previous quarter spend)",
       },
       international: null,
     },
@@ -18776,7 +19004,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "FinBooster Credit Card",
     slug: "finbooster-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18822,10 +19050,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Zero joining + annual fee",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles (via YES Rewardz)",
-      ],
-      max_value_note: "5X online dining (10 RPs/Rs.200); 3X grocery/apparel (6 RPs/Rs.200); 2X base (4 RPs/Rs.200 on other retail); 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
+      partners: ["InterMiles (via YES Rewardz)"],
+      max_value_note:
+        "5X online dining (10 RPs/Rs.200); 3X grocery/apparel (6 RPs/Rs.200); 2X base (4 RPs/Rs.200 on other retail); 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
     },
     not_ideal_for: [
       "No lounge access",
@@ -18849,7 +19076,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank WELLNESS Credit Card",
     slug: "yes-bank-wellness-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18878,7 +19105,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 300,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Annual preventive health check-up (25 parameters) via Aditya Birla Wellness app + Amazon voucher Rs.300 on card activation",
+      display:
+        "Annual preventive health check-up (25 parameters) via Aditya Birla Wellness app + Amazon voucher Rs.300 on card activation",
     },
     lounge: {
       domestic: null,
@@ -18925,7 +19153,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank ACE Credit Card",
     slug: "yes-bank-ace-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -18977,10 +19205,9 @@ export const MOCK_CARDS: MockCard[] = [
       "No lounge access",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles (via YES Rewardz)",
-      ],
-      max_value_note: "8 RPs/Rs.200 on online spends (1% effective); 4 RPs/Rs.200 on offline; 2 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
+      partners: ["InterMiles (via YES Rewardz)"],
+      max_value_note:
+        "8 RPs/Rs.200 on online spends (1% effective); 4 RPs/Rs.200 on offline; 2 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
     },
     not_ideal_for: [
       "No lounge access",
@@ -19002,7 +19229,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank WELLNESS PLUS Credit Card",
     slug: "yes-bank-wellness-plus-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -19031,7 +19258,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_1000_within_30d",
       expires_in_months: 12,
-      display: "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days (online applications only) + complimentary annual health check-up (31 parameters)",
+      display:
+        "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days (online applications only) + complimentary annual health check-up (31 parameters)",
     },
     lounge: {
       domestic: {
@@ -19041,7 +19269,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
       },
       international: null,
     },
@@ -19081,7 +19310,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank ELITE+ Credit Card",
     slug: "yes-bank-elite+-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -19114,7 +19343,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on spend-based criteria from April 2024)",
+        display:
+          "8/year domestic (2/quarter on spend-based criteria from April 2024)",
       },
       international: {
         visitsPerPeriod: 3,
@@ -19148,10 +19378,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Not on Paisabazaar",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles (via YES Rewardz)",
-      ],
-      max_value_note: "12 RPs/Rs.200 on online spends (1.5% effective); 6 RPs/Rs.200 on offline; 4 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
+      partners: ["InterMiles (via YES Rewardz)"],
+      max_value_note:
+        "12 RPs/Rs.200 on online spends (1.5% effective); 6 RPs/Rs.200 on offline; 4 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
     },
     not_ideal_for: [
       "1.5% base online effective is low vs dedicated cashback cards",
@@ -19210,7 +19439,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited domestic via Mastercard lounge programme (primary + add-on)",
+        display:
+          "Unlimited domestic via Mastercard lounge programme (primary + add-on)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -19219,7 +19449,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "loungekey",
-        display: "Unlimited international via LoungeKey (primary + add-on; 12 guest visits/year)",
+        display:
+          "Unlimited international via LoungeKey (primary + add-on; 12 guest visits/year)",
       },
     },
     ideal_for: [
@@ -19245,11 +19476,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Minimum relationship value required (invite/HNI)",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles",
-        "+ hotel partners via YES Rewardz portal",
-      ],
-      max_value_note: "40 RPs/Rs.200 on international spends (5% effective); 20 RPs/Rs.200 on domestic spends (2.5% effective); 1 RP = Rs.0.25",
+      partners: ["InterMiles", "+ hotel partners via YES Rewardz portal"],
+      max_value_note:
+        "40 RPs/Rs.200 on international spends (5% effective); 20 RPs/Rs.200 on domestic spends (2.5% effective); 1 RP = Rs.0.25",
     },
     not_ideal_for: [
       "Rs.50,000 joining fee is very high",
@@ -19301,7 +19530,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
       },
       international: null,
     },
@@ -19345,7 +19575,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES BANK RESERV Credit Card",
     slug: "yes-bank-reserv-credit-card-yes-bank",
     bankId: "yes",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -19374,7 +19604,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_1000_within_30d",
       expires_in_months: 12,
-      display: "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days + 8,000 renewal RPs on annual fee payment",
+      display:
+        "Amazon voucher Rs.500 on spending Rs.1,000 within first 30 days + 8,000 renewal RPs on annual fee payment",
     },
     lounge: {
       domestic: {
@@ -19393,7 +19624,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "LoungeKey",
         program: "loungekey",
-        display: "6/year via LoungeKey (primary cardholder only; direct card swipe, no Priority Pass issued)",
+        display:
+          "6/year via LoungeKey (primary cardholder only; direct card swipe, no Priority Pass issued)",
       },
     },
     ideal_for: [
@@ -19418,11 +19650,9 @@ export const MOCK_CARDS: MockCard[] = [
       "YesRewardz 3-year RP expiry",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles",
-        "+ hotel partners via YES Rewardz",
-      ],
-      max_value_note: "24 RPs/Rs.200 on online spends (3% effective at Rs.0.25/pt); 12 RPs/Rs.200 on offline (1.5%); 6 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
+      partners: ["InterMiles", "+ hotel partners via YES Rewardz"],
+      max_value_note:
+        "24 RPs/Rs.200 on online spends (3% effective at Rs.0.25/pt); 12 RPs/Rs.200 on offline (1.5%); 6 RPs/Rs.200 on select categories; 1 RP = Rs.0.25; 10 RPs = 1 InterMile",
     },
     not_ideal_for: [
       "3% online effective at Rs.0.25/pt is decent but not outstanding vs HDFC Regalia Gold (2.67% but 1:2 airline transfer) or Axis Magnus (3.5% + mile transfers)",
@@ -19472,7 +19702,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "first_txn_within_90d",
       expires_in_months: 12,
-      display: "Welcome RPs on first transaction within 90 days + exclusive welcome experiences",
+      display:
+        "Welcome RPs on first transaction within 90 days + exclusive welcome experiences",
     },
     lounge: {
       domestic: {
@@ -19482,7 +19713,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Unlimited domestic via Mastercard lounge programme (primary + add-on)",
+        display:
+          "Unlimited domestic via Mastercard lounge programme (primary + add-on)",
       },
       international: {
         visitsPerPeriod: 999,
@@ -19491,7 +19723,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "loungekey",
-        display: "Unlimited international via LoungeKey (primary + add-on; 12 guest visits/year)",
+        display:
+          "Unlimited international via LoungeKey (primary + add-on; 12 guest visits/year)",
       },
     },
     ideal_for: [
@@ -19515,11 +19748,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Min income Rs.1.4L/month salary or Rs.14.4L ITR",
     ],
     transfer_partners: {
-      partners: [
-        "InterMiles",
-        "+ hotel partners via YES Rewardz",
-      ],
-      max_value_note: "24 RPs/Rs.200 on international spends (3% effective); 16 RPs/Rs.200 on domestic spends (2% effective); 1 RP = Rs.0.25",
+      partners: ["InterMiles", "+ hotel partners via YES Rewardz"],
+      max_value_note:
+        "24 RPs/Rs.200 on international spends (3% effective); 16 RPs/Rs.200 on domestic spends (2% effective); 1 RP = Rs.0.25",
     },
     not_ideal_for: [
       "1.75% forex (higher than YES PRIVATE's 0.5%) — key downgrade vs YES PRIVATE for international spenders",
@@ -19603,7 +19834,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "YES Bank UNI Credit Card",
     slug: "yes-bank-uni-credit-card--yes-bank",
     bankId: "yes",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -19696,7 +19927,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 6000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "6,000 Reward Points on joining fee payment (worth Rs.6,000 at 1 RP = Re.1 — offsets joining fee)",
+      display:
+        "6,000 Reward Points on joining fee payment (worth Rs.6,000 at 1 RP = Re.1 — offsets joining fee)",
     },
     lounge: {
       domestic: {
@@ -19715,7 +19947,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "1/month international via Priority Pass (on Rs.20,000 prev month spend; no complimentary guest visits)",
+        display:
+          "1/month international via Priority Pass (on Rs.20,000 prev month spend; no complimentary guest visits)",
       },
     },
     ideal_for: [
@@ -19790,7 +20023,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "fuel_within_90d",
       expires_in_months: 12,
-      display: "100% cashback up to Rs.1,500 on fuel transactions within the first 90 days of card issuance",
+      display:
+        "100% cashback up to Rs.1,500 on fuel transactions within the first 90 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -19832,7 +20066,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Standard Chartered Rewards Credit Card",
     slug: "standard-chartered-rewards-credit-card-standard-chartered-bank",
     bankId: "scb",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20181,7 +20415,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "24/year international via Priority Pass (for Priority Banking clients)",
+        display:
+          "24/year international via Priority Pass (for Priority Banking clients)",
       },
     },
     ideal_for: [
@@ -20223,7 +20458,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Rewards Credit Card",
     slug: "axis-bank-rewards-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20252,7 +20487,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "5,000 EDGE RPs on payment of joining fee (worth Rs.1,000 at Rs.0.20/pt)",
+      display:
+        "5,000 EDGE RPs on payment of joining fee (worth Rs.1,000 at Rs.0.20/pt)",
     },
     lounge: {
       domestic: {
@@ -20262,7 +20498,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 30000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (1/quarter on Rs.30,000 previous month spend)",
+        display:
+          "4/year domestic (1/quarter on Rs.30,000 previous month spend)",
       },
       international: null,
     },
@@ -20301,7 +20538,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Select Credit Card",
     slug: "axis-bank-select-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20330,7 +20567,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2000,
       condition: "first_txn_within_30d",
       expires_in_months: 12,
-      display: "10,000 EDGE RPs on first transaction within 30 days (worth Rs.2,000) + Rs.500 BigBasket voucher",
+      display:
+        "10,000 EDGE RPs on first transaction within 30 days (worth Rs.2,000) + Rs.500 BigBasket voucher",
     },
     lounge: {
       domestic: {
@@ -20340,7 +20578,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.50,000 previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 6,
@@ -20349,7 +20588,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "6/year via Priority Pass (+ 6 more on Rs.3L annual spend = 12 total)",
+        display:
+          "6/year via Priority Pass (+ 6 more on Rs.3L annual spend = 12 total)",
       },
     },
     ideal_for: [
@@ -20376,7 +20616,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways (Avios)",
         "+ other EDGE partners",
       ],
-      max_value_note: "10 RPs/Rs.200 base; 20 RPs/Rs.200 on retail up to Rs.20,000/month; 1 RP = Rs.0.20 cash or Rs.0.25 via Pay with Rewards",
+      max_value_note:
+        "10 RPs/Rs.200 base; 20 RPs/Rs.200 on retail up to Rs.20,000/month; 1 RP = Rs.0.20 cash or Rs.0.25 via Pay with Rewards",
     },
     not_ideal_for: [
       "1% effective on retail at Rs.0.20/pt — low for a Rs.3,000 card",
@@ -20396,7 +20637,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Privilege Credit Card",
     slug: "axis-bank-privilege-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard","amex"],
+    network: ["visa", "mastercard", "amex"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20425,7 +20666,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "12,500 EDGE RPs on joining fee payment (worth Rs.2,500-Rs.3,125) + anniversary welcome gift",
+      display:
+        "12,500 EDGE RPs on joining fee payment (worth Rs.2,500-Rs.3,125) + anniversary welcome gift",
     },
     lounge: {
       domestic: {
@@ -20460,7 +20702,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Singapore Airlines (KrisFlyer)",
         "+ other EDGE partners via Axis EDGE Rewards",
       ],
-      max_value_note: "10 RPs/Rs.200 on all domestic + international spends (uncapped); 1 RP = Rs.0.20 cash or Rs.0.25 via Pay with Rewards",
+      max_value_note:
+        "10 RPs/Rs.200 on all domestic + international spends (uncapped); 1 RP = Rs.0.20 cash or Rs.0.25 via Pay with Rewards",
     },
     not_ideal_for: [
       "No international lounge",
@@ -20509,7 +20752,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "first_txn",
       expires_in_months: 12,
-      display: "Amazon eVoucher Rs.250 on first transaction (for cards issued without joining fee)",
+      display:
+        "Amazon eVoucher Rs.250 on first transaction (for cards issued without joining fee)",
     },
     lounge: {
       domestic: null,
@@ -20580,7 +20824,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1250,
       condition: "first_txn_within_37d",
       expires_in_months: 12,
-      display: "2,500 EDGE Miles on first transaction within 37 days of card setup",
+      display:
+        "2,500 EDGE Miles on first transaction within 37 days of card setup",
     },
     lounge: {
       domestic: {
@@ -20590,7 +20835,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Tier-based: Silver 4/year; Gold 12/year; Platinum 18/year domestic",
+        display:
+          "Tier-based: Silver 4/year; Gold 12/year; Platinum 18/year domestic",
       },
       international: {
         visitsPerPeriod: 4,
@@ -20599,7 +20845,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "Tier-based: Silver 4/year; Gold 6/year; Platinum 12/year international",
+        display:
+          "Tier-based: Silver 4/year; Gold 6/year; Platinum 12/year international",
       },
     },
     ideal_for: [
@@ -20632,7 +20879,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Wyndham",
         "+ others (Group A capped 1L Miles/yr, Group B capped 4L Miles/yr)",
       ],
-      max_value_note: "5 EDGE Miles/Rs.100 on travel (up to Rs.2L/month); 2 EDGE Miles/Rs.100 on other spends; 1 EDGE Mile = 2 partner miles (1:2 ratio)",
+      max_value_note:
+        "5 EDGE Miles/Rs.100 on travel (up to Rs.2L/month); 2 EDGE Miles/Rs.100 on other spends; 1 EDGE Mile = 2 partner miles (1:2 ratio)",
     },
     not_ideal_for: [
       "1:2 transfer ratio means 1 EDGE Mile = 2 partner miles — headline sounds good but Group A capped at 1L EDGE Miles/year",
@@ -20653,7 +20901,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Burgundy Private Credit Card",
     slug: "axis-bank-burgundy-private-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20682,7 +20930,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "No formal welcome benefit (LTF for Axis Private Banking clients); complimentary Club Marriott, ALL Accor+, Taj Epicure, EazyDiner Prime memberships on card activation",
+      display:
+        "No formal welcome benefit (LTF for Axis Private Banking clients); complimentary Club Marriott, ALL Accor+, Taj Epicure, EazyDiner Prime memberships on card activation",
     },
     lounge: {
       domestic: {
@@ -20701,7 +20950,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international via Priority Pass (primary + add-on + guest visits)",
+        display:
+          "Unlimited international via Priority Pass (primary + add-on + guest visits)",
       },
     },
     ideal_for: [
@@ -20731,7 +20981,8 @@ export const MOCK_CARDS: MockCard[] = [
         "British Airways (Avios)",
         "+ 15 more partners",
       ],
-      max_value_note: "15 EDGE RPs/Rs.200 on all spends (1.5% effective); 5 EDGE RPs = 4 partner miles (5:4 ratio); 1 RP = Rs.0.20 cash",
+      max_value_note:
+        "15 EDGE RPs/Rs.200 on all spends (1.5% effective); 5 EDGE RPs = 4 partner miles (5:4 ratio); 1 RP = Rs.0.20 cash",
     },
     not_ideal_for: [
       "Requires Axis Private Banking relationship (TRV Rs.5Cr+) — extremely exclusive",
@@ -20780,7 +21031,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 20,
       condition: "first_online_txn",
       expires_in_months: 12,
-      display: "Invite-only via Freecharge app; 100 EDGE RPs on first online transaction",
+      display:
+        "Invite-only via Freecharge app; 100 EDGE RPs on first online transaction",
     },
     lounge: {
       domestic: null,
@@ -20826,7 +21078,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Axis Bank Air India Signature Credit Card",
     slug: "axis-bank-air-india-signature-credit-card-axis-bank",
     bankId: "axis",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -20855,7 +21107,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "10,000 EDGE RPs on joining fee payment + complimentary Air India Maharaja Club Gold membership",
+      display:
+        "10,000 EDGE RPs on joining fee payment + complimentary Air India Maharaja Club Gold membership",
     },
     lounge: {
       domestic: {
@@ -20874,7 +21127,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Priority Pass",
         program: "priority_pass",
-        display: "Priority Pass membership (complimentary but visits USD 27/person)",
+        display:
+          "Priority Pass membership (complimentary but visits USD 27/person)",
       },
     },
     ideal_for: [
@@ -20893,10 +21147,9 @@ export const MOCK_CARDS: MockCard[] = [
       "1% fuel waiver",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Flying Returns/Maharaja Club)",
-      ],
-      max_value_note: "15 EDGE RPs/Rs.100 on Air India bookings; 5 EDGE RPs/Rs.100 on dining + grocery; 2 EDGE RPs/Rs.100 on all other spends; 1 RP = 1 Air India Air Mile",
+      partners: ["Air India (Flying Returns/Maharaja Club)"],
+      max_value_note:
+        "15 EDGE RPs/Rs.100 on Air India bookings; 5 EDGE RPs/Rs.100 on dining + grocery; 2 EDGE RPs/Rs.100 on all other spends; 1 RP = 1 Air India Air Mile",
     },
     not_ideal_for: [
       "DISCONTINUED — new applications on hold per CardExpert Dec 2025",
@@ -20944,7 +21197,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "3_txns_within_30d",
       expires_in_months: 12,
-      display: "2,500 EDGE RPs on completing 3 transactions within 30 days of card issuance (worth Rs.500)",
+      display:
+        "2,500 EDGE RPs on completing 3 transactions within 30 days of card issuance (worth Rs.500)",
     },
     lounge: {
       domestic: {
@@ -20954,7 +21208,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 50000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (on Rs.50,000 previous 3 months spend — from May 2024)",
+        display:
+          "4/year domestic (on Rs.50,000 previous 3 months spend — from May 2024)",
       },
       international: null,
     },
@@ -21023,7 +21278,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "2,500 IndiGo BluChips voucher on joining fee payment (valid 6 months; worth Rs.2,500 on IndiGo flights)",
+      display:
+        "2,500 IndiGo BluChips voucher on joining fee payment (valid 6 months; worth Rs.2,500 on IndiGo flights)",
     },
     lounge: {
       domestic: null,
@@ -21047,10 +21303,9 @@ export const MOCK_CARDS: MockCard[] = [
       "No earn on utilities, insurance, wallet, rent, govt, education, gaming from June 2025",
     ],
     transfer_partners: {
-      partners: [
-        "IndiGo (BluChip programme)",
-      ],
-      max_value_note: "Up to 19 BluChips/Rs.100 on IndiGo (5 base + 4 tier Blu1 + programme credits); 3 BluChips/Rs.100 on dining + entertainment; 2 BluChips/Rs.100 on all other spends; 1 BluChip = Re.1 on IndiGo",
+      partners: ["IndiGo (BluChip programme)"],
+      max_value_note:
+        "Up to 19 BluChips/Rs.100 on IndiGo (5 base + 4 tier Blu1 + programme credits); 3 BluChips/Rs.100 on dining + entertainment; 2 BluChips/Rs.100 on all other spends; 1 BluChip = Re.1 on IndiGo",
     },
     not_ideal_for: [
       "No airport lounge access (XL variant needed)",
@@ -21102,7 +21357,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 4000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "4,000 IndiGo BluChips voucher + 6E Eats voucher on joining fee payment (voucher valid 6 months; worth Rs.4,000 on IndiGo — offsets bulk of joining fee)",
+      display:
+        "4,000 IndiGo BluChips voucher + 6E Eats voucher on joining fee payment (voucher valid 6 months; worth Rs.4,000 on IndiGo — offsets bulk of joining fee)",
     },
     lounge: {
       domestic: {
@@ -21112,7 +21368,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter — no spend condition per official Kotak page)",
+        display:
+          "8/year domestic (2/quarter — no spend condition per official Kotak page)",
       },
       international: null,
     },
@@ -21132,10 +21389,9 @@ export const MOCK_CARDS: MockCard[] = [
       "No annual fee waiver",
     ],
     transfer_partners: {
-      partners: [
-        "IndiGo (BluChip programme)",
-      ],
-      max_value_note: "Up to 21 BluChips/Rs.100 on IndiGo (8 base + 4 tier Blu1 + 9 programme credits); 3 BluChips/Rs.100 on dining + entertainment; 2 BluChips/Rs.100 on all other spends; 1 BluChip = Re.1 on IndiGo",
+      partners: ["IndiGo (BluChip programme)"],
+      max_value_note:
+        "Up to 21 BluChips/Rs.100 on IndiGo (8 base + 4 tier Blu1 + 9 programme credits); 3 BluChips/Rs.100 on dining + entertainment; 2 BluChips/Rs.100 on all other spends; 1 BluChip = Re.1 on IndiGo",
     },
     not_ideal_for: [
       "3.5% forex — very expensive for international travel",
@@ -21186,7 +21442,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 10000,
       condition: "first_txn_post_anniversary",
       expires_in_months: 12,
-      display: "Rs.10,000 Taj or ITC Hotels voucher + 2,500 EDGE Miles on first transaction post-anniversary (renews every year)",
+      display:
+        "Rs.10,000 Taj or ITC Hotels voucher + 2,500 EDGE Miles on first transaction post-anniversary (renews every year)",
     },
     lounge: {
       domestic: {
@@ -21205,7 +21462,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited via Priority Pass (primary + add-on + 10 guest visits/year)",
+        display:
+          "Unlimited via Priority Pass (primary + add-on + 10 guest visits/year)",
       },
     },
     ideal_for: [
@@ -21234,7 +21492,8 @@ export const MOCK_CARDS: MockCard[] = [
         "ITC Hotels",
         "+ 10 more EDGE partners",
       ],
-      max_value_note: "1 EDGE Mile = 4 Partner Miles (1:4 ratio — exceptional; domestic spend effectively 4%, international 8%)",
+      max_value_note:
+        "1 EDGE Mile = 4 Partner Miles (1:4 ratio — exceptional; domestic spend effectively 4%, international 8%)",
     },
     not_ideal_for: [
       "No annual fee waiver (Rs.20K unavoidable every year)",
@@ -21281,7 +21540,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 40000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Choice of: 25,000 EDGE Miles (= 1,25,000 partner miles at 1:5) OR ITC Hotels e-gift card worth Rs.40,000; milestone quarterly bonus EDGE Miles based on spend (Rs.20L-Rs.50L+ tiers)",
+      display:
+        "Choice of: 25,000 EDGE Miles (= 1,25,000 partner miles at 1:5) OR ITC Hotels e-gift card worth Rs.40,000; milestone quarterly bonus EDGE Miles based on spend (Rs.20L-Rs.50L+ tiers)",
     },
     lounge: {
       domestic: {
@@ -21300,7 +21560,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited via Priority Pass (primary + add-on + 12 guest visits/year)",
+        display:
+          "Unlimited via Priority Pass (primary + add-on + 12 guest visits/year)",
       },
     },
     ideal_for: [
@@ -21331,7 +21592,8 @@ export const MOCK_CARDS: MockCard[] = [
         "ITC Hotels",
         "+ 15 more EDGE partners",
       ],
-      max_value_note: "1 EDGE Mile = 5 Partner Miles (1:5 ratio — India's highest; effectively 5% on all categories at flat earn rate)",
+      max_value_note:
+        "1 EDGE Mile = 5 Partner Miles (1:5 ratio — India's highest; effectively 5% on all categories at flat earn rate)",
     },
     not_ideal_for: [
       "Rs.5L joining + Rs.3L annual fee — prohibitively expensive (total year 1 cost Rs.5.9L incl. GST)",
@@ -21500,7 +21762,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "1 complimentary Air India domestic Economy class ticket on joining + Maharaja Club Base Tier membership (discontinued from Apr 18 2025)",
+      display:
+        "1 complimentary Air India domestic Economy class ticket on joining + Maharaja Club Base Tier membership (discontinued from Apr 18 2025)",
     },
     lounge: {
       domestic: {
@@ -21533,10 +21796,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Existing cardholders can continue using card",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Maharaja Club / Flying Returns)",
-      ],
-      max_value_note: "3 CV Points/Rs.200 (now Maharaja Points post-Vistara merger); 1 CV Point = ~Air India Flying Returns mile",
+      partners: ["Air India (Maharaja Club / Flying Returns)"],
+      max_value_note:
+        "3 CV Points/Rs.200 (now Maharaja Points post-Vistara merger); 1 CV Point = ~Air India Flying Returns mile",
     },
     not_ideal_for: [
       "PHASED OUT — no new applications from April 18 2025 (Vistara-Air India merger)",
@@ -21583,7 +21845,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "1 complimentary Air India Business class ticket on joining + Maharaja Club Gold Tier membership (discontinued from Apr 18 2025)",
+      display:
+        "1 complimentary Air India Business class ticket on joining + Maharaja Club Gold Tier membership (discontinued from Apr 18 2025)",
     },
     lounge: {
       domestic: {
@@ -21615,10 +21878,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Renewal fee waived from Apr 18 2025 for renewals on/after that date",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Maharaja Club / Flying Returns)",
-      ],
-      max_value_note: "6 CV Points/Rs.200 (now Maharaja Points); best redemption via Air India flights",
+      partners: ["Air India (Maharaja Club / Flying Returns)"],
+      max_value_note:
+        "6 CV Points/Rs.200 (now Maharaja Points); best redemption via Air India flights",
     },
     not_ideal_for: [
       "PHASED OUT — no new applications from April 18 2025 (Vistara-Air India merger)",
@@ -21665,7 +21927,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "1 complimentary Air India Premium Economy ticket on joining + Maharaja Club Silver Tier membership (discontinued from Apr 18 2025)",
+      display:
+        "1 complimentary Air India Premium Economy ticket on joining + Maharaja Club Silver Tier membership (discontinued from Apr 18 2025)",
     },
     lounge: {
       domestic: {
@@ -21698,10 +21961,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Renewal fee waived from Apr 18 2025",
     ],
     transfer_partners: {
-      partners: [
-        "Air India (Maharaja Club / Flying Returns)",
-      ],
-      max_value_note: "4 CV Points/Rs.200 (now Maharaja Points); redemption via Air India Flying Returns",
+      partners: ["Air India (Maharaja Club / Flying Returns)"],
+      max_value_note:
+        "4 CV Points/Rs.200 (now Maharaja Points); redemption via Air India Flying Returns",
     },
     not_ideal_for: [
       "PHASED OUT — no new applications from April 18 2025 (Vistara-Air India merger)",
@@ -21812,7 +22074,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "8,000 bonus Reward Points on card activation (worth Rs.2,000 at Rs.0.25/pt)",
+      display:
+        "8,000 bonus Reward Points on card activation (worth Rs.2,000 at Rs.0.25/pt)",
     },
     lounge: {
       domestic: {
@@ -21822,7 +22085,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Flight booking Rs.5,000+ via AU Rewardz",
         program: "issuer",
-        display: "4/quarter domestic (conditional — on flight ticket booking Rs.5,000+ via AU Rewardz)",
+        display:
+          "4/quarter domestic (conditional — on flight ticket booking Rs.5,000+ via AU Rewardz)",
       },
       international: null,
     },
@@ -21958,7 +22222,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "4,000 bonus Reward Points or brand voucher worth Rs.1,000 on card activation + first successful transaction within 30 days",
+      display:
+        "4,000 bonus Reward Points or brand voucher worth Rs.1,000 on card activation + first successful transaction within 30 days",
     },
     lounge: {
       domestic: {
@@ -21968,7 +22233,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: "Flight booking Rs.5,000+ via AU Rewardz",
         program: "issuer",
-        display: "4/quarter domestic (conditional — on flight ticket booking Rs.5,000+ via AU Rewardz)",
+        display:
+          "4/quarter domestic (conditional — on flight ticket booking Rs.5,000+ via AU Rewardz)",
       },
       international: null,
     },
@@ -22096,7 +22362,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Choice of brand vouchers worth Rs.500 OR 2,000 Reward Points on card activation + first successful transaction within 30 days of card issuance",
+      display:
+        "Choice of brand vouchers worth Rs.500 OR 2,000 Reward Points on card activation + first successful transaction within 30 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -22134,7 +22401,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "CheQ AU Credit Card",
     slug: "cheq-au-credit-card-au-bank",
     bankId: "au",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22163,7 +22430,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 695,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Complimentary 3-month EazyDiner Prime membership worth Rs.695 on card activation",
+      display:
+        "Complimentary 3-month EazyDiner Prime membership worth Rs.695 on card activation",
     },
     lounge: {
       domestic: {
@@ -22213,7 +22481,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "CheQ AU LED Credit Card",
     slug: "cheq-au-led-credit-card-au-bank",
     bankId: "au",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22242,7 +22510,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 695,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Complimentary 3-month EazyDiner Prime membership worth Rs.695 on card activation (same as standard CheQ AU)",
+      display:
+        "Complimentary 3-month EazyDiner Prime membership worth Rs.695 on card activation (same as standard CheQ AU)",
     },
     lounge: {
       domestic: {
@@ -22289,7 +22558,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD Cashback Credit Card",
     slug: "bobcard-cashback-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22347,7 +22616,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD Etihad Guest Credit Card",
     slug: "bobcard-etihad-guest-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22376,7 +22645,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_plus_spend_50000_60d",
       expires_in_months: 12,
-      display: "5,000 Etihad Guest Bonus Miles on joining fee payment + spending Rs.50,000 in first 60 days; complimentary Etihad Guest Silver Tier status on first Etihad transaction within 6 months",
+      display:
+        "5,000 Etihad Guest Bonus Miles on joining fee payment + spending Rs.50,000 in first 60 days; complimentary Etihad Guest Silver Tier status on first Etihad transaction within 6 months",
     },
     lounge: {
       domestic: {
@@ -22411,10 +22681,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Strong for regular Etihad flyers visiting Middle East",
     ],
     transfer_partners: {
-      partners: [
-        "Etihad Airways (Etihad Guest)",
-      ],
-      max_value_note: "3 Etihad Guest Miles/Rs.100 on Etihad spends (3%); 1 Mile/Rs.100 on all other spends; milestone bonus 250/month + 2,000/quarter + 12,000/year + 500 on 2 Etihad flights/year",
+      partners: ["Etihad Airways (Etihad Guest)"],
+      max_value_note:
+        "3 Etihad Guest Miles/Rs.100 on Etihad spends (3%); 1 Mile/Rs.100 on all other spends; milestone bonus 250/month + 2,000/quarter + 12,000/year + 500 on 2 Etihad flights/year",
     },
     not_ideal_for: [
       "Miles locked entirely to Etihad ecosystem — no flexibility for other airlines",
@@ -22433,7 +22702,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD Etihad Guest Premium Credit Card",
     slug: "bobcard-etihad-guest-premium-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 1800000,
       min_self_employed_income_inr: 1800000,
@@ -22462,7 +22731,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining_plus_spend_25000_60d",
       expires_in_months: 12,
-      display: "5,000 Etihad Guest Bonus Miles on joining fee payment + spending Rs.25,000 in first 60 days; complimentary Etihad Guest Silver Tier + Gold Tier upgrade on first Etihad.com transaction within 6 months (Gold Tier otherwise requires 50,000+ tier miles flying)",
+      display:
+        "5,000 Etihad Guest Bonus Miles on joining fee payment + spending Rs.25,000 in first 60 days; complimentary Etihad Guest Silver Tier + Gold Tier upgrade on first Etihad.com transaction within 6 months (Gold Tier otherwise requires 50,000+ tier miles flying)",
     },
     lounge: {
       domestic: {
@@ -22497,10 +22767,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Strong for frequent Middle East/Europe travellers via Abu Dhabi",
     ],
     transfer_partners: {
-      partners: [
-        "Etihad Airways (Etihad Guest)",
-      ],
-      max_value_note: "6 Etihad Guest Miles/Rs.100 on Etihad spends (6%); 2 Miles/Rs.100 on all other spends; milestone 500/month + 4,000/quarter + 16,000/year + 500 on 2 Etihad flights/year",
+      partners: ["Etihad Airways (Etihad Guest)"],
+      max_value_note:
+        "6 Etihad Guest Miles/Rs.100 on Etihad spends (6%); 2 Miles/Rs.100 on all other spends; milestone 500/month + 4,000/quarter + 16,000/year + 500 on 2 Etihad flights/year",
     },
     not_ideal_for: [
       "Miles locked entirely to Etihad ecosystem",
@@ -22519,7 +22788,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD PRIME Credit Card",
     slug: "bobcard-prime-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22581,7 +22850,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "BOBCARD VARUNAH Credit Card",
     slug: "bobcard-varunah-credit-card-bank-of-baroda",
     bankId: "bob",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -22667,7 +22936,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 125,
       condition: "spend_5000_within_60d",
       expires_in_months: 12,
-      display: "500 bonus Reward Points on spends of Rs.5,000 within 60 days of card issuance; complimentary FITPASS Pro 6-month membership on card activation",
+      display:
+        "500 bonus Reward Points on spends of Rs.5,000 within 60 days of card issuance; complimentary FITPASS Pro 6-month membership on card activation",
     },
     lounge: {
       domestic: {
@@ -22677,7 +22947,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.20,000 previous quarter spend — from Jan 2025)",
+        display:
+          "8/year domestic (2/quarter on Rs.20,000 previous quarter spend — from Jan 2025)",
       },
       international: null,
     },
@@ -22744,7 +23015,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 600,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.600 on spending Rs.10,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.600 on spending Rs.10,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -22754,7 +23026,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 60000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -22830,7 +23103,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 400,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.400 on spending Rs.5,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.400 on spending Rs.5,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -22840,7 +23114,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 40000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.40,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.40,000 previous quarter spend)",
       },
       international: null,
     },
@@ -22907,7 +23182,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 200,
       condition: "spend_3000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.200 on spending Rs.3,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.200 on spending Rs.3,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -22985,7 +23261,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 600,
       condition: "spend_10000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.600 on spending Rs.10,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.600 on spending Rs.10,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -22995,7 +23272,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 60000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -23071,7 +23349,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 400,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.400 on spending Rs.5,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.400 on spending Rs.5,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -23081,7 +23360,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 40000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "8/year domestic (2/quarter on Rs.40,000 previous quarter spend)",
+        display:
+          "8/year domestic (2/quarter on Rs.40,000 previous quarter spend)",
       },
       international: null,
     },
@@ -23149,7 +23429,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 200,
       condition: "spend_3000_within_30d",
       expires_in_months: 12,
-      display: "Amazon Pay e-gift voucher worth Rs.200 on spending Rs.3,000 within first 30 days of card activation",
+      display:
+        "Amazon Pay e-gift voucher worth Rs.200 on spending Rs.3,000 within first 30 days of card activation",
     },
     lounge: {
       domestic: {
@@ -23286,7 +23567,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 250,
       condition: "first_txn_within_37d",
       expires_in_months: 12,
-      display: "Amazon or Swiggy e-gift voucher worth Rs.250 on first transaction within 37 days of card issuance",
+      display:
+        "Amazon or Swiggy e-gift voucher worth Rs.250 on first transaction within 37 days of card issuance",
     },
     lounge: {
       domestic: null,
@@ -23355,7 +23637,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1250,
       condition: "joining_fee_realisation",
       expires_in_months: 12,
-      display: "2,500 bonus Reward Points on joining fee realisation; additional 2,500 RPs on renewal (when fee is paid, not waived)",
+      display:
+        "2,500 bonus Reward Points on joining fee realisation; additional 2,500 RPs on renewal (when fee is paid, not waived)",
     },
     lounge: {
       domestic: {
@@ -23440,7 +23723,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1,000 bonus Reward Points on joining fee payment; 1,000 RPs on renewal (when fee is paid)",
+      display:
+        "1,000 bonus Reward Points on joining fee payment; 1,000 RPs on renewal (when fee is paid)",
     },
     lounge: {
       domestic: null,
@@ -23477,7 +23761,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "ICICI Bank Diamant Credit Card",
     slug: "icici-bank-diamant-credit-card-icici-bank",
     bankId: "icici",
-    network: ["mastercard","visa"],
+    network: ["mastercard", "visa"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -23506,7 +23790,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 75000,
       condition: "joining_fee_realisation",
       expires_in_months: 12,
-      display: "Apple MacBook Air (MMGG2HN/A worth ~Rs.75,000) on joining fee realisation",
+      display:
+        "Apple MacBook Air (MMGG2HN/A worth ~Rs.75,000) on joining fee realisation",
     },
     lounge: {
       domestic: {
@@ -23525,7 +23810,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited — Priority Pass (600+ lounges worldwide, primary + add-on)",
+        display:
+          "Unlimited — Priority Pass (600+ lounges worldwide, primary + add-on)",
       },
     },
     ideal_for: [
@@ -23595,7 +23881,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 75000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "1/quarter (on Rs.75,000 previous quarter spend — Starter plan; Premium plan may vary)",
+        display:
+          "1/quarter (on Rs.75,000 previous quarter spend — Starter plan; Premium plan may vary)",
       },
       international: null,
     },
@@ -23691,7 +23978,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Business Credit Card",
     slug: "idfc-first-business-credit-card-icici-bank",
     bankId: "idfc",
-    network: ["visa","mastercard"],
+    network: ["visa", "mastercard"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -23783,7 +24070,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "card_activation",
       expires_in_months: 12,
-      display: "Rs.500 welcome voucher on card activation (limited value vs Rs.3,000 joining fee)",
+      display:
+        "Rs.500 welcome voucher on card activation (limited value vs Rs.3,000 joining fee)",
     },
     lounge: {
       domestic: {
@@ -23793,7 +24081,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 20000, windowMonths: 1 },
         membershipRequired: null,
         program: "issuer",
-        display: "2/quarter domestic (on Rs.20,000 previous month spend); 4/quarter railway lounge",
+        display:
+          "2/quarter domestic (on Rs.20,000 previous month spend); 4/quarter railway lounge",
       },
       international: {
         visitsPerPeriod: 2,
@@ -23843,7 +24132,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IDFC FIRST Family Credit Card",
     slug: "idfc-first-family-credit-card-icici-bank",
     bankId: "idfc",
-    network: ["visa","mastercard","rupay"],
+    network: ["visa", "mastercard", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -23872,7 +24161,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 500,
       condition: "spend_5000_within_30d",
       expires_in_months: 12,
-      display: "Rs.500 e-gift voucher on spending Rs.5,000 within first 30 days; 5% cashback (max Rs.1,000) on first EMI within 30 days",
+      display:
+        "Rs.500 e-gift voucher on spending Rs.5,000 within first 30 days; 5% cashback (max Rs.1,000) on first EMI within 30 days",
     },
     lounge: {
       domestic: {
@@ -23951,7 +24241,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 12500,
       condition: "joining",
       expires_in_months: 12,
-      display: "12,500 invitation Reward Points (1 RP = Re.1 on travel bookings via IDFC app — effectively offsets Rs.12,500 joining fee); complimentary lifetime-free FIRST Digital RuPay Credit Card for UPI payments",
+      display:
+        "12,500 invitation Reward Points (1 RP = Re.1 on travel bookings via IDFC app — effectively offsets Rs.12,500 joining fee); complimentary lifetime-free FIRST Digital RuPay Credit Card for UPI payments",
     },
     lounge: {
       domestic: {
@@ -24041,7 +24332,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 100,
       condition: "first_jiobp_txn_30d",
       expires_in_months: 12,
-      display: "400 Smiles on first Jio-bp fuel transaction within 30 days + Rs.200 Wildbean Cafe coupon on first Wildbean spend within 30 days; joining fee waived on Rs.10,000 spend within 90 days",
+      display:
+        "400 Smiles on first Jio-bp fuel transaction within 30 days + Rs.200 Wildbean Cafe coupon on first Wildbean spend within 30 days; joining fee waived on Rs.10,000 spend within 90 days",
     },
     lounge: {
       domestic: null,
@@ -24112,7 +24404,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "joining",
       expires_in_months: 12,
-      display: "Welcome gift vouchers from EazyDiner, Bata, Vero Moda + others (on paid joining fee plan); welcome depends on plan selected",
+      display:
+        "Welcome gift vouchers from EazyDiner, Bata, Vero Moda + others (on paid joining fee plan); welcome depends on plan selected",
     },
     lounge: {
       domestic: {
@@ -24141,10 +24434,9 @@ export const MOCK_CARDS: MockCard[] = [
       "EMI facility",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer)",
-      ],
-      max_value_note: "400 RP = 100 KrisFlyer Miles (4:1 ratio — poor); 1 RP = Rs.0.40 cash credit",
+      partners: ["Singapore Airlines (KrisFlyer)"],
+      max_value_note:
+        "400 RP = 100 KrisFlyer Miles (4:1 ratio — poor); 1 RP = Rs.0.40 cash credit",
     },
     not_ideal_for: [
       "BookMyShow BOGO discontinued Oct 2022 — verify if still active",
@@ -24166,7 +24458,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "IndusInd Bank Iconia Credit Card",
     slug: "indusind-bank-iconia-credit-card-indusind-bank",
     bankId: "indusind",
-    network: ["amex","visa"],
+    network: ["amex", "visa"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -24215,10 +24507,9 @@ export const MOCK_CARDS: MockCard[] = [
       "Discontinued per MITC as of available records",
     ],
     transfer_partners: {
-      partners: [
-        "Singapore Airlines (KrisFlyer) via IndusMoments",
-      ],
-      max_value_note: "1.5 RPs weekday / 2 RPs weekend per Rs.150; 1 RP = Re.1 cash; KrisFlyer conversion via IndusMoments portal",
+      partners: ["Singapore Airlines (KrisFlyer) via IndusMoments"],
+      max_value_note:
+        "1.5 RPs weekday / 2 RPs weekend per Rs.150; 1 RP = Re.1 cash; KrisFlyer conversion via IndusMoments portal",
     },
     not_ideal_for: [
       "DISCONTINUED — confirmed in official IndusInd Bank MITC document",
@@ -24333,7 +24624,8 @@ export const MOCK_CARDS: MockCard[] = [
       partners: [
         "Air India (Maharaja Club / Flying Returns) — formerly Club Vistara",
       ],
-      max_value_note: "CV Points (now Maharaja Points); 4 CV Points/Rs.200 on all spends",
+      max_value_note:
+        "CV Points (now Maharaja Points); 4 CV Points/Rs.200 on all spends",
     },
     not_ideal_for: [
       "PHASED OUT — confirmed in official IndusInd Bank MITC document",
@@ -24380,7 +24672,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1000,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "1,000 bonus Air Miles on joining fee payment (within 120 days); 1,000 Air Miles on each annual renewal",
+      display:
+        "1,000 bonus Air Miles on joining fee payment (within 120 days); 1,000 Air Miles on each annual renewal",
     },
     lounge: {
       domestic: {
@@ -24390,7 +24683,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 60000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
+        display:
+          "4/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -24426,7 +24720,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy (3:1)",
         "ALL Loyalty (Accor)",
       ],
-      max_value_note: "3 Air Miles/Rs.100 on Kotak Unbox flights/hotels (3%); 1 Air Mile/Rs.100 on all other spends; 1 Air Mile = Rs.1 on Unbox; 3 Air Miles = 1 partner mile (3:1 — poor ratio)",
+      max_value_note:
+        "3 Air Miles/Rs.100 on Kotak Unbox flights/hotels (3%); 1 Air Mile/Rs.100 on all other spends; 1 Air Mile = Rs.1 on Unbox; 3 Air Miles = 1 partner mile (3:1 — poor ratio)",
     },
     not_ideal_for: [
       "3:1 transfer ratio to partners (1 Air Mile = 0.33 partner points) — unfavourable vs Axis Atlas (1:2) or Axis Horizon (1:1)",
@@ -24474,7 +24769,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 2500,
       condition: "joining_fee_payment",
       expires_in_months: 12,
-      display: "2,500 Air Miles on joining fee payment (within 120 days); 2,500 Air Miles on each annual renewal",
+      display:
+        "2,500 Air Miles on joining fee payment (within 120 days); 2,500 Air Miles on each annual renewal",
     },
     lounge: {
       domestic: {
@@ -24484,7 +24780,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: { thresholdInr: 60000, windowMonths: 3 },
         membershipRequired: null,
         program: "issuer",
-        display: "4/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
+        display:
+          "4/year domestic (2/quarter on Rs.60,000 previous quarter spend)",
       },
       international: {
         visitsPerPeriod: 2,
@@ -24522,7 +24819,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Marriott Bonvoy (3:1)",
         "ALL Loyalty (Accor)",
       ],
-      max_value_note: "5 Air Miles/Rs.100 on Kotak Unbox flights/hotels (5%) + 5 Air Miles/Rs.100 on auto dealer MCCs; 2 Air Miles/Rs.100 on all other spends; 1 Air Mile = Rs.1 on Unbox; 2 Air Miles = 1 partner mile (2:1)",
+      max_value_note:
+        "5 Air Miles/Rs.100 on Kotak Unbox flights/hotels (5%) + 5 Air Miles/Rs.100 on auto dealer MCCs; 2 Air Miles/Rs.100 on all other spends; 1 Air Mile = Rs.1 on Unbox; 2 Air Miles = 1 partner mile (2:1)",
     },
     not_ideal_for: [
       "2:1 partner transfer ratio (1 Air Mile = 0.5 partner point) — weaker than Axis Atlas (1:2) or Axis Horizon (1:1)",
@@ -24543,7 +24841,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "Kotak Cashback+ Prime Credit Card",
     slug: "kotak-cashback+-prime-credit-card-kotak-mahindra-bank",
     bankId: "kotak",
-    network: ["visa","rupay"],
+    network: ["visa", "rupay"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -24634,7 +24932,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "first_txn",
       expires_in_months: 12,
-      display: "2 complimentary BookMyShow vouchers on first card transaction (limited-time offer)",
+      display:
+        "2 complimentary BookMyShow vouchers on first card transaction (limited-time offer)",
     },
     lounge: {
       domestic: null,
@@ -25147,7 +25446,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "RBL BankBazaar SaveMax Credit Card",
     slug: "rbl-bankbazaar-savemax-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["mastercard","visa"],
+    network: ["mastercard", "visa"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -25210,7 +25509,7 @@ export const MOCK_CARDS: MockCard[] = [
     name: "RBL BankBazaar SaveMax Pro Credit Card",
     slug: "rbl-bankbazaar-savemax-pro-credit-card-rbl-bank",
     bankId: "rbl",
-    network: ["mastercard","visa"],
+    network: ["mastercard", "visa"],
     eligibility: {
       min_salary_inr: 0,
       min_self_employed_income_inr: 0,
@@ -25488,7 +25787,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 1500,
       condition: "first_txn_within_60d",
       expires_in_months: 12,
-      display: "Gift voucher worth Rs.1,500 on first transaction within 60 days",
+      display:
+        "Gift voucher worth Rs.1,500 on first transaction within 60 days",
     },
     lounge: {
       domestic: {
@@ -25612,7 +25912,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 12500,
       condition: "first_spend_within_90d",
       expires_in_months: 12,
-      display: "12,500 reward points on first spend within 90 days; complimentary Club Marriott membership (1 year)",
+      display:
+        "12,500 reward points on first spend within 90 days; complimentary Club Marriott membership (1 year)",
     },
     lounge: {
       domestic: {
@@ -25631,7 +25932,8 @@ export const MOCK_CARDS: MockCard[] = [
         spendCondition: null,
         membershipRequired: null,
         program: "priority_pass",
-        display: "Unlimited international (via Priority Pass — 6 complimentary/year for add-on)",
+        display:
+          "Unlimited international (via Priority Pass — 6 complimentary/year for add-on)",
       },
     },
     ideal_for: [
@@ -25659,7 +25961,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Accor",
         "+ 15 partners",
       ],
-      max_value_note: "Singapore Airlines KrisFlyer — ~Rs.2/point; best for business class redemptions",
+      max_value_note:
+        "Singapore Airlines KrisFlyer — ~Rs.2/point; best for business class redemptions",
     },
     not_ideal_for: [
       "Those who prefer the metal Infinia (better brand value at same positioning)",
@@ -26651,7 +26954,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 0,
       condition: "first_spend",
       expires_in_months: 12,
-      display: "Rs.2,500 joining fee effectively offset by reward points credited on first spend",
+      display:
+        "Rs.2,500 joining fee effectively offset by reward points credited on first spend",
     },
     lounge: {
       domestic: {
@@ -26694,7 +26998,8 @@ export const MOCK_CARDS: MockCard[] = [
         "ITC Hotels",
         "+ 12 partners",
       ],
-      max_value_note: "Singapore Airlines KrisFlyer — Rs.1.5-2/point depending on redemption",
+      max_value_note:
+        "Singapore Airlines KrisFlyer — Rs.1.5-2/point depending on redemption",
     },
     not_ideal_for: [
       "New customers (Regalia Gold is the current recommended variant with better benefits)",
@@ -26739,7 +27044,8 @@ export const MOCK_CARDS: MockCard[] = [
       value_inr: 5000,
       condition: "joining",
       expires_in_months: 12,
-      display: "Rs.5,000 worth e-gift vouchers on joining (Hush Puppies / Bata)",
+      display:
+        "Rs.5,000 worth e-gift vouchers on joining (Hush Puppies / Bata)",
     },
     lounge: {
       domestic: {
@@ -26861,7 +27167,8 @@ export const MOCK_CARDS: MockCard[] = [
         "Flying Blue",
         "+ 6 airline partners",
       ],
-      max_value_note: "6 Miles/Rs.200 on airlines and travel bookings; 2 Miles/Rs.200 on all other spends; KrisFlyer Rs.2-2.5/mile for premium cabin redemptions",
+      max_value_note:
+        "6 Miles/Rs.200 on airlines and travel bookings; 2 Miles/Rs.200 on all other spends; KrisFlyer Rs.2-2.5/mile for premium cabin redemptions",
     },
     not_ideal_for: [
       "Users seeking cashback rather than miles",

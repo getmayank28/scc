@@ -307,7 +307,7 @@ function buildOnlineSpecs(
 // base); categories that don't beat the card's base rate aren't eligible and
 // their share folds into the OFFLINE_SHOPPING base bucket.
 const OFFLINE_CATEGORY_CANDIDATES = [
-  CATEGORIES.DINING,
+  CATEGORIES.OFFLINE_FOOD_DINING,
   CATEGORIES.GROCERY,
   CATEGORIES.FUEL,
 ] as const;
@@ -318,7 +318,7 @@ const OFFLINE_CATEGORY_LABELS: Record<
   (typeof OFFLINE_CATEGORY_CANDIDATES)[number],
   string
 > = {
-  [CATEGORIES.DINING]: "Dining",
+  [CATEGORIES.OFFLINE_FOOD_DINING]: "Dining",
   [CATEGORIES.GROCERY]: "Grocery",
   [CATEGORIES.FUEL]: "Fuel",
 };

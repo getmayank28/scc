@@ -189,8 +189,8 @@ function merchantBestOf(
   return computeBestOfForCard(card, subset)[0];
 }
 
-function diningFallbackRate(card: MockCard): number {
-  if (card.excluded_categories?.includes(CATEGORIES.DINING)) return 0;
+function diningFallbackRate(card: MockCard, category: Category): number {
+  if (card.excluded_categories?.includes(category)) return 0;
   return card.rewards.base_reward_rate;
 }
 
@@ -202,7 +202,7 @@ function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "merchant",
       label: "Swiggy delivery",
       spend: swiggy,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY,
     });
   }
@@ -211,7 +211,7 @@ function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "merchant",
       label: "Zomato delivery",
       spend: zomato,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO,
     });
   }
@@ -220,7 +220,7 @@ function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "fallback",
       label: "Other delivery platforms",
       spend: other,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
     });
   }
   return out;
@@ -234,7 +234,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "merchant",
       label: "Swiggy dining",
       spend: swiggy,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY_DINEOUT,
     });
   }
@@ -243,7 +243,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "merchant",
       label: "Zomato dining",
       spend: zomato,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO_DISTRICT,
     });
   }
@@ -254,7 +254,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       kind: "fallback",
       label: "Offline dining",
       spend: other,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
     });
   }
   return out;
@@ -267,7 +267,7 @@ function evaluateSpec(
   rules: MockRule[],
 ): FoodSubReturn {
   if (spec.kind === "fallback") {
-    const rate = diningFallbackRate(card);
+    const rate = diningFallbackRate(card, spec.category);
     return {
       label: spec.label,
       spend: spec.spend,
@@ -546,7 +546,7 @@ function buildDeliverySpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "merchant",
       label: "Swiggy delivery",
       spend: swiggy,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY,
     });
   }
@@ -555,7 +555,7 @@ function buildDeliverySpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "merchant",
       label: "Zomato delivery",
       spend: zomato,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO,
     });
   }
@@ -564,7 +564,7 @@ function buildDeliverySpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "fallback",
       label: "Other delivery platforms",
       spend: other,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
     });
   }
   return out;
@@ -579,7 +579,7 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "merchant",
       label: "Swiggy Dineout",
       spend: swiggyDineout,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY_DINEOUT,
     });
   }
@@ -588,7 +588,7 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "merchant",
       label: "Zomato District",
       spend: zomatoDistrict,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO_DISTRICT,
     });
   }
@@ -597,7 +597,7 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "merchant",
       label: "EazyDiner",
       spend: eazyDiner,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.EAZYDINER,
     });
   }
@@ -606,7 +606,7 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       kind: "fallback",
       label: "Direct restaurant payment",
       spend: other,
-      category: CATEGORIES.DINING,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
     });
   }
   return out;
