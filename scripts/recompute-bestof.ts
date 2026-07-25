@@ -1,7 +1,6 @@
 // Recompute the CardBestOf precompute cache for EVERY card currently in the
-// database. Unlike `seed:advisor` (which only walks the in-memory MOCK_CARDS),
-// this walks CardAdvisor itself — so cards added directly to Mongo (admin rule
-// upload, direct Atlas edits) are covered too.
+// database. Walks CardAdvisor itself, so cards added directly to Mongo (admin
+// rule upload, direct Atlas edits) are covered.
 //
 // Use this after bulk data changes when you're unsure whether cardbestofs is up
 // to date. Idempotent: re-running produces the same payloads.

@@ -794,5 +794,3 @@ export interface MockRule {
 
   is_active: boolean;
 }
-
-export const MOCK_RULES: MockRule[] = [];
