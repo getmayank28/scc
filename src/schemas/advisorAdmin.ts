@@ -3,21 +3,12 @@
 
 import z from "zod";
 
-const CATEGORY_VALUES = [
-  "flights",
-  "hotels",
-  "forex",
-  "dining",
-  "fuel",
-  "grocery",
-  "online_shopping",
-  "offline_shopping",
-  "utilities",
-  "other",
-  "rent",
-  "insurance",
-  "fees_taxes",
-] as const;
+import { CATEGORIES, type Category } from "@/lib/logic/advisor/cards";
+
+// Derive the admin allow-list from the engine's CATEGORIES source of truth so
+// the two never drift (a hand-copied list previously omitted the extended
+// categories — e.g. online_food_dining — and rejected valid rule writes).
+const CATEGORY_VALUES = Object.values(CATEGORIES) as [Category, ...Category[]];
 
 const NETWORK_VALUES = [
   "visa",
