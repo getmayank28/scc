@@ -17,6 +17,8 @@
 import { CATEGORIES, type Category } from "@/lib/logic/advisor/cards";
 import {
   MERCHANTS,
+  toRuleCaps,
+  toSharedCapGroup,
   type CapMetric,
   type CapPeriod,
   type CapScope,
@@ -24,6 +26,7 @@ import {
   type DirectSwipeTier,
   type DirectSwipeTierMode,
   type Merchant,
+  type MockRule,
   type SharedCapGroup,
   type SharedCapType,
   type VoucherCap,
@@ -529,6 +532,15 @@ export function normalizeRow(
   if (vscg && "error" in vscg) {
     return fail("bad_shared_cap_group", `voucher_${vscg.error}`);
   }
+  // A combined voucher group pools its members' voucher_cap — a member without
+  // one has no budget to contribute, so reject at the gate (the recompute-time
+  // validator enforces the same invariant and would fail the whole card).
+  if (vscg && vscg.capType === "combined" && !voucher_cap) {
+    return fail(
+      "bad_voucher_cap",
+      "voucher_shared_cap_group requires a voucher_cap: set voucher_cap_value (period/metric/scope optional; metric defaults to purchase_inr)",
+    );
+  }
 
   // ---- partner (optional free-form text, default null) ----
   const partner = isBlank(raw.partner) ? null : String(raw.partner).trim();
@@ -613,5 +625,31 @@ export function ruleToDoc(
     valid_from: new Date(),
     valid_until: null,
     is_active: true,
+  };
+}
+
+// Adapt a rule-shaped plain object (lean CardRule doc, normalized upload row +
+// identity, or a parsed admin API body) into the MockRule shape
+// validateSharedCapGroups consumes. Only the fields the validator reads are
+// meaningful; the rest get inert defaults. caps/groups go through the canonical
+// normalizers so legacy fields fold in exactly as they do at engine read time.
+export function ruleDocToEngineRule(doc: Record<string, unknown>): MockRule {
+  return {
+    _id: String(doc.ruleKey ?? ""),
+    cardId: String(doc.cardSlug ?? ""),
+    category: doc.category as Category,
+    merchant: (doc.merchant as Merchant | null) ?? null,
+    reward: doc.reward as MockRule["reward"],
+    caps: toRuleCaps(doc.caps),
+    shared_cap_group: toSharedCapGroup(doc.shared_cap_group),
+    voucher_shared_cap_group: toSharedCapGroup(doc.voucher_shared_cap_group),
+    fuel_surcharge_applicable: 0,
+    max_fuel_transaction_limit: 0,
+    redemption_mode: "both",
+    voucher_validity_in_months: null,
+    gv_coins_percentage: 0,
+    valid_from: (doc.valid_from as Date) ?? new Date(0),
+    valid_until: null,
+    is_active: (doc.is_active as boolean) ?? true,
   };
 }

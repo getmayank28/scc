@@ -47,6 +47,8 @@ const REASON_LABELS: Record<string, string> = {
   bad_shared_cap_group: "Bad shared_cap_group",
   unknown_redemption_mode: "redemption_mode must be online / offline / both",
   unknown_slug: "Card slug not found in advisor cards",
+  cap_group_conflict:
+    "Card skipped: combined cap group members disagree on their cap (see reason)",
   duplicate: "Duplicate (slug, category, merchant, partner) — superseded by a later row",
 };
 

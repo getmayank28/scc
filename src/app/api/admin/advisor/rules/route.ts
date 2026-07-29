@@ -6,6 +6,7 @@ import CardAdvisorModel from "@/models/Card";
 import { ruleCreateSchema } from "@/schemas/advisorAdmin";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
+import { capGroupConflictFor } from "@/lib/advisor/capGroupGuard";
 
 export const runtime = "nodejs";
 
@@ -55,6 +56,12 @@ export async function POST(req: Request) {
     }
     const ruleExists = await CardRuleModel.exists({ ruleKey: parsed.data.ruleKey });
     if (ruleExists) return ApiResponse.error("ruleKey already exists", 409);
+
+    const conflict = await capGroupConflictFor(
+      parsed.data.cardSlug,
+      parsed.data as unknown as Record<string, unknown>,
+    );
+    if (conflict) return ApiResponse.error(conflict, 400);
 
     // Zod widens enum-bearing fields (merchant, category) to `string`; the
     // Mongoose doc types use narrow unions. Cast at the boundary.
