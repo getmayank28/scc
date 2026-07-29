@@ -6,6 +6,7 @@ import CardAdvisorModel from "@/models/Card";
 import { ruleUpdateSchema } from "@/schemas/advisorAdmin";
 import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
 import { AdvisorCache } from "@/lib/advisor/cache";
+import { capGroupConflictFor } from "@/lib/advisor/capGroupGuard";
 
 export const runtime = "nodejs";
 
@@ -51,6 +52,17 @@ export async function PUT(req: Request, ctx: RouteContext) {
     const before = await CardRuleModel.findOne({ ruleKey }).lean();
     if (!before) return ApiResponse.error("Rule not found", 404);
 
+    // Validate the post-update state of the owning card before writing.
+    const merged = { ...before, ...parsed.data, ruleKey } as unknown as Record<
+      string,
+      unknown
+    >;
+    const targetSlug = (parsed.data.cardSlug ?? before.cardSlug) as string;
+    if ((merged.is_active as boolean) !== false) {
+      const conflict = await capGroupConflictFor(targetSlug, merged, ruleKey);
+      if (conflict) return ApiResponse.error(conflict, 400);
+    }
+
     const updated = await CardRuleModel.findOneAndUpdate(
       { ruleKey },
       { $set: parsed.data },
@@ -67,7 +79,14 @@ export async function PUT(req: Request, ctx: RouteContext) {
         { slug: cardSlug },
         { $inc: { rulesVersion: 1 } },
       );
-      await recomputeBestOfForCard(cardSlug);
+      // The update itself succeeded; a recompute failure (e.g. the card's
+      // OTHER rules have a pre-existing group conflict) must not 500 it — the
+      // card just serves its previous bestOf payload until the data is fixed.
+      try {
+        await recomputeBestOfForCard(cardSlug);
+      } catch (err) {
+        console.error(`[admin/rules/:key PUT] recompute failed for ${cardSlug}:`, err);
+      }
     }
     AdvisorCache.invalidate();
     return ApiResponse.success("updated", 200, updated);
@@ -91,7 +110,14 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
       { slug: deleted.cardSlug },
       { $inc: { rulesVersion: 1 } },
     );
-    await recomputeBestOfForCard(deleted.cardSlug);
+    try {
+      await recomputeBestOfForCard(deleted.cardSlug);
+    } catch (err) {
+      console.error(
+        `[admin/rules/:key DELETE] recompute failed for ${deleted.cardSlug}:`,
+        err,
+      );
+    }
     AdvisorCache.invalidate();
     return ApiResponse.success("deleted", 200);
   } catch (err) {

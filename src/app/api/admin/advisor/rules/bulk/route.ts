@@ -9,6 +9,7 @@ import { AdvisorCache } from "@/lib/advisor/cache";
 import {
   mapHeader,
   normalizeRow,
+  ruleDocToEngineRule,
   ruleToDoc,
   ruleKeyFor,
   TEMPLATE_COLUMNS,
@@ -16,6 +17,10 @@ import {
   type RowError,
   type NormalizedRule,
 } from "@/lib/advisor/bulkRules";
+import {
+  validateSharedCapGroups,
+  type MockRule,
+} from "@/lib/logic/advisor/rules";
 
 export const runtime = "nodejs";
 
@@ -159,7 +164,7 @@ export async function POST(req: Request) {
     const unknownSlugRowCounts = new Map<string, number>();
 
     // Group importable rules by card slug.
-    const byCard = new Map<string, NormalizedRule[]>();
+    const byCard = new Map<string, typeof deduped>();
     for (const v of deduped) {
       if (!knownSlugs.has(v.rule.cardSlug)) {
         unknownSlugRowCounts.set(
@@ -175,10 +180,65 @@ export async function POST(req: Request) {
         continue;
       }
       const arr = byCard.get(v.rule.cardSlug) ?? [];
-      arr.push(v.rule);
+      arr.push(v);
       byCard.set(v.rule.cardSlug, arr);
     }
     const unknownSlugRows = [...unknownSlugRowCounts.values()].reduce((a, b) => a + b, 0);
+
+    // ---- pre-validate combined cap groups per card (existing + incoming) ----
+    // A combined group's budget derives from its members' caps, so members must
+    // agree on them. Recompute enforces the same invariant and THROWS — after
+    // the write. Validate up front instead: a failing card's rows are dropped
+    // (reported per-row with the conflict) and the card is left untouched.
+    const existingRuleDocs = byCard.size
+      ? await CardRuleModel.find({
+          cardSlug: { $in: [...byCard.keys()] },
+          is_active: true,
+        })
+          .select(
+            "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group is_active",
+          )
+          .lean<Record<string, unknown>[]>()
+      : [];
+    const existingByCard = new Map<string, Record<string, unknown>[]>();
+    for (const d of existingRuleDocs) {
+      const slug = String(d.cardSlug);
+      const arr = existingByCard.get(slug) ?? [];
+      arr.push(d);
+      existingByCard.set(slug, arr);
+    }
+
+    let capGroupDroppedRows = 0;
+    const capGroupConflicts: { cardSlug: string; message: string }[] = [];
+    for (const [cardSlug, entries] of [...byCard]) {
+      const overlay = new Map<string, MockRule>();
+      for (const d of existingByCard.get(cardSlug) ?? []) {
+        overlay.set(String(d.ruleKey), ruleDocToEngineRule(d));
+      }
+      for (const e of entries) {
+        const ruleKey = ruleKeyFor(
+          cardSlug,
+          e.rule.category,
+          e.rule.merchant,
+          e.rule.partner,
+        );
+        overlay.set(
+          ruleKey,
+          ruleDocToEngineRule({ ...e.rule, ruleKey, cardSlug }),
+        );
+      }
+      try {
+        validateSharedCapGroups([...overlay.values()]);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        capGroupConflicts.push({ cardSlug, message });
+        for (const e of entries) {
+          pushFailed(e.raw, e.row, "cap_group_conflict", message);
+        }
+        capGroupDroppedRows += entries.length;
+        byCard.delete(cardSlug);
+      }
+    }
 
     // ---- per-rule upsert (NO card wipe) ----
     // Identity = (slug, category, merchant, partner) -> ruleKey. The rows are
@@ -188,8 +248,11 @@ export async function POST(req: Request) {
     let inserted = 0; // newly created (upserted)
     let replaced = 0; // matched an existing rule combo and overwrote it
     const cardsAffected: string[] = [];
-    for (const [cardSlug, rules] of byCard) {
-      const ops = rules.map((r) => {
+    // Recompute errors must not 500 an import whose writes already succeeded —
+    // report them so the admin knows which cards serve a stale bestOf payload.
+    const recomputeFailures: { cardSlug: string; message: string }[] = [];
+    for (const [cardSlug, entries] of byCard) {
+      const ops = entries.map(({ rule: r }) => {
         const ruleKey = ruleKeyFor(cardSlug, r.category, r.merchant, r.partner);
         const { ruleKey: _k, ...rest } = ruleToDoc(r, cardSlug, ruleKey);
         void _k;
@@ -214,7 +277,15 @@ export async function POST(req: Request) {
         { slug: cardSlug },
         { $inc: { rulesVersion: 1 } },
       );
-      await recomputeBestOfForCard(cardSlug);
+      try {
+        await recomputeBestOfForCard(cardSlug);
+      } catch (err) {
+        console.error(`[admin/rules/bulk] recompute failed for ${cardSlug}:`, err);
+        recomputeFailures.push({
+          cardSlug,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
       cardsAffected.push(cardSlug);
     }
 
@@ -232,6 +303,8 @@ export async function POST(req: Request) {
     if (blankRowsSkipped > 0) reasonCounts["blank_row"] = blankRowsSkipped;
     if (unknownSlugRows > 0) reasonCounts["unknown_slug"] = unknownSlugRows;
     if (duplicateDropped > 0) reasonCounts["duplicate"] = duplicateDropped;
+    if (capGroupDroppedRows > 0)
+      reasonCounts["cap_group_conflict"] = capGroupDroppedRows;
 
     const dropReasons = Object.entries(reasonCounts)
       .map(([code, count]) => ({ code, count }))
@@ -241,7 +314,11 @@ export async function POST(req: Request) {
     // Dropped = blank + validation + unknown slug + duplicate-superseded.
     // rowsInFile = inserted + replaced + totalDropped.
     const totalDropped =
-      blankRowsSkipped + errors.length + unknownSlugRows + duplicateDropped;
+      blankRowsSkipped +
+      errors.length +
+      unknownSlugRows +
+      duplicateDropped +
+      capGroupDroppedRows;
 
     return ApiResponse.success("Upload processed", 200, {
       rowsInFile: physicalDataRows, // data rows (excl. header), incl. blanks
@@ -256,6 +333,8 @@ export async function POST(req: Request) {
       cardsAffected,
       dropReasons, // [{ code, count }] sorted desc — accounts for every dropped row
       unknownSlugs, // distinct card slugs not found in advisor cards
+      capGroupConflicts, // cards skipped entirely: shared-cap group members disagree
+      recomputeFailures, // cards written but serving a stale bestOf payload
       failedRows, // every dropped row (orig. columns + reason) for download
       failedRowsTruncated: failedRows.length >= FAILED_CAP,
     });
