@@ -368,6 +368,30 @@ function voucherWaterfallInr(
   // model — keeps voucher cap math consistent across the waterfall.
   const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
 
+  // Shared-pool budgets, resolved once per pool key (members agree on their
+  // cap by validation). Purchase pools bound absorbed spend (₹ of vouchers
+  // bought); reward pools bound accelerated reward VALUE, mirroring
+  // flatWaterfallInr's poolCapReward/poolUsedReward for the direct lane.
+  const poolCapPurchase = new Map<string, number>();
+  const poolCapReward = new Map<string, number>();
+  for (const v of sorted) {
+    const pKey = v.voucherPurchasePool?.key;
+    if (pKey && !poolCapPurchase.has(pKey)) {
+      poolCapPurchase.set(pKey, v.voucherPurchasePool!.annualLimitInr);
+    }
+    const rKey = v.sharedCapPool?.key;
+    if (rKey && !poolCapReward.has(rKey)) {
+      const annual = tripAwareAnnualCapInr(
+        v.rewardCapPerPeriodValueInr,
+        v.sharedCapPool!.capPeriod,
+        bookingsPerYear,
+      );
+      poolCapReward.set(rKey, annual ?? Number.POSITIVE_INFINITY);
+    }
+  }
+  const poolUsedPurchase = new Map<string, number>();
+  const poolUsedReward = new Map<string, number>();
+
   let remaining = spend;
   let totalInr = 0;
   let primary: BestVoucher | null = null;
@@ -375,8 +399,16 @@ function voucherWaterfallInr(
   for (const v of sorted) {
     if (remaining <= 0) break;
     const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
-    const absorbed =
+    let absorbed =
       purchaseCap === null ? remaining : Math.min(remaining, purchaseCap);
+    const pKey = v.voucherPurchasePool?.key ?? null;
+    if (pKey) {
+      const headroom = Math.max(
+        0,
+        poolCapPurchase.get(pKey)! - (poolUsedPurchase.get(pKey) ?? 0),
+      );
+      absorbed = Math.min(absorbed, headroom);
+    }
     if (absorbed <= 0) continue;
 
     const rewardCap = tripAwareAnnualCapInr(
@@ -384,8 +416,19 @@ function voucherWaterfallInr(
       v.capPeriod,
       bookingsPerYear,
     );
-    const acceleratedV =
+    let acceleratedV =
       rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
+    const rKey = v.sharedCapPool?.key ?? null;
+    if (rKey && v.breakdown.reward > 0) {
+      const headroomValue = Math.max(
+        0,
+        poolCapReward.get(rKey)! - (poolUsedReward.get(rKey) ?? 0),
+      );
+      acceleratedV = Math.min(
+        acceleratedV,
+        (headroomValue * 100) / v.breakdown.reward,
+      );
+    }
     const overflowV = absorbed - acceleratedV;
 
     const earned =
@@ -396,6 +439,16 @@ function voucherWaterfallInr(
 
     totalInr += earned;
     remaining -= absorbed;
+    if (pKey) {
+      poolUsedPurchase.set(pKey, (poolUsedPurchase.get(pKey) ?? 0) + absorbed);
+    }
+    if (rKey) {
+      poolUsedReward.set(
+        rKey,
+        (poolUsedReward.get(rKey) ?? 0) +
+          (acceleratedV * v.breakdown.reward) / 100,
+      );
+    }
     if (!primary) primary = v;
   }
 
@@ -430,13 +483,20 @@ function voucherAnnualCap(
       ? bookingsPerYear * Math.min(avgBookingInr, perBookingCeiling)
       : null;
 
-  const annualFromMonthly =
-    monthlyPurchaseInr !== null ? monthlyPurchaseInr * 12 : null;
+  // Purchase-volume cap from the voucher_cap-derived pool. Payloads written
+  // before voucherPurchasePool existed carry only monthlyPurchaseInr — fall
+  // back to the legacy ×12 annualization for those.
+  const pool = voucher.voucherPurchasePool;
+  const annualFromPurchaseCap = pool
+    ? pool.annualLimitInr
+    : monthlyPurchaseInr !== null
+      ? monthlyPurchaseInr * 12
+      : null;
 
-  if (annualFromBookings === null && annualFromMonthly === null) return null;
-  if (annualFromBookings === null) return annualFromMonthly;
-  if (annualFromMonthly === null) return annualFromBookings;
-  return Math.min(annualFromBookings, annualFromMonthly);
+  if (annualFromBookings === null && annualFromPurchaseCap === null) return null;
+  if (annualFromBookings === null) return annualFromPurchaseCap;
+  if (annualFromPurchaseCap === null) return annualFromBookings;
+  return Math.min(annualFromBookings, annualFromPurchaseCap);
 }
 
 function formatInr(value: number): string {
@@ -603,7 +663,13 @@ interface SharedCapParticipant {
   baseRate: number;
   discount: number;
   fee: number;
-  pool: ParticipantPool;
+  // Reward-value pool (null when the candidate has no shared reward cap — a
+  // voucher can still participate purely through its purchase pool).
+  pool: ParticipantPool | null;
+  // Purchase-volume pool (vouchers with a shared purchase_inr voucher_cap
+  // only): bounds the ₹ of vouchers bought across categories before the reward
+  // pool applies.
+  purchasePool: ParticipantPool | null;
 }
 
 // Resolve the combined pool (with annual budget) a candidate participates in.
@@ -644,7 +710,14 @@ function collectSharedCapParticipants(
       const v = bestOf.bestVoucher;
       if (!v) continue;
       const pool = annualParticipantPool(v, tripsPerYearForGroup);
-      if (!pool) continue;
+      // Shared purchase pool (purchase_inr voucher_cap with a combined voucher
+      // group). A voucher participates when it has either shared budget.
+      const pp = v.voucherPurchasePool;
+      const purchasePool: ParticipantPool | null =
+        pp && pp.key !== null
+          ? { key: pp.key, budgetAnnualInr: pp.annualLimitInr }
+          : null;
+      if (!pool && !purchasePool) continue;
       // cat.cappedAnnualSpendInr was set to the voucher purchase cap in
       // computeCategoryReturn — reuse rather than recomputing voucherAnnualCap.
       const coveredSpend =
@@ -662,6 +735,7 @@ function collectSharedCapParticipants(
         discount: v.breakdown.discount,
         fee: v.breakdown.fee,
         pool,
+        purchasePool,
       });
     } else {
       const d = bestOf.bestDirectSwipe;
@@ -679,6 +753,7 @@ function collectSharedCapParticipants(
         discount: 0,
         fee: 0,
         pool,
+        purchasePool: null,
       });
     }
   }
@@ -696,34 +771,74 @@ function reallocateSharedPools(
 ): void {
   const remaining = new Map<string, number>();
   const memberCount = new Map<string, number>();
+  const remainingPurchase = new Map<string, number>();
+  const purchaseMemberCount = new Map<string, number>();
   for (const p of participants) {
-    memberCount.set(p.pool.key, (memberCount.get(p.pool.key) ?? 0) + 1);
-    const prev = remaining.get(p.pool.key);
-    remaining.set(
-      p.pool.key,
-      prev === undefined
-        ? p.pool.budgetAnnualInr
-        : Math.min(prev, p.pool.budgetAnnualInr),
-    );
+    if (p.pool) {
+      memberCount.set(p.pool.key, (memberCount.get(p.pool.key) ?? 0) + 1);
+      const prev = remaining.get(p.pool.key);
+      remaining.set(
+        p.pool.key,
+        prev === undefined
+          ? p.pool.budgetAnnualInr
+          : Math.min(prev, p.pool.budgetAnnualInr),
+      );
+    }
+    if (p.purchasePool) {
+      purchaseMemberCount.set(
+        p.purchasePool.key,
+        (purchaseMemberCount.get(p.purchasePool.key) ?? 0) + 1,
+      );
+      const prev = remainingPurchase.get(p.purchasePool.key);
+      remainingPurchase.set(
+        p.purchasePool.key,
+        prev === undefined
+          ? p.purchasePool.budgetAnnualInr
+          : Math.min(prev, p.purchasePool.budgetAnnualInr),
+      );
+    }
   }
 
+  // Re-allocate only genuinely shared pools (>1 member on either budget); a
+  // lone member's per-category caps were already applied upstream.
   const toProcess = participants.filter(
-    (p) => (memberCount.get(p.pool.key) ?? 0) > 1,
+    (p) =>
+      (p.pool && (memberCount.get(p.pool.key) ?? 0) > 1) ||
+      (p.purchasePool &&
+        (purchaseMemberCount.get(p.purchasePool.key) ?? 0) > 1),
   );
   toProcess.sort((a, b) => b.rate - a.rate);
 
   for (const m of toProcess) {
-    const potential = (m.coveredSpend * m.rate) / 100;
-    const cap = remaining.get(m.pool.key) ?? Number.POSITIVE_INFINITY;
+    // Shared purchase budget clamps the voucher spend this category can route
+    // before its reward draws from the reward pool.
+    let coveredSpend = m.coveredSpend;
+    if (
+      m.purchasePool &&
+      (purchaseMemberCount.get(m.purchasePool.key) ?? 0) > 1
+    ) {
+      const headroom = Math.max(
+        0,
+        remainingPurchase.get(m.purchasePool.key) ?? 0,
+      );
+      coveredSpend = Math.min(coveredSpend, headroom);
+      remainingPurchase.set(m.purchasePool.key, headroom - coveredSpend);
+    }
+    const potential = (coveredSpend * m.rate) / 100;
+    const cap = m.pool
+      ? (remaining.get(m.pool.key) ?? Number.POSITIVE_INFINITY)
+      : Number.POSITIVE_INFINITY;
     const accelerated = Math.min(potential, cap);
     overrides.set(
       `${segLabelFor(m)}::${m.category}`,
-      participantReturn(m, accelerated),
+      participantReturn({ ...m, coveredSpend }, accelerated),
     );
-    remaining.set(
-      m.pool.key,
-      Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated),
-    );
+    if (m.pool) {
+      remaining.set(
+        m.pool.key,
+        Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated),
+      );
+    }
   }
 }
 

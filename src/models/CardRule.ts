@@ -7,6 +7,7 @@ import type {
   CapScope,
   DirectSwipeSchedule,
   SharedCapGroup,
+  VoucherCap,
 } from "@/lib/logic/advisor/rules";
 
 // One document per reward rule. `cardSlug` matches Card.slug — we join by the
@@ -31,11 +32,17 @@ export interface CardRuleDoc extends Document {
       value: number;
       scope: CapScope;
     } | null;
-    voucher_monthly_purchase_limit_inr: number | null;
+    // Voucher-lane cap (metric "purchase_inr" = purchase-volume cap; reward
+    // metrics = voucher-lane reward cap). May be absent on legacy rows.
+    voucher_cap?: VoucherCap | null;
+    // DEPRECATED: folded into voucher_cap at read time (toRuleCaps). Kept so
+    // legacy rows keep working until backfilled.
+    voucher_monthly_purchase_limit_inr?: number | null;
     max_voucher_size_inr: number | null;
     vouchers_per_booking: number | null;
   };
   shared_cap_group: SharedCapGroup | null;
+  voucher_shared_cap_group?: SharedCapGroup | null;
   fuel_surcharge_applicable: number;
   max_fuel_transaction_limit: number;
   redemption_mode: "online" | "offline" | "both";
@@ -59,6 +66,7 @@ const CardRuleSchema = new Schema<CardRuleDoc>(
     reward: { type: Schema.Types.Mixed, required: true },
     caps: { type: Schema.Types.Mixed, required: true },
     shared_cap_group: { type: Schema.Types.Mixed, default: null },
+    voucher_shared_cap_group: { type: Schema.Types.Mixed, default: null },
     fuel_surcharge_applicable: { type: Number, default: 0 },
     max_fuel_transaction_limit: { type: Number, default: 0 },
     redemption_mode: { type: String, default: "both" },

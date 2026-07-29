@@ -3,7 +3,12 @@ import CardRuleModel, { type CardRuleDoc } from "@/models/CardRule";
 import CardBestOfModel from "@/models/CardBestOf";
 import { computeBestOfForCard } from "@/lib/logic/advisor/bestOf";
 import type { MockCard } from "@/lib/logic/advisor/cards";
-import { toSharedCapGroup, type MockRule } from "@/lib/logic/advisor/rules";
+import {
+  toRuleCaps,
+  toSharedCapGroup,
+  validateSharedCapGroups,
+  type MockRule,
+} from "@/lib/logic/advisor/rules";
 
 type LeanCard = Omit<CardDoc, keyof Document> & Record<string, unknown>;
 type LeanCardRule = Omit<CardRuleDoc, keyof Document> & Record<string, unknown>;
@@ -42,8 +47,9 @@ function toMockRule(doc: LeanCardRule): MockRule {
     category: doc.category as MockRule["category"],
     merchant: doc.merchant as MockRule["merchant"],
     reward: doc.reward as MockRule["reward"],
-    caps: doc.caps as MockRule["caps"],
+    caps: toRuleCaps(doc.caps),
     shared_cap_group: toSharedCapGroup(doc.shared_cap_group),
+    voucher_shared_cap_group: toSharedCapGroup(doc.voucher_shared_cap_group),
     fuel_surcharge_applicable: (doc.fuel_surcharge_applicable as number) ?? 0,
     max_fuel_transaction_limit: (doc.max_fuel_transaction_limit as number) ?? 0,
     redemption_mode:
@@ -78,6 +84,10 @@ export async function recomputeBestOfForCard(
   const card = toMockCard(cardDoc);
   const rules = (ruleDocs ?? []).map(toMockRule);
   const rulesVersion = (cardDoc.rulesVersion as number) ?? 1;
+
+  // Combined groups pool their members' caps, so inconsistent member caps
+  // would silently mis-score — fail the recompute loudly instead.
+  validateSharedCapGroups(rules);
 
   const results = computeBestOfForCard(card, rules, rulesVersion);
   const now = new Date();

@@ -1,9 +1,11 @@
 import { type Category, type MockCard } from "./cards";
 import {
   sharedCapGroupKey,
+  voucherPoolKey,
   groupFallbackRate,
   CARD_LEVEL_CAP,
   TOTAL_LEVEL_CAP,
+  CAP_PERIODS_PER_YEAR,
   type CapPeriod,
   type CapScope,
   type DirectSwipeSchedule,
@@ -38,11 +40,24 @@ export interface BestDirectSwipe {
   schedule: DirectSwipeSchedule | null;
 }
 
+// The purchase-volume pool a voucher draws absorbed spend from, derived from a
+// `purchase_inr` voucher_cap. `key` is the voucherPoolKey-namespaced shared
+// pool key when the rule has a `combined` voucher_shared_cap_group, or null for
+// a private (per-rule) purchase cap. The annual limit is a plain
+// periods-per-year annualization (never trip-aware — purchase volume doesn't
+// concentrate into trip periods the way accelerated rewards do).
+export interface VoucherPurchasePool {
+  key: string | null;
+  annualLimitInr: number;
+}
+
 export interface BestVoucher {
   merchant: Merchant;
   breakdown: { discount: number; reward: number; fee: number };
   totalPercentage: number;
   caps: {
+    // Monthly purchase-volume cap, kept for display and for payloads written
+    // before voucherPurchasePool existed (the engine falls back to ×12 on it).
     monthlyPurchaseInr: number | null;
     maxVoucherInr: number | null;
     perBooking: number | null;
@@ -50,6 +65,7 @@ export interface BestVoucher {
   };
   sharedCapGroup: SharedCapGroup | null;
   sharedCapPool: SharedCapPool | null;
+  voucherPurchasePool: VoucherPurchasePool | null;
   rewardCapPerPeriodValueInr: number | null;
   capPeriod: CapPeriod | null;
   fallbackPercentage: number;
@@ -90,11 +106,10 @@ const PERIOD_LABEL: Record<CapPeriod, string> = {
 };
 
 function perPeriodSpendForCap(
-  rule: MockRule,
+  cap: MockRule["caps"]["reward_cap"],
   card: MockCard,
   ratePercentage: number,
 ): number | null {
-  const cap = rule.caps.reward_cap;
   if (!cap) return null;
   if (ratePercentage <= 0) return null;
 
@@ -108,8 +123,10 @@ function perPeriodSpendForCap(
   return Math.round(spend);
 }
 
-function perPeriodValueForCap(rule: MockRule, card: MockCard): number | null {
-  const cap = rule.caps.reward_cap;
+function perPeriodValueForCap(
+  cap: MockRule["caps"]["reward_cap"],
+  card: MockCard,
+): number | null {
   if (!cap) return null;
   const value =
     cap.metric === "points"
@@ -184,8 +201,8 @@ function buildDirectCandidate(
       r.shared_cap_group,
       card.rewards.base_reward_rate,
     ),
-    cappedSpendPerPeriodInr: perPeriodSpendForCap(r, card, pct),
-    rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
+    cappedSpendPerPeriodInr: perPeriodSpendForCap(r.caps.reward_cap, card, pct),
+    rewardCapPerPeriodValueInr: perPeriodValueForCap(r.caps.reward_cap, card),
     capPeriod: r.caps.reward_cap?.period ?? null,
     capNote: capNoteFor(r),
     capScope: r.caps.reward_cap?.scope ?? null,
@@ -201,6 +218,39 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
     rw.voucher_discount_percentage +
     rw.voucher_reward_percentage -
     rw.convenience_fee_percentage;
+
+  const vc = r.caps.voucher_cap;
+  const vg = r.voucher_shared_cap_group;
+  const vgCombined = vg && vg.capType === "combined" ? vg : null;
+
+  // purchase_inr voucher_cap: clamps absorbed voucher spend (pooled across
+  // rules when a combined voucher group is set). The reward side is untouched —
+  // voucher rewards still budget against reward_cap / shared_cap_group.
+  const purchaseCap = vc?.metric === "purchase_inr" ? vc : null;
+  const voucherPurchasePool: VoucherPurchasePool | null = purchaseCap
+    ? {
+        key: vgCombined ? voucherPoolKey(vgCombined) : null,
+        annualLimitInr:
+          purchaseCap.value * CAP_PERIODS_PER_YEAR[purchaseCap.period],
+      }
+    : null;
+
+  // Reward-metric voucher_cap: the voucher lane budgets against it (and pools
+  // under the voucher group's namespaced key) instead of reward_cap +
+  // shared_cap_group.
+  const rewardVoucherCap =
+    vc && vc.metric !== "purchase_inr"
+      ? { period: vc.period, metric: vc.metric, value: vc.value, scope: vc.scope }
+      : null;
+
+  const laneCap = rewardVoucherCap ?? r.caps.reward_cap;
+  const laneGroup = rewardVoucherCap ? (vg ?? null) : r.shared_cap_group;
+  const lanePool: SharedCapPool | null = rewardVoucherCap
+    ? vgCombined
+      ? { key: voucherPoolKey(vgCombined), capPeriod: rewardVoucherCap.period }
+      : null
+    : sharedCapPoolFor(r);
+
   return {
     merchant: r.merchant as Merchant,
     breakdown: {
@@ -210,21 +260,25 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
     },
     totalPercentage: total,
     caps: {
-      monthlyPurchaseInr: r.caps.voucher_monthly_purchase_limit_inr,
+      monthlyPurchaseInr:
+        purchaseCap && purchaseCap.period === "monthly"
+          ? purchaseCap.value
+          : null,
       maxVoucherInr: r.caps.max_voucher_size_inr,
       perBooking: r.caps.vouchers_per_booking,
       rewardSpendPerPeriodInr: perPeriodSpendForCap(
-        r,
+        laneCap,
         card,
         rw.voucher_reward_percentage,
       ),
     },
-    sharedCapGroup: r.shared_cap_group,
-    sharedCapPool: sharedCapPoolFor(r),
-    rewardCapPerPeriodValueInr: perPeriodValueForCap(r, card),
-    capPeriod: r.caps.reward_cap?.period ?? null,
+    sharedCapGroup: laneGroup,
+    sharedCapPool: lanePool,
+    voucherPurchasePool,
+    rewardCapPerPeriodValueInr: perPeriodValueForCap(laneCap, card),
+    capPeriod: laneCap?.period ?? null,
     fallbackPercentage: groupFallbackRate(
-      r.shared_cap_group,
+      laneGroup,
       card.rewards.base_reward_rate,
     ),
   };
@@ -277,13 +331,17 @@ function pruneDirectFrontier(
   );
 }
 
-// Pareto-prune vouchers across (totalPercentage, monthlyPurchaseInr,
+// Pareto-prune vouchers across (totalPercentage, annual purchase limit,
 // maxVoucherInr × perBooking, rewardCapPerPeriodValueInr). null caps treated as
 // infinity. Each surviving voucher is optimal in at least one cap regime.
+// Candidates in different purchase pools draw from independent budgets, so
+// neither can dominate the other regardless of the numbers.
 function pruneVoucherFrontier(candidates: BestVoucher[]): BestVoucher[] {
+  const purchasePoolKey = (v: BestVoucher) => v.voucherPurchasePool?.key ?? null;
   const score = (v: BestVoucher) => ({
     pct: v.totalPercentage,
-    monthly: v.caps.monthlyPurchaseInr ?? Number.POSITIVE_INFINITY,
+    purchaseAnnual:
+      v.voucherPurchasePool?.annualLimitInr ?? Number.POSITIVE_INFINITY,
     perBookingVol:
       (v.caps.maxVoucherInr ?? Number.POSITIVE_INFINITY) *
       (v.caps.perBooking ?? Number.POSITIVE_INFINITY),
@@ -294,10 +352,11 @@ function pruneVoucherFrontier(candidates: BestVoucher[]): BestVoucher[] {
       const cs = score(c);
       return !candidates.some((o) => {
         if (o === c) return false;
+        if (purchasePoolKey(o) !== purchasePoolKey(c)) return false;
         const os = score(o);
         if (
           os.pct < cs.pct ||
-          os.monthly < cs.monthly ||
+          os.purchaseAnnual < cs.purchaseAnnual ||
           os.perBookingVol < cs.perBookingVol ||
           os.rewardCap < cs.rewardCap
         ) {
@@ -305,7 +364,7 @@ function pruneVoucherFrontier(candidates: BestVoucher[]): BestVoucher[] {
         }
         return (
           os.pct > cs.pct ||
-          os.monthly > cs.monthly ||
+          os.purchaseAnnual > cs.purchaseAnnual ||
           os.perBookingVol > cs.perBookingVol ||
           os.rewardCap > cs.rewardCap
         );

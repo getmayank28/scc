@@ -618,6 +618,26 @@ export type CapPeriod = "daily" | "monthly" | "quarterly" | "annually";
 export type CapMetric = "points" | "inr" | "cashback";
 export type CapScope = "merchant" | "category" | "card";
 
+// Voucher-lane caps additionally support "purchase_inr": a cap on the voucher
+// PURCHASE volume (₹ of vouchers bought per period), as opposed to the reward
+// metrics which cap the reward value earned. Supersedes the deprecated
+// `voucher_monthly_purchase_limit_inr` (a monthly-only purchase_inr cap).
+export type VoucherCapMetric = CapMetric | "purchase_inr";
+
+export interface VoucherCap {
+  period: CapPeriod;
+  metric: VoucherCapMetric;
+  value: number;
+  scope: CapScope;
+}
+
+export const CAP_PERIODS_PER_YEAR: Record<CapPeriod, number> = {
+  daily: 365,
+  monthly: 12,
+  quarterly: 4,
+  annually: 1,
+};
+
 export type SharedCapType = "combined" | "standalone";
 
 // Sentinel `merchant` value meaning the shared cap is scoped to the whole card
@@ -660,6 +680,14 @@ export function sharedCapGroupKey(group: SharedCapGroup): string {
   return `${group.multiplier ?? "*"}::${group.merchant ?? "*"}`;
 }
 
+// Pool key for a VOUCHER-lane shared group. Namespaced so a voucher pool can
+// never merge with a direct-lane pool, even when both use the same group token
+// (SmartBuy: direct rules pool a reward cap under "10::smartbuy" while voucher
+// rules pool a purchase cap under "voucher::10::smartbuy").
+export function voucherPoolKey(group: SharedCapGroup): string {
+  return `voucher::${sharedCapGroupKey(group)}`;
+}
+
 // A `total` group's spend earns 0% once its cap is exhausted; every other group
 // (and groupless spend) falls back to the card base rate. Centralised here so the
 // engine's per-category and cross-category fallback paths agree.
@@ -691,9 +719,71 @@ export function toSharedCapGroup(raw: unknown): SharedCapGroup | null {
   };
 }
 
+const VOUCHER_CAP_METRICS = new Set<string>([
+  "points",
+  "inr",
+  "cashback",
+  "purchase_inr",
+]);
+const CAP_PERIOD_SET = new Set<string>(Object.keys(CAP_PERIODS_PER_YEAR));
+
+// Normalize a rule's stored `caps` into the canonical MockRule shape. The
+// deprecated `voucher_monthly_purchase_limit_inr` is folded into an equivalent
+// `voucher_cap` (monthly purchase_inr — same ×12 annualization the engine used
+// to apply) when no explicit voucher_cap is set, so legacy rows keep working
+// byte-identically while the engine only ever sees `voucher_cap`.
+export function toRuleCaps(raw: unknown): MockRule["caps"] {
+  const c = (raw && typeof raw === "object" ? raw : {}) as Record<
+    string,
+    unknown
+  >;
+  let voucher_cap: VoucherCap | null = null;
+  const vc = c.voucher_cap as Partial<VoucherCap> | null | undefined;
+  if (
+    vc &&
+    typeof vc === "object" &&
+    typeof vc.value === "number" &&
+    typeof vc.metric === "string" &&
+    VOUCHER_CAP_METRICS.has(vc.metric) &&
+    typeof vc.period === "string" &&
+    CAP_PERIOD_SET.has(vc.period)
+  ) {
+    voucher_cap = {
+      period: vc.period,
+      metric: vc.metric,
+      value: vc.value,
+      scope: vc.scope ?? "merchant",
+    };
+  }
+  const legacyLimit = c.voucher_monthly_purchase_limit_inr;
+  if (!voucher_cap && typeof legacyLimit === "number") {
+    voucher_cap = {
+      period: "monthly",
+      metric: "purchase_inr",
+      value: legacyLimit,
+      scope: "merchant",
+    };
+  }
+  return {
+    reward_cap: (c.reward_cap as MockRule["caps"]["reward_cap"]) ?? null,
+    voucher_cap,
+    max_voucher_size_inr: (c.max_voucher_size_inr as number | null) ?? null,
+    vouchers_per_booking: (c.vouchers_per_booking as number | null) ?? null,
+  };
+}
+
 function sameCap(
   a: NonNullable<MockRule["caps"]["reward_cap"]> | null | undefined,
   b: NonNullable<MockRule["caps"]["reward_cap"]> | null | undefined,
+): boolean {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  return a.value === b.value && a.period === b.period && a.metric === b.metric;
+}
+
+function sameVoucherCap(
+  a: VoucherCap | null | undefined,
+  b: VoucherCap | null | undefined,
 ): boolean {
   if (!a && !b) return true;
   if (!a || !b) return false;
@@ -721,6 +811,40 @@ export function validateSharedCapGroups(rules: MockRule[]): void {
       if (!sameCap(first, m.caps.reward_cap)) {
         throw new Error(
           `Shared cap group "${key}" has inconsistent reward_cap across rules: ${members
+            .map((x) => x._id)
+            .join(", ")}`,
+        );
+      }
+    }
+  }
+
+  // Voucher-lane pass: `combined` voucher groups pool the members' voucher_cap,
+  // so each member must carry one and they must agree on it.
+  const byVoucherKey = new Map<string, MockRule[]>();
+  for (const r of rules) {
+    if (!r.is_active) continue;
+    const group = r.voucher_shared_cap_group;
+    if (!group || group.capType !== "combined") continue;
+    const key = `${r.cardId}::${voucherPoolKey(group)}`;
+    const list = byVoucherKey.get(key) ?? [];
+    list.push(r);
+    byVoucherKey.set(key, list);
+  }
+  for (const [key, members] of byVoucherKey) {
+    const missing = members.filter((m) => !m.caps.voucher_cap);
+    if (missing.length > 0) {
+      throw new Error(
+        `Voucher shared cap group "${key}" has members without a voucher_cap: ${missing
+          .map((x) => x._id)
+          .join(", ")}`,
+      );
+    }
+    if (members.length <= 1) continue;
+    const first = members[0].caps.voucher_cap;
+    for (const m of members.slice(1)) {
+      if (!sameVoucherCap(first, m.caps.voucher_cap)) {
+        throw new Error(
+          `Voucher shared cap group "${key}" has inconsistent voucher_cap across rules: ${members
             .map((x) => x._id)
             .join(", ")}`,
         );
@@ -774,12 +898,23 @@ export interface MockRule {
       value: number;
       scope: CapScope;
     } | null;
-    voucher_monthly_purchase_limit_inr: number | null;
+    // Voucher-lane cap. metric "purchase_inr" caps the voucher purchase volume
+    // (₹ bought/period); a reward metric caps the voucher lane's reward value,
+    // replacing reward_cap in the voucher lane's budget derivation. null =
+    // voucher rewards budget from reward_cap, no purchase-volume cap. The
+    // deprecated voucher_monthly_purchase_limit_inr is normalized into this
+    // field at DB read (see toRuleCaps).
+    voucher_cap: VoucherCap | null;
     max_voucher_size_inr: number | null;
     vouchers_per_booking: number | null;
   };
 
   shared_cap_group: SharedCapGroup | null;
+  // Voucher-lane shared group: pools the members' voucher_cap across rules on
+  // the same card, keyed by voucherPoolKey (namespaced so it never merges with
+  // a direct-lane pool). Members must agree on voucher_cap (validated). null =
+  // the voucher_cap (if any) is private to this rule.
+  voucher_shared_cap_group: SharedCapGroup | null;
 
   fuel_surcharge_applicable: number;
   max_fuel_transaction_limit: number;
