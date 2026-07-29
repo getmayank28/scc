@@ -23,6 +23,9 @@ const WELCOME_BENEFIT_TYPE_VALUES = ["points", "voucher", "cashback", "miles", "
 const LOUNGE_PROGRAM_VALUES = ["issuer", "priority_pass", "dreamfolks", "loungekey"] as const;
 const CAP_PERIOD_VALUES = ["daily", "monthly", "quarterly", "annually"] as const;
 const CAP_METRIC_VALUES = ["points", "inr", "cashback"] as const;
+// Voucher caps additionally support "purchase_inr" (caps voucher purchase
+// volume in ₹/period rather than reward value).
+const VOUCHER_CAP_METRIC_VALUES = [...CAP_METRIC_VALUES, "purchase_inr"] as const;
 const CAP_SCOPE_VALUES = ["merchant", "category", "card"] as const;
 
 const loungeAccessSchema = z.object({
@@ -109,6 +112,16 @@ const rewardCapSchema = z
   })
   .nullable();
 
+const voucherCapSchema = z
+  .object({
+    period: z.enum(CAP_PERIOD_VALUES),
+    metric: z.enum(VOUCHER_CAP_METRIC_VALUES),
+    value: z.number().nonnegative(),
+    scope: z.enum(CAP_SCOPE_VALUES),
+  })
+  .nullable()
+  .default(null);
+
 const directSwipeScheduleSchema = z
   .object({
     mode: z.enum(["marginal", "whole"]),
@@ -139,11 +152,19 @@ export const ruleCreateSchema = z.object({
   }),
   caps: z.object({
     reward_cap: rewardCapSchema,
-    voucher_monthly_purchase_limit_inr: z.number().nonnegative().nullable(),
+    voucher_cap: voucherCapSchema,
+    // DEPRECATED: use voucher_cap with metric "purchase_inr". Still accepted;
+    // normalized into voucher_cap at DB read (toRuleCaps).
+    voucher_monthly_purchase_limit_inr: z
+      .number()
+      .nonnegative()
+      .nullable()
+      .default(null),
     max_voucher_size_inr: z.number().nonnegative().nullable(),
     vouchers_per_booking: z.number().nonnegative().nullable(),
   }),
   shared_cap_group: sharedCapGroupSchema,
+  voucher_shared_cap_group: sharedCapGroupSchema,
   valid_from: z.coerce.date(),
   valid_until: z.coerce.date().nullable(),
   notes: z.string().nullable(),

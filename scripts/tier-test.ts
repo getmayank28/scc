@@ -31,11 +31,12 @@ function makeRule(schedule: DirectSwipeSchedule | null, flatPct = 0): MockRule {
     },
     caps: {
       reward_cap: null,
-      voucher_monthly_purchase_limit_inr: null,
+      voucher_cap: null,
       max_voucher_size_inr: null,
       vouchers_per_booking: null,
     },
     shared_cap_group: null,
+    voucher_shared_cap_group: null,
     fuel_surcharge_applicable: 0,
     max_fuel_transaction_limit: 0,
     redemption_mode: "both",

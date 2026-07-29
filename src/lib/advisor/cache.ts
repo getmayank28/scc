@@ -6,7 +6,11 @@ import CardMilestoneModel, {
 } from "@/models/CardMilestone";
 import dbConnect from "@/lib/utils/dbConnet";
 import type { MockCard } from "@/lib/logic/advisor/cards";
-import { toSharedCapGroup, type MockRule } from "@/lib/logic/advisor/rules";
+import {
+  toRuleCaps,
+  toSharedCapGroup,
+  type MockRule,
+} from "@/lib/logic/advisor/rules";
 import type { MockBestOf } from "@/lib/logic/advisor/bestOf";
 import type { MockMilestone } from "@/lib/logic/advisor/scoring";
 
@@ -71,8 +75,9 @@ function toMockRule(doc: LeanRule): MockRule {
     category: doc.category as MockRule["category"],
     merchant: doc.merchant as MockRule["merchant"],
     reward: doc.reward as MockRule["reward"],
-    caps: doc.caps as MockRule["caps"],
+    caps: toRuleCaps(doc.caps),
     shared_cap_group: toSharedCapGroup(doc.shared_cap_group),
+    voucher_shared_cap_group: toSharedCapGroup(doc.voucher_shared_cap_group),
     fuel_surcharge_applicable: (doc.fuel_surcharge_applicable as number) ?? 0,
     max_fuel_transaction_limit: (doc.max_fuel_transaction_limit as number) ?? 0,
     redemption_mode:
@@ -97,7 +102,7 @@ async function hydrate(): Promise<void> {
       .lean<LeanCard[]>(),
     CardRuleModel.find({ is_active: true })
       .select(
-        "ruleKey cardSlug category merchant reward caps shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until notes is_active",
+        "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until notes is_active",
       )
       .lean<LeanRule[]>(),
     CardBestOfModel.find({})

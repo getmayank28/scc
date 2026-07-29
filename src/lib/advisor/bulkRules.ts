@@ -26,6 +26,8 @@ import {
   type Merchant,
   type SharedCapGroup,
   type SharedCapType,
+  type VoucherCap,
+  type VoucherCapMetric,
   CARD_LEVEL_CAP,
   TOTAL_LEVEL_CAP,
 } from "@/lib/logic/advisor/rules";
@@ -37,6 +39,12 @@ const MERCHANT_SET = new Set<string>(Object.values(MERCHANTS));
 // membership; if a union gains a member, add it here too.
 const CAP_PERIODS = new Set<CapPeriod>(["daily", "monthly", "quarterly", "annually"]);
 const CAP_METRICS = new Set<CapMetric>(["points", "inr", "cashback"]);
+const VOUCHER_CAP_METRICS = new Set<VoucherCapMetric>([
+  "points",
+  "inr",
+  "cashback",
+  "purchase_inr",
+]);
 const CAP_SCOPES = new Set<CapScope>(["merchant", "category", "card"]);
 const TIER_MODES = new Set<DirectSwipeTierMode>(["marginal", "whole"]);
 const REDEMPTION_MODES = new Set<RedemptionMode>(["online", "offline", "both"]);
@@ -76,6 +84,11 @@ export interface RawRuleRow {
   reward_cap_metric?: Cell;
   reward_cap_value?: Cell;
   reward_cap_scope?: Cell;
+  voucher_shared_cap_group?: Cell;
+  voucher_cap_period?: Cell;
+  voucher_cap_metric?: Cell;
+  voucher_cap_value?: Cell;
+  voucher_cap_scope?: Cell;
   direct_swipe_schedule_mode?: Cell;
   direct_swipe_schedule_period?: Cell;
   direct_swipe_schedule_value?: Cell;
@@ -100,11 +113,12 @@ export interface NormalizedRule {
       value: number;
       scope: CapScope;
     } | null;
-    voucher_monthly_purchase_limit_inr: number | null;
+    voucher_cap: VoucherCap | null;
     max_voucher_size_inr: number | null;
     vouchers_per_booking: number | null;
   };
   shared_cap_group: SharedCapGroup | null;
+  voucher_shared_cap_group: SharedCapGroup | null;
   fuel_surcharge_applicable: number;
   max_fuel_transaction_limit: number;
   redemption_mode: RedemptionMode;
@@ -120,6 +134,7 @@ export type DropCode =
   | "unknown_merchant"
   | "bad_number"
   | "bad_reward_cap"
+  | "bad_voucher_cap"
   | "bad_direct_swipe_schedule"
   | "bad_shared_cap_group"
   | "unknown_redemption_mode"
@@ -141,7 +156,6 @@ export const TEMPLATE_COLUMNS = [
   "voucher_discount_percentage",
   "voucher_reward_percentage",
   "convenience_fee_percentage",
-  "voucher_monthly_purchase_limit_inr",
   "max_voucher_size_inr",
   "vouchers_per_booking",
   "voucher_validity_in_months",
@@ -154,6 +168,11 @@ export const TEMPLATE_COLUMNS = [
   "reward_cap_metric",
   "reward_cap_value",
   "reward_cap_scope",
+  "voucher_shared_cap_group",
+  "voucher_cap_period",
+  "voucher_cap_metric",
+  "voucher_cap_value",
+  "voucher_cap_scope",
   "direct_swipe_schedule_mode",
   "direct_swipe_schedule_period",
   "direct_swipe_schedule_value",
@@ -171,6 +190,9 @@ const HEADER_ALIASES: Record<string, keyof RawRuleRow> = {
   rate: "direct_swipe_percentage",
   cap_group: "shared_cap_group",
   group: "shared_cap_group",
+  // DEPRECATED column, still accepted: folded into voucher_cap (monthly
+  // purchase_inr) during normalizeRow when no voucher_cap_* is set.
+  voucher_monthly_purchase_limit_inr: "voucher_monthly_purchase_limit_inr",
 };
 
 export function mapHeader(rawHeader: string): keyof RawRuleRow | null {
@@ -286,6 +308,43 @@ function parseRewardCap(
     : (String(scopeRaw).trim().toLowerCase() as CapScope);
   if (!CAP_SCOPES.has(scope)) {
     return { error: `reward_cap_scope "${scopeRaw}" must be one of ${[...CAP_SCOPES].join(", ")}` };
+  }
+  return { period, metric, value, scope };
+}
+
+// Build the voucher_cap from its four columns. VALUE DRIVES IT, like
+// parseRewardCap: blank voucher_cap_value -> null. period/metric/scope default
+// to monthly/purchase_inr/merchant — most voucher caps are per-rule monthly
+// purchase-volume limits. metric additionally accepts "purchase_inr" (caps the
+// ₹ of vouchers bought/period); a reward metric caps the voucher lane's reward
+// value instead (replacing reward_cap in that lane).
+function parseVoucherCap(
+  valueRaw: Cell,
+  periodRaw: Cell,
+  metricRaw: Cell,
+  scopeRaw: Cell,
+): VoucherCap | null | { error: string } {
+  const value = parseNum(valueRaw, "voucher_cap_value");
+  if (value && typeof value === "object") return value; // {error}
+  if (value === null) return null; // blank value -> no cap
+
+  const period = isBlank(periodRaw)
+    ? "monthly"
+    : (String(periodRaw).trim().toLowerCase() as CapPeriod);
+  if (!CAP_PERIODS.has(period)) {
+    return { error: `voucher_cap_period "${periodRaw}" must be one of ${[...CAP_PERIODS].join(", ")}` };
+  }
+  const metric = isBlank(metricRaw)
+    ? "purchase_inr"
+    : (String(metricRaw).trim().toLowerCase() as VoucherCapMetric);
+  if (!VOUCHER_CAP_METRICS.has(metric)) {
+    return { error: `voucher_cap_metric "${metricRaw}" must be one of ${[...VOUCHER_CAP_METRICS].join(", ")}` };
+  }
+  const scope = isBlank(scopeRaw)
+    ? "merchant"
+    : (String(scopeRaw).trim().toLowerCase() as CapScope);
+  if (!CAP_SCOPES.has(scope)) {
+    return { error: `voucher_cap_scope "${scopeRaw}" must be one of ${[...CAP_SCOPES].join(", ")}` };
   }
   return { period, metric, value, scope };
 }
@@ -444,9 +503,32 @@ export function normalizeRow(
     return fail("bad_reward_cap", reward_cap.error);
   }
 
-  // ---- shared_cap_group ----
+  // ---- voucher_cap (legacy voucher_monthly_purchase_limit_inr folds in) ----
+  let voucher_cap = parseVoucherCap(
+    raw.voucher_cap_value,
+    raw.voucher_cap_period,
+    raw.voucher_cap_metric,
+    raw.voucher_cap_scope,
+  );
+  if (voucher_cap && "error" in voucher_cap) {
+    return fail("bad_voucher_cap", voucher_cap.error);
+  }
+  if (!voucher_cap && nullables.voucher_monthly_purchase_limit_inr !== null) {
+    voucher_cap = {
+      period: "monthly",
+      metric: "purchase_inr",
+      value: nullables.voucher_monthly_purchase_limit_inr,
+      scope: "merchant",
+    };
+  }
+
+  // ---- shared_cap_group / voucher_shared_cap_group ----
   const scg = parseSharedCapGroup(raw.shared_cap_group);
   if (scg && "error" in scg) return fail("bad_shared_cap_group", scg.error);
+  const vscg = parseSharedCapGroup(raw.voucher_shared_cap_group);
+  if (vscg && "error" in vscg) {
+    return fail("bad_shared_cap_group", `voucher_${vscg.error}`);
+  }
 
   // ---- partner (optional free-form text, default null) ----
   const partner = isBlank(raw.partner) ? null : String(raw.partner).trim();
@@ -466,12 +548,12 @@ export function normalizeRow(
       },
       caps: {
         reward_cap,
-        voucher_monthly_purchase_limit_inr:
-          nullables.voucher_monthly_purchase_limit_inr,
+        voucher_cap,
         max_voucher_size_inr: nullables.max_voucher_size_inr,
         vouchers_per_booking: nullables.vouchers_per_booking,
       },
       shared_cap_group: scg,
+      voucher_shared_cap_group: vscg,
       fuel_surcharge_applicable: nums.fuel_surcharge_applicable,
       max_fuel_transaction_limit: nums.max_fuel_transaction_limit,
       redemption_mode,
@@ -516,12 +598,12 @@ export function ruleToDoc(
     },
     caps: {
       reward_cap: rule.caps.reward_cap,
-      voucher_monthly_purchase_limit_inr:
-        rule.caps.voucher_monthly_purchase_limit_inr,
+      voucher_cap: rule.caps.voucher_cap,
       max_voucher_size_inr: rule.caps.max_voucher_size_inr,
       vouchers_per_booking: rule.caps.vouchers_per_booking,
     },
     shared_cap_group: rule.shared_cap_group,
+    voucher_shared_cap_group: rule.voucher_shared_cap_group,
     fuel_surcharge_applicable: rule.fuel_surcharge_applicable,
     max_fuel_transaction_limit: rule.max_fuel_transaction_limit,
     redemption_mode: rule.redemption_mode,
