@@ -55,6 +55,10 @@ export interface BestVoucher {
   merchant: Merchant;
   breakdown: { discount: number; reward: number; fee: number };
   totalPercentage: number;
+  // The same merchant's direct-swipe rate. Once the voucher's own cap is
+  // exhausted, spend on this merchant overflows to this rate (never to another
+  // merchant's voucher) — one merchant per hotel evaluation.
+  directSwipePercentage: number;
   caps: {
     // Monthly purchase-volume cap, kept for display and for payloads written
     // before voucherPurchasePool existed (the engine falls back to ×12 on it).
@@ -259,6 +263,7 @@ function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
       fee: rw.convenience_fee_percentage,
     },
     totalPercentage: total,
+    directSwipePercentage: rw.direct_swipe_percentage,
     caps: {
       monthlyPurchaseInr:
         purchaseCap && purchaseCap.period === "monthly"
