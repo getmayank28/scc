@@ -353,114 +353,60 @@ interface VoucherWaterfallResult {
 // purchase cap, next voucher absorbs the next slice, etc. Spend that can't be
 // routed through any voucher spills into the *direct* waterfall (not the card
 // base rate) — this is the key correctness fix vs. the old single-rule lane.
+// One merchant per evaluation: the voucher absorbs spend up to its own annual
+// cap at the voucher rate; every rupee above that cap earns the SAME merchant's
+// direct-swipe rate (not another merchant's voucher, not the card base rate).
+function singleVoucherInr(
+  v: BestVoucher,
+  spend: number,
+  bookingsPerYear: number,
+  avgBookingInr: number,
+): number {
+  const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+  const absorbed =
+    purchaseCap === null ? spend : Math.min(spend, purchaseCap);
+
+  // Within the absorbed slice, accelerated reward can be capped separately; the
+  // part beyond that reward cap earns only the discount at the voucher merchant.
+  const rewardCap = tripAwareAnnualCapInr(
+    v.caps.rewardSpendPerPeriodInr,
+    v.capPeriod,
+    bookingsPerYear,
+  );
+  const acceleratedV =
+    rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
+
+  const voucherEarned =
+    (absorbed * v.breakdown.discount) / 100 -
+    (absorbed * v.breakdown.fee) / 100 +
+    (acceleratedV * v.breakdown.reward) / 100;
+
+  // Spend above the voucher cap falls back to this merchant's direct rate.
+  const overflow = Math.max(0, spend - absorbed);
+  const overflowEarned = (overflow * v.directSwipePercentage) / 100;
+
+  return voucherEarned + overflowEarned;
+}
+
+// Pick the single best voucher merchant for this spend and return its total.
+// "Best" is by rupees earned (not headline rate), since the capped-slice +
+// direct-overflow structure means a lower-rate voucher can out-earn a higher
+// one once caps bite.
 function voucherWaterfallInr(
   spend: number,
   voucherFrontier: BestVoucher[],
-  directFrontier: BestDirectSwipe[],
-  baseTier: BestDirectSwipe | null,
-  baseRate: number,
   bookingsPerYear: number,
 ): VoucherWaterfallResult {
-  const sorted = [...voucherFrontier].sort(
-    (a, b) => b.totalPercentage - a.totalPercentage,
-  );
-  // avgBookingInr derived from full spend matches the legacy single-voucher
-  // model — keeps voucher cap math consistent across the waterfall.
   const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
 
-  // Shared-pool budgets, resolved once per pool key (members agree on their
-  // cap by validation). Purchase pools bound absorbed spend (₹ of vouchers
-  // bought); reward pools bound accelerated reward VALUE, mirroring
-  // flatWaterfallInr's poolCapReward/poolUsedReward for the direct lane.
-  const poolCapPurchase = new Map<string, number>();
-  const poolCapReward = new Map<string, number>();
-  for (const v of sorted) {
-    const pKey = v.voucherPurchasePool?.key;
-    if (pKey && !poolCapPurchase.has(pKey)) {
-      poolCapPurchase.set(pKey, v.voucherPurchasePool!.annualLimitInr);
-    }
-    const rKey = v.sharedCapPool?.key;
-    if (rKey && !poolCapReward.has(rKey)) {
-      const annual = tripAwareAnnualCapInr(
-        v.rewardCapPerPeriodValueInr,
-        v.sharedCapPool!.capPeriod,
-        bookingsPerYear,
-      );
-      poolCapReward.set(rKey, annual ?? Number.POSITIVE_INFINITY);
-    }
-  }
-  const poolUsedPurchase = new Map<string, number>();
-  const poolUsedReward = new Map<string, number>();
-
-  let remaining = spend;
-  let totalInr = 0;
   let primary: BestVoucher | null = null;
-
-  for (const v of sorted) {
-    if (remaining <= 0) break;
-    const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
-    let absorbed =
-      purchaseCap === null ? remaining : Math.min(remaining, purchaseCap);
-    const pKey = v.voucherPurchasePool?.key ?? null;
-    if (pKey) {
-      const headroom = Math.max(
-        0,
-        poolCapPurchase.get(pKey)! - (poolUsedPurchase.get(pKey) ?? 0),
-      );
-      absorbed = Math.min(absorbed, headroom);
+  let totalInr = 0;
+  for (const v of voucherFrontier) {
+    const earned = singleVoucherInr(v, spend, bookingsPerYear, avgBookingInr);
+    if (primary === null || earned > totalInr) {
+      primary = v;
+      totalInr = earned;
     }
-    if (absorbed <= 0) continue;
-
-    const rewardCap = tripAwareAnnualCapInr(
-      v.caps.rewardSpendPerPeriodInr,
-      v.capPeriod,
-      bookingsPerYear,
-    );
-    let acceleratedV =
-      rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
-    const rKey = v.sharedCapPool?.key ?? null;
-    if (rKey && v.breakdown.reward > 0) {
-      const headroomValue = Math.max(
-        0,
-        poolCapReward.get(rKey)! - (poolUsedReward.get(rKey) ?? 0),
-      );
-      acceleratedV = Math.min(
-        acceleratedV,
-        (headroomValue * 100) / v.breakdown.reward,
-      );
-    }
-    const overflowV = absorbed - acceleratedV;
-
-    const earned =
-      (absorbed * v.breakdown.discount) / 100 -
-      (absorbed * v.breakdown.fee) / 100 +
-      (acceleratedV * v.breakdown.reward) / 100 +
-      (overflowV * baseRate) / 100;
-
-    totalInr += earned;
-    remaining -= absorbed;
-    if (pKey) {
-      poolUsedPurchase.set(pKey, (poolUsedPurchase.get(pKey) ?? 0) + absorbed);
-    }
-    if (rKey) {
-      poolUsedReward.set(
-        rKey,
-        (poolUsedReward.get(rKey) ?? 0) +
-          (acceleratedV * v.breakdown.reward) / 100,
-      );
-    }
-    if (!primary) primary = v;
-  }
-
-  if (remaining > 0) {
-    const spill = directWaterfallInr(
-      remaining,
-      directFrontier,
-      baseTier,
-      baseRate,
-      bookingsPerYear,
-    );
-    totalInr += spill.totalInr;
   }
 
   return { totalInr, primary };
@@ -545,14 +491,7 @@ export function computeCategoryReturn(
 
   const voucherResult =
     voucherFrontier.length > 0
-      ? voucherWaterfallInr(
-          spend,
-          voucherFrontier,
-          directFrontier,
-          baseTier,
-          floorRate,
-          bookingsPerYear,
-        )
+      ? voucherWaterfallInr(spend, voucherFrontier, bookingsPerYear)
       : null;
 
   if (
