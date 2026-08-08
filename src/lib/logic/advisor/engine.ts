@@ -62,6 +62,38 @@ const LOUNGE_MIN_COVERAGE_RATIO = 0.3;
 
 export type ReturnSource = "voucher" | "direct" | "fallback";
 
+// The combined shared-cap pool a category return drew its accelerated reward
+// from, surfaced so callers (the food / shopping / all-rounder engines) can
+// reconcile pools that span MULTIPLE categories — a concern computeCategory
+// Return can't see on its own, since it scores one category at a time. Carries
+// everything reallocateAcrossCategories needs to re-split the single pool
+// budget across every category that shares its `key`. Null when the winning
+// route has no combined pool (a private cap, or the base-rate fallback).
+export interface SettledCapPool {
+  key: string;
+  capPeriod: CapPeriod | null;
+  // The pool's per-period reward-value cap (₹ of reward per capPeriod). The
+  // reconciler annualizes this trip-aware — the same annualization computeCat
+  // egoryReturn used to clamp the winner in isolation — then re-splits it across
+  // the categories sharing `key`. Null → unbounded pool (nothing to re-split).
+  perPeriodCapInr: number | null;
+  // The accelerated rate the winning route earns at (voucher reward % or direct
+  // swipe %), used to rank categories top-down when the shared budget is split.
+  rate: number;
+  // Rate the pool's overflow spend falls back to (card base rate, or 0 for a
+  // `total` group). Applied to spend the shared budget can no longer cover.
+  fallbackRate: number;
+  // Voucher lanes earn a discount (minus convenience fee) on ALL absorbed spend
+  // regardless of the reward cap; only the reward leg draws from the pool. Zero
+  // for direct routes.
+  discount: number;
+  fee: number;
+  // For a voucher route, the spend the voucher actually absorbed (its purchase
+  // cap); overflow beyond it already earns the merchant's direct rate and never
+  // touches the shared reward pool. Equals `spend` for direct routes.
+  coveredSpend: number;
+}
+
 export interface CategoryReturn {
   category: Category;
   spend: number;
@@ -72,6 +104,9 @@ export interface CategoryReturn {
   capNote: string | null;
   cappedAnnualSpendInr: number | null;
   returnInr: number;
+  // Set when the winning route draws from a `combined` shared pool. Lets a
+  // caller pool this category's reward with other categories sharing the key.
+  sharedCapPool: SettledCapPool | null;
 }
 
 function withEffectiveRate(
@@ -507,6 +542,10 @@ export function computeCategoryReturn(
       v.capPeriod,
       bookingsPerYear,
     );
+    // Spend the voucher actually absorbed (its purchase cap); overflow past it
+    // already earns the merchant's direct rate and never draws from the pool.
+    const coveredSpend =
+      voucherCap === null ? spend : Math.min(spend, voucherCap);
     return withEffectiveRate({
       category,
       spend,
@@ -516,6 +555,18 @@ export function computeCategoryReturn(
       capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
       cappedAnnualSpendInr: voucherCap,
       returnInr: voucherResult.totalInr,
+      sharedCapPool: v.sharedCapPool
+        ? {
+            key: v.sharedCapPool.key,
+            capPeriod: v.sharedCapPool.capPeriod,
+            perPeriodCapInr: v.rewardCapPerPeriodValueInr,
+            rate: v.breakdown.reward,
+            fallbackRate: v.fallbackPercentage,
+            discount: v.breakdown.discount,
+            fee: v.breakdown.fee,
+            coveredSpend,
+          }
+        : null,
     });
   }
 
@@ -535,6 +586,18 @@ export function computeCategoryReturn(
       capNote: d.capNote,
       cappedAnnualSpendInr: directRewardCap,
       returnInr: directResult.totalInr,
+      sharedCapPool: d.sharedCapPool
+        ? {
+            key: d.sharedCapPool.key,
+            capPeriod: d.sharedCapPool.capPeriod,
+            perPeriodCapInr: d.rewardCapPerPeriodValueInr,
+            rate: d.percentage,
+            fallbackRate: d.fallbackPercentage,
+            discount: 0,
+            fee: 0,
+            coveredSpend: spend,
+          }
+        : null,
     });
   }
 
@@ -547,6 +610,7 @@ export function computeCategoryReturn(
     capNote: null,
     cappedAnnualSpendInr: null,
     returnInr: directResult.totalInr,
+    sharedCapPool: null,
   });
 }
 
@@ -799,6 +863,101 @@ function participantReturn(
     acceleratedValue +
     (overflowSpend * p.baseRate) / 100
   );
+}
+
+// ============================================================================
+// Generic cross-category shared-pool reconciliation
+// ============================================================================
+//
+// The travel machinery above is bound to the flights/hotels/other `Segment
+// Return` shape. The food, shopping and all-rounder engines slice spend into
+// flat sub-streams across categories (e.g. HSBC Live+ pools ONE ₹1200/month
+// cashback cap across both online_food_dining and offline_food_dining). Each
+// sub-stream is scored in isolation by computeCategoryReturn, so a `combined`
+// pool spanning several sub-streams gets its FULL budget once per sub-stream —
+// over-crediting. This reconciler re-splits each such pool's single annual
+// budget across the sub-streams that share it, top-down by rate.
+//
+// Callers pass any array of items that carry a scored CategoryReturn; the return
+// value is a map of array index → corrected returnInr for the items whose reward
+// changed. Items with no shared pool, or the lone member of a pool (its per
+// category cap already bit upstream), are left untouched.
+
+// The scored-category-return surface the reconciler reads from each item.
+export interface SharedPoolReturn {
+  spend: number;
+  returnInr: number;
+  sharedCapPool: SettledCapPool | null;
+}
+
+export function reallocateAcrossCategories<T extends { cat: SharedPoolReturn }>(
+  items: T[],
+  bookingsPerYear: number,
+): Map<number, number> {
+  const overrides = new Map<number, number>();
+
+  // Count members per pool key so lone members (pool size 1) are skipped — their
+  // per-category cap was already enforced by computeCategoryReturn.
+  const memberCount = new Map<string, number>();
+  for (const it of items) {
+    const p = it.cat.sharedCapPool;
+    if (p) memberCount.set(p.key, (memberCount.get(p.key) ?? 0) + 1);
+  }
+
+  // Resolve each shared pool's annual reward budget once. All members of a
+  // `combined` pool agree on their reward_cap by validation, so the first member
+  // to claim the key sets it (trip-aware annualization, matching every other
+  // cap path). A null cap → unbounded (no override needed).
+  const poolBudget = new Map<string, number>();
+  for (const it of items) {
+    const p = it.cat.sharedCapPool;
+    if (!p) continue;
+    if ((memberCount.get(p.key) ?? 0) <= 1) continue;
+    if (poolBudget.has(p.key)) continue;
+    const annual = tripAwareAnnualCapInr(
+      p.perPeriodCapInr,
+      p.capPeriod,
+      bookingsPerYear,
+    );
+    poolBudget.set(p.key, annual ?? Number.POSITIVE_INFINITY);
+  }
+
+  // Re-allocate genuinely shared pools (>1 member), top-down by accelerated
+  // rate: the highest-rate sub-stream drains the shared budget first.
+  const shared = items
+    .map((it, index) => ({ it, index }))
+    .filter(
+      ({ it }) =>
+        it.cat.sharedCapPool &&
+        (memberCount.get(it.cat.sharedCapPool.key) ?? 0) > 1,
+    )
+    .sort((a, b) => b.it.cat.sharedCapPool!.rate - a.it.cat.sharedCapPool!.rate);
+
+  const remaining = new Map(poolBudget);
+  for (const { it, index } of shared) {
+    const pool = it.cat.sharedCapPool!;
+    const potential = (pool.coveredSpend * pool.rate) / 100;
+    const headroom = remaining.get(pool.key) ?? Number.POSITIVE_INFINITY;
+    const accelerated = Math.min(potential, headroom);
+
+    // Recompute the sub-stream's return with only `accelerated` reward from the
+    // pool; the rest of covered spend overflows to the fallback rate. Mirrors
+    // participantReturn so travel and the flat engines agree numerically.
+    const spendAtRate = pool.rate > 0 ? (accelerated * 100) / pool.rate : 0;
+    const overflowSpend = Math.max(0, pool.coveredSpend - spendAtRate);
+    const nonCovered = Math.max(0, it.cat.spend - pool.coveredSpend);
+    const corrected =
+      accelerated +
+      (pool.coveredSpend * pool.discount) / 100 -
+      (pool.coveredSpend * pool.fee) / 100 +
+      (nonCovered * pool.fallbackRate) / 100 +
+      (overflowSpend * pool.fallbackRate) / 100;
+
+    overrides.set(index, corrected);
+    remaining.set(pool.key, Math.max(0, headroom - accelerated));
+  }
+
+  return overrides;
 }
 
 function applySharedCapGroups(

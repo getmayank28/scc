@@ -1,7 +1,12 @@
 import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
-import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  computeCategoryReturn,
+  reallocateAcrossCategories,
+  type CategoryReturn,
+  type SettledCapPool,
+} from "./engine";
 import {
   filterEligibleCards,
   finalizeCardScore,
@@ -347,6 +352,10 @@ export interface SubBucketReturn {
   merchant: string | null;
   category: Category | null;
   returnInr: number;
+  // Combined shared-cap pool this sub-bucket drew from, if any. Carried so a
+  // card-level pass can pool it with sub-buckets in other buckets/categories
+  // that share the same cap. Null when the winning route has no combined pool.
+  sharedCapPool: SettledCapPool | null;
 }
 
 export interface BucketReturn {
@@ -621,6 +630,7 @@ function evaluateSpec(
       merchant: null,
       category: null,
       returnInr: (spend * fallbackRate) / 100,
+      sharedCapPool: null,
     };
   }
 
@@ -661,6 +671,7 @@ function evaluateSpec(
     merchant: cat.merchant,
     category: spec.category,
     returnInr: excluded ? 0 : cat.returnInr,
+    sharedCapPool: excluded ? null : cat.sharedCapPool,
   };
 }
 
@@ -699,6 +710,44 @@ function evaluateBucket(
   };
 }
 
+// Reconcile combined pools that span buckets/streams (e.g. a card whose food
+// cashback cap pools across the foodAndDining online + offline legs, or the same
+// merchant appearing under two buckets). evaluateBucket scores each sub-bucket
+// in isolation, so a shared pool's full budget would be earned once per leg.
+// This gathers every sub-bucket across all buckets, re-splits each shared pool's
+// single annual budget across them, then recomputes the per-stream and per
+// bucket totals in place. Returns the corrected card-level annual return.
+function reconcileBucketPools(
+  buckets: Record<AllRounderBucket, BucketReturn>,
+): number {
+  const all: { cat: SubBucketReturn }[] = [];
+  for (const b of ALL_BUCKETS) {
+    for (const s of buckets[b].online.subs) all.push({ cat: s });
+    for (const s of buckets[b].offline.subs) all.push({ cat: s });
+  }
+
+  const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
+  if (overrides.size > 0) {
+    overrides.forEach((returnInr, i) => {
+      all[i].cat.returnInr = returnInr;
+      all[i].cat.effectiveRateAfterCap =
+        all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+    });
+  }
+
+  // Recompute stream + bucket totals from the (possibly) rewritten subs. Cheap
+  // and unconditional so the totals always match the subs.
+  let annualReturnInr = 0;
+  for (const b of ALL_BUCKETS) {
+    const br = buckets[b];
+    br.online.returnInr = br.online.subs.reduce((a, s) => a + s.returnInr, 0);
+    br.offline.returnInr = br.offline.subs.reduce((a, s) => a + s.returnInr, 0);
+    br.totalReturnInr = br.online.returnInr + br.offline.returnInr;
+    annualReturnInr += br.totalReturnInr;
+  }
+  return annualReturnInr;
+}
+
 interface DistributionScoring {
   byCard: CardAllRounderReturn[];
   best: CardAllRounderReturn | null;
@@ -733,18 +782,18 @@ function scoreCardsForDistribution(
           totalReturnInr: 0,
         },
       );
-      let annualReturnInr = 0;
       for (const b of ALL_BUCKETS) {
-        const br = evaluateBucket(
+        buckets[b] = evaluateBucket(
           b,
           distribution.categories[b],
           card,
           index,
           rules,
         );
-        buckets[b] = br;
-        annualReturnInr += br.totalReturnInr;
       }
+      // Reconcile combined pools spanning buckets/streams, then sum the corrected
+      // per-bucket totals into the card's annual return.
+      const annualReturnInr = reconcileBucketPools(buckets);
       return {
         cardId: card._id,
         cardName: card.name,
