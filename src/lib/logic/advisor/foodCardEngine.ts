@@ -1,7 +1,12 @@
 import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
-import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  computeCategoryReturn,
+  reallocateAcrossCategories,
+  type CategoryReturn,
+  type SettledCapPool,
+} from "./engine";
 import {
   filterEligibleCards,
   finalizeCardScore,
@@ -133,6 +138,11 @@ export interface FoodSubReturn {
   source: "voucher" | "direct" | "fallback";
   merchant: string | null;
   returnInr: number;
+  // The combined shared-cap pool this sub-stream drew from, if any. Carried so
+  // the card-level pass can pool it with sub-streams in OTHER categories that
+  // share the same cap (e.g. HSBC Live+'s single food cashback cap spanning
+  // online + offline dining). Null when the winning route has no combined pool.
+  sharedCapPool: SettledCapPool | null;
 }
 
 export interface FoodStreamReturn {
@@ -276,6 +286,7 @@ function evaluateSpec(
       source: "fallback",
       merchant: null,
       returnInr: (spec.spend * rate) / 100,
+      sharedCapPool: null,
     };
   }
 
@@ -307,17 +318,22 @@ function evaluateSpec(
     source: cat.source,
     merchant: cat.merchant,
     returnInr: excluded ? 0 : cat.returnInr,
+    // An excluded fallback earns nothing and can't draw a pool; otherwise carry
+    // whatever combined pool the winning route settled on.
+    sharedCapPool: excluded ? null : cat.sharedCapPool,
   };
 }
 
-function evaluateStream(
+function evaluateSubs(
   specs: FoodSubSpec[],
-  totalSpend: number,
   card: MockCard,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
-): FoodStreamReturn {
-  const subs = specs.map((s) => evaluateSpec(s, card, index, rules));
+): FoodSubReturn[] {
+  return specs.map((s) => evaluateSpec(s, card, index, rules));
+}
+
+function streamOf(subs: FoodSubReturn[], totalSpend: number): FoodStreamReturn {
   return {
     spend: totalSpend,
     subs,
@@ -338,14 +354,24 @@ function scoreCardFromStreams(
   rules: MockRule[],
   options?: EngineScoringOptions,
 ): CardFoodReturn {
-  const delivery = evaluateStream(
-    deliverySpecs,
-    deliverySpend,
-    card,
-    index,
-    rules,
-  );
-  const dining = evaluateStream(diningSpecs, diningSpend, card, index, rules);
+  const deliverySubs = evaluateSubs(deliverySpecs, card, index, rules);
+  const diningSubs = evaluateSubs(diningSpecs, card, index, rules);
+
+  // Reconcile combined pools that span delivery + dining (e.g. HSBC Live+'s one
+  // food cashback cap across online_food_dining + offline_food_dining). Without
+  // this each category earns the full cap independently — double-counting. The
+  // reconciler re-splits each shared pool's single annual budget across the
+  // sub-streams that share it and rewrites their returns in place.
+  const all = [...deliverySubs, ...diningSubs].map((s) => ({ cat: s }));
+  const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
+  overrides.forEach((returnInr, i) => {
+    all[i].cat.returnInr = returnInr;
+    all[i].cat.effectiveRateAfterCap =
+      all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+  });
+
+  const delivery = streamOf(deliverySubs, deliverySpend);
+  const dining = streamOf(diningSubs, diningSpend);
   const annualReturnInr = delivery.returnInr + dining.returnInr;
   const annualSpend = deliverySpend + diningSpend;
   return {

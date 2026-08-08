@@ -1,7 +1,12 @@
 import { CATEGORIES, type Category, type MockCard } from "./cards";
 import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
-import { computeCategoryReturn, type CategoryReturn } from "./engine";
+import {
+  computeCategoryReturn,
+  reallocateAcrossCategories,
+  type CategoryReturn,
+  type SettledCapPool,
+} from "./engine";
 import {
   filterEligibleCards,
   finalizeCardScore,
@@ -212,6 +217,10 @@ export interface ShoppingSubReturn {
   source: "voucher" | "direct" | "fallback";
   merchant: string | null;
   returnInr: number;
+  // Combined shared-cap pool this sub-stream drew from, if any. Carried so the
+  // card-level pass can pool it with sub-streams in other categories/channels
+  // that share the same cap. Null when the winning route has no combined pool.
+  sharedCapPool: SettledCapPool | null;
 }
 
 export interface ShoppingStreamReturn {
@@ -404,6 +413,7 @@ function evaluateSpec(
       source: "fallback",
       merchant: null,
       returnInr: (spec.spend * rate) / 100,
+      sharedCapPool: null,
     };
   }
 
@@ -435,22 +445,43 @@ function evaluateSpec(
     source: cat.source,
     merchant: cat.merchant,
     returnInr: excluded ? 0 : cat.returnInr,
+    sharedCapPool: excluded ? null : cat.sharedCapPool,
   };
 }
 
-function evaluateStream(
+function evaluateSubs(
   specs: ShoppingSubSpec[],
-  totalSpend: number,
   card: MockCard,
   index: Map<string, MockBestOf>,
   rules: MockRule[],
+): ShoppingSubReturn[] {
+  return specs.map((s) => evaluateSpec(s, card, index, rules));
+}
+
+function streamOf(
+  subs: ShoppingSubReturn[],
+  totalSpend: number,
 ): ShoppingStreamReturn {
-  const subs = specs.map((s) => evaluateSpec(s, card, index, rules));
   return {
     spend: totalSpend,
     subs,
     returnInr: subs.reduce((acc, s) => acc + s.returnInr, 0),
   };
+}
+
+// Reconcile combined pools that span the card's streams (online / offline /
+// utility) before their returns are summed. A card whose accelerated cap pools
+// across e.g. online_shopping + offline_shopping would otherwise earn the full
+// cap in each stream. The reconciler re-splits each shared pool's single annual
+// budget across all sub-streams that share it, rewriting their returns in place.
+function reconcileStreams(streams: ShoppingSubReturn[][]): void {
+  const all = streams.flat().map((s) => ({ cat: s }));
+  const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
+  overrides.forEach((returnInr, i) => {
+    all[i].cat.returnInr = returnInr;
+    all[i].cat.effectiveRateAfterCap =
+      all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+  });
 }
 
 function scoreCard(
@@ -460,20 +491,21 @@ function scoreCard(
   rules: MockRule[],
   options?: EngineScoringOptions,
 ): CardShoppingReturn {
-  const online = evaluateStream(
+  const onlineSubs = evaluateSubs(
     buildOnlineSpecs(spend.onlineAllocation),
-    spend.annualOnline,
     card,
     index,
     rules,
   );
-  const offline = evaluateStream(
+  const offlineSubs = evaluateSubs(
     buildOfflineSpecs(spend.offlineAllocation, card, index),
-    spend.annualOffline,
     card,
     index,
     rules,
   );
+  reconcileStreams([onlineSubs, offlineSubs]);
+  const online = streamOf(onlineSubs, spend.annualOnline);
+  const offline = streamOf(offlineSubs, spend.annualOffline);
   const annualReturnInr = online.returnInr + offline.returnInr;
   const annualSpend = spend.annualOnline + spend.annualOffline;
   return {
@@ -648,28 +680,32 @@ function scoreCardTwo(
   rules: MockRule[],
   options?: EngineScoringOptions,
 ): CardShoppingReturnTwo {
-  const online = evaluateStream(
+  const onlineSubs = evaluateSubs(
     buildOnlineSpecs(spend.onlineAllocation),
-    spend.annualOnline,
     card,
     index,
     rules,
   );
-  const offline = evaluateStream(
+  const offlineSubs = evaluateSubs(
     buildOfflineSpecs(spend.offlineAllocation, card, index),
-    spend.annualOffline,
     card,
     index,
     rules,
   );
-  const utility = spend.utility
-    ? evaluateStream(
-        buildUtilitySpecs(spend.utility),
-        spend.utility.annualTotal,
-        card,
-        index,
-        rules,
-      )
+  const utilitySubs = spend.utility
+    ? evaluateSubs(buildUtilitySpecs(spend.utility), card, index, rules)
+    : null;
+
+  reconcileStreams(
+    utilitySubs
+      ? [onlineSubs, offlineSubs, utilitySubs]
+      : [onlineSubs, offlineSubs],
+  );
+
+  const online = streamOf(onlineSubs, spend.annualOnline);
+  const offline = streamOf(offlineSubs, spend.annualOffline);
+  const utility = utilitySubs
+    ? streamOf(utilitySubs, spend.utility!.annualTotal)
     : null;
 
   const annualSpend =
