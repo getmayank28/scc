@@ -1,6 +1,7 @@
 import { useChatSessionTokenMutation } from "@/store/api";
 import { useMemo } from "react";
 import { CHANNEL } from "../constants/channel";
+import { getEncodedBotContext } from "../utils/chatContext";
 
 const useSocket = () => {
   const [
@@ -68,7 +69,15 @@ const useSocket = () => {
     const prodUrl = "wss://studio.zijus.com/ws/sarathi-9720";
 
     const sessionIdString = sessionId ? `&session_id=${sessionId}` : "";
-    return `${prodUrl}?token=${token}${sessionIdString}&language=EN_US&channel=${CHANNEL.CARD_RECOMMENDATION}&is_audio=false`;
+
+    // The agent reads `custom_data` once, when the connection is established —
+    // it is never re-read and never returned. That is why we hold the socket
+    // closed until a recommendation exists (see WebSocketConnection): this one
+    // shot has to carry the journey the agent never saw.
+    const context = getEncodedBotContext();
+    const customDataString = context ? `&custom_data=${context}` : "";
+
+    return `${prodUrl}?token=${token}${sessionIdString}${customDataString}&language=EN_US&channel=${CHANNEL.CARD_RECOMMENDATION}&is_audio=false`;
   };
 
   return { getSocketUrl, isLoading, error, createChatSessionToken };
