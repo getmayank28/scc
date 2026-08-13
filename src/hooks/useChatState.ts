@@ -3,42 +3,30 @@ import {
   BaseMessage,
   ChatMessage,
   MESSAGE_SOURCE,
-  SessionMessage,
 } from "@/types/chatMessages";
 import { useChatContext } from "@/contexts/ChatContext";
-import { cardCategoryJourneyData } from "@/lib/constants/chatJourney";
-import { BotRecommendationCreditCardProps, CardsType } from "@/types/card";
+import { CardsType } from "@/types/card";
 import { continueJourney } from "@/lib/constants/questions/common";
 import { HISTORY_ACTIONS } from "@/lib/constants/actions";
 import { CARD_CATEGORY } from "@/lib/data/cards";
 import { useAddAssistantMessage } from "@/lib/hooks/useAddAssistantMessage";
-import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { safeParseJson } from "@/lib/utils/markdown";
+import {
+  buildReplayMetadata,
+  buildReplaySummary,
+  collectReplayAnswers,
+  decodeReplayMetadata,
+  restoreJourneyMessages,
+  restoreRecommendationMessages,
+  type RecommendationPayload,
+} from "@/lib/utils/chatReplay";
+import {
+  getPendingReplay,
+  releasePendingReplay,
+  savePendingReplay,
+} from "@/lib/utils/chatContext";
+import { FOLLOW_UP_TRIGGER_MID } from "@/lib/constants/chat";
 
-type RecommendationPayload = {
-  startMessage: string;
-  cards: BotRecommendationCreditCardProps[];
-  endMessage: string;
-};
-
-// A compact NL summary of the locally-computed recommendation, sent to the
-// socket so the partner grounds follow-up answers on cards it never generated.
-function summarizeRecommendation(jsonContent: string): string {
-  const parsed = safeParseJson<RecommendationPayload>(jsonContent);
-  const cards = parsed?.cards ?? [];
-  if (!cards.length) return "No card recommendation was produced.";
-  const lines = cards.map((c, i) => {
-    const parts = [
-      `${i + 1}. ${c.cardName}`,
-      c.returnOnSpend ? `return on spend ${c.returnOnSpend}%` : "",
-      c.annualFee ? `annual fee ${c.annualFee}` : "",
-    ].filter(Boolean);
-    return parts.join(", ");
-  });
-  return `Context — I recommended these cards to the user for their journey:\n${lines.join(
-    "\n",
-  )}\nAnswer the user's follow-up questions about these cards.`;
-}
 
 export function useChatState() {
   const {
@@ -51,43 +39,21 @@ export function useChatState() {
     startFollowUp,
     setShowContinueJourneyMessage,
   } = useChatContext();
-  const { sendMessageToSocket } = useAppWebSocketConnection();
 
-  // Holds the summary of the last locally-computed recommendation so the
-  // follow-up transition can seed the socket with it before "Start the follow up".
-  const followUpContextRef = useRef<string>("");
-
-  // Hand the conversation off to the partner socket for free follow-up Q&A,
-  // seeding it first with the locally-computed recommendation as context.
+  // Open free follow-up Q&A.
+  //
+  // The recommendation context no longer travels as a fake user turn — it rides
+  // the connection itself as `custom_data`. Releasing the replay is what opens
+  // the socket at all (see `usePendingReplay`), so there is nothing to send
+  // from here: the connection does not exist yet, and anything written now
+  // would be dropped. `useSocketReplaySync` delivers the replay and the
+  // follow-up trigger once the connection is actually open.
   const startSocketFollowUp = useCallback(() => {
-    const context = followUpContextRef.current;
-    setTimeout(() => {
-      enableChatInput?.();
-      setCurrentMessageId("");
-      if (context) {
-        sendMessageToSocket(
-          JSON.stringify({
-            source: "user",
-            content: context,
-            m_id: "recommendation-context",
-            ts: new Date().toISOString(),
-            type: "TextMessage",
-            custom_metadata: [],
-          }),
-        );
-      }
-      sendMessageToSocket(
-        JSON.stringify({
-          source: "user",
-          content: "Start the follow up",
-          m_id: "start-follow-up",
-          ts: new Date().toISOString(),
-          type: "TextMessage",
-          custom_metadata: [],
-        }),
-      );
-      followUpContextRef.current = "";
-    }, 2000);
+    // The journey is over — whichever phase produced the last recommendation,
+    // it is now final.
+    releasePendingReplay();
+    enableChatInput?.();
+    setCurrentMessageId("");
   }, []);
 
   // Completion handler for messages that arrive over the socket (follow-up
@@ -109,8 +75,18 @@ export function useChatState() {
   //   - "early": after the cards render, keep input disabled and show the
   //     "fine-tune?" prompt (No -> free follow-up, Yes -> phase-2 journey).
   //   - "end":  hand off to the partner socket for free follow-up Q&A.
+  //
+  // This is also the point where the session becomes persistable: the journey
+  // answers and the recommendation are stashed as a replay payload, which both
+  // unblocks the socket connection (see `WebSocketConnection`) and is what a
+  // later reload rebuilds the screen from.
   const injectLocalAssistantMessage = useCallback(
-    (jsonContent: string, phase: "early" | "end") => {
+    (
+      jsonContent: string,
+      phase: "early" | "end",
+      journeyMessages: BaseMessage[],
+      category: CardsType,
+    ) => {
       const m_id = crypto.randomUUID();
       disableTypingLoader?.();
       setMessages((prev) => [
@@ -124,9 +100,38 @@ export function useChatState() {
         } as BaseMessage,
       ]);
 
-      // Keep the recommendation summary ready for whichever follow-up path
-      // runs next (phase-2 "end", or "No, I am good" from the fine-tune prompt).
-      followUpContextRef.current = summarizeRecommendation(jsonContent);
+      const action =
+        phase === "early"
+          ? HISTORY_ACTIONS.EARLY_RECOMMENDATION
+          : HISTORY_ACTIONS.END_RECOMMENDATION;
+
+      const recommendation =
+        safeParseJson<RecommendationPayload>(jsonContent) ?? null;
+      const answers = collectReplayAnswers(journeyMessages, action);
+
+      // Phase 2 answers only cover the fine-tuning questions, so keep the
+      // phase-1 result alongside them — it is the recommendation the user
+      // actually saw first, and the agent needs both to explain any change.
+      const earlierRecommendation =
+        phase === "end" ? (getPendingReplay()?.recommendation ?? null) : null;
+
+      savePendingReplay({
+        category,
+        summary: buildReplaySummary(category, answers),
+        recommendation,
+        earlierRecommendation,
+        // A phase-1 result is provisional: the user is about to be asked
+        // whether to fine-tune, and phase 2 would supersede it. Hold it back
+        // until the journey actually ends.
+        released: phase === "end",
+        metadata: buildReplayMetadata({
+          category,
+          answers,
+          recommendation,
+          earlierRecommendation,
+          action,
+        }),
+      });
 
       if (phase === "early") {
         // Cards shown; keep input disabled and prompt to fine-tune.
@@ -160,8 +165,59 @@ export function useChatState() {
     handleAssistantSocketMessage(msg);
   };
 
+  /**
+   * Re-render a journey from the locally stashed replay.
+   *
+   * Covers the window between "cards are on screen" and "the partner has minted
+   * a session id": during it there is no server-side history to reload from, so
+   * a refresh would otherwise drop the recommendation the user just received.
+   * Returns false when there is nothing stashed.
+   */
+  const restoreLocalReplay = useCallback(() => {
+    const pending = getPendingReplay();
+    const replay = decodeReplayMetadata(pending?.metadata);
+    if (!replay) return false;
+
+    const restored = [
+      ...restoreJourneyMessages(replay),
+      ...restoreRecommendationMessages(replay),
+    ];
+    if (!restored.length) return false;
+
+    setSelectedCardCategory(
+      replay.category || (CARD_CATEGORY.TRAVEL as CardsType),
+    );
+
+    if (replay.action === HISTORY_ACTIONS.EARLY_RECOMMENDATION) {
+      // The fine-tune prompt was still on screen when the page went away.
+      setMessages([...restored, continueJourney as BaseMessage]);
+      setCurrentMessageId("continueJourney");
+      disableChatInput();
+    } else {
+      setMessages(restored);
+      setCurrentMessageId("");
+      enableChatInput();
+    }
+
+    return true;
+  }, []);
+
+  /**
+   * Rebuild the chat from the partner's `history` frame.
+   *
+   * The journey and its recommendation are computed locally and never travel
+   * over the socket as ordinary messages, so they are restored from the replay
+   * payload we stash in `custom_metadata` (see `lib/utils/chatReplay.ts`).
+   * Everything else in the frame is genuine follow-up conversation and is
+   * replayed as-is, in timestamp order, after the restored journey.
+   */
   const loadHistory = useCallback((history: ChatMessage[]) => {
     if (!history || !history.length) {
+      // An empty frame can arrive before our replay turn has been stored, so
+      // fall back to the local stash rather than blanking a journey the user
+      // can still see.
+      if (restoreLocalReplay()) return;
+
       setMessages([]);
       setCurrentMessageId("card-category-fs");
       return;
@@ -193,105 +249,67 @@ export function useChatState() {
       (a, b) => new Date(a.ts ?? 0).getTime() - new Date(b.ts ?? 0).getTime(),
     );
 
-    const selectedCategory = sorted
-      ?.find(
-        (message: BaseMessage) =>
-          message?.source === MESSAGE_SOURCE.USER &&
-          message?.custom_metadata?.length,
-      )
-      ?.custom_metadata?.find(
-        (message: Record<string, string>) =>
-          Object.keys(message)?.at(0) === "card-category-fs",
-      )?.["card-category-fs"];
+    // The replay lives on the synthetic message we sent once, right after the
+    // socket opened. Later phases overwrite earlier ones, so take the last.
+    const replay = sorted
+      .filter((message) => message?.custom_metadata?.length)
+      .map((message) => decodeReplayMetadata(message.custom_metadata))
+      .filter(Boolean)
+      .at(-1);
 
-    const handleMessageMetadata = (
-      metadata: Record<string, string>[],
-      category: CardsType,
-    ) => {
-      const selectedCategoryData =
-        cardCategoryJourneyData?.[category as CardsType];
+    // No replay in the frame: either our turn has not landed yet (use the local
+    // stash) or this session never got past the journey (start fresh).
+    if (!replay) {
+      if (restoreLocalReplay()) return;
 
-      const formattedMessage = metadata
-        ?.filter((ele) => Object.keys(ele)?.at(0) !== "action")
-        ?.map((ele: Record<string, string>) => {
-          const currentQuestion = selectedCategoryData?.find(
-            (question) => question?.m_id === Object.keys(ele)?.at(0),
-          );
+      setMessages([]);
+      setCurrentMessageId("card-category-fs");
+      return;
+    }
 
-          const userMessage = {
-            name: currentQuestion?.content,
-            content: Object.values(ele)?.at(0),
-            m_id: crypto.randomUUID(),
-            source: "user",
-            type: "TextMessage",
-            questionId: Object.keys(ele)?.at(0),
-            questionType: currentQuestion?.type,
-            botContent: currentQuestion?.botContent,
-          };
-          return [
-            { ...currentQuestion, selectedValue: Object.values(ele)?.at(0) },
-            userMessage,
-          ];
-        });
+    const journeyMessages = restoreJourneyMessages(replay);
+    const recommendationMessages = restoreRecommendationMessages(replay);
 
-      return formattedMessage;
-    };
+    // Follow-up conversation: everything that is not the synthetic replay
+    // carrier and not our own seeded control turns. The empty-content check
+    // also covers the carrier turn itself should its metadata ever come back
+    // stripped — it would otherwise render as a blank bubble.
+    const followUpMessages = sorted.filter(
+      (message) =>
+        !message?.custom_metadata?.length &&
+        message?.m_id !== FOLLOW_UP_TRIGGER_MID &&
+        !!message?.content?.trim(),
+    );
 
-    const historyBuildUp = sorted?.map((message: BaseMessage) => {
-      if (message?.source === MESSAGE_SOURCE.USER) {
-        const metadata: Record<string, string>[] | undefined =
-          message?.custom_metadata;
+    const finalHistory: BaseMessage[] = [
+      ...journeyMessages,
+      ...recommendationMessages,
+    ];
 
-        if (metadata?.length) {
-          const formattedMessage = handleMessageMetadata(
-            metadata,
-            selectedCategory as CardsType,
-          );
-          return formattedMessage?.flat();
-        }
-        return message;
+    if (replay.action === HISTORY_ACTIONS.EARLY_RECOMMENDATION) {
+      // Phase 1 ended with the "want to fine-tune?" prompt. If the user had
+      // already moved on to free follow-up, the prompt is spent — show the
+      // conversation and re-enable input instead of re-asking.
+      if (followUpMessages.length) {
+        finalHistory.push(continueJourney as BaseMessage, ...followUpMessages);
+        setCurrentMessageId("");
+        enableChatInput();
+      } else {
+        finalHistory.push(continueJourney as BaseMessage);
+        setCurrentMessageId("continueJourney");
+        disableChatInput();
       }
-      return message;
-    });
-
-    const lastAction = sorted
-      ?.filter(
-        (message) =>
-          message?.source === MESSAGE_SOURCE.USER &&
-          message?.custom_metadata?.length,
-      )
-      ?.at(-1)
-      ?.custom_metadata?.find(
-        (ele) => Object.keys(ele)?.at(0) === "action",
-      )?.action;
-
-    let finalHistory = historyBuildUp?.flat();
-
-    if (lastAction === HISTORY_ACTIONS.END_RECOMMENDATION) {
+    } else {
+      // Phase 2 / end: the conversation is in free follow-up.
+      finalHistory.push(...followUpMessages);
       setCurrentMessageId("");
       enableChatInput();
-    } else if (lastAction === HISTORY_ACTIONS.EARLY_RECOMMENDATION) {
-      const isFollowUp = finalHistory?.findIndex(
-        (message) => message?.m_id === "start-follow-up",
-      );
-
-      if (isFollowUp !== -1) {
-        finalHistory = [
-          ...finalHistory?.slice(0, isFollowUp),
-          continueJourney,
-          ...finalHistory?.slice(isFollowUp + 1),
-        ];
-        enableChatInput();
-        setCurrentMessageId("");
-      } else {
-        finalHistory?.push(continueJourney);
-        setCurrentMessageId("continueJourney");
-      }
     }
+
     setSelectedCardCategory(
-      selectedCategory || (CARD_CATEGORY.TRAVEL as CardsType),
+      replay.category || (CARD_CATEGORY.TRAVEL as CardsType),
     );
-    setMessages(finalHistory as BaseMessage[]);
+    setMessages(finalHistory);
   }, []);
 
   const setSessionIdValidation = useCallback((validation: boolean) => {
@@ -312,6 +330,7 @@ export function useChatState() {
     injectLocalAssistantMessage,
     startSocketFollowUp,
     loadHistory,
+    restoreLocalReplay,
     clearProcessedChunks,
     setSessionIdValidation,
   };

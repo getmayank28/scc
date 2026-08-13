@@ -103,10 +103,10 @@ const useInputButtonGroupAction = () => {
     const isEnd = args?.action === HISTORY_ACTIONS.END_RECOMMENDATION;
 
     // Compute the recommendation locally instead of over the partner socket.
-    const input = buildRecommendInput(
-      category,
-      filterUserMessage(args?.updatedMessageState || messages),
+    const journeyMessages = filterUserMessage(
+      args?.updatedMessageState || messages,
     );
+    const input = buildRecommendInput(category, journeyMessages);
 
     try {
       const res = await fetch("/api/recommend", {
@@ -122,7 +122,12 @@ const useInputButtonGroupAction = () => {
       // Wrap in a ```json block so it flows through the existing render path
       // (isCardRecommendationResponse / ScrollableArea).
       const jsonContent = "```json\n" + JSON.stringify(body.result) + "\n```";
-      injectLocalAssistantMessage(jsonContent, isEnd ? "end" : "early");
+      injectLocalAssistantMessage(
+        jsonContent,
+        isEnd ? "end" : "early",
+        journeyMessages,
+        category,
+      );
     } catch (err) {
       console.error("[evaluateEarly] local recommendation failed:", err);
       injectLocalAssistantMessage(
@@ -135,6 +140,8 @@ const useInputButtonGroupAction = () => {
           }) +
           "\n```",
         isEnd ? "end" : "early",
+        journeyMessages,
+        category,
       );
     }
 

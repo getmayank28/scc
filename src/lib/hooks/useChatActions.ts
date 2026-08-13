@@ -16,6 +16,7 @@ import { INPUT_MESSAGE_SOURCE } from "../constants/chatJourney";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { trackEvent } from "../analytics/track";
 import { EventName } from "../analytics/types";
+import { ReadyState } from "react-use-websocket";
 
 const useChatActions = () => {
   const buttonGroupInputActions = useInputButtonGroupAction();
@@ -37,7 +38,7 @@ const useChatActions = () => {
     loadHistory,
     setSessionIdValidation,
   } = useChatState();
-  const { sendMessageToSocket } = useAppWebSocketConnection();
+  const { sendMessageToSocket, readyState } = useAppWebSocketConnection();
 
   const handleMessageFormatting = (
     message: BaseMessage | HistoryMessage | SessionMessage,
@@ -135,6 +136,12 @@ const useChatActions = () => {
     if (typeof value === "string" && !value.trim()) return;
 
     if (messageSource === INPUT_MESSAGE_SOURCE.DIRECT) {
+      // Free text is answered by the partner, and the socket is deliberately
+      // closed until the journey has produced a recommendation. Sending now
+      // would drop the message silently, so ignore it and leave the user's
+      // text in the box.
+      if (readyState !== ReadyState.OPEN) return;
+
       trackEvent(EventName.CHAT_MESSAGE_SENT, {
         messageSource: "direct",
         messageLength: typeof value === "string" ? value.length : 0,
@@ -144,7 +151,7 @@ const useChatActions = () => {
         m_id: crypto.randomUUID(),
         source: MESSAGE_SOURCE.USER,
         type: MESSAGE_TYPE.TEXT,
-        custom_metadat: [],
+        custom_metadata: [],
       };
       addUserMessage(userMsg as BaseMessage);
       sendMessageToSocket(JSON.stringify(userMsg));
