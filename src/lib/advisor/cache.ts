@@ -43,7 +43,7 @@ type LeanBestOf = Omit<CardBestOfDoc, keyof Document> & Record<string, unknown>;
 type LeanMilestone = Omit<CardMilestoneDoc, keyof Document> &
   Record<string, unknown>;
 
-function toMockCard(doc: LeanCard): MockCard {
+export function toMockCard(doc: LeanCard): MockCard {
   return {
     _id: doc.slug as string,
     name: doc.name as string,
@@ -215,6 +215,122 @@ export const AdvisorCache = {
 
   milestonesBySlug(): Map<string, MockMilestone[]> {
     return snapshot?.milestonesBySlug ?? new Map();
+  },
+
+  // Resolve specific slugs, INCLUDING cards with is_active: false.
+  //
+  // The hydrated snapshot deliberately holds only active cards, because the
+  // advisor recommends cards a user could apply for today. The spend optimizer
+  // asks a different question — "which of the cards I already hold should I
+  // swipe?" — and users hold discontinued cards (Axis Atlas, HDFC Diners Club
+  // Black). Dropping those would silently shrink their wallet, so anything the
+  // snapshot lacks is fetched straight from Mongo.
+  async cardsBySlugIncludingInactive(slugs: string[]): Promise<MockCard[]> {
+    if (slugs.length === 0) return [];
+    const bySlug = new Map((snapshot?.cards ?? []).map((c) => [c._id, c]));
+    const found = slugs.map((s) => bySlug.get(s)).filter(Boolean) as MockCard[];
+
+    const missing = slugs.filter((s) => !bySlug.has(s));
+    if (missing.length === 0) return found;
+
+    await dbConnect();
+    const docs = await CardAdvisorModel.find({ slug: { $in: missing } })
+      .select(
+        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only excluded_categories rulesVersion",
+      )
+      .lean<LeanCard[]>();
+
+    return [...found, ...docs.map(toMockCard)];
+  },
+
+  // ── Narrow, on-demand reads for the spend optimizer ────────────────────────
+  //
+  // The full hydrate pulls ~81k rules (~71 MB) and ~6.5k bestOf payloads
+  // (~13 MB). That is a reasonable one-off for the advisor, which scores every
+  // card in the catalogue, but ruinous for the spend optimizer, which touches
+  // only the handful of cards in one wallet and one category — a cold start was
+  // costing minutes. These read exactly that slice instead.
+
+  /** CardBestOf payloads for specific cards in ONE category. */
+  async bestOfForCards(
+    cardSlugs: string[],
+    category: string,
+  ): Promise<MockBestOf[]> {
+    if (cardSlugs.length === 0) return [];
+    // Serve from the snapshot when it is already warm — no query needed.
+    if (snapshot) {
+      return snapshot.bestOf.filter(
+        (b) => b.category === category && cardSlugs.includes(b.cardId),
+      );
+    }
+    await dbConnect();
+    const docs = await CardBestOfModel.find({
+      cardSlug: { $in: cardSlugs },
+      category,
+    })
+      .select("payload")
+      .lean<LeanBestOf[]>();
+    return docs.map((d) => d.payload as MockBestOf);
+  },
+
+  /** Active rules for specific cards in ONE category. */
+  async rulesForCards(
+    cardSlugs: string[],
+    category: string,
+  ): Promise<MockRule[]> {
+    if (cardSlugs.length === 0) return [];
+    if (snapshot) {
+      return snapshot.rules.filter(
+        (r) => r.category === category && cardSlugs.includes(r.cardId),
+      );
+    }
+    await dbConnect();
+    const docs = await CardRuleModel.find({
+      cardSlug: { $in: cardSlugs },
+      category,
+      is_active: true,
+    })
+      .select(
+        "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until is_active",
+      )
+      .lean<LeanRule[]>();
+    return docs.map(toMockRule);
+  },
+
+  /**
+   * Engine categories this merchant has active rules in.
+   *
+   * Lets the UI stop asking for a category when a merchant is unambiguous
+   * (~63% of merchants) and, when it isn't, offer only that merchant's real
+   * options instead of the full category list.
+   */
+  async categoriesForMerchant(merchantSlug: string): Promise<string[]> {
+    if (snapshot) {
+      return [
+        ...new Set(
+          snapshot.rules
+            .filter((r) => r.merchant === merchantSlug)
+            .map((r) => r.category as string),
+        ),
+      ];
+    }
+    await dbConnect();
+    const cats = await CardRuleModel.distinct("category", {
+      merchant: merchantSlug,
+      is_active: true,
+    });
+    return cats as string[];
+  },
+
+  /** Whether any active rule uses this merchant slug — a cheap existence check. */
+  async merchantExists(merchantSlug: string): Promise<boolean> {
+    if (snapshot) return snapshot.rules.some((r) => r.merchant === merchantSlug);
+    await dbConnect();
+    const n = await CardRuleModel.countDocuments({
+      merchant: merchantSlug,
+      is_active: true,
+    }).limit(1);
+    return n > 0;
   },
 
   // Force invalidate (e.g. immediately after an admin write in the same

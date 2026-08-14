@@ -188,7 +188,13 @@ function scheduleFor(r: MockRule): DirectSwipeSchedule | null {
   };
 }
 
-function buildDirectCandidate(
+// Exported for the spend optimizer, which resolves ONE merchant chosen by the
+// user and so must build that merchant's candidate from the raw rule. The
+// precomputed frontiers are Pareto-pruned for annual planning (~1.3 voucher
+// merchants survive per card/category out of ~11 raw rules), which is correct
+// when spend can be routed to the best merchant — but drops the merchant the
+// user is actually paying.
+export function buildDirectCandidate(
   r: MockRule,
   card: MockCard,
 ): BestDirectSwipe {
@@ -216,7 +222,8 @@ function buildDirectCandidate(
   };
 }
 
-function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
+// Exported alongside buildDirectCandidate — see the note there.
+export function buildVoucherCandidate(r: MockRule, card: MockCard): BestVoucher {
   const rw = r.reward;
   const total =
     rw.voucher_discount_percentage +
