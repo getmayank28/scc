@@ -1,26 +1,34 @@
 import type { MockCard } from "../cards";
 import type {
   CardTravelReturn,
+  TravelEngineResult,
   TravelEngineAdvancedResult,
 } from "../engine";
 import type {
   CardFoodReturn,
+  FoodCardEngineResult,
   FoodCardEngineResultTwo,
 } from "../foodCardEngine";
 import type {
+  CardShoppingReturn,
   CardShoppingReturnTwo,
+  ShoppingCardEngineResult,
   ShoppingCardEngineResultTwo,
 } from "../shoppingCardEngine";
 import type {
   CardAllRounderReturn,
+  AllRounderEngineResult,
   AllRounderEnginePhaseTwoResult,
 } from "../allrounderEngine";
 import type { BotRecommendationCreditCardProps } from "@/types/card";
 
 // The subset of engine card-return shapes that share the fields we display.
+// Both phases of every engine return the same row shape (phase-2 shopping only
+// adds an optional `utility` stream), so one union covers all eight engines.
 type AnyCardReturn =
   | CardTravelReturn
   | CardFoodReturn
+  | CardShoppingReturn
   | CardShoppingReturnTwo
   | CardAllRounderReturn;
 
@@ -31,9 +39,13 @@ export type RecommendCategory =
   | "allrounder";
 
 export type EngineResult =
+  | TravelEngineResult
   | TravelEngineAdvancedResult
+  | FoodCardEngineResult
   | FoodCardEngineResultTwo
+  | ShoppingCardEngineResult
   | ShoppingCardEngineResultTwo
+  | AllRounderEngineResult
   | AllRounderEnginePhaseTwoResult;
 
 const INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });

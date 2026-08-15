@@ -131,12 +131,12 @@ export const foodCard = [
       {
         label: "I use both equally",
         value: "I use both equally",
-        engineValue: "others",
+        engineValue: "both",
       },
       {
         label: "No strong preference",
         value: "No strong preference",
-        engineValue: "others",
+        engineValue: "none",
       },
     ],
   },

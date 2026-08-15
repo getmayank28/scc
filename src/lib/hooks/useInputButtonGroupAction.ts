@@ -106,13 +106,16 @@ const useInputButtonGroupAction = () => {
     const journeyMessages = filterUserMessage(
       args?.updatedMessageState || messages,
     );
-    const input = buildRecommendInput(category, journeyMessages);
+    // The early submit has only the phase-1 answers; the fine-tune questions
+    // that feed phase 2 are answered by the time END_RECOMMENDATION fires.
+    const phase = isEnd ? 2 : 1;
+    const input = buildRecommendInput(category, phase, journeyMessages);
 
     try {
       const res = await fetch("/api/recommend", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category, input }),
+        body: JSON.stringify({ category, phase, input }),
       });
       const body = await res.json();
       if (!res.ok || !body?.success) {
