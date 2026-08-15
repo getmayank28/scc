@@ -7,7 +7,7 @@ import { joinTextMessagesByMid } from "@/lib/utils/content";
 // Studio bot that powers the WhatsApp conversational replies.
 // Mirrors the `whatsAppBotCommunication` RTK mutation in src/store/api.ts,
 // re-implemented with fetch because RTK hooks can't run in a server route.
-const WHATSAPP_BOT_URL = "https://studio.zijus.com/api/fisensewhatsapp-5768";
+const WHATSAPP_BOT_URL = "https://agent.platform.zijus.com/api/fisensewhatsapp-5768";
 
 // Gupshup webhook receiver.
 // Configure this URL in the Gupshup dashboard:
