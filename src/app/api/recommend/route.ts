@@ -1,15 +1,36 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/options";
 import { ApiResponse } from "@/lib/utils/ApiResponse";
 import { AdvisorCache } from "@/lib/advisor/cache";
-import { recommendTravelCardAdvanced } from "@/lib/logic/advisor/engine";
-import { recommendFoodCardPhaseTwo } from "@/lib/logic/advisor/foodCardEngine";
-import { recommendShoppingCardPhaseTwo } from "@/lib/logic/advisor/shoppingCardEngine";
-import { recommendAllRounderCardPhaseTwo } from "@/lib/logic/advisor/allrounderEngine";
+import dbConnect from "@/lib/utils/dbConnet";
+import UserModel from "@/models/User";
+import {
+  recommendTravelCard,
+  recommendTravelCardAdvanced,
+} from "@/lib/logic/advisor/engine";
+import {
+  recommendFoodCardPhaseOne,
+  recommendFoodCardPhaseTwo,
+} from "@/lib/logic/advisor/foodCardEngine";
+import {
+  recommendShoppingCardPhaseOne,
+  recommendShoppingCardPhaseTwo,
+} from "@/lib/logic/advisor/shoppingCardEngine";
+import {
+  recommendAllRounderCardPhaseOne,
+  recommendAllRounderCardPhaseTwo,
+} from "@/lib/logic/advisor/allrounderEngine";
 import {
   travelRecommendInputSchema,
+  travelRecommendPhaseOneInputSchema,
   foodRecommendInputSchema,
+  foodRecommendPhaseOneInputSchema,
   shoppingRecommendInputSchema,
+  shoppingRecommendPhaseOneInputSchema,
   allrounderRecommendInputSchema,
+  allrounderRecommendPhaseOneInputSchema,
 } from "@/schemas/advisor";
+import type { UserProfile } from "@/lib/logic/advisor/scoring";
 import {
   toRecommendationCards,
   type EngineResult,
@@ -37,12 +58,60 @@ function toRecommendCategory(raw: unknown): RecommendCategory | null {
   }
 }
 
+// The journey submits twice: once early (phase 1, few answers) and again after
+// the fine-tune questions (phase 2, declared spend). Phase 1 is the default —
+// every journey's `submit` fires before any phase-2 question is asked.
+type Phase = 1 | 2;
+
+function toPhase(raw: unknown): Phase {
+  return raw === 2 || raw === "2" ? 2 : 1;
+}
+
 const SCHEMA = {
-  travel: travelRecommendInputSchema,
-  food: foodRecommendInputSchema,
-  shopping: shoppingRecommendInputSchema,
-  allrounder: allrounderRecommendInputSchema,
+  travel: {
+    1: travelRecommendPhaseOneInputSchema,
+    2: travelRecommendInputSchema,
+  },
+  food: {
+    1: foodRecommendPhaseOneInputSchema,
+    2: foodRecommendInputSchema,
+  },
+  shopping: {
+    1: shoppingRecommendPhaseOneInputSchema,
+    2: shoppingRecommendInputSchema,
+  },
+  allrounder: {
+    1: allrounderRecommendPhaseOneInputSchema,
+    2: allrounderRecommendInputSchema,
+  },
 } as const;
+
+// The signed-in user's declared profile drives the income-eligibility filter
+// (Step 1 of the scoring pipeline). Read it from the session rather than the
+// request body so a client can't spoof income to unlock premium cards.
+async function profileForSession(): Promise<UserProfile | undefined> {
+  try {
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?._id;
+    if (!userId) return undefined;
+
+    await dbConnect();
+    const user = await UserModel.findById(userId)
+      .select("employmentType salaryRange")
+      .lean<{ employmentType?: string; salaryRange?: string } | null>();
+    if (!user?.employmentType) return undefined;
+
+    return {
+      employmentType: user.employmentType,
+      salaryRange: user.salaryRange,
+    } as UserProfile;
+  } catch (err) {
+    // An unreadable profile must not break the recommendation — the engines
+    // treat an absent profile as "unknown income, don't filter".
+    console.error("[/api/recommend] profile lookup failed:", err);
+    return undefined;
+  }
+}
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -52,15 +121,20 @@ export async function POST(req: Request) {
     return ApiResponse.error("Invalid JSON body", 400);
   }
 
-  const { category: rawCategory, input } =
-    (body as { category?: unknown; input?: unknown }) ?? {};
+  const {
+    category: rawCategory,
+    phase: rawPhase,
+    input,
+  } = (body as { category?: unknown; phase?: unknown; input?: unknown }) ?? {};
 
   const category = toRecommendCategory(rawCategory);
   if (!category) {
     return ApiResponse.error("Unknown or missing card category", 400);
   }
 
-  const parsed = SCHEMA[category].safeParse(input);
+  const phase = toPhase(rawPhase);
+
+  const parsed = SCHEMA[category][phase].safeParse(input);
   if (!parsed.success) {
     return ApiResponse.error(
       parsed.error.issues[0]?.message ?? "Invalid input",
@@ -73,27 +147,44 @@ export async function POST(req: Request) {
     const cards = AdvisorCache.cards();
     const bestOf = AdvisorCache.bestOf();
     const rules = AdvisorCache.rules();
-    // Chat doesn't collect employment/income yet, so no profile filter here —
-    // milestones and fees still shape the ranking.
-    const options = { milestonesBySlug: AdvisorCache.milestonesBySlug() };
+    const options = {
+      profile: await profileForSession(),
+      milestonesBySlug: AdvisorCache.milestonesBySlug(),
+    };
 
     let result: EngineResult;
     switch (category) {
       case "travel":
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendTravelCardAdvanced(parsed.data as any, cards, bestOf, options);
+        result =
+          phase === 1
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendTravelCard(parsed.data as any, cards, bestOf, options)
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendTravelCardAdvanced(parsed.data as any, cards, bestOf, options);
         break;
       case "food":
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendFoodCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+        result =
+          phase === 1
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendFoodCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendFoodCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
       case "shopping":
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendShoppingCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+        result =
+          phase === 1
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendShoppingCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendShoppingCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
       case "allrounder":
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        result = recommendAllRounderCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+        result =
+          phase === 1
+            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendAllRounderCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              recommendAllRounderCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
         break;
     }
 

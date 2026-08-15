@@ -91,7 +91,97 @@ function dedupeEnums<T>(values: T[]): T[] {
   return Array.from(new Set(values));
 }
 
-// ── Per-category assemblers ──────────────────────────────────────────────────
+// The journey submits twice: once early (phase 1) and again after the fine-tune
+// questions (phase 2). Each phase has its own engine and its own Zod schema, so
+// each needs its own payload — phase 1 must never be padded with invented
+// phase-2 defaults.
+export type RecommendPhase = 1 | 2;
+
+// ── Per-category assemblers: phase 1 ─────────────────────────────────────────
+
+function buildTravelPhaseOne(single: Map<string, string | number>) {
+  return {
+    tripsPerYear: toNumber(
+      single.get("domestic-international-holidays-trips"),
+      2,
+    ),
+    travelMix: String(single.get("total-travel-spend") ?? "only_domestic"),
+    avgSpendPerTrip: toNumber(single.get("spend-per-holiday"), 40000),
+  };
+}
+
+function buildFoodPhaseOne(single: Map<string, string | number>) {
+  return {
+    onlineFoodDeliveryFrequency: toNumber(
+      single.get("online-food-order-frequency-fs"),
+      1,
+    ),
+    diningOutFrequency: toNumber(single.get("dine-out-frequency-fs"), 1),
+    foodDeliveryPlatformPreference: String(
+      single.get("food-dining-platform-fs") ?? "none",
+    ),
+  };
+}
+
+// `mostly-shopping` slots carry no engineValue, so map the raw slot text onto
+// the phase-1 enum here.
+const SHOPPING_PREFERENCE_BY_ANSWER: Record<string, string> = {
+  "Mostly online (more than 70% online)": "online",
+  "Mix of online and offline ( Approx. 50-50)": "equal",
+  "Mostly offline ( more than 70% offline)": "offline",
+};
+
+function buildShoppingPhaseOne(
+  single: Map<string, string | number>,
+  multi: Map<string, (string | number)[]>,
+) {
+  const answer = String(single.get("mostly-shopping") ?? "");
+  return {
+    monthlySpend: toNumber(single.get("average-shopping-spend"), 20000),
+    shoppingPreference: SHOPPING_PREFERENCE_BY_ANSWER[answer] ?? "equal",
+    preferredOnlinePlatform: dedupeEnums(
+      (multi.get("preferred-shopping-online-platform") ?? []).map(String),
+    ),
+  };
+}
+
+// `most-spend-category` slots carry no engineValue either.
+const SPEND_CATEGORY_BY_ANSWER: Record<string, string> = {
+  Travel: "travel",
+  "Food & Dining": "foodAndDining",
+  "Online Shopping": "onlineShopping",
+  "Utility Bills": "utilityBills",
+  Fuel: "fuel",
+  "Rent / Insurance / Fees": "rentInsuranceFees",
+};
+
+function buildAllrounderPhaseOne(
+  single: Map<string, string | number>,
+  multi: Map<string, (string | number)[]>,
+) {
+  const monthlyTotal = toNumber(single.get("monthly-spend"), 50000);
+  return {
+    averageTotalMonthlySpend: monthlyTotal,
+    averageOnlineMonthlySpend: toNumber(
+      single.get("online-spend"),
+      Math.round(monthlyTotal * 0.6),
+    ),
+    mostSpendCategory: dedupeEnums(
+      (multi.get("most-spend-category") ?? [])
+        .map((v) => SPEND_CATEGORY_BY_ANSWER[String(v)])
+        .filter(Boolean),
+    ),
+  };
+}
+
+// ── Per-category assemblers: phase 2 ─────────────────────────────────────────
+
+// Phase 2's delivery enum is swiggy | zomato | others — it has no "both"/"none"
+// (phase 1 splits those 50/50 and 100%-fallback respectively). Anything that
+// isn't an explicit single-platform answer narrows to "others".
+function toPhaseTwoDeliveryPreference(value: string | number | undefined) {
+  return value === "swiggy" || value === "zomato" ? value : "others";
+}
 
 function buildTravel(
   single: Map<string, string | number>,
@@ -132,11 +222,12 @@ function buildFood(single: Map<string, string | number>) {
     ),
     diningOutAverageSpend: toNumber(single.get("dining-out-average-bill-fs"), 2000),
     // Prefer the explicit FORM answer; fall back to the delivery-preference
-    // select captured earlier in the journey.
-    foodDeliveryPlatformPreference: String(
+    // select captured earlier in the journey. That earlier select is a phase-1
+    // question, so its "both"/"none" answers have no phase-2 equivalent and
+    // narrow to "others".
+    foodDeliveryPlatformPreference: toPhaseTwoDeliveryPreference(
       single.get("preferred-food-order-platform") ??
-        single.get("food-dining-platform-fs") ??
-        "others",
+        single.get("food-dining-platform-fs"),
     ),
     diningOutPlatformPreference: String(
       single.get("preferred-dining-platform") ?? "others",
@@ -185,16 +276,34 @@ function buildAllrounder(single: Map<string, string | number>) {
 }
 
 /**
- * Build the typed engine input for the given category from the journey's user
- * messages. The returned object is validated by the matching Zod schema on the
- * BE (`POST /api/recommend`); this function only shapes typed values, it does
- * not parse free text.
+ * Build the typed engine input for the given category and phase from the
+ * journey's user messages. The returned object is validated by the matching
+ * Zod schema on the BE (`POST /api/recommend`); this function only shapes
+ * typed values, it does not parse free text.
+ *
+ * Phase 1 is the early submit (few answers, engine models the spend); phase 2
+ * runs only after the fine-tune questions supply declared per-bill amounts.
  */
 export function buildRecommendInput(
   category: CardsType,
+  phase: RecommendPhase,
   userMessages: BaseMessage[],
 ): Record<string, unknown> {
   const { single, multi } = collectAnswers(category, userMessages);
+
+  if (phase === 1) {
+    switch (category) {
+      case CARD_CATEGORY.TRAVEL:
+        return buildTravelPhaseOne(single);
+      case CARD_CATEGORY.FOOD:
+        return buildFoodPhaseOne(single);
+      case CARD_CATEGORY.SHOPPING:
+        return buildShoppingPhaseOne(single, multi);
+      case CARD_CATEGORY.ALL_ROUNDER:
+      default:
+        return buildAllrounderPhaseOne(single, multi);
+    }
+  }
 
   switch (category) {
     case CARD_CATEGORY.TRAVEL:
