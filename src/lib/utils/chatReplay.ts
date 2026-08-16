@@ -227,6 +227,48 @@ export function buildReplaySummary(
   return `I want a ${category} card,${parts.join(" and")}`;
 }
 
+/**
+ * The journey as explicit question/answer pairs, for the agent's `custom_data`.
+ *
+ * `buildReplaySummary` is deliberately lossy — it concatenates `botContent`
+ * fragments into one first-person sentence and silently drops any answer whose
+ * question has no `botContent`. That is fine as a message bubble, but it leaves
+ * the agent unable to answer "how many trips did I say I take?": the question
+ * text never travels, only a fragment glued to a value.
+ *
+ * So the agent gets the questions verbatim alongside the answers, and gets the
+ * ones without `botContent` too — an unasked question is simply absent, while a
+ * dropped one makes the agent look like it forgot.
+ */
+export function buildReplayQA(
+  category: CardsType,
+  answers: ReplayAnswer[],
+): string {
+  const questions = indexQuestions(category);
+
+  return answers
+    .map((answer) => {
+      const question = questions.get(answer.questionId);
+      if (!question) return "";
+
+      // Prefer the question as the user actually saw it; fall back to the
+      // `botContent` fragment, and finally to the raw id so an answer is never
+      // silently discarded.
+      const label =
+        (typeof question.content === "string" && question.content.trim()) ||
+        question.botContent?.trim() ||
+        answer.questionId;
+
+      const value = String(answer.value ?? "").trim();
+      // The category selector stores a raw "action-…" token, not an answer.
+      if (!value || value.startsWith("action-")) return "";
+
+      return `- ${label} -> ${value}`;
+    })
+    .filter(Boolean)
+    .join("\n");
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Read path                                                                 */
 /* -------------------------------------------------------------------------- */

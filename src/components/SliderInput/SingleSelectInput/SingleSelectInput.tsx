@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 
 interface SingleSelectProps {
@@ -37,14 +37,36 @@ export default function SingleSelectInput({
 
   const [selectedPlatform, setSelectedPlatform] = useState(buttonGroupSelectedValue ?? "");
 
+  /**
+   * One answer per question, latched on the first click.
+   *
+   * The parent disables these buttons by moving `currentMessageId` off this
+   * message, but that is React state: it does not land until the next render,
+   * so the buttons stay live for the rest of the current click's tick. An
+   * action like "No, I am good" — which opens the socket for follow-up and,
+   * unlike the recommendation path, never turns the typing loader on — has no
+   * other guard covering it, so repeat taps during the connect window each
+   * fire a fresh turn. A ref flips synchronously and closes that window.
+   */
+  const hasSubmitted = useRef(false);
+
+  const submitOnce = (value: string) => {
+    if (!value || hasSubmitted.current) return;
+    hasSubmitted.current = true;
+    setHasSubmittedState(true);
+    onSubmit?.(value);
+  };
+
+  // Mirrors the ref so a latched group also re-renders into its disabled state;
+  // the ref is what actually blocks the second click.
+  const [hasSubmittedState, setHasSubmittedState] = useState(false);
+
   const handleSubmit = () => {
-    if (selectedPlatform) {
-      onSubmit(selectedPlatform);
-    }
+    submitOnce(selectedPlatform);
   };
 
   const handleSubmitByOptionClick = (value: string) => {
-    if (value) onSubmit?.(value);
+    submitOnce(value);
   }
 
   return (
@@ -54,6 +76,7 @@ export default function SingleSelectInput({
           <Button
             key={platform?.value}
             onClick={() => {
+              if (hasSubmitted.current) return;
               setSelectedPlatform(platform?.value);
               handleSubmitByOptionClick(platform?.value);
             }}
@@ -71,7 +94,7 @@ export default function SingleSelectInput({
                 : `bg-brown-sidebar text-white font-semibold ${selectedPlatform === platform.value ? "text-primary-orange border-primary-orange" : "border-primary-orange"}  hover:text-white hover:border-primary-orange`
               }
             `}
-            disabled={disabled}
+            disabled={disabled || hasSubmittedState}
           >
             {platform?.label}
           </Button>
@@ -99,7 +122,7 @@ export default function SingleSelectInput({
           !onSelectionSubmit && showSubmit && (
             <Button
               onClick={handleSubmit}
-              disabled={!selectedPlatform || disabled}
+              disabled={!selectedPlatform || disabled || hasSubmittedState}
               className="px-12 h-10 text-sm rounded-full hover:bg-primary-orange/70 bg-secondary-orange/70 cursor-pointer"
             >
               Submit

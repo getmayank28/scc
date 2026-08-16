@@ -8,6 +8,7 @@ import { useChatScroll } from "@/lib/hooks/useChatScroll";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import ChatSidebar from "@/components/ChatSidebar/ChatSidebar";
 import useChatActions from "@/lib/hooks/useChatActions";
+import { useSocketReplyTimeout } from "@/lib/hooks/useSocketReplyTimeout";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { INPUT_MESSAGE_SOURCE } from "@/lib/constants/chatJourney";
@@ -29,6 +30,7 @@ export default function ChatbotUI() {
     chatInputDisabled,
     setInputValue,
     messages,
+    timedOutReply,
   } = useChatContext();
 
   const { addUserMessage, restoreLocalReplay } = useChatState();
@@ -37,7 +39,11 @@ export default function ChatbotUI() {
     handleSendMessage,
     handleKeyPressSendMessage,
     handleAssistantSocketMessage,
+    retryTimedOutMessage,
   } = useChatActions();
+
+  // Release the screen if the partner goes quiet on a turn we sent.
+  useSocketReplyTimeout();
 
   const { lastMessage, isSocketLoading, isChatLoading } =
     useAppWebSocketConnection();
@@ -93,7 +99,7 @@ export default function ChatbotUI() {
     <div className="flex">
       <ChatSidebar />
       
-      <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background">
+      <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background min-w-0">
         <CardSelectorSkeleton
           className={`${isChatLoading ? "inline" : "hidden"}`}
         />
@@ -106,6 +112,8 @@ export default function ChatbotUI() {
           handleSend={handleSendWrapper}
           messagesEndRef={messagesEndRef}
           isTyping={showTypingLoader}
+          hasReplyTimedOut={!!timedOutReply}
+          onRetryTimedOutReply={retryTimedOutMessage}
         />
 
         {/* Input Area - Fixed at Bottom */}

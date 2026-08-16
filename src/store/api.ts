@@ -1,4 +1,5 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { ZIJUS_API_URL } from "@/lib/constants/zijus";
 
 export const api = createApi({
   reducerPath: "api",
@@ -94,7 +95,7 @@ export const api = createApi({
     }),
     chatCommunication: builder.mutation({
       query: ({ message, token }) => ({
-        url: `https://agent.platform.zijus.com/api/sarathi-9720`,
+        url: ZIJUS_API_URL,
         method: "POST",
         headers: {
           "Content-Type": "application/json",

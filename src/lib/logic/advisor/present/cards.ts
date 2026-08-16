@@ -20,7 +20,11 @@ import type {
   AllRounderEngineResult,
   AllRounderEnginePhaseTwoResult,
 } from "../allrounderEngine";
-import type { BotRecommendationCreditCardProps } from "@/types/card";
+import type {
+  BotRecommendationCreditCardProps,
+  CardMilestoneSummary,
+  CardRewardStream,
+} from "@/types/card";
 
 // The subset of engine card-return shapes that share the fields we display.
 // Both phases of every engine return the same row shape (phase-2 shopping only
@@ -126,6 +130,68 @@ function categoryWiseReward(
   return parts.length ? parts.join(", ") : "Rewards across your spend";
 }
 
+// The same per-stream split as `categoryWiseReward`, kept numeric so the UI can
+// rank the streams and size bars against the largest. Costs (forex markup) are
+// flagged rather than dropped — they are part of why a card scores lower.
+function rewardStreams(
+  category: RecommendCategory,
+  card: AnyCardReturn,
+): CardRewardStream[] {
+  const streams: CardRewardStream[] = [];
+  const push = (label: string, valueInr: number, isCost = false) => {
+    if (valueInr > 0) streams.push({ label, valueInr, isCost });
+  };
+
+  switch (category) {
+    case "travel": {
+      const t = card as CardTravelReturn;
+      push("Domestic", t.domestic.totalReturnInr);
+      push("International", t.international.totalReturnInr);
+      if (t.extraFlights) push("Extra flights", t.extraFlights.totalReturnInr);
+      push("Forex cost", t.forex.totalCostInr, true);
+      break;
+    }
+    case "food": {
+      const f = card as CardFoodReturn;
+      push("Delivery", f.delivery.returnInr);
+      push("Dining", f.dining.returnInr);
+      break;
+    }
+    case "shopping": {
+      const s = card as CardShoppingReturnTwo;
+      push("Online", s.online.returnInr);
+      push("Offline", s.offline.returnInr);
+      break;
+    }
+    case "allrounder": {
+      const a = card as CardAllRounderReturn;
+      for (const bucket of Object.values(a.buckets)) {
+        push(String(bucket.bucket), bucket.totalReturnInr);
+      }
+      break;
+    }
+  }
+
+  // Biggest contributor first: that is the reason the card won.
+  return streams.sort((a, b) => b.valueInr - a.valueInr);
+}
+
+// Milestones the projected spend actually unlocks. The engine has already
+// threshold-checked and resolved mutual-exclusivity groups, so everything here
+// is genuinely earned — this is unclaimed value the old UI never surfaced.
+function milestoneSummaries(card: AnyCardReturn): CardMilestoneSummary[] {
+  return (card.achievedMilestones ?? [])
+    .filter((m) => m.annualValueInr > 0)
+    .map((m) => ({
+      // `milestoneType` is a machine key ("spend_milestone"); make it readable.
+      label: (m.milestoneType ?? "Milestone").replace(/[_-]+/g, " ").trim(),
+      annualValueInr: m.annualValueInr,
+      spendThresholdInr: m.spendThresholdInr,
+      period: m.period,
+    }))
+    .sort((a, b) => b.annualValueInr - a.annualValueInr);
+}
+
 function annualFeeText(card: MockCard | undefined): string {
   if (!card) return "—";
   if (card.fees.is_lifetime_free) return "0 (Lifetime free)";
@@ -166,10 +232,12 @@ export function toRecommendationCards(
   const catalogById = new Map(catalog.map((c) => [c._id, c]));
   const bestReturn = annualReturn(byCard[0]);
 
-  return byCard.slice(0, 3).map((card) => {
+  return byCard.slice(0, 3).map((card, index) => {
     const catalogCard = catalogById.get(card.cardId);
     const loss = Math.max(0, bestReturn - annualReturn(card));
     const rate = returnOnSpend(card);
+
+    const waiverSpend = catalogCard?.fees?.waiver_spend_inr ?? 0;
 
     return {
       id: card.cardId,
@@ -183,6 +251,20 @@ export function toRecommendationCards(
       annualFee: annualFeeText(catalogCard),
       notIdealFor: notIdealFor(catalogCard),
       applyLink: "", // resolved lazily client-side from `id`
+
+      // Structured mirror of the above, for the UI that can use real numbers.
+      netAnnualValueInr: annualReturn(card),
+      lossVsBestInr: loss,
+      annualSpendInr: card.annualSpendInr ?? annualSpend(card),
+      feeInr: card.feeInr,
+      feeWaived: card.feeWaived,
+      // Only meaningful while the waiver is still unmet; once waived the
+      // threshold is history and showing it invites "do I still need to?".
+      feeWaiverSpendInr:
+        waiverSpend > 0 && !card.feeWaived ? waiverSpend : undefined,
+      rewardStreams: rewardStreams(category, card),
+      milestones: milestoneSummaries(card),
+      rank: index + 1,
     };
   });
 }

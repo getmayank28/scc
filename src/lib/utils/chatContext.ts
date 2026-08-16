@@ -3,7 +3,12 @@ import {
   CHAT_PENDING_REPLAY_KEY,
   CHAT_RECOMMENDATION_CONTEXT_KEY,
 } from "../constants/storage";
-import type { ReplayMetadata, RecommendationPayload } from "./chatReplay";
+import { buildReplayQA, decodeReplayMetadata } from "./chatReplay";
+import type {
+  ReplayAnswer,
+  ReplayMetadata,
+  RecommendationPayload,
+} from "./chatReplay";
 
 /**
  * Context handed to the partner bot, and the local stash that makes it survive
@@ -91,11 +96,14 @@ function formatCards(recommendation: RecommendationPayload | null): string {
 export function buildBotContext({
   category,
   summary,
+  answersQA,
   recommendation,
   earlierRecommendation,
 }: {
   category: CardsType;
   summary: string;
+  /** The journey as explicit question/answer pairs (see `buildReplayQA`). */
+  answersQA?: string;
   recommendation: RecommendationPayload | null;
   earlierRecommendation?: RecommendationPayload | null;
 }): string {
@@ -104,6 +112,17 @@ export function buildBotContext({
     `What they told us: ${summary}`,
     "",
   ];
+
+  // The prose summary glues answers together and loses which question each one
+  // answered, so the agent cannot field "what did I say my trip count was?".
+  // The explicit pairs are what make those follow-ups answerable.
+  if (answersQA) {
+    lines.push(
+      "Their answers to the journey questions, verbatim:",
+      answersQA,
+      "",
+    );
+  }
 
   // When the user chose to fine-tune, both sets are already on their screen and
   // either may be asked about — including why the second differs from the first.
@@ -126,6 +145,9 @@ export function buildBotContext({
     "",
     "These cards are already displayed to the user. Do not repeat or re-list them.",
     "Answer their follow-up questions about these cards.",
+    // Without this the agent treats the context as card-only and says it does
+    // not know, even though the answers are right above.
+    "The user may also ask what they told you during the journey (for example how many trips they take, or what they said they spend). Answer those from the answers above.",
     "Do not recommend a different set of cards unless they explicitly ask.",
   );
 
@@ -165,12 +187,42 @@ export function encodeBotContext(context: string): string {
 export function savePendingReplay(pending: PendingReplay) {
   if (!isBrowser()) return;
 
+  // Read before the overwrite below: on a phase-2 save this is still the
+  // phase-1 replay, and it holds the only copy of the phase-1 answers.
+  const previous = getPendingReplay();
+
   sessionStorage.setItem(CHAT_PENDING_REPLAY_KEY, JSON.stringify(pending));
+
+  // The answers are already in `metadata` (that is what the reload path
+  // restores from), so decode them back rather than threading a second copy
+  // through every caller — the two can then never disagree.
+  const decoded = decodeReplayMetadata(pending.metadata);
+
+  // `collectReplayAnswers` scopes a phase-2 journey to the fine-tuning answers
+  // alone, so the phase-1 answers (trip counts, spend) are absent from this
+  // metadata even though the user gave them and can still ask about them.
+  // Carry them over, earliest first, so the agent sees the whole journey.
+  const previousAnswers =
+    pending.earlierRecommendation && previous
+      ? (decodeReplayMetadata(previous.metadata)?.answers ?? [])
+      : [];
+
+  // Merge phase-1 then phase-2, keyed by question: a question answered in both
+  // keeps the later (fine-tuned) value, while order stays earliest-first.
+  const byQuestion = new Map<string, ReplayAnswer>();
+  for (const answer of [...previousAnswers, ...(decoded?.answers ?? [])]) {
+    byQuestion.set(answer.questionId, answer);
+  }
+  const allAnswers = [...byQuestion.values()];
+
   sessionStorage.setItem(
     CHAT_RECOMMENDATION_CONTEXT_KEY,
     buildBotContext({
       category: pending.category,
       summary: pending.summary,
+      answersQA: allAnswers.length
+        ? buildReplayQA(pending.category, allAnswers)
+        : undefined,
       recommendation: pending.recommendation,
       earlierRecommendation: pending.earlierRecommendation,
     }),

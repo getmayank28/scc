@@ -31,6 +31,9 @@ const useChatActions = () => {
     inputValue,
     messages,
     enableTypingLoader,
+    setPendingReply,
+    setTimedOutReply,
+    timedOutReply,
   } = useChatContext();
   const {
     addUserMessage,
@@ -127,6 +130,53 @@ const useChatActions = () => {
     return resolvedQuestion;
   };
 
+  /**
+   * Hand a free-text turn to the partner and start waiting on it.
+   *
+   * `m_id` is reused across retries so a late reply to the original attempt
+   * still resolves the same turn rather than appearing as a second answer.
+   */
+  const sendDirectMessage = (content: string, m_id = crypto.randomUUID()) => {
+    if (readyState !== ReadyState.OPEN) return false;
+
+    const userMsg = {
+      content,
+      m_id,
+      source: MESSAGE_SOURCE.USER,
+      type: MESSAGE_TYPE.TEXT,
+      custom_metadata: [],
+    };
+    addUserMessage(userMsg as BaseMessage);
+    sendMessageToSocket(JSON.stringify(userMsg));
+    setSessionIdValidation(true);
+    disableChatInput();
+    setCurrentMessageId("");
+    enableTypingLoader();
+    // Arm the deadline: from here the turn is unanswered until a FinalMessage
+    // lands (see `useSocketReplyTimeout`).
+    setTimedOutReply(null);
+    setPendingReply({ m_id, content, startedAt: Date.now() });
+    return true;
+  };
+
+  /**
+   * Re-send the turn whose reply never arrived. Driven by the retry CTA that
+   * `useSocketReplyTimeout` surfaces.
+   */
+  const retryTimedOutMessage = () => {
+    if (!timedOutReply) return;
+
+    trackEvent(EventName.CHAT_MESSAGE_SENT, {
+      messageSource: "retry",
+      messageLength: timedOutReply.content.length,
+    });
+
+    const sent = sendDirectMessage(timedOutReply.content, timedOutReply.m_id);
+    // Still no usable connection — keep the CTA on screen instead of dropping
+    // the message silently.
+    if (!sent) setTimedOutReply(timedOutReply);
+  };
+
   const handleSendMessage = async (
     value: string | Record<string, string | number>,
     messageSource?: MessageSourceType,
@@ -144,19 +194,7 @@ const useChatActions = () => {
         messageSource: "direct",
         messageLength: typeof value === "string" ? value.length : 0,
       });
-      const userMsg = {
-        content: value,
-        m_id: crypto.randomUUID(),
-        source: MESSAGE_SOURCE.USER,
-        type: MESSAGE_TYPE.TEXT,
-        custom_metadata: [],
-      };
-      addUserMessage(userMsg as BaseMessage);
-      sendMessageToSocket(JSON.stringify(userMsg));
-      setSessionIdValidation(true);
-      disableChatInput();
-      setCurrentMessageId("");
-      enableTypingLoader();
+      sendDirectMessage(value as string);
       setInputValue("");
       return;
     }
@@ -253,6 +291,7 @@ const useChatActions = () => {
     handleSendMessage,
     handleKeyPressSendMessage,
     handleAssistantSocketMessage,
+    retryTimedOutMessage,
   };
 };
 
