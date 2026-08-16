@@ -109,11 +109,14 @@ export async function POST(req: Request) {
     const scoredSlugs = cards.map((c) => c._id);
     const [bestOf, rules, merchantKnown] = await Promise.all([
       AdvisorCache.bestOfForCards(scoredSlugs, engineCategory),
-      // Rules are only needed to resolve a named merchant out of the
-      // Pareto-pruned frontier; skip the read entirely otherwise.
-      merchantSlug
-        ? AdvisorCache.rulesForCards(scoredSlugs, engineCategory)
-        : Promise.resolve([]),
+      // Always read the rules, not just for a named merchant. The precompute
+      // drops any rule at or below the card's base rate (bestOf.ts) and writes
+      // no row at all when that leaves nothing — so a missing bestOf row means
+      // either "no rule" or "a rule that pays less than base". Only the rules
+      // themselves tell the two apart, and the optimizer must report the real
+      // rate rather than falling back to base. Bounded: the wallet's cards
+      // (<= 3) in one category, served from the warm snapshot when present.
+      AdvisorCache.rulesForCards(scoredSlugs, engineCategory),
       merchantSlug
         ? AdvisorCache.merchantExists(merchantSlug)
         : Promise.resolve(false),

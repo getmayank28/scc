@@ -12,6 +12,7 @@ import {
   ArrowRight,
   ArrowLeft,
   CirclePlus,
+  ExternalLink,
 } from "lucide-react";
 import {
   Select,
@@ -27,7 +28,10 @@ import { bankIcon } from "@/lib/data/banks";
 import useNav from "@/lib/hooks/useNav";
 import useUserData from "@/lib/hooks/useUserData";
 import { useGetUserCardsQuery } from "@/store/api";
-import { useGetPortalsQuery } from "@/store/admin";
+import {
+  useGetPortalsQuery,
+  useLazyGetGiftorsByCardSlugQuery,
+} from "@/store/admin";
 import {
   useAddSpendTransactionMutation,
   useOptimizeSpendMutation,
@@ -45,6 +49,7 @@ import {
   AMOUNT_CHIPS,
   merchantLabel,
   type OptimizedCardResult,
+  type PortalOption,
 } from "./data";
 
 type Status = "idle" | "loading" | "done";
@@ -75,6 +80,10 @@ export default function SpendOptimizerPage() {
   const { data: portals, isFetching: isPortalFetching } = useGetPortalsQuery({});
   const [optimizeSpend, { isLoading: isOptimizing }] = useOptimizeSpendMutation();
   const [addSpendTransaction] = useAddSpendTransactionMutation();
+  // Voucher partners are per-bank and only needed once the user commits to the
+  // voucher route, so they're fetched lazily on click rather than up front.
+  const [giftorsByCardSlug, { isFetching: isGiftorLoading }] =
+    useLazyGetGiftorsByCardSlugQuery();
 
   // --- inputs ---
   const [selected, setSelected] = useState<string[]>([]);
@@ -83,6 +92,12 @@ export default function SpendOptimizerPage() {
   const [category, setCategory] = useState("online-shopping");
   const [merchantValue, setMerchantValue] = useState("");
   const [amount, setAmount] = useState("5000");
+
+  // "More" tiles hand off to the precision panel: switch tab, then open that
+  // tab's input. The category Select is controlled so it can be popped open;
+  // the merchant searchbox has no imperative API, so we focus its input.
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [pendingFocus, setPendingFocus] = useState<Mode | null>(null);
 
   // --- output ---
   const [status, setStatus] = useState<Status>("idle");
@@ -131,6 +146,22 @@ export default function SpendOptimizerPage() {
       })),
     [portals],
   );
+
+  // The searchbox only needs a name, but the result CTA needs somewhere to send
+  // the user — so the portal rows are also kept whole, keyed by the same name
+  // the searchbox writes into `merchantValue`.
+  const portalsByName = useMemo(() => {
+    const map = new Map<string, PortalOption>();
+    for (const p of (portals ?? []) as (PortalProps & { _id: string })[]) {
+      map.set(p.name.toLowerCase(), {
+        _id: p._id,
+        name: p.name,
+        affiliateLink: p.affiliateLink,
+        websiteUrl: p.websiteUrl,
+      });
+    }
+    return map;
+  }, [portals]);
 
   // Which categories the chosen merchant actually has rules in. Skipped until a
   // merchant is picked; `skipToken`-style guard via the `skip` option.
@@ -181,25 +212,133 @@ export default function SpendOptimizerPage() {
     [ranWith.category],
   );
 
+  // Resolved off `ranWith`, not the live `merchantValue`: the results belong to
+  // the merchant the run was made with, and editing the field mid-result would
+  // otherwise point the CTA at a site the numbers aren't about.
+  //
+  // Category runs have no merchant and therefore no destination — the swipe CTA
+  // is dropped entirely in that case rather than rendered dead.
+  const directSwipeLink = useMemo(() => {
+    if (!ranWith.merchant) return null;
+    const portal = portalsByName.get(ranWith.merchant.toLowerCase());
+    return portal?.affiliateLink || portal?.websiteUrl || null;
+  }, [ranWith.merchant, portalsByName]);
+
+  // Shared by both CTAs so the two events carry identical card/context props.
+  const actionProps = useCallback(
+    (card: OptimizedCardResult, savingsAmount: number) => ({
+      cardId: card.cardId,
+      cardName: card.cardName,
+      isBestCard: card.isBestCard,
+      savingsAmount,
+      category: ranWith.category,
+      amount: ranWith.amount,
+      merchant: ranWith.merchant,
+    }),
+    [ranWith.category, ranWith.amount, ranWith.merchant],
+  );
+
+  const handleBuyVoucher = useCallback(
+    async (card: OptimizedCardResult) => {
+      if (isGiftorLoading) return;
+
+      track(
+        EventName.SPEND_OPTIMIZER_BUY_VOUCHER_CLICKED,
+        actionProps(card, card.voucherSavingsInInr),
+      );
+
+      try {
+        const res = await giftorsByCardSlug(card.cardId).unwrap();
+        // A bank with no giftor on file resolves to an empty list; opening the
+        // undefined url would land the user on about:blank.
+        const url = res?.[0]?.url;
+        if (!url) {
+          toast.error(`No voucher partner listed for ${card.bankName} yet`);
+          return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
+      } catch {
+        toast.error("Couldn't open the voucher partner. Please try again.");
+      }
+    },
+    [giftorsByCardSlug, isGiftorLoading, track, actionProps],
+  );
+
+  const handleDirectSwipe = useCallback(
+    (card: OptimizedCardResult) => {
+      if (!directSwipeLink) return;
+      track(
+        EventName.SPEND_OPTIMIZER_DIRECT_SWIPE_CLICKED,
+        actionProps(card, card.directSwipeSavingsInInr),
+      );
+      window.open(directSwipeLink, "_blank", "noopener,noreferrer");
+    },
+    [directSwipeLink, track, actionProps],
+  );
+
   // On mobile the result panel sits below the inputs, so a tap on a category or
   // merchant tile appears to do nothing — the answer renders off-screen. Bring
   // it into view. Desktop keeps the two-column layout with the panel already
   // visible, so scrolling there would be disorienting; the 1024px check mirrors
   // the `.so-grid` breakpoint.
   const resultRef = useRef<HTMLDivElement>(null);
-  const scrollToResultOnMobile = useCallback(() => {
+  const scrollToResultOnMobile = useCallback((smooth = true) => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(min-width: 1024px)").matches) return;
     // Wait for the skeleton to be laid out before measuring.
     requestAnimationFrame(() => {
       resultRef.current?.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
+        behavior:
+          !smooth ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
         block: "start",
       });
     });
   }, []);
+
+  // Jump from a "More" tile into the precision panel on the matching tab. The
+  // panel only renders while status === "idle", so a run in progress is reset
+  // first — otherwise the target input isn't mounted to open or focus.
+  // Instant, not smooth: the dropdown is opened a frame later and Radix
+  // measures the trigger's position at that moment. A smooth scroll is still
+  // animating then, so the menu anchors to where the trigger *was* and lands
+  // detached from it. Jumping straight there means the measurement is taken
+  // against the final layout.
+  const openPrecision = useCallback(
+    (target: Mode) => {
+      setStatus("idle");
+      setMode(target);
+      setPendingFocus(target);
+      scrollToResultOnMobile(false);
+    },
+    [scrollToResultOnMobile],
+  );
+
+  // Run after the panel has committed, so the trigger/input exists.
+  // Two frames, not one: the scroll above is itself deferred by a frame, so a
+  // single rAF here would open the menu in the same frame the scroll is applied
+  // and Radix would measure a stale trigger position. The inner frame runs
+  // after the scroll has committed.
+  useEffect(() => {
+    if (!pendingFocus) return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
+        if (pendingFocus === "category") setCategoryOpen(true);
+        else
+          document
+            .querySelector<HTMLInputElement>("#so-merchant-search")
+            ?.focus();
+        setPendingFocus(null);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      cancelAnimationFrame(inner);
+    };
+  }, [pendingFocus]);
 
   function toggleCard(slug: string) {
     const card = wallet.find((c) => c.slug === slug);
@@ -346,7 +485,7 @@ export default function SpendOptimizerPage() {
             <section>
               <h3 className="so-eyecaps">Jump straight to</h3>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {TOP_CATEGORIES.map((value) => {
+                {TOP_CATEGORIES.slice(0, -1).map((value) => {
                   const c = categories.find((x) => x.value === value);
                   if (!c) return null;
                   const on = !ranWith.merchant && ranWith.category === value;
@@ -359,19 +498,44 @@ export default function SpendOptimizerPage() {
                         runFor(value, "");
                       }}
                       disabled={busy}
-                      className={`so-tile ${on ? "is-on" : ""}`}
+                      className={`so-tile so-brand ${on ? "is-on" : ""}`}
                     >
-                      <span className="so-tile-label">{c.label}</span>
+                      <span
+                        className={`so-brand-chip is-art${c.artOnPaper ? " on-paper" : ""}`}
+                      >
+                        {c.art ? (
+                          <Image
+                            src={c.art}
+                            alt=""
+                            width={34}
+                            height={34}
+                            className="so-brand-img"
+                          />
+                        ) : (
+                          <c.icon className="h-4 w-4" />
+                        )}
+                      </span>
+                      <span className="so-brand-name">{c.label}</span>
                     </button>
                   );
                 })}
+                <button
+                  onClick={() => openPrecision("category")}
+                  disabled={busy}
+                  className="so-tile so-brand so-tile-more"
+                >
+                  <span className="so-brand-chip is-empty" aria-hidden>
+                    <CirclePlus className="h-4 w-4" />
+                  </span>
+                  <span className="so-brand-name">More</span>
+                </button>
               </div>
             </section>
 
             <section>
               <h3 className="so-eyecaps">Or a merchant</h3>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {quickMerchants.map((m) => (
+                {quickMerchants.slice(0, -1).map((m) => (
                   <button
                     key={m.value}
                     onClick={() => {
@@ -383,11 +547,43 @@ export default function SpendOptimizerPage() {
                       runFor(m.category, m.label);
                     }}
                     disabled={busy}
-                    className={`so-tile ${ranWith.merchant === m.label ? "is-on" : ""}`}
+                    className={`so-tile so-brand ${ranWith.merchant === m.label ? "is-on" : ""}`}
                   >
-                    <span className="so-tile-label">{m.label}</span>
+                    <span
+                      className={`so-brand-chip${m.logoOnDark ? " is-inked" : ""}${m.logoBleed ? " is-bleed" : ""}${m.logoPortrait ? " is-portrait" : ""}${m.logoScale ? " is-wide" : ""}`}
+                      style={
+                        m.logoScale
+                          ? ({
+                              "--so-logo-scale": m.logoScale,
+                            } as React.CSSProperties)
+                          : undefined
+                      }
+                    >
+                      {m.logo ? (
+                        <Image
+                          src={m.logo}
+                          alt=""
+                          width={34}
+                          height={34}
+                          className="so-brand-img"
+                        />
+                      ) : (
+                        <span className="so-brand-initial">{m.label[0]}</span>
+                      )}
+                    </span>
+                    <span className="so-brand-name">{m.label}</span>
                   </button>
                 ))}
+                <button
+                  onClick={() => openPrecision("merchant")}
+                  disabled={busy}
+                  className="so-tile so-brand so-tile-more"
+                >
+                  <span className="so-brand-chip is-empty" aria-hidden>
+                    <CirclePlus className="h-4 w-4" />
+                  </span>
+                  <span className="so-brand-name">More</span>
+                </button>
               </div>
             </section>
 
@@ -525,6 +721,8 @@ export default function SpendOptimizerPage() {
                     </label>
                     {mode === "category" ? (
                       <Select
+                        open={categoryOpen}
+                        onOpenChange={setCategoryOpen}
                         value={category}
                         onValueChange={(v) => {
                           track(EventName.SPEND_OPTIMIZER_CATEGORY_CHANGED, {
@@ -537,7 +735,16 @@ export default function SpendOptimizerPage() {
                         <SelectTrigger className="so-underline">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="!max-h-[300px]">
+                        {/* popper, not the default item-aligned: item-aligned
+                            positions the menu against the *selected row* so it
+                            can sit far from the field (worse the further down
+                            the list the selection is — "Flights" is 5th). popper
+                            anchors it to the trigger itself. */}
+                        <SelectContent
+                          position="popper"
+                          sideOffset={6}
+                          className="!max-h-[300px] w-[var(--radix-select-trigger-width)]"
+                        >
                           {categories.map((c) => {
                             const Icon = c.icon;
                             return (
@@ -554,6 +761,7 @@ export default function SpendOptimizerPage() {
                     ) : (
                       <div className="so-searchbox">
                         <SearchboxInput
+                          id="so-merchant-search"
                           disabled={isPortalFetching}
                           options={merchantOptions}
                           value={merchantValue}
@@ -582,7 +790,11 @@ export default function SpendOptimizerPage() {
                               <SelectTrigger className="so-underline mt-2">
                                 <SelectValue />
                               </SelectTrigger>
-                              <SelectContent className="!max-h-[300px]">
+                              <SelectContent
+                                position="popper"
+                                sideOffset={6}
+                                className="!max-h-[300px] w-[var(--radix-select-trigger-width)]"
+                              >
                                 {merchantCategoryOptions.map((c) => {
                                   const Icon = c.icon;
                                   return (
@@ -734,12 +946,21 @@ export default function SpendOptimizerPage() {
                     <p className="so-instruction">
                       <span className="so-instruction-tag">Do this</span>
                       {winner.bestRoute === "voucher"
-                        ? `Buy a ${ranCategory?.label.toLowerCase() ?? "gift"} voucher on your bank portal, then pay with ${winner.cardName}.`
+                        ? `Buy an online shopping voucher on your bank portal using ${winner.cardName}. Load the voucher into your merchant wallet and pay using the balance. Check the T&C of the voucher before buying.`
                         : `Pay directly with ${winner.cardName}${ranWith.merchant ? ` at ${ranWith.merchant}` : ""}.`}
                     </p>
                     {winner.capNote && (
                       <p className="so-capnote">Cap: {winner.capNote}</p>
                     )}
+
+                    <SpendActions
+                      card={winner}
+                      merchant={ranWith.merchant}
+                      hasSwipeLink={!!directSwipeLink}
+                      isVoucherLoading={isGiftorLoading}
+                      onBuyVoucher={() => handleBuyVoucher(winner)}
+                      onDirectSwipe={() => handleDirectSwipe(winner)}
+                    />
                   </div>
                 </div>
 
@@ -858,6 +1079,88 @@ export default function SpendOptimizerPage() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+/**
+ * The two ways to act on the winning card, ranked by what the engine actually
+ * recommends: `bestRoute` takes the primary button, the other route stays
+ * available as a secondary labelled with what choosing it costs.
+ *
+ * The swipe route is merchant-bound — the destination comes from the portal
+ * record, so a category-wide run has nowhere to send the user and the button is
+ * omitted rather than shown dead. When that happens on a swipe-win, the voucher
+ * CTA deliberately stays secondary: promoting it would contradict the "you
+ * keep ₹X" figure directly above, which is the swipe number.
+ */
+function SpendActions({
+  card,
+  merchant,
+  hasSwipeLink,
+  isVoucherLoading,
+  onBuyVoucher,
+  onDirectSwipe,
+}: {
+  card: OptimizedCardResult;
+  merchant: string;
+  hasSwipeLink: boolean;
+  isVoucherLoading: boolean;
+  onBuyVoucher: () => void;
+  onDirectSwipe: () => void;
+}) {
+  const voucherWins = card.bestRoute === "voucher";
+  // What the runner-up route gives up. Only meaningful next to the route it is
+  // losing to, so it needs both buttons on screen — alone on a lone voucher CTA
+  // it reads as a charge or a discount rather than a comparison. Also hidden
+  // when the gap is zero or negative, where it would be noise.
+  const delta = hasSwipeLink
+    ? Math.round(
+        Math.abs(card.voucherSavingsInInr - card.directSwipeSavingsInInr),
+      )
+    : 0;
+  const swipeLabel = merchant ? `Pay at ${merchant}` : "Pay direct";
+
+  const voucher = (
+    <button
+      onClick={onBuyVoucher}
+      disabled={isVoucherLoading}
+      className={voucherWins ? "so-act so-act-primary" : "so-act so-act-ghost"}
+    >
+      <TicketPercent className="h-3.5 w-3.5" />
+      {isVoucherLoading ? "Opening…" : "Buy voucher"}
+      {!voucherWins && delta > 0 && (
+        <span className="so-act-delta so-mono">−{inr(delta)}</span>
+      )}
+    </button>
+  );
+
+  const swipe = hasSwipeLink ? (
+    <button
+      onClick={onDirectSwipe}
+      className={voucherWins ? "so-act so-act-ghost" : "so-act so-act-primary"}
+    >
+      <ExternalLink className="h-3.5 w-3.5" />
+      {swipeLabel}
+      {voucherWins && delta > 0 && (
+        <span className="so-act-delta so-mono">−{inr(delta)}</span>
+      )}
+    </button>
+  ) : null;
+
+  return (
+    <div className="so-actions">
+      {voucherWins ? (
+        <>
+          {voucher}
+          {swipe}
+        </>
+      ) : (
+        <>
+          {swipe}
+          {voucher}
+        </>
+      )}
     </div>
   );
 }
@@ -1009,18 +1312,110 @@ function StyleBlock() {
         letter-spacing: 0.14em; text-transform: uppercase; color: var(--so-mut);
       }
 
+      /* Radix locks body scroll when the category Select opens and pads the
+         body to replace the removed scrollbar — a sideways jump of the whole
+         page. Reserving the gutter up front makes that compensation a no-op. */
+      html { scrollbar-gutter: stable; }
+
       .so-tile {
         display: flex; align-items: center; justify-content: center;
         height: 62px; padding: 0 10px; border-radius: 12px;
         background: var(--so-surface-low); color: var(--so-ink);
         box-shadow: inset 1px 1px 0 rgba(255,255,255,0.05);
-        border: 1px solid transparent;
+        border: 1px solid transparent; cursor: pointer;
         transition: background .2s, border-color .2s, color .2s, transform .12s;
       }
       .so-tile:hover:not(:disabled) { background: var(--so-surface-high); color: var(--so-primary); transform: translateY(-1px); }
       .so-tile.is-on { border-color: var(--so-primary); background: var(--so-surface-high); color: var(--so-primary); }
-      .so-tile:disabled { opacity: .5; }
+      .so-tile:disabled { opacity: .5; cursor: not-allowed; }
+      /* "More" is a doorway to the precision panel, not a spend choice. It must
+         stay dimensionally identical to a base tile — same box, same 1px solid
+         border, same inset — so only the border colour and text tone differ. */
+      .so-tile-more { border-color: rgba(255,255,255,0.18); color: var(--so-mut); }
+      .so-tile-more:hover:not(:disabled) { border-color: var(--so-primary); }
       .so-tile-label { font-size: 0.85rem; text-align: center; line-height: 1.2; }
+
+      /* Merchant tiles pin the mark to a fixed-size chip so five logos with
+         wildly different aspect ratios (Amazon 120x88, Myntra 497x190,
+         Flipkart 54x54) all carry equal visual weight. Without the chip they'd
+         each set their own scale.
+
+         Three tiles per row leaves ~100px each on a small phone, and a chip
+         beside a label truncates "Amazon" to "Amaz…". So the mark sits ABOVE
+         the name there, handing the label the tile's full width; the row form
+         returns once the tile is wide enough to hold both. */
+      .so-brand {
+        flex-direction: column; justify-content: center; gap: 4px;
+        padding: 0 4px; text-align: center;
+      }
+      @media (min-width: 420px) {
+        .so-brand { flex-direction: row; justify-content: flex-start; gap: 8px; padding: 0 9px; text-align: left; }
+      }
+      .so-brand-chip {
+        flex: 0 0 auto; display: grid; place-items: center; position: relative;
+        /* Smaller stacked, so chip + name clear the 62px tile without crowding. */
+        width: 28px; height: 28px; border-radius: 8px; overflow: hidden;
+        /* Brand marks are drawn for light ground, and two of these assets bake
+           in their own white/red plate. A paper chip makes that uniform. */
+        background: var(--so-paper); color: var(--so-paper-mut);
+        transition: background .2s;
+      }
+      @media (min-width: 420px) {
+        .so-brand-chip { width: 34px; height: 34px; border-radius: 9px; }
+      }
+      /* Light-on-transparent marks (Amazon) need ink under them instead. */
+      .so-brand-chip.is-inked { background: var(--so-paper-ink); }
+      /* Category art is full-colour illustration, not a brand mark needing a
+         light plate to sit on — it reads directly against the tile, so no chip
+         background. The box still sizes and aligns it with the merchant row. */
+      .so-brand-chip.is-art { background: transparent; }
+      .so-brand-chip.is-art .so-brand-img { padding: 0; }
+      /* Dark line-art needs the plate back, or it disappears into the tile. */
+      .so-brand-chip.is-art.on-paper { background: var(--so-paper); }
+      .so-brand-chip.is-art.on-paper .so-brand-img { padding: 2px; }
+      .so-brand-chip.is-empty { background: transparent; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16); color: var(--so-mut); }
+      /* Absolutely positioned so object-fit resolves against the 34px chip.
+         Left in grid flow, next/image's own width/height attributes size the
+         box and a portrait asset (Swiggy 114x170) overflows into the corners. */
+      .so-brand-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 4px; box-sizing: border-box; }
+      /* ...while assets that ship their own plate fill it edge to edge, so the
+         chip's radius clips the plate instead of framing it in paper. */
+      .so-brand-chip.is-bleed { background: transparent; }
+      .so-brand-chip.is-bleed .so-brand-img { padding: 0; object-fit: cover; }
+      /* Portrait glyphs (Swiggy 114x170) fit by height, so the default padding
+         is what squeezes them. Less padding lets the mark fill the chip while
+         staying whole — the plate assets above are already edge to edge. */
+      .so-brand-chip.is-portrait .so-brand-img { padding: 3px; }
+      /* Wide wordmarks fit by width and end up tiny; scaling past the frame
+         crops the asset's own baked-in margins back off. The factor is per
+         asset — Amazon (120x88) clips its smile past ~1.5, Myntra (497x190)
+         carries far wider margins and needs more. */
+      .so-brand-chip.is-wide .so-brand-img { padding: 0; transform: scale(var(--so-logo-scale, 1.5)); }
+      .so-brand-initial { font-family: var(--so-display-face); font-size: 0.95rem; font-weight: 700; color: var(--so-paper-ink); }
+      /* Stacked, the label owns the full tile width, so it needs no ellipsis —
+         these are short brand names and they fit outright. It sits a step down
+         in size and tone so the logo leads and the name only confirms it. */
+      .so-brand-name {
+        font-size: 0.7rem; line-height: 1.15; letter-spacing: 0.01em;
+        color: var(--so-ink-variant); min-width: 0; max-width: 100%;
+      }
+      /* The dimmed label would otherwise swallow the tile's hover/selected
+         colour, which the name used to inherit. */
+      .so-tile:hover:not(:disabled) .so-brand-name,
+      .so-tile.is-on .so-brand-name { color: inherit; }
+      @media (min-width: 420px) {
+        /* Beside the chip the label is width-constrained. Two-word names like
+           "Online shopping" wrap onto a second line rather than being clipped
+           to "Online shop…"; the 62px tile has room for two lines, and the
+           balanced wrap keeps the break off a one-word orphan. */
+        .so-brand-name {
+          font-size: 0.8rem; line-height: 1.2;
+          white-space: normal; overflow-wrap: break-word; text-wrap: balance;
+        }
+      }
+      .so-tile-more .so-brand-name { color: var(--so-mut); }
+      .so-tile-more:hover:not(:disabled) .so-brand-name { color: var(--so-primary); }
+      .so-tile-more:hover:not(:disabled) .so-brand-chip.is-empty { box-shadow: inset 0 0 0 1px var(--so-primary); color: var(--so-primary); }
 
       .so-wallet-toggle {
         display: flex; align-items: center; justify-content: space-between; width: 100%;
@@ -1153,9 +1548,40 @@ function StyleBlock() {
       .so-notch-l { left: -28px; } .so-notch-r { right: -28px; }
 
       .so-stub { padding: 18px 20px 20px; }
-      .so-instruction { font-size: 0.9rem; line-height: 1.5; color: color-mix(in oklab, var(--so-paper-ink) 85%, white); }
+      .so-instruction { font-size: 0.7rem; line-height: 1.5; color: color-mix(in oklab, var(--so-paper-ink) 85%, white); }
       .so-instruction-tag { display: inline-block; margin-right: 8px; padding: 2px 7px; border-radius: 5px; background: var(--so-paper-ink); color: var(--so-paper); font-family: var(--so-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
       .so-capnote { margin-top: 10px; font-family: var(--so-mono); font-size: 0.68rem; color: var(--so-paper-mut); }
+
+      /* Actions sit on the ticket's paper stub, not the dark panel, so they
+         carry their own palette rather than reusing .so-cta. Both buttons share
+         one box — only fill and border separate the recommended route from the
+         alternative, so the hierarchy reads at a glance without the secondary
+         looking disabled. */
+      .so-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+      .so-act {
+        display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+        flex: 1 1 auto; min-width: 0; padding: 12px 16px; border-radius: 10px;
+        font-family: var(--so-mono); font-size: 0.72rem; font-weight: 600;
+        letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap;
+        border: 1px solid transparent; cursor: pointer;
+        transition: background .18s, border-color .18s, color .18s, filter .18s, opacity .18s;
+      }
+      .so-act-primary { background: var(--so-action); color: #fff; }
+      .so-act-primary:hover:not(:disabled) { filter: brightness(1.06); }
+      /* Ink rather than orange: two orange buttons side by side would compete,
+         and the alternative route is a real option, not a warning. */
+      .so-act-ghost {
+        background: transparent; color: var(--so-paper-ink);
+        border-color: color-mix(in oklab, var(--so-paper-ink) 26%, transparent);
+      }
+      .so-act-ghost:hover:not(:disabled) {
+        background: color-mix(in oklab, var(--so-paper-ink) 7%, transparent);
+        border-color: color-mix(in oklab, var(--so-paper-ink) 45%, transparent);
+      }
+      .so-act:disabled { opacity: .5; cursor: not-allowed; }
+      /* The cost of taking the road not recommended. Tucked to a lighter weight
+         so it annotates the label instead of competing with it. */
+      .so-act-delta { font-size: 0.66rem; font-weight: 500; opacity: 0.65; letter-spacing: 0; }
 
       .so-ticket--loading { min-height: 300px; }
       .so-skel, .so-skel-dark { border-radius: 8px; background-size: 200% 100%; animation: so-shimmer 1.3s ease infinite; }
