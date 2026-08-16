@@ -26,7 +26,19 @@ import {
 interface Category {
   value: string;
   label: string;
+  /** Used in the precision-panel dropdown, where a flat glyph reads better. */
   icon: LucideIcon;
+  /**
+   * Illustration for the quick-pick tile. Only the TOP_CATEGORIES entries need
+   * one; the dropdown keeps using `icon` either way.
+   */
+  art?: string;
+  /**
+   * Keeps the paper chip behind the art. Needed for dark line-art (food.png is
+   * navy) that would otherwise vanish against the dark tile; full-colour
+   * illustrations read fine with no plate.
+   */
+  artOnPaper?: boolean;
 }
 
 export interface SpendTransaction {
@@ -66,17 +78,28 @@ export interface FormErrors {
  * the boundary rather than silently scored as "other".
  */
 export const categories: Category[] = [
-  { value: "online-shopping", label: "Online shopping", icon: ShoppingBag },
+  {
+    value: "online-shopping",
+    label: "Online shopping",
+    icon: ShoppingBag,
+    art: "/icons/online-shopping.png",
+  },
   { value: "offline-retail", label: "Offline retail", icon: Store },
   { value: "food-delivery", label: "Food delivery", icon: UtensilsCrossed },
-  { value: "dining", label: "Dining out", icon: UtensilsCrossed },
-  { value: "flights", label: "Flights", icon: Plane },
-  { value: "hotels", label: "Hotels", icon: Hotel },
+  {
+    value: "dining",
+    label: "Dining out",
+    icon: UtensilsCrossed,
+    art: "/icons/food.png",
+    artOnPaper: true,
+  },
+  { value: "flights", label: "Flights", icon: Plane, art: "/icons/trip.png" },
+  { value: "hotels", label: "Hotels", icon: Hotel, art: "/icons/hotel.png" },
   { value: "travel-ground", label: "Cabs & transport", icon: Car },
   { value: "international", label: "International spend", icon: Globe },
   { value: "forex", label: "Forex", icon: Banknote },
   { value: "utilities", label: "Utility bills", icon: Zap },
-  { value: "fuel", label: "Fuel & FASTag", icon: Fuel },
+  { value: "fuel", label: "Fuel", icon: Fuel, art: "/icons/fuel.png" },
   { value: "groceries", label: "Groceries", icon: ShoppingBag },
   { value: "electronics", label: "Electronics", icon: Laptop },
   { value: "healthcare", label: "Healthcare", icon: Heart },
@@ -107,15 +130,72 @@ export interface QuickMerchant {
   label: string;
   /** Category the optimizer runs on, chosen so the two can't mismatch. */
   category: string;
+  /** Brand mark under /public. Omitted merchants fall back to a letter chip. */
+  logo?: string;
+  /**
+   * True when the mark is light-on-transparent and would vanish against the
+   * paper chip — it gets an inked chip instead. Amazon's wordmark is the only
+   * one today; the others are dark or full-bleed marks made for light ground.
+   */
+  logoOnDark?: boolean;
+  /**
+   * True when the asset already carries its own background plate edge-to-edge
+   * (Zomato's red tile, Flipkart's yellow). These fill the chip so the plate
+   * becomes the chip; padded ones would show a seam of paper around the edge.
+   */
+  logoBleed?: boolean;
+  /**
+   * Scale-up for wide wordmarks whose asset bakes in wide side margins — they'd
+   * otherwise fit by width and render too small to read inside the chip. Tuned
+   * per asset: too much crops the mark itself.
+   */
+  logoScale?: number;
+  /**
+   * True for portrait marks (Swiggy 114x170) that fit by height in a square
+   * chip. They get tighter padding so the mark fills the chip without being
+   * squeezed, and stay whole rather than being cropped by the chip's radius.
+   */
+  logoPortrait?: boolean;
 }
 
 /** One-tap merchant shortcuts; the full list comes from the portals API. */
 export const quickMerchants: QuickMerchant[] = [
-  { value: "amazon", label: "Amazon", category: "online-shopping" },
-  { value: "flipkart", label: "Flipkart", category: "online-shopping" },
-  { value: "swiggy", label: "Swiggy", category: "food-delivery" },
-  { value: "zomato", label: "Zomato", category: "food-delivery" },
-  { value: "myntra", label: "Myntra", category: "online-shopping" },
+  {
+    value: "amazon",
+    label: "Amazon",
+    category: "online-shopping",
+    logo: "/icons/amazon.png",
+    logoOnDark: true,
+    logoScale: 1.15,
+  },
+  {
+    value: "flipkart",
+    label: "Flipkart",
+    category: "online-shopping",
+    logo: "/icons/flipkart.png",
+    logoBleed: true,
+  },
+  {
+    value: "swiggy",
+    label: "Swiggy",
+    category: "food-delivery",
+    logo: "/icons/swiggy.png",
+    logoPortrait: true,
+  },
+  {
+    value: "zomato",
+    label: "Zomato",
+    category: "food-delivery",
+    logo: "/icons/zomato.png",
+    logoBleed: true,
+  },
+  {
+    value: "myntra",
+    label: "Myntra",
+    category: "online-shopping",
+    logo: "/icons/myntra.png",
+    logoScale: 1.9,
+  },
   { value: "ajio", label: "Ajio", category: "online-shopping" },
 ];
 
