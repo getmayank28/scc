@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
 import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader";
+import { ChatReplyTimeout } from "../ChatReplyTimeout/ChatReplyTimeout";
 import { renderInput } from "@/lib/utils/renderInput";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 import { chatLoaderStates } from "@/lib/constants/loader";
@@ -28,6 +29,9 @@ interface ChatbotScrollableAreaProps {
     id?: string
   ) => void;
   isSocketLoading?: boolean
+  /** Set when the partner never answered the last turn — shows the retry CTA. */
+  hasReplyTimedOut?: boolean
+  onRetryTimedOutReply?: () => void
 }
 
 export const ChatbotScrollableArea = ({
@@ -36,7 +40,9 @@ export const ChatbotScrollableArea = ({
   isTyping,
   messagesEndRef,
   handleSend,
-  isSocketLoading
+  isSocketLoading,
+  hasReplyTimedOut,
+  onRetryTimedOutReply
 }: ChatbotScrollableAreaProps) => {
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(
     new Set()
@@ -119,7 +125,7 @@ export const ChatbotScrollableArea = ({
                           ,
                         }}
                       ></p>}
-                      <div className="flex gap-6 my-6 max-md:flex-col">
+                      <div className="flex items-start gap-6 my-6 max-md:flex-col">
                         {(safeParseJson<RecommendationPayload>(message?.content || ""))?.cards.map(
                           (item: BotRecommendationCreditCardProps, index: number) => {
                             return (
@@ -159,6 +165,9 @@ export const ChatbotScrollableArea = ({
             </div>
           ))}
           {isTyping && <MultiStepChatLoader loadingStates={chatLoaderStates} />}
+          {hasReplyTimedOut && !isTyping && (
+            <ChatReplyTimeout onRetry={() => onRetryTimedOutReply?.()} />
+          )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

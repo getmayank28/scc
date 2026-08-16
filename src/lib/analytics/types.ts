@@ -223,7 +223,8 @@ interface ChatSessionViewedProperties extends BaseProperties {
 }
 
 interface ChatMessageSentProperties extends BaseProperties {
-  messageSource: "direct" | "journey";
+  /** "retry" is a re-send of a turn the partner never answered in time. */
+  messageSource: "direct" | "journey" | "retry";
   messageLength: number;
 }
 

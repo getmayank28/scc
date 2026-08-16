@@ -38,6 +38,8 @@ export function useChatState() {
     disableTypingLoader,
     startFollowUp,
     setShowContinueJourneyMessage,
+    setPendingReply,
+    setTimedOutReply,
   } = useChatContext();
 
   // Open free follow-up Q&A.
@@ -63,6 +65,10 @@ export function useChatState() {
     disableTypingLoader?.();
     setCurrentMessageId(m_id);
     enableChatInput();
+    // The partner answered — disarm the deadline and drop any stale retry CTA
+    // (a late reply to a timed-out turn still counts as an answer).
+    setPendingReply(null);
+    setTimedOutReply(null);
   }, []);
 
   const { handleAssistantSocketMessage } = useAddAssistantMessage(setMessages, {
@@ -162,6 +168,12 @@ export function useChatState() {
   }, []);
 
   const addAssistantMessage = (msg: ChatMessage) => {
+    // The partner is alive and streaming, so push the deadline out even though
+    // nothing renders until the FinalMessage. Without this a long answer that
+    // simply takes a while to finish would be failed as a hang.
+    setPendingReply((prev) =>
+      prev ? { ...prev, startedAt: Date.now() } : prev,
+    );
     handleAssistantSocketMessage(msg);
   };
 

@@ -66,7 +66,7 @@ const useSocket = () => {
       return null;
     }
 
-    const prodUrl = "wss://studio.zijus.com/ws/sarathi-9720";
+    const prodUrl = "wss://agent.platform.zijus.com/ws/sarathi-9720";
 
     const sessionIdString = sessionId ? `&session_id=${sessionId}` : "";
 
