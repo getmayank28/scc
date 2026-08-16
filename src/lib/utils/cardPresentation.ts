@@ -125,24 +125,33 @@ export function feeStatus(card: CardDisplayFields): {
       };
     }
 
-    return { label: `₹${amount}`, detail: "Annual fee", isFree: false };
+    // Empty rather than "Annual fee": the caller already labels the row that,
+    // and this branch cannot say whether the parsed figure includes GST.
+    return { label: `₹${amount}`, detail: "", isFree: false };
   }
 
   if (card.feeWaived) {
     return { label: "No fee", detail: "Waived at your spend", isFree: true };
   }
 
+  // The engine's fee is `annual_inr + annual_gst_inr` (see computeAnnualFeeInr),
+  // so every figure below is already tax-inclusive. Saying so matters: banks
+  // advertise the pre-GST number, so a reader comparing this card against the
+  // bank's own page sees a higher figure here and would otherwise assume the
+  // engine is wrong rather than that it is quoting what actually gets charged.
+  // Only stated on the structured branch — the string fallback above parses a
+  // preformatted fee of unknown tax basis, so it cannot make this claim.
   if (card.feeWaiverSpendInr) {
     return {
       label: formatInr(card.feeInr),
-      detail: `Waived above ${formatInr(card.feeWaiverSpendInr)}`,
+      detail: `Incl. GST · waived above ${formatInr(card.feeWaiverSpendInr)}`,
       isFree: false,
     };
   }
 
   return {
     label: card.feeInr > 0 ? formatInr(card.feeInr) : "No fee",
-    detail: card.feeInr > 0 ? "Annual fee" : "Lifetime free",
+    detail: card.feeInr > 0 ? "Incl. GST" : "Lifetime free",
     isFree: card.feeInr <= 0,
   };
 }

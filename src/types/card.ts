@@ -60,4 +60,8 @@ export interface BotRecommendationCreditCardProps {
   bankName?: string;
   /** Rank within the recommendation, 1-based. */
   rank?: number;
+  /** True when any card in the same row has a milestone, so cards without one
+   *  reserve the slot and the row keeps a single baseline. Row-level knowledge:
+   *  set by whoever renders the group, not by the engines. */
+  reserveMilestoneSlot?: boolean;
 }

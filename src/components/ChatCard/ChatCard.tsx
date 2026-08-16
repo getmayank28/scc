@@ -48,28 +48,19 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
   const hasNetValue = typeof netValue === "number" && netValue > 0;
 
   const isBest = props?.rank === 1 || props?.lossVsBestInr === 0;
-  const behindBy = props?.lossVsBestInr ?? 0;
 
   const milestone = props?.milestones?.at(0);
 
   return (
     <div
-      className={`w-[210px] max-w-[210px] max-md:w-full max-md:max-w-full shadow-sm overflow-visible rounded-lg relative flex flex-col
+      className={`w-[220px] max-w-[220px] max-md:w-full max-md:max-w-full shadow-sm overflow-visible rounded-lg relative flex flex-col
         bg-[linear-gradient(135deg,#30251E_60%,#6F4D34_100%,#AD744A_100%)]
         ${isBest ? "border-2 border-primary-orange" : "border border-brown-border"}`}
     >
-      {isBest && (
-        <div className="absolute -top-2.5 left-3 z-10 rounded-full bg-primary-orange px-2.5 py-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-[1px] text-white">
-            Best match
-          </span>
-        </div>
-      )}
-
       {/* Rank. The engines sort by net return, so 01/02/03 encodes real
           order — and set large and ghosted it reads as embossing, which is the
-          subject's own vernacular. Decorative here: the badge and the
-          "less than the best match" line carry the meaning for screen readers. */}
+          subject's own vernacular. Decorative here: the badge carries the
+          meaning for screen readers, and the detail modal states the gap. */}
       {props?.rank && (
         <span
           aria-hidden="true"
@@ -79,10 +70,22 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
         </span>
       )}
 
-      <div className="relative flex h-full flex-col gap-3 p-3 pt-4">
+      {/* The badge is absolutely positioned so it costs the row no height —
+          only one card in three carries it, and a reserved row on the other two
+          is space spent on nothing. It sits fully inside the border rather than
+          straddling it, which clipped the rounded corner. */}
+      {isBest && (
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-primary-orange px-2 py-[2px] text-[9px] font-bold uppercase leading-none tracking-[1px] text-white">
+          Best match
+        </span>
+      )}
+
+      <div className="relative flex h-full flex-col gap-3 p-3">
         <Typography
           variant="p"
-          className="text-left font-bold leading-[130%] line-clamp-2 min-h-[32px] pr-7"
+          className={`text-left font-bold leading-[130%] line-clamp-2 min-h-[32px] pr-7 ${
+            isBest ? "mt-5" : ""
+          }`}
           title={name}
         >
           {name}
@@ -180,16 +183,22 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
               {fee.isFree ? fee.label : `−${fee.label}`}
             </span>
           </div>
-          {/* The waiver condition, when there is one to state. */}
-          {!fee.isFree && fee.detail !== "Annual fee" && (
+          {/* The tax basis, and the waiver condition when there is one. Empty
+              only on the legacy string payload, which cannot vouch for either. */}
+          {!fee.isFree && fee.detail && (
             <p className="mt-0.5 text-[9px] leading-tight text-white/40 [font-variant-numeric:tabular-nums]">
               {fee.detail}
             </p>
           )}
         </div>
 
-        {/* One nudge, only when there is genuinely unclaimed value. */}
-        {milestone && (
+        {/* One nudge, only when there is genuinely unclaimed value. When a
+            sibling card in the row has a milestone and this one does not, the
+            slot is still reserved — an empty box of the same height — so the
+            row shares one baseline instead of three ragged ones. The
+            placeholder says nothing rather than claiming ₹0: it is scaffolding,
+            so it is hidden from screen readers. */}
+        {milestone ? (
           <div className="rounded border border-primary-orange/25 bg-primary-orange/10 px-2 py-1.5">
             <p className="text-[10px] leading-snug text-white/80">
               Unlocks{" "}
@@ -199,16 +208,22 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
               in milestone rewards
             </p>
           </div>
-        )}
+        ) : props?.reserveMilestoneSlot ? (
+          <div
+            aria-hidden="true"
+            className="rounded border border-white/5 px-2 py-1.5"
+          >
+            <p className="text-[10px] leading-snug text-white/25">
+              No milestone rewards
+            </p>
+          </div>
+        ) : null}
 
-        {/* Ranking context, on the runners-up only. */}
-        {!isBest && behindBy > 0 && (
-          <p className="text-[10px] text-white/45 [font-variant-numeric:tabular-nums]">
-            {formatInr(behindBy)} less than the best match
-          </p>
-        )}
+        {/* The gap to the best match lives in the "Why this?" detail modal —
+            on the card it was a third ranking cue competing with the rank
+            numeral and the badge. */}
 
-        <div className="mt-2 flex gap-2">
+        <div className="mt-auto flex gap-2">
           <button
             className="w-full cursor-pointer rounded-full border border-primary-orange/70 p-2 py-1 text-[12px] text-white transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange"
             onClick={() => {

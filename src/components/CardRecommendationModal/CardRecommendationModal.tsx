@@ -53,12 +53,18 @@ const CardRecommendationModal = ({
   const isBest = rest?.rank === 1 || behindBy === 0;
 
   return (
+    /* The panel is capped at the viewport and lays itself out as a column:
+       a scrolling body between a pinned close button and a pinned footer. It
+       used to be `h-fit` with an `absolute bottom-0` footer, so on a tall card
+       the box grew past the screen and took the fee and Apply button with it —
+       the one row the reader needs was the first thing to be clipped. Padding
+       moves onto the scroll container so the footer can sit flush. */
     <Modal
       isOpen={open}
       onClose={onClose}
       removeCloseButton
       allowOutsideClickClose={false}
-      className="relative h-fit border-2 border-brown-border bg-brown-background max-md:w-full max-md:pb-[80px] max-md:min-w-full max-md:h-screen max-md:overflow-y-auto max-md:rounded-none w-[800px] min-w-[800px] max-w-[80vw] pb-24"
+      className="relative flex max-h-[90vh] flex-col overflow-hidden border-2 border-brown-border bg-brown-background p-0 max-md:mx-0 max-md:w-full max-md:min-w-0 max-md:max-w-none max-md:h-[100dvh] max-md:max-h-none max-md:rounded-none w-[800px] min-w-[800px] max-w-[80vw]"
     >
       <div
         onClick={onClose}
@@ -67,6 +73,7 @@ const CardRecommendationModal = ({
         <X color="#ffffff" />
       </div>
 
+      <div className="min-h-0 flex-1 overflow-y-auto p-6">
       {/* Header: the figure, then the arithmetic that produces it. */}
       <div className="pr-14">
         <Typography
@@ -334,15 +341,18 @@ const CardRecommendationModal = ({
           )}
         </div>
       )}
+      </div>
 
-      <div className="bg-[#372921] flex justify-between items-center gap-3 p-4 max-md:gap-2 absolute max-md:fixed bottom-0 left-0 w-full">
+      {/* The fee and the Apply button: a flex sibling of the scroll area, so
+          they stay visible however tall the card's detail runs. */}
+      <div className="shrink-0 bg-[#372921] flex justify-between items-center gap-3 p-4 max-md:gap-2 w-full">
         <div className="[font-variant-numeric:tabular-nums]">
           <span className="text-[11px] uppercase tracking-[0.5px] text-white/45">
             Annual fee
           </span>
           <p className="text-sm font-bold text-white">
             {fee.label}
-            {!fee.isFree && fee.detail !== "Annual fee" && (
+            {!fee.isFree && fee.detail && (
               <span className="font-normal text-white/50">
                 {" "}
                 · {fee.detail}

@@ -125,15 +125,36 @@ export const ChatbotScrollableArea = ({
                           ,
                         }}
                       ></p>}
-                      <div className="flex items-start gap-6 my-6 max-md:flex-col">
-                        {(safeParseJson<RecommendationPayload>(message?.content || ""))?.cards.map(
-                          (item: BotRecommendationCreditCardProps, index: number) => {
-                            return (
-                              <ChatCard key={index} {...item} />
-                            );
-                          }
-                        )}
-                      </div>
+                      {(() => {
+                        const cards =
+                          safeParseJson<RecommendationPayload>(
+                            message?.content || "",
+                          )?.cards ?? [];
+                        // Whether the milestone slot is drawn is a property of
+                        // the row, not of a single card: if any card has a
+                        // milestone, every card reserves the space so the three
+                        // stay the same height.
+                        const reserveMilestoneSlot = cards.some(
+                          (c: BotRecommendationCreditCardProps) =>
+                            (c?.milestones?.length ?? 0) > 0,
+                        );
+                        return (
+                          <div className="flex items-stretch gap-6 my-6 max-md:flex-col">
+                            {cards.map(
+                              (
+                                item: BotRecommendationCreditCardProps,
+                                index: number,
+                              ) => (
+                                <ChatCard
+                                  key={index}
+                                  {...item}
+                                  reserveMilestoneSlot={reserveMilestoneSlot}
+                                />
+                              ),
+                            )}
+                          </div>
+                        );
+                      })()}
                       {(safeParseJson<RecommendationPayload>(message?.content || ""))?.endMessage && <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{

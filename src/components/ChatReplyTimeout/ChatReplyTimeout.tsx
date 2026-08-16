@@ -12,8 +12,7 @@ export const ChatReplyTimeout = ({ onRetry }: { onRetry: () => void }) => (
     className="flex max-w-[85%] max-md:max-w-[75%] flex-col gap-3 rounded-md border border-brown-border bg-brown-sidebar px-4 py-3 max-md:px-3"
   >
     <p className="text-sm max-md:text-xs leading-relaxed text-gray-100">
-      That took longer than expected and we didn&apos;t get a response. Your
-      message wasn&apos;t answered — you can try sending it again.
+      That took longer than expected. Please try again.
     </p>
     <button
       type="button"

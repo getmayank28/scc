@@ -15,7 +15,7 @@ if(isMobile) return null
     <Sidebar open={open} setOpen={setOpen}>
       <SidebarBody
         isVaraint2
-        className="fixed z-100 justify-between bg-brown-sidebar gap-10 h-screen !w-[220px] px-2 pl-4"
+        className="fixed z-100 justify-between bg-brown-sidebar gap-10 h-screen !w-[180px] px-2 pl-4"
       >
        <ChatSidebarBody />
       </SidebarBody>
