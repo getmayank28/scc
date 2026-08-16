@@ -199,6 +199,18 @@ export const quickMerchants: QuickMerchant[] = [
   { value: "ajio", label: "Ajio", category: "online-shopping" },
 ];
 
+/**
+ * A merchant from the portals API, kept whole. The searchbox only needs a name,
+ * but the result CTAs need the destination URL — mapping portals down to
+ * `{_id, value, name}` on the way in would throw that away.
+ */
+export interface PortalOption {
+  _id: string;
+  name: string;
+  affiliateLink?: string | null;
+  websiteUrl?: string;
+}
+
 /** Max cards compared at once. */
 export const MAX_SELECTED = 3;
 

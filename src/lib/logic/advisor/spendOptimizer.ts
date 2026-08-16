@@ -194,8 +194,27 @@ function laneView(
     };
   }
 
-  // No merchant: the category-wide question the precompute already answers.
-  if (!bestOf) return undefined;
+  // No merchant: the category-wide question the precompute already answers —
+  // except when it has no answer on file.
+  //
+  // A missing bestOf row does NOT mean "no rules for this category". The
+  // precompute discards every rule at or below the card's base rate and then
+  // skips the row entirely if that leaves nothing (bestOf.ts), so a card whose
+  // only fuel rule pays 0% looks identical to a card with no fuel rule at all.
+  // Reading the base rule straight from the rules tells them apart: the 0% is a
+  // real, stated rate and must be reported as such, not silently replaced by
+  // the card's general earn rate.
+  if (!bestOf) {
+    if (lane === "voucher") return undefined;
+    const baseRule = categoryBaseRule(merchantRules);
+    if (!baseRule) return undefined;
+    return {
+      ...emptyBestOf(card, merchantRules),
+      directFrontier: [],
+      baseTier: buildDirectCandidate(baseRule, card),
+      voucherFrontier: [],
+    };
+  }
 
   if (lane === "voucher") {
     if (bestOf.voucherFrontier.length === 0) return undefined;
@@ -203,6 +222,22 @@ function laneView(
   }
 
   return { ...bestOf, voucherFrontier: [] };
+}
+
+/**
+ * The category's catch-all rule — the one with no merchant, stating what the
+ * card pays for this category generally. Highest rate wins when a card has
+ * several, matching how the precompute picks its baseTier.
+ */
+function categoryBaseRule(rules: MockRule[]): MockRule | null {
+  let best: MockRule | null = null;
+  for (const r of rules) {
+    if (r.merchant !== null) continue;
+    if (!best || r.reward.direct_swipe_percentage > best.reward.direct_swipe_percentage) {
+      best = r;
+    }
+  }
+  return best;
 }
 
 /** A bestOf shell for a card/category the precompute has no row for. */
@@ -246,7 +281,23 @@ function scoreCard(
     ? computeCategoryReturn(amountInr, category, card, voucherView, 1)
     : null;
 
-  const directSwipeSavingsInInr = Math.max(0, Math.round(direct.returnInr));
+  // `computeCategoryReturn` floors every category at the card's base earn rate,
+  // which is right for the advisor ("what will this card earn me over a year")
+  // and wrong here. If the category states its own rate — including 0% — that
+  // rate is the answer for this transaction, and quoting the general earn rate
+  // instead would promise rewards the card does not pay.
+  //
+  // The engine flags exactly that fall-through as `source: "fallback"`, so the
+  // clamp fires only when no rule was applied; a rule-backed win is left alone.
+  // Scoped here deliberately: `computeCategoryReturn` is shared by all four
+  // advisor engines, and this is the optimizer's question, not theirs.
+  const baseRule = categoryBaseRule(rulesForCategory);
+  const directReturnInr =
+    direct.source === "fallback" && baseRule
+      ? (amountInr * baseRule.reward.direct_swipe_percentage) / 100
+      : direct.returnInr;
+
+  const directSwipeSavingsInInr = Math.max(0, Math.round(directReturnInr));
   const voucherSavingsInInr = voucher
     ? Math.max(0, Math.round(voucher.returnInr))
     : 0;
@@ -281,9 +332,12 @@ function scoreCard(
     // reads as a lie, while 50% back "via Vrott" reads as a niche deal.
     voucherMerchant: voucher?.merchant ?? null,
     capNote: winner.capNote,
-    // No bestOf row at all means no rules for this category — the engine still
-    // returns the card's base rate, which is a real (if unexciting) answer.
-    isBaseRateFallback: !bestOf,
+    // True only when the category has nothing on file for this card at all —
+    // no precomputed row and no rule — so the figure above is the card's
+    // general earn rate rather than anything category-specific. A stated rate
+    // is NOT a fallback, even when it is 0%: `!bestOf` alone used to conflate
+    // the two and quietly presented base-rate guesses as real answers.
+    isBaseRateFallback: !bestOf && !baseRule && rulesForCategory.length === 0,
   };
 }
 
@@ -303,15 +357,16 @@ export function optimizeSpend(
   rules: MockRule[] = [],
 ): OptimizedCard[] {
   // Index once per call rather than filtering the full rule set per card.
+  // Indexed on every run, not just merchant ones: a category-wide run needs the
+  // rules too, to recover a category floor the precompute dropped for being at
+  // or below the card's base rate (see `laneView`).
   const rulesByCard = new Map<string, MockRule[]>();
-  if (input.merchant) {
-    for (const r of rules) {
-      if (r.category !== input.category) continue;
-      if (!r.is_active) continue;
-      const list = rulesByCard.get(r.cardId);
-      if (list) list.push(r);
-      else rulesByCard.set(r.cardId, [r]);
-    }
+  for (const r of rules) {
+    if (r.category !== input.category) continue;
+    if (!r.is_active) continue;
+    const list = rulesByCard.get(r.cardId);
+    if (list) list.push(r);
+    else rulesByCard.set(r.cardId, [r]);
   }
 
   const results = cards.map((card) =>
