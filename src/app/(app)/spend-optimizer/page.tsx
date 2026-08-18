@@ -1110,22 +1110,29 @@ function SpendActions({
   onDirectSwipe: () => void;
 }) {
   const voucherWins = card.bestRoute === "voucher";
+  // A zero here is the engine saying this card has no voucher route for the
+  // query at all (laneView returns undefined and the lane prices at 0), not a
+  // voucher that happens to earn nothing — the comparison table renders the
+  // same field as a dash. Offering the CTA anyway sent the user to the bank's
+  // gift-card portal to buy something we'd just priced at nothing.
+  const hasVoucherRoute = card.voucherSavingsInInr > 0;
   // What the runner-up route gives up. Only meaningful next to the route it is
   // losing to, so it needs both buttons on screen — alone on a lone voucher CTA
   // it reads as a charge or a discount rather than a comparison. Also hidden
   // when the gap is zero or negative, where it would be noise.
-  const delta = hasSwipeLink
-    ? Math.round(
-        Math.abs(card.voucherSavingsInInr - card.directSwipeSavingsInInr),
-      )
-    : 0;
+  const delta =
+    hasSwipeLink && hasVoucherRoute
+      ? Math.round(
+          Math.abs(card.voucherSavingsInInr - card.directSwipeSavingsInInr),
+        )
+      : 0;
   const swipeLabel = merchant ? `Pay at ${merchant}` : "Pay direct";
 
-  const voucher = (
+  const voucher = hasVoucherRoute ? (
     <button
       onClick={onBuyVoucher}
       disabled={isVoucherLoading}
-      className={voucherWins ? "so-act so-act-primary" : "so-act so-act-ghost"}
+      className={voucherWins ? "so-act so-act-primary" : "so-act so-act-secondary"}
     >
       <TicketPercent className="h-3.5 w-3.5" />
       {isVoucherLoading ? "Opening…" : "Buy voucher"}
@@ -1133,12 +1140,14 @@ function SpendActions({
         <span className="so-act-delta so-mono">−{inr(delta)}</span>
       )}
     </button>
-  );
+  ) : null;
 
   const swipe = hasSwipeLink ? (
     <button
       onClick={onDirectSwipe}
-      className={voucherWins ? "so-act so-act-ghost" : "so-act so-act-primary"}
+      className={
+        voucherWins ? "so-act so-act-secondary" : "so-act so-act-primary"
+      }
     >
       <ExternalLink className="h-3.5 w-3.5" />
       {swipeLabel}
@@ -1568,15 +1577,18 @@ function StyleBlock() {
       }
       .so-act-primary { background: var(--so-action); color: #fff; }
       .so-act-primary:hover:not(:disabled) { filter: brightness(1.06); }
-      /* Ink rather than orange: two orange buttons side by side would compete,
-         and the alternative route is a real option, not a warning. */
-      .so-act-ghost {
-        background: transparent; color: var(--so-paper-ink);
-        border-color: color-mix(in oklab, var(--so-paper-ink) 26%, transparent);
+      /* A tinted secondary rather than a bare outline: the alternative route is
+         a real, earning option, so it carries the action colour at low
+         saturation — enough to read as clickable next to the filled primary
+         without the two competing for the eye. */
+      .so-act-secondary {
+        background: color-mix(in oklab, var(--so-action) 10%, transparent);
+        color: var(--so-action);
+        border-color: color-mix(in oklab, var(--so-action) 32%, transparent);
       }
-      .so-act-ghost:hover:not(:disabled) {
-        background: color-mix(in oklab, var(--so-paper-ink) 7%, transparent);
-        border-color: color-mix(in oklab, var(--so-paper-ink) 45%, transparent);
+      .so-act-secondary:hover:not(:disabled) {
+        background: color-mix(in oklab, var(--so-action) 17%, transparent);
+        border-color: color-mix(in oklab, var(--so-action) 52%, transparent);
       }
       .so-act:disabled { opacity: .5; cursor: not-allowed; }
       /* The cost of taking the road not recommended. Tucked to a lighter weight
