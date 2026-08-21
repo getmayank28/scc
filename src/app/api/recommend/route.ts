@@ -1,3 +1,4 @@
+import type { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { ApiResponse } from "@/lib/utils/ApiResponse";
@@ -159,16 +160,25 @@ export async function POST(req: Request) {
       milestonesBySlug: AdvisorCache.milestonesBySlug(),
     };
 
+    // `SCHEMA[category][phase]` is a union across all 8 schemas, so
+    // `parsed.data` stays a union that the switch below can't narrow. Each
+    // branch re-reads the value through its own schema's inferred type; the
+    // runtime value has already been validated by that same schema above.
+    const data = parsed.data;
+
     let result: EngineResult;
     switch (category) {
       case "travel":
         result =
           phase === 1
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendTravelCard(parsed.data as any, cards, bestOf, options)
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendTravelCardAdvanced(
-                parsed.data as any,
+            ? recommendTravelCard(
+                data as z.infer<typeof travelRecommendPhaseOneInputSchema>,
+                cards,
+                bestOf,
+                options,
+              )
+            : recommendTravelCardAdvanced(
+                data as z.infer<typeof travelRecommendInputSchema>,
                 cards,
                 bestOf,
                 options,
@@ -177,17 +187,15 @@ export async function POST(req: Request) {
       case "food":
         result =
           phase === 1
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendFoodCardPhaseOne(
-                parsed.data as any,
+            ? recommendFoodCardPhaseOne(
+                data as z.infer<typeof foodRecommendPhaseOneInputSchema>,
                 cards,
                 bestOf,
                 rules,
                 options,
               )
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendFoodCardPhaseTwo(
-                parsed.data as any,
+            : recommendFoodCardPhaseTwo(
+                data as z.infer<typeof foodRecommendInputSchema>,
                 cards,
                 bestOf,
                 rules,
@@ -197,17 +205,15 @@ export async function POST(req: Request) {
       case "shopping":
         result =
           phase === 1
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendShoppingCardPhaseOne(
-                parsed.data as any,
+            ? recommendShoppingCardPhaseOne(
+                data as z.infer<typeof shoppingRecommendPhaseOneInputSchema>,
                 cards,
                 bestOf,
                 rules,
                 options,
               )
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendShoppingCardPhaseTwo(
-                parsed.data as any,
+            : recommendShoppingCardPhaseTwo(
+                data as z.infer<typeof shoppingRecommendInputSchema>,
                 cards,
                 bestOf,
                 rules,
@@ -217,17 +223,15 @@ export async function POST(req: Request) {
       case "allrounder":
         result =
           phase === 1
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendAllRounderCardPhaseOne(
-                parsed.data as any,
+            ? recommendAllRounderCardPhaseOne(
+                data as z.infer<typeof allrounderRecommendPhaseOneInputSchema>,
                 cards,
                 bestOf,
                 rules,
                 options,
               )
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendAllRounderCardPhaseTwo(
-                parsed.data as any,
+            : recommendAllRounderCardPhaseTwo(
+                data as z.infer<typeof allrounderRecommendInputSchema>,
                 cards,
                 bestOf,
                 rules,
