@@ -610,6 +610,139 @@ export const MERCHANTS = {
   KIWI: "kiwi",
   UPI_MERCHANT_PAYMENT: "upi_merchant_payment",
   ZAGG: "zagg",
+
+  // Batch add: merchants from the 2026-08 source list not already present.
+  // Names in trailing comments are the source display names.
+  ABSOLUTE_BARBEQUE_WEEKEND: "absolute_barbeque_weekend", // Absolute Barbeque (Weekend)
+  ADANI_ELECTRICITY: "adani_electricity", // Adani Electricity
+  ADANI_ONE: "adani_one", // Adani One
+  ADVENTRA: "adventra", // Adventra
+  AIR_ASIA_INDIA: "air_asia_india", // Air Asia India
+  AIRTEL_THANKS_APP: "airtel_thanks_app", // Airtel Thanks App
+  AMA_STAYS_TRAILS: "ama_stays_trails", // amã Stays & Trails
+  APOLLO_SERVICES: "apollo_services", // Apollo Services
+  APPLE_HSBC_UNICORN_PORTAL: "apple_hsbc_unicorn_portal", // Apple (HSBC Unicorn Portal)
+  BAJAJ_FINSERV_PARTNER_OUTLET: "bajaj_finserv_partner_outlet", // Bajaj Finserv partner outlet
+  BAKINGO_WEEKEND: "bakingo_weekend", // Bakingo (Weekend)
+  BARBEQUE_NATION_WEEKEND: "barbeque_nation_weekend", // Barbeque Nation (Weekend)
+  BASKIN_ROBBINS_WEEKEND: "baskin_robbins_weekend", // Baskin Robbins (Weekend)
+  BEER_CAFE_WEEKEND: "beer_cafe_weekend", // Beer Cafe (Weekend)
+  BEHROUZ_BIRYANI_WEEKEND: "behrouz_biryani_weekend", // Behrouz Biryani (Weekend)
+  BIRTHDAY_SPEND: "birthday_spend", // Birthday Spend
+  BOBCARD_SMARTDEAL: "bobcard_smartdeal", // BOBCARD SmartDeal
+  BOSS: "boss", // BOSS
+  BPCL: "bpcl", // BPCL
+  BRITISH_AIRWAYS: "british_airways", // British Airways
+  CAFE_DELHI_HEIGHTS_WEEKEND: "cafe_delhi_heights_weekend", // Cafe Delhi Heights (Weekend)
+  CANTEEN_STORE_DEPARTMENT: "canteen_store_department", // Canteen Store Department
+  CARATLANE: "caratlane", // Caratlane
+  CINEPOLIS: "cinepolis", // Cinépolis
+  COLUMBIA: "columbia", // Columbia
+  COSTA_COFFEE_WEEKEND: "costa_coffee_weekend", // Costa Coffee (Weekend)
+  CRED: "cred", // Cred
+  DIRECT_AIRLINES: "direct_airlines", // Direct Airlines
+  DIRECT_HOTELS: "direct_hotels", // Direct Hotels
+  DISTRICT_BOGO_MOVIE_RS_250_MAX: "district_bogo_movie_rs_250_max", // District BOGO Movie (₹250 max)
+  DISTRICT_BY_ZOMATO: "district_by_zomato", // District by Zomato
+  DOMINO_S: "domino_s", // Domino's
+  DOMINO_S_PIZZA_WEEKEND: "domino_s_pizza_weekend", // Domino's Pizza (Weekend)
+  DPAULS_TRAVEL_TOURS_HOIDAYS: "dpauls_travel_tours_hoidays", // DPauls Travel & Tours Hoidays
+  DUNE_LUXE: "dune_luxe", // Dune-Luxe
+  EATSURE_WEEKEND: "eatsure_weekend", // EatSure (Weekend)
+  ELIVAAS: "elivaas", // Elivaas
+  EMPORIO_ARMANI: "emporio_armani", // Emporio Armani
+  ETIHAD_AIRWAYS: "etihad_airways", // Etihad Airways
+  EZEEGO1: "ezeego1", // Ezeego1
+  FAASOS_WEEKEND: "faasos_weekend", // Faasos (Weekend)
+  FREECHARGE: "freecharge", // Freecharge
+  GATEWAY_HOTELS: "gateway_hotels", // Gateway Hotels
+  GIORGIO_ARMANI: "giorgio_armani", // Giorgio Armani
+  GOIBIBO: "goibibo", // Goibibo
+  GOOGLE_PAY: "google_pay", // Google Pay
+  GPAY_FLEX_FREQUENT_SPENDER: "gpay_flex_frequent_spender", // GPay Flex Frequent Spender
+  GPAY_FLEX_POWER_USER: "gpay_flex_power_user", // GPay Flex Power User
+  GRAB_DEALS: "grab_deals", // Grab Deals
+  HARLEY_DAVIDSON_AUTHORISED_DEALER: "harley_davidson_authorised_dealer", // Harley-Davidson authorised dealer
+  HINDUSTAN_HINDI: "hindustan_hindi", // Hindustan (Hindi)
+  HPCL_FUEL_OUTLETS: "hpcl_fuel_outlets", // HPCL Fuel Outlets
+  IDFC_FIRST_BANK_APP: "idfc_first_bank_app", // IDFC FIRST Bank App
+  IHCL: "ihcl", // IHCL
+  IKEA_INDIA: "ikea_india", // IKEA India
+  INDIANOIL: "indianoil", // IndianOil
+  IOCL_FUEL_OUTLETS: "iocl_fuel_outlets", // IOCL Fuel Outlets
+  IRCTC_CATERING: "irctc_catering", // IRCTC Catering
+  ISHOP: "ishop", // iShop
+  KFC_WEEKEND: "kfc_weekend", // KFC (Weekend)
+  KOTAK_UNBOX: "kotak_unbox", // Kotak Unbox
+  LIC_PREMIUM: "lic_premium", // LIC Premium
+  LUNCH_BOX_WEEKEND: "lunch_box_weekend", // Lunch Box (Weekend)
+  MACHAAN_WEEKEND: "machaan_weekend", // Machaan (Weekend)
+  MAINLAND_CHINA_WEEKEND: "mainland_china_weekend", // Mainland China (Weekend)
+  MARRIOTT_BONVOY_PARTICIPATING_HOTELS: "marriott_bonvoy_participating_hotels", // Marriott Bonvoy participating hotels
+  MAX: "max", // MAX
+  MEESHO: "meesho", // Meesho
+  METRO_WHOLESALE: "metro_wholesale", // METRO Wholesale
+  MOI: "moi", // Moi
+  OH_CALCUTTA_WEEKEND: "oh_calcutta_weekend", // Oh! Calcutta (Weekend)
+  OLA: "ola", // Ola
+  OVEN_STORY_WEEKEND: "oven_story_weekend", // Oven Story (Weekend)
+  OYO: "oyo", // Oyo
+  PAYTM: "paytm", // Paytm
+  PAYTM_MALL: "paytm_mall", // Paytm Mall
+  PAYTM_TRAVEL: "paytm_travel", // Paytm Travel
+  PHONEPE: "phonepe", // PhonePe
+  PHONEPE_PINCODE: "phonepe_pincode", // PhonePe Pincode
+  PIZZA_HUT_WEEKEND: "pizza_hut_weekend", // Pizza Hut (Weekend)
+  PREMIUM_RESELLER: "premium_reseller", // Premium Reseller
+  PRET_A_MANGER_LUXE_WEEKEND: "pret_a_manger_luxe_weekend", // Pret A Manger-Luxe (Weekend)
+  QATAR_AIRWAYS: "qatar_airways", // Qatar Airways
+  RELIANCE_RETAIL_STORES: "reliance_retail_stores", // Reliance Retail Stores
+  REWARD_MULTIPLIER_DINING: "reward_multiplier_dining", // Reward Multiplier Dining
+  SAMSUNG: "samsung", // Samsung
+  SCAPIA_APP: "scapia_app", // Scapia App
+  SELEQTIONS_HOTELS: "seleqtions_hotels", // SeleQtions Hotels
+  SIGREE_WEEKEND: "sigree_weekend", // SIGREE (Weekend)
+  SINGAPORE_AIRLINES_GROUP: "singapore_airlines_group", // Singapore Airlines Group
+  SONATA: "sonata", // Sonata
+  SPICEJET: "spicejet", // SpiceJet
+  STARBUCKS_WEEKEND: "starbucks_weekend", // Starbucks (Weekend)
+  SUBWAY_WEEKEND: "subway_weekend", // Subway (Weekend)
+  SUPER_MONEY_APP: "super_money_app", // super.money app
+  SWEET_BENGAL_WEEKEND: "sweet_bengal_weekend", // Sweet Bengal (Weekend)
+  SWEET_TRUTH_DESSERT_WEEKEND: "sweet_truth_dessert_weekend", // Sweet Truth Dessert (Weekend)
+  SWIGGY_WEEKEND: "swiggy_weekend", // Swiggy (Weekend)
+  TAJ_EXPERIENCES_WEEKEND: "taj_experiences_weekend", // Taj Experiences (Weekend)
+  TAJ_HOTELS: "taj_hotels", // Taj Hotels
+  TAJ_HOTELS_RESTAURANTS: "taj_hotels_restaurants", // Taj Hotels Restaurants
+  TATA_1MG: "tata_1mg", // Tata 1mg
+  TATA_BRAND: "tata_brand", // Tata Brand
+  TATA_NEU: "tata_neu", // Tata Neu
+  TATA_PLAY: "tata_play", // Tata Play
+  TGIF_WEEKEND: "tgif_weekend", // TGIF (Weekend)
+  THE_GOOD_BOWL_WEEKEND: "the_good_bowl_weekend", // The Good Bowl (Weekend)
+  TIM_HORTONS_WEEKEND: "tim_hortons_weekend", // Tim Hortons (Weekend)
+  TIRA: "tira", // Tira
+  TITAN_EYE: "titan_eye", // Titan Eye+
+  TRAINMAN: "trainman", // Trainman
+  TRAVEL_EDGE: "travel_edge", // Travel EDGE
+  TRAVEL_WITH_POINTS_PORTAL: "travel_with_points_portal", // Travel with Points Portal
+  TRAVEL_WITH_POINTS_PORTAL_CAR_RENTALS: "travel_with_points_portal_car_rentals", // Travel with Points Portal - Car Rentals
+  TRENT: "trent", // Trent
+  UNISTORE: "unistore", // Unistore
+  UPI: "upi", // UPI
+  UPI_PAYMENTS: "upi_payments", // UPI Payments
+  VIVANTA_HOTELS: "vivanta_hotels", // Vivanta Hotels
+  VOUCHERS: "vouchers", // Vouchers
+  WEDNESDAY_DINING: "wednesday_dining", // Wednesday dining
+  WEEKDAY_DINING: "weekday_dining", // Weekday Dining
+  WEEKEND_DINING: "weekend_dining", // Weekend Dining
+  WENDY_S_WEEKEND: "wendy_s_weekend", // Wendy's (Weekend)
+  WORLD_OF_TITAN: "world_of_titan", // World of Titan
+  WOW_CHICKEN_WEEKEND: "wow_chicken_weekend", // Wow! Chicken (Weekend)
+  WOW_CHINA_WEEKEND: "wow_china_weekend", // Wow! China (Weekend)
+  WOW_MOMO_WEEKEND: "wow_momo_weekend", // Wow! Momo (Weekend)
+  YES_BANK: "yes_bank", // Yes Bank
+  ZOMATO_WEEKEND: "zomato_weekend", // Zomato (Weekend)
 } as const;
 
 export type Merchant = (typeof MERCHANTS)[keyof typeof MERCHANTS];

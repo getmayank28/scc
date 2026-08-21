@@ -93,10 +93,9 @@ const CardRecommendationModal = ({
             </Typography>
 
             <p className="text-left text-[13px] text-white/50 mt-1 [font-variant-numeric:tabular-nums]">
-              {rest?.returnOnSpend && `${rest.returnOnSpend}% effective return`}
               {typeof rest?.annualSpendInr === "number" &&
                 rest.annualSpendInr > 0 &&
-                ` on ${formatInr(rest.annualSpendInr)} of projected spend`}
+                `On ${formatInr(rest.annualSpendInr)} of projected spend`}
             </p>
 
             {/* The working, shown. This is what makes the breakdown below and
@@ -137,8 +136,7 @@ const CardRecommendationModal = ({
           </>
         ) : (
           <Typography variant="h3" className="font-bold text-left my-2">
-            <span className="text-primary-orange">{rest?.returnOnSpend}%</span>{" "}
-            return on your annual spend
+            Value back a year
           </Typography>
         )}
 

@@ -56,6 +56,8 @@ export const CATEGORIES = {
   WELLNESS_EXCLUSIVE_ACCESS: "wellness_exclusive_access",
   TRAVEL: "travel",
   REWARDXCELERATOR_MERCHANT_SPECIFIC: "rewardxcelerator_merchant_specific",
+  JEWELLERY: "jewellery",
+  UPI: "upi",
 } as const;
 
 export type Category = (typeof CATEGORIES)[keyof typeof CATEGORIES];

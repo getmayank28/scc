@@ -46,7 +46,6 @@ const FIELD_LABELS: Record<string, string> = {
   annualFee: 'Annual Fee',
   joiningFee: 'Joining Fee',
   netAnnualRewardLoss: 'Net Annual Reward Loss',
-  returnOnSpend: 'Return on Spend',
   categoryWiseReward: 'Category-wise Reward',
   whyThisCard: 'Why this card',
   notIdealFor: 'Not ideal for',
@@ -236,7 +235,7 @@ const KeyValueRow: React.FC<{ label: string; value: string }> = ({ label, value 
 
 const renderCardObject = (card: Record<string, unknown>, idx: number): React.ReactNode => {
   const title = stringifyValue(card.cardName ?? card.name ?? '') || `Card ${idx + 1}`;
-  const skip = new Set(['cardName', 'name', 'id', '_id', 'slug', 'image', 'imageUrl', 'applyLink']);
+  const skip = new Set(['cardName', 'name', 'id', '_id', 'slug', 'image', 'imageUrl', 'applyLink', 'returnOnSpend']);
 
   const rows = Object.entries(card).filter(([k]) => !skip.has(k));
 

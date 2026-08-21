@@ -82,7 +82,6 @@ function formatCards(recommendation: RecommendationPayload | null): string {
     .map((card, index) => {
       const parts = [
         `${index + 1}. ${card.cardName}`,
-        card.returnOnSpend ? `return on spend ${card.returnOnSpend}%` : "",
         card.annualFee ? `annual fee ${card.annualFee}` : "",
         card.categoryWiseReward ? `rewards: ${card.categoryWiseReward}` : "",
         card.whyThisCard ? `why: ${card.whyThisCard}` : "",

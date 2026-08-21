@@ -95,21 +95,13 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="font-hubot text-[32px] font-bold leading-none text-white [font-variant-numeric:tabular-nums]">
-              {hasNetValue ? formatInrCompact(netValue) : props?.returnOnSpend}
-              {!hasNetValue && (
-                <span className="text-[20px]">%</span>
-              )}
+              {hasNetValue ? formatInrCompact(netValue) : "—"}
             </span>
-            {hasNetValue && props?.returnOnSpend && (
-              <span className="text-[13px] font-semibold text-primary-orange [font-variant-numeric:tabular-nums]">
-                {props.returnOnSpend}%
-              </span>
-            )}
           </div>
           <p className="mt-1 text-[11px] leading-tight text-white/60">
             {hasNetValue
               ? "Value back per year, after fees"
-              : "Return on your annual spend"}
+              : "Value back per year"}
           </p>
           {/* The basis every figure on this card rests on. Identical across all
               three cards, which is what makes them comparable. */}

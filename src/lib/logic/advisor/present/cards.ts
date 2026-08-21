@@ -205,10 +205,9 @@ function annualFeeText(card: MockCard | undefined): string {
   return `${INR.format(fee)}`;
 }
 
-function whyThisCard(card: MockCard | undefined, returnRate: string): string {
+function whyThisCard(card: MockCard | undefined): string {
   const reasons = card?.ideal_for?.slice(0, 2).join("; ");
-  const base = `Delivers a ${returnRate}% effective return on your annual spend.`;
-  return reasons ? `${base} ${reasons}.` : base;
+  return reasons ? `${reasons}.` : "Strong all-round value for your spend.";
 }
 
 function notIdealFor(card: MockCard | undefined): string {
@@ -247,7 +246,7 @@ export function toRecommendationCards(
       netAnnualRewardLoss: loss > 0 ? formatInr(loss) : "0",
       returnOnSpend: rate,
       categoryWiseReward: categoryWiseReward(category, card),
-      whyThisCard: whyThisCard(catalogCard, rate),
+      whyThisCard: whyThisCard(catalogCard),
       annualFee: annualFeeText(catalogCard),
       notIdealFor: notIdealFor(catalogCard),
       applyLink: "", // resolved lazily client-side from `id`
