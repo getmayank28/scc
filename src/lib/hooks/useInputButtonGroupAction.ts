@@ -67,6 +67,10 @@ const useInputButtonGroupAction = () => {
       questionId: currentQuestion?.m_id,
       botContent: currentQuestion?.botContent,
       thread: 2,
+      // Carries the submit question's id for transcript rendering, but it is
+      // an acknowledgement, not an answer to it — keep it out of the engine
+      // input so it can't clobber the real answer.
+      isAnswer: false,
     };
 
     if (currentMessageIndex + 1 < selectedCardCategoryJourney.length) {

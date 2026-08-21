@@ -15,7 +15,10 @@ export async function POST(req: Request) {
 
   const parsed = shoppingRecommendPhaseOneInputSchema.safeParse(body);
   if (!parsed.success) {
-    return ApiResponse.error(parsed.error.issues[0]?.message ?? "Invalid input", 400);
+    return ApiResponse.error(
+      parsed.error.issues[0]?.message ?? "Invalid input",
+      400,
+    );
   }
 
   try {
@@ -24,7 +27,7 @@ export async function POST(req: Request) {
       parsed.data,
       AdvisorCache.cards(),
       AdvisorCache.bestOf(),
-      AdvisorCache.rules(),
+      await AdvisorCache.rulesForEngine("shopping"),
       {
         profile: {
           employmentType: parsed.data.employmentType,

@@ -21,20 +21,84 @@ function indexQuestions(category: CardsType): QuestionIndex {
   return index;
 }
 
+// True when every slot on a question declares an `engineValue` — i.e. the
+// question's answers are a closed enum. For those, an answer that matches no
+// slot is a plumbing bug, never legitimate free text.
+function hasClosedEnumSlots(question: BaseMessage | undefined): boolean {
+  const slots = question?.slots ?? [];
+  return slots.length > 0 && slots.every((s) => s.engineValue !== undefined);
+}
+
 // The typed value the engine wants for a given answer: the matching slot's
 // `engineValue` when present, else the raw slot value / slider number.
 function engineValueFor(
   question: BaseMessage | undefined,
   answer: string | number,
 ): string | number {
-  const slot = question?.slots?.find((s) => String(s.value) === String(answer));
+  // Match on trimmed values: multi-select answers are split out of a
+  // comma-joined string and trimmed, so a slot value carrying stray whitespace
+  // would otherwise miss its slot and leak the raw label to the Zod enum.
+  const key = String(answer).trim();
+  const slot = question?.slots?.find((s) => String(s.value).trim() === key);
   if (slot?.engineValue !== undefined) return slot.engineValue;
+  // A closed-enum question with no matching slot means the answer never came
+  // from this question (stale/synthetic message) or the slot data drifted.
+  // Returning the raw label would leak display text into an engine enum and
+  // surface as an opaque 400, so drop it loudly instead.
+  if (hasClosedEnumSlots(question)) {
+    console.warn(
+      `[buildRecommendInput] "${question?.m_id}" got an answer matching no slot: ${JSON.stringify(answer)} — dropped`,
+    );
+    return UNMATCHED;
+  }
   return answer;
 }
+
+// Sentinel for "this answer matched no slot on a closed-enum question".
+// Filtered out before the payload is built rather than leaked to the schema.
+const UNMATCHED = Symbol("unmatched") as unknown as string;
 
 function toNumber(value: string | number | undefined, fallback = 0): number {
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : fallback;
+}
+
+
+// Split a comma-joined multi-select answer back into slot values, tolerating
+// slot values that themselves contain commas.
+function parseMultiSelect(
+  question: BaseMessage,
+  content: string,
+): (string | number)[] {
+  const slotValues = (question.slots ?? [])
+    .map((s) => String(s.value).trim())
+    .filter(Boolean)
+    // Longest first: otherwise a short slot value that is a prefix of a longer
+    // one would consume part of the longer one's text.
+    .sort((a, b) => b.length - a.length);
+
+  const found: (string | number)[] = [];
+  let rest = content;
+
+  for (const value of slotValues) {
+    const at = rest.indexOf(value);
+    if (at === -1) continue;
+    found.push(engineValueFor(question, value));
+    // Remove the matched span (plus a trailing separator) so overlapping slot
+    // values can't double-match the same characters.
+    rest = (rest.slice(0, at) + rest.slice(at + value.length)).replace(
+      /^\s*,\s*|,\s*,/g,
+      ",",
+    );
+  }
+
+  // Anything the slot pass didn't claim: fall back to the old comma split so
+  // free-text or out-of-catalog answers still come through.
+  for (const part of rest.split(",").map((p) => p.trim())) {
+    if (part) found.push(engineValueFor(question, part));
+  }
+
+  return found.filter((v) => v !== UNMATCHED);
 }
 
 /**
@@ -56,32 +120,37 @@ function collectAnswers(
   for (const msg of userMessages) {
     const qid = msg.questionId;
     if (!qid) continue;
+    // Synthetic messages (e.g. the "continue" acknowledgement) reuse a real
+    // question's id for rendering but answer nothing — skip them, else they
+    // overwrite that question's actual answer.
+    if (msg.isAnswer === false) continue;
     const question = questions.get(qid);
 
     // FORM answers carry raw per-field values keyed by inner input m_id.
     if (msg.formValues) {
       for (const [innerId, raw] of Object.entries(msg.formValues)) {
-        single.set(innerId, engineValueFor(questions.get(innerId), raw));
+        const value = engineValueFor(questions.get(innerId), raw);
+        if (value !== UNMATCHED) single.set(innerId, value);
       }
       continue;
     }
 
     const content = msg.content ?? "";
 
-    // Multi-select answers are a comma-separated list of slot values.
+    // Multi-select answers arrive as `String(selectedArray)` — a comma-joined
+    // list of slot values. Some slot values contain commas themselves (e.g.
+    // "Luxury travel perks(upgrades, concierge, golf, elite status)"), so a
+    // naive split shatters them into fragments that match no slot and leak raw
+    // label text into the engine enums. Match whole slot values first, longest
+    // first so a slot that prefixes another can't win, and only comma-split
+    // whatever is left over.
     if (question?.type === "MultiSelect") {
-      const parts = content
-        .split(",")
-        .map((p) => p.trim())
-        .filter(Boolean);
-      multi.set(
-        qid,
-        parts.map((p) => engineValueFor(question, p)),
-      );
+      multi.set(qid, parseMultiSelect(question, content));
       continue;
     }
 
-    single.set(qid, engineValueFor(question, content));
+    const value = engineValueFor(question, content);
+    if (value !== UNMATCHED) single.set(qid, value);
   }
 
   return { single, multi };

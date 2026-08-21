@@ -77,6 +77,11 @@ export interface BaseMessage {
   // Preserved so the recommendation-input assembler can read typed values that
   // the concatenated `content` string would otherwise lose.
   formValues?: Record<string, string | number>;
+  // False for synthetic user messages that carry a `questionId` for transcript
+  // rendering but are NOT the user's answer to it (e.g. the "Great, let's move
+  // forward" continue acknowledgement). The recommendation-input assembler
+  // skips these so they can't overwrite the real answer. Absent === true.
+  isAnswer?: boolean;
 }
 
 export interface SessionMessage {

@@ -15,9 +15,13 @@ import type { MockBestOf } from "@/lib/logic/advisor/bestOf";
 import type { MockMilestone } from "@/lib/logic/advisor/scoring";
 
 // Process-local cache of advisor data. Vercel keeps function instances warm for
-// minutes at a time, so this Map survives across many invocations. On a cold
-// start the first request pays the hydrate cost (~500ms on M0); every warm
-// request after is in-memory only.
+// minutes at a time, so this survives across many invocations. On a cold start
+// the first request pays the hydrate cost; every warm request after is
+// in-memory only.
+//
+// The snapshot holds cards + bestOf + milestones (~14 MB). Rules are NOT in it
+// — see rulesByCategory below — because the active rule set is ~62 MB and no
+// single request needs more than a slice of it.
 //
 // Invalidation: TTL-based (60s). Admin writes update Mongo synchronously; all
 // instances pick up changes on their next post-TTL request. That's acceptable
@@ -28,7 +32,6 @@ const STALE_GRACE_MS = 300_000;
 
 interface Snapshot {
   cards: MockCard[];
-  rules: MockRule[];
   bestOf: MockBestOf[];
   milestonesBySlug: Map<string, MockMilestone[]>;
 }
@@ -36,6 +39,82 @@ interface Snapshot {
 let snapshot: Snapshot | null = null;
 let fetchedAt = 0;
 let inflight: Promise<void> | null = null;
+
+// Rules are cached SEPARATELY from the snapshot, keyed by category, because
+// they dwarf everything else: ~81k active rules (~62 MB) against ~14 MB for
+// cards + bestOf + milestones combined. Hydrating them eagerly made every cold
+// request pay for the whole catalogue even though each engine reads only its
+// own handful of categories (travel reads none at all). Keyed by category so a
+// food request never pulls the 41k offline/online_shopping rules.
+const rulesByCategory = new Map<string, MockRule[]>();
+const rulesFetchedAt = new Map<string, number>();
+const rulesInflight = new Map<string, Promise<MockRule[]>>();
+
+// The categories each engine can score. Derived from the CATEGORIES.* constants
+// each engine references; every engine filters rules with `r.category === X`,
+// so fetching exactly these categories is equivalent to filtering the full
+// catalogue — not an approximation.
+//
+// `travel` is absent deliberately: recommendTravelCard/-Advanced take no rules
+// argument at all, scoring purely off the CardBestOf precompute.
+export const ENGINE_CATEGORIES = {
+  food: ["online_food_dining", "offline_food_dining"],
+  shopping: [
+    "online_shopping",
+    "offline_shopping",
+    "offline_food_dining",
+    "grocery",
+    "fuel",
+    "utilities",
+  ],
+  allrounder: [
+    "flights",
+    "hotels",
+    "forex",
+    "online_food_dining",
+    "offline_food_dining",
+    "online_shopping",
+    "grocery",
+    "fuel",
+    "utilities",
+    "rent",
+    "insurance",
+    "fees_taxes",
+    "other",
+  ],
+} as const;
+
+export type EngineName = keyof typeof ENGINE_CATEGORIES;
+
+const RULE_SELECT =
+  "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until is_active";
+
+// Fetch (and memoise) every active rule in one category. Concurrent callers for
+// the same category share a single query rather than each issuing their own.
+async function loadCategory(category: string): Promise<MockRule[]> {
+  const cached = rulesByCategory.get(category);
+  const age = Date.now() - (rulesFetchedAt.get(category) ?? 0);
+  if (cached && age < TTL_MS) return cached;
+
+  const existing = rulesInflight.get(category);
+  if (existing) return existing;
+
+  const p = (async () => {
+    await dbConnect();
+    const docs = await CardBestOfModel.find({ category, is_active: true })
+      .select(RULE_SELECT)
+      .lean<LeanRule[]>();
+    const mapped = docs.map(toMockRule);
+    rulesByCategory.set(category, mapped);
+    rulesFetchedAt.set(category, Date.now());
+    return mapped;
+  })().finally(() => {
+    rulesInflight.delete(category);
+  });
+
+  rulesInflight.set(category, p);
+  return p;
+}
 
 type LeanCard = Omit<CardDoc, keyof Document> & Record<string, unknown>;
 type LeanRule = Omit<CardRuleDoc, keyof Document> & Record<string, unknown>;
@@ -94,17 +173,12 @@ function toMockRule(doc: LeanRule): MockRule {
 async function hydrate(): Promise<void> {
   await dbConnect();
 
-  const [cardDocs, ruleDocs, bestOfDocs, milestoneDocs] = await Promise.all([
+  const [cardDocs, bestOfDocs, milestoneDocs] = await Promise.all([
     CardAdvisorModel.find({ is_active: true })
       .select(
         "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>(),
-    CardRuleModel.find({ is_active: true })
-      .select(
-        "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until notes is_active",
-      )
-      .lean<LeanRule[]>(),
     CardBestOfModel.find({})
       .select("cardSlug category rulesVersion payload")
       .lean<LeanBestOf[]>(),
@@ -164,7 +238,7 @@ async function hydrate(): Promise<void> {
     else milestonesBySlug.set(m.cardSlug, [m]);
   }
 
-  snapshot = { cards, rules: ruleDocs.map(toMockRule), bestOf, milestonesBySlug };
+  snapshot = { cards, bestOf, milestonesBySlug };
   fetchedAt = Date.now();
 }
 
@@ -205,8 +279,20 @@ export const AdvisorCache = {
     return snapshot?.cards ?? [];
   },
 
-  rules(): MockRule[] {
-    return snapshot?.rules ?? [];
+  // Active rules across a set of categories, fetched concurrently and cached
+  // per category. Replaces the old `rules()` accessor, which returned the
+  // entire 62 MB catalogue from the snapshot.
+  async rulesForCategories(categories: readonly string[]): Promise<MockRule[]> {
+    const unique = [...new Set(categories)];
+    const groups = await Promise.all(unique.map(loadCategory));
+    return groups.flat();
+  },
+
+  // Every rule an engine needs for one recommendation request. Each engine
+  // scores a fixed, statically-known set of categories (see ENGINE_CATEGORIES),
+  // so this is exact — not a heuristic subset.
+  async rulesForEngine(engine: EngineName): Promise<MockRule[]> {
+    return this.rulesForCategories(ENGINE_CATEGORIES[engine]);
   },
 
   bestOf(): MockBestOf[] {
@@ -279,10 +365,12 @@ export const AdvisorCache = {
     category: string,
   ): Promise<MockRule[]> {
     if (cardSlugs.length === 0) return [];
-    if (snapshot) {
-      return snapshot.rules.filter(
-        (r) => r.category === category && cardSlugs.includes(r.cardId),
-      );
+    // Reuse the category cache when it is already warm; otherwise query just
+    // these cards rather than warming the whole category for a few slugs.
+    const cached = rulesByCategory.get(category);
+    if (cached && Date.now() - (rulesFetchedAt.get(category) ?? 0) < TTL_MS) {
+      const wanted = new Set(cardSlugs);
+      return cached.filter((r) => wanted.has(r.cardId));
     }
     await dbConnect();
     const docs = await CardRuleModel.find({
@@ -290,9 +378,7 @@ export const AdvisorCache = {
       category,
       is_active: true,
     })
-      .select(
-        "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group fuel_surcharge_applicable max_fuel_transaction_limit redemption_mode voucher_validity_in_months gv_coins_percentage valid_from valid_until is_active",
-      )
+      .select(RULE_SELECT)
       .lean<LeanRule[]>();
     return docs.map(toMockRule);
   },
@@ -305,26 +391,16 @@ export const AdvisorCache = {
    * options instead of the full category list.
    */
   async categoriesForMerchant(merchantSlug: string): Promise<string[]> {
-    if (snapshot) {
-      return [
-        ...new Set(
-          snapshot.rules
-            .filter((r) => r.merchant === merchantSlug)
-            .map((r) => r.category as string),
-        ),
-      ];
-    }
     await dbConnect();
     const cats = await CardRuleModel.distinct("category", {
       merchant: merchantSlug,
       is_active: true,
     });
-    return cats as string[];
+    return cats as unknown as string[];
   },
 
   /** Whether any active rule uses this merchant slug — a cheap existence check. */
   async merchantExists(merchantSlug: string): Promise<boolean> {
-    if (snapshot) return snapshot.rules.some((r) => r.merchant === merchantSlug);
     await dbConnect();
     const n = await CardRuleModel.countDocuments({
       merchant: merchantSlug,

@@ -4,7 +4,7 @@
 //   npm run smoke:recommend
 
 import mongoose from "mongoose";
-import { AdvisorCache } from "../src/lib/advisor/cache";
+import { AdvisorCache, ENGINE_CATEGORIES } from "../src/lib/advisor/cache";
 import { recommendTravelCardAdvanced } from "../src/lib/logic/advisor/engine";
 import { recommendShoppingCardPhaseTwo } from "../src/lib/logic/advisor/shoppingCardEngine";
 import { recommendFoodCardPhaseTwo } from "../src/lib/logic/advisor/foodCardEngine";
@@ -15,8 +15,16 @@ async function main() {
   const t0 = Date.now();
   await AdvisorCache.ensureFresh();
   const tHydrate = Date.now() - t0;
+  // This script exercises every engine, so it loads the union of their rule
+  // categories once. Real requests load only the engine they need.
+  const tRules = Date.now();
+  const rules = await AdvisorCache.rulesForCategories([
+    ...ENGINE_CATEGORIES.food,
+    ...ENGINE_CATEGORIES.shopping,
+    ...ENGINE_CATEGORIES.allrounder,
+  ]);
   console.log(
-    `[smoke] hydrate: ${tHydrate}ms  cards=${AdvisorCache.cards().length}  rules=${AdvisorCache.rules().length}  bestOf=${AdvisorCache.bestOf().length}`,
+    `[smoke] hydrate: ${tHydrate}ms  rules: ${Date.now() - tRules}ms  cards=${AdvisorCache.cards().length}  rules=${rules.length}  bestOf=${AdvisorCache.bestOf().length}`,
   );
 
   // Travel
@@ -52,7 +60,7 @@ async function main() {
       },
       AdvisorCache.cards(),
       AdvisorCache.bestOf(),
-      AdvisorCache.rules(),
+      rules,
     );
     console.log(
       `[smoke] shopping:   ${Date.now() - t}ms  best=${r.best?.cardName ?? "n/a"}  net=₹${Math.round(r.best?.annualReturnInr ?? 0)}`,
@@ -73,7 +81,7 @@ async function main() {
       },
       AdvisorCache.cards(),
       AdvisorCache.bestOf(),
-      AdvisorCache.rules(),
+      rules,
     );
     console.log(
       `[smoke] food:       ${Date.now() - t}ms  best=${r.best?.cardName ?? "n/a"}  net=₹${Math.round(r.best?.annualReturnInr ?? 0)}`,
@@ -96,7 +104,7 @@ async function main() {
       },
       AdvisorCache.cards(),
       AdvisorCache.bestOf(),
-      AdvisorCache.rules(),
+      rules,
     );
     console.log(
       `[smoke] allrounder: ${Date.now() - t}ms  best=${r.best?.cardName ?? "n/a"}  net=₹${Math.round(r.best?.annualReturnInr ?? 0)}`,

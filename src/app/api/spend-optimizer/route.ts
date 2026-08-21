@@ -78,11 +78,11 @@ export async function POST(req: Request) {
       return ApiResponse.error("None of the requested cards are in your wallet", 400);
     }
 
-    // Deliberately NOT AdvisorCache.ensureFresh(): a cold hydrate pulls ~81k
-    // rules (~71 MB) and ~6.5k bestOf payloads (~13 MB), which cost minutes on a
-    // cold start. This endpoint needs only the wallet's cards in one category,
-    // so it reads that slice directly (and still serves from the snapshot when
-    // another request has already warmed it).
+    // Deliberately NOT AdvisorCache.ensureFresh(): a cold hydrate still pulls
+    // ~6.5k bestOf payloads (~12 MB), which costs minutes on a throttled
+    // cluster. This endpoint needs only the wallet's cards in one category, so
+    // it reads that slice directly (and still serves from the caches when
+    // another request has already warmed them).
     //
     // Includes discontinued cards: the user holds them, so they must be scored
     // even though the advisor would never recommend applying for one.

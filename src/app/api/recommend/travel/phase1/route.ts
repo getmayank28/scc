@@ -15,7 +15,10 @@ export async function POST(req: Request) {
 
   const parsed = travelRecommendPhaseOneInputSchema.safeParse(body);
   if (!parsed.success) {
-    return ApiResponse.error(parsed.error.issues[0]?.message ?? "Invalid input", 400);
+    return ApiResponse.error(
+      parsed.error.issues[0]?.message ?? "Invalid input",
+      400,
+    );
   }
 
   try {

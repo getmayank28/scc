@@ -2,7 +2,7 @@
 // diffing. Deterministic ordering. Usage: npx tsx --env-file=.env.local
 // scripts/regression-snapshot.ts > /tmp/snap.txt
 import mongoose from "mongoose";
-import { AdvisorCache } from "../src/lib/advisor/cache";
+import { AdvisorCache, ENGINE_CATEGORIES } from "../src/lib/advisor/cache";
 import { recommendTravelCardAdvanced } from "../src/lib/logic/advisor/engine";
 import { recommendShoppingCardPhaseTwo } from "../src/lib/logic/advisor/shoppingCardEngine";
 import { recommendFoodCardPhaseTwo } from "../src/lib/logic/advisor/foodCardEngine";
@@ -19,7 +19,11 @@ async function main() {
   await AdvisorCache.ensureFresh();
   const cards = AdvisorCache.cards();
   const bestOf = AdvisorCache.bestOf();
-  const rules = AdvisorCache.rules();
+  const rules = await AdvisorCache.rulesForCategories([
+    ...ENGINE_CATEGORIES.food,
+    ...ENGINE_CATEGORIES.shopping,
+    ...ENGINE_CATEGORIES.allrounder,
+  ]);
 
   const travel = recommendTravelCardAdvanced(
     {

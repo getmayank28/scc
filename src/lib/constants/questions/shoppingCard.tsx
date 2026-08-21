@@ -77,8 +77,8 @@ export const shoppingCard = [
         engineValue: "flipkart",
       },
       {
-        label: "Myntra ",
-        value: "Myntra ",
+        label: "Myntra",
+        value: "Myntra",
         engineValue: "myntra",
       },
       {

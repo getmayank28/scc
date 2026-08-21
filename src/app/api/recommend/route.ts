@@ -146,9 +146,16 @@ export async function POST(req: Request) {
     await AdvisorCache.ensureFresh();
     const cards = AdvisorCache.cards();
     const bestOf = AdvisorCache.bestOf();
-    const rules = AdvisorCache.rules();
+    // Only this engine's rule categories are fetched (travel needs none), so a
+    // cold request pulls a few MB instead of the full ~62 MB rule catalogue.
+    const [rules, profile] = await Promise.all([
+      category === "travel"
+        ? Promise.resolve([])
+        : AdvisorCache.rulesForEngine(category),
+      profileForSession(),
+    ]);
     const options = {
-      profile: await profileForSession(),
+      profile,
       milestonesBySlug: AdvisorCache.milestonesBySlug(),
     };
 
@@ -160,31 +167,72 @@ export async function POST(req: Request) {
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
               recommendTravelCard(parsed.data as any, cards, bestOf, options)
             : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendTravelCardAdvanced(parsed.data as any, cards, bestOf, options);
+              recommendTravelCardAdvanced(
+                parsed.data as any,
+                cards,
+                bestOf,
+                options,
+              );
         break;
       case "food":
         result =
           phase === 1
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendFoodCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+              recommendFoodCardPhaseOne(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              )
             : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendFoodCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+              recommendFoodCardPhaseTwo(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              );
         break;
       case "shopping":
         result =
           phase === 1
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendShoppingCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+              recommendShoppingCardPhaseOne(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              )
             : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendShoppingCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+              recommendShoppingCardPhaseTwo(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              );
         break;
       case "allrounder":
         result =
           phase === 1
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendAllRounderCardPhaseOne(parsed.data as any, cards, bestOf, rules, options)
+              recommendAllRounderCardPhaseOne(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              )
             : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              recommendAllRounderCardPhaseTwo(parsed.data as any, cards, bestOf, rules, options);
+              recommendAllRounderCardPhaseTwo(
+                parsed.data as any,
+                cards,
+                bestOf,
+                rules,
+                options,
+              );
         break;
     }
 
