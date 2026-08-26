@@ -101,7 +101,7 @@ async function loadCategory(category: string): Promise<MockRule[]> {
 
   const p = (async () => {
     await dbConnect();
-    const docs = await CardBestOfModel.find({ category, is_active: true })
+    const docs = await CardRuleModel.find({ category, is_active: true })
       .select(RULE_SELECT)
       .lean<LeanRule[]>();
     const mapped = docs.map(toMockRule);
