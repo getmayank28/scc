@@ -1,28 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useGetInsightsQuery } from "@/store/api";
 import {
   KIND_LABEL,
-  type ClientInsight,
   type InsightKind,
   type InsightsPayload,
 } from "@/lib/insights/clientTypes";
-import AtRiskCounter from "./components/AtRiskCounter";
-import InsightRow from "./components/InsightRow";
-import RewardPointsBar from "./components/RewardPointsBar";
+import { RP_VALUE_INR } from "@/lib/insights/rewardPoints";
+import { buildWalletSummaries } from "@/lib/insights/walletSummary";
+import WalletHeaderStrip from "./components/WalletHeaderStrip";
+import WalletCardTile from "./components/WalletCardTile";
+import BenefitCard from "./components/BenefitCard";
+import RewardPointsPanel from "./components/RewardPointsPanel";
 import { Button } from "@/components/ui/stateful-button";
 import Typography from "@/components/Typography/Typography";
 
-const FILTERS: { key: InsightKind | "all"; label: string }[] = [
-  { key: "all", label: "Everything" },
-  { key: "milestone", label: KIND_LABEL.milestone },
-  { key: "reward_cap", label: KIND_LABEL.reward_cap },
-  { key: "fee_waiver", label: KIND_LABEL.fee_waiver },
-  { key: "unused_benefit", label: KIND_LABEL.unused_benefit },
-];
-
-/** What the right-column figure represents, per mechanic. */
+/** What the value figure on a benefit card represents, per mechanic. */
 const VALUE_CAPTION: Record<InsightKind, string> = {
   milestone: "Reward value",
   reward_cap: "Cap ceiling value",
@@ -30,101 +24,113 @@ const VALUE_CAPTION: Record<InsightKind, string> = {
   unused_benefit: "Unredeemed value",
 };
 
+const KIND_ORDER: InsightKind[] = [
+  "milestone",
+  "fee_waiver",
+  "reward_cap",
+  "unused_benefit",
+];
+
 export default function InsightsPage() {
   const { data, isFetching, isError, refetch } = useGetInsightsQuery({});
   const payload = data as InsightsPayload | undefined;
-  const [filter, setFilter] = useState<InsightKind | "all">("all");
-  const [cardFilter, setCardFilter] = useState<string>("all");
 
-  const all = useMemo(() => payload?.insights ?? [], [payload?.insights]);
+  /** null = no card inspected, so the drawer is closed. A slug opens it. */
+  const [selected, setSelected] = useState<string | null>(null);
+  const [kind, setKind] = useState<InsightKind | "all">("all");
 
-  // The two filters compose: a card selection narrows the wallet, a kind
-  // selection narrows the mechanic, and the feed is the intersection.
-  const insights = useMemo(
-    () =>
-      all.filter(
-        (i) =>
-          (filter === "all" || i.kind === filter) &&
-          (cardFilter === "all" || i.cardSlug === cardFilter),
-      ),
-    [all, filter, cardFilter],
+  // The drawer only exists once a card is picked, and it sits below the fold, so
+  // a selection that revealed off-screen content would read as a dead click.
+  // The ref sits on the points+drawer wrapper, not the drawer alone.
+  const scrollTargetRef = useRef<HTMLDivElement | null>(null);
+  /** Set when a click opened the drawer; consumed by the scroll effect below. */
+  const [pendingScroll, setPendingScroll] = useState(false);
+
+  const summaries = useMemo(
+    () => (payload ? buildWalletSummaries(payload) : []),
+    [payload],
   );
 
-  // Only cards that actually carry insights are worth offering as filters —
-  // a pill that always yields an empty feed is noise.
-  const cardOptions = useMemo(() => {
-    const byslug = new Map<string, { slug: string; name: string }>();
-    for (const i of all) {
-      if (!byslug.has(i.cardSlug)) {
-        byslug.set(i.cardSlug, { slug: i.cardSlug, name: i.cardName });
-      }
-    }
-    return [...byslug.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [all]);
-
-  // The nearest live deadline within the CURRENT view, so the hero and the
-  // feed below it always describe the same set.
-  const soonest = useMemo(() => {
-    const dated = insights.filter(
-      (i): i is ClientInsight & { deadline: string; daysRemaining: number } =>
-        i.deadline !== null && i.daysRemaining !== null && i.daysRemaining > 0,
-    );
-    if (!dated.length) return null;
-    return dated.reduce((a, b) => (b.daysRemaining < a.daysRemaining ? b : a));
-  }, [insights]);
-
-  // Headline total tracks the filtered view. Mirrors the server's rule:
-  // only items with a deadline and a live action contribute.
-  const visibleAtRiskInr = useMemo(
-    () =>
-      Math.round(
-        insights
-          .filter((i) => i.deadline !== null)
-          .reduce((t, i) => t + i.valueAtRiskInr, 0),
-      ),
-    [insights],
+  const active = useMemo(
+    () => summaries.find((s) => s.slug === selected) ?? null,
+    [summaries, selected],
   );
 
-  const visibleCardCount = useMemo(
-    () => new Set(insights.map((i) => i.cardSlug)).size,
-    [insights],
+  // The drawer's source list. Empty until a card is selected — the whole-wallet
+  // feed is deliberately not a state the drawer can be in.
+  const scoped = useMemo(() => active?.insights ?? [], [active]);
+
+  const visible = useMemo(
+    () => (kind === "all" ? scoped : scoped.filter((i) => i.kind === kind)),
+    [scoped, kind],
   );
 
-  // Points track the CARD filter only — accrual is a property of spend, not of
-  // which mechanic the user is currently reading about.
+  // Kind pills only offer mechanics the current scope actually contains, so a
+  // pill never leads to an empty drawer.
+  const kindTabs = useMemo(() => {
+    const counts = new Map<InsightKind, number>();
+    for (const i of scoped) counts.set(i.kind, (counts.get(i.kind) ?? 0) + 1);
+    return KIND_ORDER.filter((k) => counts.has(k)).map((k) => ({
+      key: k,
+      label: KIND_LABEL[k],
+      count: counts.get(k) ?? 0,
+    }));
+  }, [scoped]);
+
+  // The points panel stays on screen whether or not a card is open, so its
+  // figures fall back to the wallet totals when nothing is selected.
   const rp = payload?.rewardPoints;
-  const visiblePoints =
-    cardFilter === "all"
-      ? (rp?.totalPoints ?? 0)
-      : (rp?.byCard?.[cardFilter] ?? 0);
-  const visibleMonthPoints =
-    cardFilter === "all"
-      ? (rp?.pointsThisMonth ?? 0)
-      : (rp?.monthByCard?.[cardFilter] ?? 0);
-  const scopeLabel =
-    cardFilter === "all"
-      ? null
-      : (cardOptions.find((c) => c.slug === cardFilter)?.name ?? null);
+  const scopePoints = active ? active.points : Math.round(rp?.totalPoints ?? 0);
+  const scopeAtRisk = active
+    ? active.atRiskInr
+    : (payload?.totalAtRiskInr ?? 0);
+  const scopeMonthPoints = Math.round(
+    active ? (rp?.monthByCard?.[active.slug] ?? 0) : (rp?.pointsThisMonth ?? 0),
+  );
 
-  // Counts are measured against the OTHER filter's current selection, so a
-  // pill's number always matches what selecting it would actually show.
-  const countFor = (k: InsightKind | "all") =>
-    all.filter(
-      (i) =>
-        (k === "all" || i.kind === k) &&
-        (cardFilter === "all" || i.cardSlug === cardFilter),
-    ).length;
+  const selectCard = useCallback(
+    (slug: string) => {
+      // Re-selecting the open card closes the drawer again.
+      const opening = selected !== slug;
+      setSelected(opening ? slug : null);
+      setKind("all");
+      // The drawer has not mounted yet, so the scroll is deferred to the layout
+      // effect below rather than attempted here.
+      setPendingScroll(opening);
+    },
+    [selected],
+  );
 
-  const countForCard = (slug: string) =>
-    all.filter(
-      (i) =>
-        (slug === "all" || i.cardSlug === slug) &&
-        (filter === "all" || i.kind === filter),
-    ).length;
+  // Scroll the drawer into view once it has actually been committed to the DOM.
+  // A layout effect is what makes this reliable: it runs after the drawer node
+  // exists and has been laid out, but before paint, so the user never sees the
+  // page sitting at the old offset.
+  //
+  // `scrollIntoView` rather than `window.scrollTo`: in this app the document
+  // itself does not scroll — the root layout sizes <body> to the viewport and
+  // the overflow lives there — so window-level scrolling is a silent no-op.
+  // Letting the browser walk to whatever the real scroll container is keeps
+  // this working regardless of where that overflow ends up living.
+  useLayoutEffect(() => {
+    if (!pendingScroll) return;
+    setPendingScroll(false);
+
+    const el = scrollTargetRef.current;
+    if (!el) return;
+
+    const reduced = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    // `scroll-mt-24` on the wrapper supplies the offset for the fixed header.
+    el.scrollIntoView({
+      block: "start",
+      behavior: reduced ? "auto" : "smooth",
+    });
+  }, [pendingScroll]);
 
   if (isError) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-brown-background">
+      <div className="flex min-h-screen w-full items-center justify-center bg-brown-background pt-20">
         <div className="flex flex-col items-center gap-4">
           <Typography variant="h3">Could not load your insights</Typography>
           <Button onClick={() => refetch()}>Try again</Button>
@@ -134,117 +140,178 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-brown-background pb-24 pt-28 text-white max-md:px-5 max-md:pb-32 max-md:pt-20">
-      <div className="mx-auto w-full max-w-5xl space-y-12 px-8 max-md:space-y-8 max-md:px-0">
-        {/* Hero */}
-        {isFetching && !payload ? (
-          <HeroSkeleton />
-        ) : (
-          <AtRiskCounter
-            totalInr={visibleAtRiskInr}
-            soonestDays={soonest?.daysRemaining ?? 0}
-            soonestLabel={
-              soonest ? formatDeadline(soonest.deadline) : "No deadline"
-            }
-            itemCount={insights.length}
-            cardCount={visibleCardCount}
-          />
-        )}
+    <div className="min-h-screen w-full bg-brown-background pb-24 pt-20 text-white max-md:px-5 max-md:pb-32 max-md:pt-20">
+      <div className="mx-auto w-full max-w-6xl space-y-6 px-8 max-md:space-y-7 max-md:px-0">
+        {/* ── Title + headline figures ─────────────────────────────────── */}
+        <header className="flex items-start justify-between gap-8 max-lg:flex-col">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-6 bg-primary-orange" />
+              <p className="font-satoshi text-[10px] font-medium uppercase tracking-[0.28em] text-secondary-gray">
+                Intelligence just for you
+              </p>
+            </div>
+            <h1 className="font-satoshi mt-3 text-[44px] font-bold leading-[1.05] tracking-[-0.03em] text-white max-md:text-[30px]">
+              Credit Insights
+            </h1>
+            <p className="font-satoshi mt-3 max-w-lg text-[14px] font-light leading-relaxed text-secondary-gray">
+              Rewards, waivers and benefits your cards forfeit if nothing
+              changes this billing cycle.
+            </p>
+          </div>
 
-        {/* Reward points */}
-        {rp && !isFetching && (
-          <RewardPointsBar
-            rp={rp}
-            visiblePoints={visiblePoints}
-            visibleMonthPoints={visibleMonthPoints}
-            scopeLabel={scopeLabel}
-          />
-        )}
+          {payload && !isFetching ? (
+            <WalletHeaderStrip
+              atRiskInr={payload.totalAtRiskInr}
+              points={Math.round(rp?.totalPoints ?? 0)}
+              pointsValueInr={rp?.valueInr ?? 0}
+            />
+          ) : (
+            <div className="h-[92px] w-full max-w-md animate-pulse rounded-xl bg-white/5 lg:w-[440px]" />
+          )}
+        </header>
 
-        {/* Filters */}
-        <div className="space-y-3 border-y border-brown-border/70 py-4">
-          {/* Card */}
-          {cardOptions.length > 1 && (
-            <nav
-              aria-label="Filter by card"
-              className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs"
-            >
-              <span className="font-satoshi shrink-0 pr-1 text-[10px] uppercase tracking-[0.18em] text-secondary-gray">
-                Card
-              </span>
-              <FilterPill
-                label="All cards"
-                count={countForCard("all")}
-                active={cardFilter === "all"}
-                onClick={() => setCardFilter("all")}
-              />
-              {cardOptions.map((c) => (
-                <FilterPill
-                  key={c.slug}
-                  label={c.name}
-                  count={countForCard(c.slug)}
-                  active={cardFilter === c.slug}
-                  onClick={() => setCardFilter(c.slug)}
+        {/* ── Wallet strip ─────────────────────────────────────────────── */}
+        <section aria-label="Your cards" className="space-y-4">
+          <div className="flex items-baseline justify-between gap-4">
+            <h2 className="font-satoshi text-[10px] font-medium uppercase tracking-[0.22em] text-secondary-gray">
+              Select asset to inspect
+            </h2>
+            <p className="font-satoshi text-[11px] text-secondary-gray max-sm:hidden">
+              {active
+                ? "Click the selected card again to close its overview"
+                : "Click a card to open its benefits overview"}
+            </p>
+          </div>
+
+          {isFetching && !payload ? (
+            <WalletSkeleton />
+          ) : (
+            <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
+              {summaries.map((s) => (
+                <WalletCardTile
+                  key={s.slug}
+                  summary={s}
+                  selected={s.slug === selected}
+                  pointValueInr={RP_VALUE_INR}
+                  onSelect={() => selectCard(s.slug)}
                 />
               ))}
-            </nav>
-          )}
-
-          {/* Kind */}
-          <nav
-            aria-label="Filter by type"
-            className="no-scrollbar flex items-center gap-2 overflow-x-auto text-xs"
-          >
-            <span className="font-satoshi shrink-0 pr-1 text-[10px] uppercase tracking-[0.18em] text-secondary-gray">
-              Type
-            </span>
-            {FILTERS.map((f) => {
-              const n = countFor(f.key);
-              return (
-                <FilterPill
-                  key={f.key}
-                  label={f.label}
-                  count={n}
-                  active={filter === f.key}
-                  onClick={() => setFilter(f.key)}
-                />
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Feed */}
-        <section aria-label="Your card insights" className="space-y-6">
-          {isFetching && !payload ? (
-            <FeedSkeleton />
-          ) : insights.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-16">
-              <p className="font-satoshi text-center text-[14px] text-white/45">
-                Nothing needs attention in this view right now.
-              </p>
-              {(filter !== "all" || cardFilter !== "all") && (
-                <button
-                  onClick={() => {
-                    setFilter("all");
-                    setCardFilter("all");
-                  }}
-                  className="font-satoshi text-[12px] text-primary-orange underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange"
-                >
-                  Clear filters
-                </button>
-              )}
             </div>
-          ) : (
-            insights.map((i, idx) => (
-              <InsightRow
-                key={i.id}
-                insight={i}
-                index={idx}
-                valueCaption={VALUE_CAPTION[i.kind]}
-              />
-            ))
           )}
         </section>
+
+        {/* ── Points + drawer ──────────────────────────────────────────────
+            Scrolled to as one unit: both figures describe the selected card,
+            so bringing the drawer into view while leaving its points balance
+            behind would split a single reading in half. Anchoring at the
+            points panel keeps the pair together. */}
+        <div
+          ref={scrollTargetRef}
+          className="scroll-mt-24 space-y-10 max-md:space-y-7"
+        >
+          {/* FiSense reward points */}
+          {rp && !isFetching && (
+            <RewardPointsPanel
+              rp={rp}
+              visiblePoints={scopePoints}
+              visibleMonthPoints={scopeMonthPoints}
+              scopeLabel={active?.name ?? null}
+            />
+          )}
+
+          {/* Contextual benefits drawer — only once a card is picked */}
+          {active && (
+            <section
+              aria-label={`${active.name} benefits and protection`}
+              className="animate-insight-in rounded-2xl border border-primary-orange/25 bg-brown-sidebar/50 p-7 max-md:p-5"
+            >
+              <div className="flex flex-wrap items-end justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary-orange" />
+                    <p className="font-satoshi text-[10px] font-medium uppercase tracking-[0.2em] text-secondary-gray">
+                      {active.name} active overview
+                    </p>
+                  </div>
+                  <h2 className="font-satoshi mt-2 text-[26px] font-semibold tracking-[-0.02em] text-white max-md:text-[20px]">
+                    {active.name} milestones &amp; protection
+                  </h2>
+                </div>
+
+                {/* Kind tabs */}
+                <nav
+                  aria-label="Filter by type"
+                  className="no-scrollbar flex items-center gap-1 overflow-x-auto rounded-lg border border-brown-border bg-brown-background/50 p-1"
+                >
+                  <KindTab
+                    label="All"
+                    count={scoped.length}
+                    active={kind === "all"}
+                    onClick={() => setKind("all")}
+                  />
+                  {kindTabs.map((t) => (
+                    <KindTab
+                      key={t.key}
+                      label={t.label}
+                      count={t.count}
+                      active={kind === t.key}
+                      onClick={() => setKind(t.key)}
+                    />
+                  ))}
+                </nav>
+              </div>
+
+              <div className="mt-6">
+                {visible.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 py-16">
+                    <p className="font-satoshi text-center text-[14px] text-white/45">
+                      Nothing needs attention on this card right now.
+                    </p>
+                    {kind !== "all" && (
+                      <button
+                        onClick={() => setKind("all")}
+                        className="font-satoshi text-[12px] text-primary-orange underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange"
+                      >
+                        Show everything on this card
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+                    {visible.map((i, idx) => (
+                      <BenefitCard
+                        key={i.id}
+                        insight={i}
+                        index={idx}
+                        valueCaption={VALUE_CAPTION[i.kind]}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Scope footer — keeps the drawer's own totals honest. */}
+              {visible.length > 0 && (
+                <div className="font-satoshi mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-brown-border/70 pt-5 text-[11px] text-secondary-gray">
+                  <span>
+                    <span className="font-semibold text-primary-orange">
+                      ₹{scopeAtRisk.toLocaleString("en-IN")}
+                    </span>{" "}
+                    at risk in this view
+                  </span>
+                  <span>
+                    Showing{" "}
+                    <span className="font-semibold text-white">
+                      {visible.length}
+                    </span>{" "}
+                    of {scoped.length} tracked
+                  </span>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
 
         {payload?.warnings?.length ? (
           <div className="rounded-lg border border-[#E8B84B]/30 bg-[#E8B84B]/8 p-4">
@@ -259,26 +326,20 @@ export default function InsightsPage() {
           </div>
         ) : null}
 
-        <footer className="flex items-center justify-between gap-4 border-t border-brown-border pt-8 max-sm:flex-col max-sm:items-start">
-          <div className="font-satoshi flex items-center gap-2 text-[12px] text-secondary-gray">
-            <span className="h-2 w-2 rounded-full bg-emerald-500/80" />
-            <span>
-              Live card catalogue connected. Spend history simulated for this
-              preview.
-            </span>
-          </div>
+        <footer className="font-satoshi flex items-center gap-2 border-t border-brown-border pt-8 text-[12px] text-secondary-gray">
+          <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500/80" />
+          <span>
+            Live card catalogue connected. Spend history simulated for this
+            preview.
+          </span>
         </footer>
       </div>
     </div>
   );
 }
 
-/**
- * One filter pill. Disabled when selecting it would empty the feed — the count
- * already reflects the other filter's selection, so a zero here means the
- * combination has no results.
- */
-function FilterPill({
+/** One tab in the drawer's mechanic filter. */
+function KindTab({
   label,
   count,
   active,
@@ -292,55 +353,30 @@ function FilterPill({
   return (
     <button
       onClick={onClick}
-      disabled={count === 0 && !active}
       aria-pressed={active}
-      className={`font-satoshi whitespace-nowrap rounded-full border px-4 py-2 font-medium transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange disabled:cursor-not-allowed disabled:opacity-25 ${
+      className={`font-satoshi whitespace-nowrap rounded-md px-3.5 py-2 text-[12px] font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange ${
         active
-          ? "border-primary-orange bg-primary-orange text-brown-background"
-          : "border-brown-border bg-brown-sidebar/40 text-secondary-gray hover:text-white"
+          ? "bg-brown-sidebar text-white"
+          : "text-secondary-gray hover:text-white"
       }`}
     >
       {label}
-      <span
-        className={`ml-1 text-[11px] ${active ? "opacity-80" : "opacity-70"}`}
-      >
-        {count}
-      </span>
+      <span className="ml-1.5 opacity-60">({count})</span>
     </button>
   );
 }
 
-/** "2026-04-01T00:00:00.000Z" → "31 Mar" (the last day inside the window). */
-function formatDeadline(iso: string): string {
-  const last = new Date(new Date(iso).getTime() - 86_400_000);
-  return last.toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-}
-
-function HeroSkeleton() {
+function WalletSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="h-3 w-40 animate-pulse rounded bg-white/10" />
-      <div className="h-24 w-80 animate-pulse rounded bg-white/10" />
-      <div className="h-4 w-96 animate-pulse rounded bg-white/10" />
-    </div>
-  );
-}
-
-function FeedSkeleton() {
-  return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-3 gap-5 max-lg:grid-cols-2 max-sm:grid-cols-1">
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="rounded-xl border border-brown-border bg-brown-sidebar p-8"
+          className="rounded-2xl border border-brown-border bg-brown-sidebar/60 p-4"
         >
-          <div className="mb-3 h-3 w-40 animate-pulse rounded bg-white/10" />
-          <div className="mb-4 h-6 w-2/3 animate-pulse rounded bg-white/10" />
-          <div className="h-2 w-full max-w-lg animate-pulse rounded bg-white/10" />
+          <div className="aspect-[1.586/1] w-full animate-pulse rounded-xl bg-white/5" />
+          <div className="mt-4 h-4 w-2/3 animate-pulse rounded bg-white/10" />
+          <div className="mt-4 h-14 w-full animate-pulse rounded-lg bg-white/5" />
         </div>
       ))}
     </div>

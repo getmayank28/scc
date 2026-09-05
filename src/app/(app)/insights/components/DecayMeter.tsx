@@ -5,7 +5,7 @@ import { URGENCY_STYLE, type Urgency } from "@/lib/insights/clientTypes";
 
 /**
  * Shortfall between elapsed time and progress, as whole percent — or null when
- * progress is keeping up. Shared with InsightRow so the bar and its caption can
+ * progress is keeping up. Shared with BenefitCard so the bar and its caption can
  * never disagree.
  */
 export function pctBehind(
