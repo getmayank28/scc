@@ -144,6 +144,14 @@ export const api = createApi({
         params: { cardId },
       }),
     }),
+    // Card-intelligence feed: milestones, reward caps, fee waivers and
+    // expiring benefits, ranked. Unwraps the ApiSuccess envelope so components
+    // receive the InsightsResult directly.
+    getInsights: builder.query({
+      query: () => "insights",
+      transformResponse: (res: { success: boolean; result?: unknown }) =>
+        res?.result,
+    }),
   }),
 });
 
@@ -168,5 +176,6 @@ export const {
   useChatCommunicationMutation,
   useWaitlistMutation,
   useLazyGetRedirectUrlQuery,
+  useGetInsightsQuery,
 } = api;
 export default api;

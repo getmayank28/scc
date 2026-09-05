@@ -4,37 +4,56 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { BadgeIndianRupee, Brain, House, MessagesSquare, Search } from "lucide-react";
+import { BadgeIndianRupee, Brain, House, MessagesSquare, Search, ShieldAlert } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";
+
+/**
+ * Whether `href` represents the route being viewed.
+ *
+ * Compares the path only — links like `/chat/new` carry a sub-path, so a nested
+ * route counts as active for its parent section (`/insights/x` highlights
+ * Insights) without `/home` swallowing every route via a bare prefix match.
+ */
+function isActiveLink(pathname: string, href: string): boolean {
+  const base = href.split("?")[0];
+  const root = base === "/chat/new" ? "/chat" : base;
+  if (pathname === root) return true;
+  return root !== "/" && pathname.startsWith(root + "/");
+}
 
 export function SidebarContainer({ children }: { children: ReactNode }) {
   const links = [
     {
       label: "Dashboard",
       href: ROUTES.DASHBOARD,
-      icon: <House className="h-5 w-5 shrink-0 text-neutral-200" />,
+      icon: <House className="h-5 w-5 shrink-0" />,
     },
     {
       label: "AI Advisor",
       href: ROUTES.CHAT + "/new",
-      icon: <MessagesSquare className="h-5 w-5 shrink-0 text-neutral-200" />,
+      icon: <MessagesSquare className="h-5 w-5 shrink-0" />,
     },
     {
       label: "Spend Optimizer",
       href: ROUTES.SPEND_OPTIMIZER,
-      icon: <Brain className="h-5 w-5 shrink-0 text-neutral-200" />,
+      icon: <Brain className="h-5 w-5 shrink-0" />,
+    },
+    {
+      label: "Insights",
+      href: ROUTES.INSIGHTS,
+      icon: <ShieldAlert className="h-5 w-5 shrink-0" />,
     },
     {
       label: "Points Redemption",
       href: ROUTES.POINTS_REDEMPTION,
-      icon: <BadgeIndianRupee className="h-5 w-5 shrink-0 text-neutral-200" />,
+      icon: <BadgeIndianRupee className="h-5 w-5 shrink-0" />,
     },
     {
       label: "Apply Card",
       href: ROUTES.APPLY_CARD,
-      icon: <Search className="h-5 w-5 shrink-0 text-neutral-200" />,
+      icon: <Search className="h-5 w-5 shrink-0" />,
     }
   ];
   const [open, setOpen] = useState(false);
@@ -57,7 +76,11 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
               {open ? <Logo /> : <LogoIcon />}
               <div className="mt-8 flex flex-col gap-2">
                 {links.map((link, idx) => (
-                  <SidebarLink className="text-white" key={idx} link={link} />
+                  <SidebarLink
+                    key={idx}
+                    link={link}
+                    active={isActiveLink(pathname, link.href)}
+                  />
                 ))}
               </div>
             </div>

@@ -384,3 +384,35 @@ body::-webkit-scrollbar {
     animation-delay: 2.9s;
   }
 }
+
+/* Insights feed — staggered row entry. Rows settle in sequence so the eye
+   follows the ranking order rather than seeing the whole list arrive at once. */
+@keyframes insight-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-insight-in {
+  animation: insight-in 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-insight-in {
+    animation: none;
+  }
+}
+
+/* Horizontal filter rails scroll on narrow screens without a visible bar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -25,6 +25,7 @@ export const ROUTES = {
   SUPPORT: "support",
   USER_INFO: "/user-info",
   CARD_VALUE_CALCULATOR: "/card-value-calculator",
+  INSIGHTS: "/insights",
 };
 
 export const PUBLIC_ROUTES = [

@@ -80,6 +80,7 @@ export const config = {
     "/home",
     "/choose-card",
     "/spend-optimizer",
+    "/insights",
     "/apply-card",
     "/user-info",
     "/verify/:path*",

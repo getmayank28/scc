@@ -167,18 +167,33 @@ export const SidebarLink = ({
   link,
   className,
   labelClassName,
+  active = false,
   ...props
 }: {
   link: Links;
   className?: string;
-  labelClassName?:string
+  labelClassName?: string;
+  /** Marks the link for the route currently being viewed. */
+  active?: boolean;
 }) => {
   const { open, animate } = useSidebar();
   return (
     <Link
       href={link.href}
+      aria-current={active ? "page" : undefined}
       className={cn(
-        "flex items-center justify-start gap-2  group/sidebar py-2",
+        "flex items-center gap-2 group/sidebar rounded-lg transition-colors",
+        // The collapsed rail is 60px wide with px-4, leaving 28px of content.
+        // A fixed 36px square centred on that keeps the highlight even; the
+        // negative inset lets it use the rail's padding rather than overflow.
+        "-mx-1 h-9 w-9 shrink-0 justify-center",
+        // Once labels appear the pill grows to the full row and left-aligns.
+        open && "w-auto justify-start px-2",
+        // The icon inherits currentColor, so tinting the link tints the glyph
+        // whether the rail is collapsed to icons or expanded with labels.
+        active
+          ? "bg-primary-orange/12 text-primary-orange"
+          : "text-neutral-200 hover:bg-white/5",
         className
       )}
       {...props}
@@ -190,7 +205,11 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className={cn("text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0", labelClassName)}
+        className={cn(
+          "text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0",
+          active ? "text-primary-orange font-medium" : "text-neutral-200",
+          labelClassName
+        )}
       >
         {link.label}
       </motion.span>
