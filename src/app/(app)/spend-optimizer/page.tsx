@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   CirclePlus,
   ExternalLink,
-  AlertTriangle,
+  LayoutGrid,
+  X,
 } from "lucide-react";
 import {
   Select,
@@ -58,6 +59,10 @@ import {
   type Segment,
   type VoucherPortal,
 } from "./instruction";
+import type {
+  MerchantBreakdown,
+  MerchantOption,
+} from "@/lib/logic/advisor/merchantBreakdown";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -120,7 +125,17 @@ export default function SpendOptimizerPage() {
     // instruction name where a voucher is bought ("via ICICI iShop") instead of
     // saying "your bank portal"; absent for banks with no giftor on file.
     voucherPortals: {} as Record<string, VoucherPortal>,
+    // Top merchants per lane for each scored card, for the explore panel.
+    // Empty on a merchant-specific run — there's nothing left to explore.
+    merchantBreakdowns: {} as Record<string, MerchantBreakdown>,
   });
+
+  // Explore panel, keyed by nothing: only one card's panel is open at a time
+  // (it slides over the ticket), so a boolean is enough.
+  const [exploring, setExploring] = useState(false);
+  // Which card the ticket shows, when the user has promoted one from the
+  // comparison table. null = show the winner.
+  const [shownCardId, setShownCardId] = useState<string | null>(null);
 
   useEffect(() => {
     track(EventName.SPEND_OPTIMIZER_VIEWED, {});
@@ -212,16 +227,55 @@ export default function SpendOptimizerPage() {
     (mode === "category" ? !!category : !!merchantValue) &&
     !isOptimizing;
 
-  const winner = results[0];
+  const best = results[0];
+  // The card the ticket is showing. Defaults to the winner; the comparison
+  // table can promote any other scored card into it. Held as a slug rather than
+  // an index so a re-run (which reorders results) can't silently point the
+  // ticket at a different card than the user picked.
+  const shown = results.find((c) => c.cardId === shownCardId) ?? best;
+  const isShowingBest = !!best && shown?.cardId === best.cardId;
   const runnerUp = results[1];
   const worst = results[results.length - 1];
   const upside =
-    winner && worst ? winner.bestSavingsInInr - worst.bestSavingsInInr : 0;
+    best && worst ? best.bestSavingsInInr - worst.bestSavingsInInr : 0;
+
+  // Re-run scoped to a merchant chosen in the explore panel. The panel lists
+  // rule merchant slugs; `runFor` takes a display label and re-slugifies it
+  // server-side, and `merchantLabel` is the exact inverse of that slugify for
+  // these values, so the round-trip is lossless.
+  // `ranWith.category` already holds the UI category value the run was made
+  // with, which is exactly what `runFor` expects.
+  function handlePickMerchant(slug: string) {
+    setExploring(false);
+    // Stay on the card whose panel this was opened from.
+    runFor(ranWith.category, merchantLabel(slug), shown?.cardId);
+  }
+
+  // Only present on a category-wide run, and only when the card has rules.
+  // Suppressed when both lanes came back empty (12-21% of cards, depending on
+  // category): an "Other options" button that opens an empty drawer is worse
+  // than no button at all.
+  const shownBreakdown = useMemo(() => {
+    if (!shown) return null;
+    const bd = ranWith.merchantBreakdowns[shown.cardId];
+    if (!bd || bd.voucher.length + bd.swipe.length === 0) return null;
+    return bd;
+  }, [shown, ranWith.merchantBreakdowns]);
 
   const ranCategory = useMemo(
     () => categories.find((c) => c.value === ranWith.category),
     [ranWith.category],
   );
+
+  // What the result is scoped to. A matched merchant is the narrower, more
+  // useful fact, so it wins; otherwise the category. `merchantMatched` guards
+  // against labelling the ticket with a merchant the rules never recognised —
+  // that run silently fell back to category-wide, and there is already a notice
+  // below saying so.
+  const scopeLabel =
+    ranWith.merchant && ranWith.merchantMatched
+      ? ranWith.merchant
+      : (ranCategory?.label ?? null);
 
   // Resolved off `ranWith`, not the live `merchantValue`: the results belong to
   // the merchant the run was made with, and editing the field mid-result would
@@ -374,7 +428,18 @@ export default function SpendOptimizerPage() {
 
   // Single entry point. Merchant CTAs pass the merchant's implied category, so
   // a category/merchant mismatch is structurally impossible.
-  async function runFor(runCategory: string, runMerchant: string) {
+  async function runFor(
+    runCategory: string,
+    runMerchant: string,
+    /**
+     * Card to keep in the ticket after the re-run. A merchant picked from a
+     * card's own panel is a question about THAT card ("what would SimplyCLICK
+     * earn at Cleartrip?"), but the re-run re-ranks every card, so without this
+     * the ticket would silently swap to whoever wins the new merchant. Absent
+     * for an ordinary run, which should always land on the winner.
+     */
+    keepShownCardId?: string,
+  ) {
     if (selected.length === 0) {
       toast.error("Add at least one card to compare");
       return;
@@ -415,7 +480,16 @@ export default function SpendOptimizerPage() {
         merchantMatched: res?.result?.merchantMatched ?? true,
         unsupportedCards: res?.result?.unsupportedCards ?? [],
         voucherPortals: res?.result?.voucherPortals ?? {},
+        merchantBreakdowns: res?.result?.merchantBreakdowns ?? {},
       });
+      // A fresh run invalidates whatever the panel was showing. The ticket
+      // returns to the new winner unless the caller asked to stay on a card.
+      setExploring(false);
+      setShownCardId(
+        keepShownCardId && cards.some((c) => c.cardId === keepShownCardId)
+          ? keepShownCardId
+          : null,
+      );
       setStatus("done");
 
       if (cards.length === 0) {
@@ -653,7 +727,7 @@ export default function SpendOptimizerPage() {
                       <div className="mb-2.5 flex items-center justify-between text-xs">
                         <span className={atMax ? "so-accent font-semibold" : "so-mut"}>
                           {atMax
-                            ? "Wallet full — swap one to change"
+                            ? "Wallet full. Swap one to change"
                             : `Add up to ${MAX_SELECTED}`}
                         </span>
                         <button
@@ -795,7 +869,7 @@ export default function SpendOptimizerPage() {
                         {merchantCategoryOptions.length > 1 && (
                           <>
                             <p className="so-field-note">
-                              {merchantValue} covers a few categories — which one is
+                              {merchantValue} covers a few categories. Which one is
                               this?
                             </p>
                             <Select value={category} onValueChange={setCategory}>
@@ -834,7 +908,7 @@ export default function SpendOptimizerPage() {
                           )}
                         {merchantValue && merchantIsUnknown && (
                           <p className="so-field-note">
-                            No {merchantValue}-specific offers yet — we&apos;ll use
+                            No {merchantValue}-specific offers yet. We&apos;ll use
                             the best card for{" "}
                             <b>
                               {categories
@@ -905,14 +979,39 @@ export default function SpendOptimizerPage() {
 
             {status === "loading" && <ResultSkeleton />}
 
-            {status === "done" && winner && (
+            {status === "done" && shown && (
               <div className="so-reveal">
                 <div className="so-ticket">
                   <div className="so-ticket-head">
-                    <span className="so-ticket-eyebrow">Use this card</span>
-                    <button onClick={reset} className="so-restart">
-                      <ArrowLeft className="h-3.5 w-3.5" /> Start over
-                    </button>
+                    {/* The eyebrow is a recommendation, so it must not claim
+                        one for a card the user promoted themselves. The scope
+                        rides alongside it: without it a merchant-specific
+                        result is indistinguishable from a category-wide one,
+                        and the figures below mean different things. */}
+                    <span className="so-ticket-eyebrow">
+                      {isShowingBest ? "Use this card" : "Viewing"}
+                      {scopeLabel && (
+                        <>
+                          <span className="so-eyebrow-dot">·</span>
+                          <span className="so-eyebrow-scope">{scopeLabel}</span>
+                        </>
+                      )}
+                    </span>
+                    {isShowingBest ? (
+                      <button onClick={reset} className="so-restart">
+                        <ArrowLeft className="h-3.5 w-3.5" /> Start over
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setShownCardId(null);
+                          setExploring(false);
+                        }}
+                        className="so-restart"
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" /> Best card
+                      </button>
+                    )}
                   </div>
 
                   <div className="so-ticket-body">
@@ -921,29 +1020,43 @@ export default function SpendOptimizerPage() {
                         <Image
                           width={22}
                           height={22}
-                          src={`/icons/banks/${bankIcon?.[winner.bankName] ?? bankIcon?.default}`}
+                          src={`/icons/banks/${bankIcon?.[shown.bankName] ?? bankIcon?.default}`}
                           alt=""
                         />
                       </span>
                       <div className="min-w-0">
                         <div className="so-ticket-card truncate">
-                          {winner.cardName}
+                          {shown.cardName}
                         </div>
-                        <div className="so-ticket-bank">{winner.bankName}</div>
+                        <div className="so-ticket-bank">{shown.bankName}</div>
                       </div>
-                      <span className="ml-auto">
-                        <RouteBadge route={winner.bestRoute} />
-                      </span>
+                      {shownBreakdown && (
+                        <button
+                          onClick={() => setExploring(true)}
+                          className="so-explore-btn ml-auto"
+                          aria-expanded={exploring}
+                        >
+                          <LayoutGrid className="h-3 w-3" />
+                          Other options
+                        </button>
+                      )}
                     </div>
 
                     <div className="so-savings">
-                      <div className="so-savings-label">You keep</div>
+                      {/* The route sits with the figure it describes: "You keep
+                          ₹1,800" is only actionable once you know whether that
+                          means swiping or buying a voucher first. */}
+                      <div className="so-savings-label">
+                        <span>You keep</span>
+                        <span className="so-eyebrow-dot">·</span>
+                        <RouteBadge route={shown.bestRoute} />
+                      </div>
                       <div className="so-savings-amt so-mono">
-                        {inr(winner.bestSavingsInInr)}
+                        {inr(shown.bestSavingsInInr)}
                       </div>
                       <div className="so-savings-rate">
                         <TrendingUp className="h-3.5 w-3.5" />
-                        {winner.bestRatePct.toFixed(1)}% back on{" "}
+                        {shown.bestRatePct.toFixed(1)}% back on{" "}
                         {inr(ranWith.amount)}
                       </div>
                     </div>
@@ -957,26 +1070,42 @@ export default function SpendOptimizerPage() {
                   <div className="so-stub">
                     <Instruction
                       instruction={buildInstruction(
-                        winner,
+                        shown,
                         ranWith.merchant,
-                        ranWith.voucherPortals[winner.cardId] ?? null,
+                        ranWith.voucherPortals[shown.cardId] ?? null,
                       )}
                     />
 
                     <SpendActions
-                      card={winner}
+                      card={shown}
                       merchant={ranWith.merchant}
                       hasSwipeLink={!!directSwipeLink}
                       isVoucherLoading={isGiftorLoading}
-                      onBuyVoucher={() => handleBuyVoucher(winner)}
-                      onDirectSwipe={() => handleDirectSwipe(winner)}
+                      onBuyVoucher={() => handleBuyVoucher(shown)}
+                      onDirectSwipe={() => handleDirectSwipe(shown)}
                     />
                   </div>
+
+                  {shownBreakdown && (
+                    <ExplorePanel
+                      open={exploring}
+                      breakdown={shownBreakdown}
+                      amount={ranWith.amount}
+                      cardRoute={shown.bestRoute}
+                      cardMerchant={
+                        shown.bestRoute === "voucher"
+                          ? shown.voucherMerchant
+                          : shown.directMerchant
+                      }
+                      onClose={() => setExploring(false)}
+                      onPick={handlePickMerchant}
+                    />
+                  )}
                 </div>
 
                 {!ranWith.merchantMatched && ranWith.merchant && (
                   <p className="so-notice">
-                    We don&apos;t have {ranWith.merchant}-specific offers yet — this
+                    We don&apos;t have {ranWith.merchant}-specific offers yet. This
                     is the best card for {ranCategory?.label.toLowerCase()} overall.
                   </p>
                 )}
@@ -987,12 +1116,15 @@ export default function SpendOptimizerPage() {
                     {ranWith.unsupportedCards.length === 1
                       ? "1 of your selected cards"
                       : `${ranWith.unsupportedCards.length} of your selected cards`}{" "}
-                    — we don&apos;t have reward data for{" "}
+                    because we don&apos;t have reward data for{" "}
                     {ranWith.unsupportedCards.map(merchantLabel).join(", ")} yet.
                   </p>
                 )}
 
-                {upside > 0 && (
+                {/* Always about the BEST card, never the promoted one —
+                    "picking this" next to a weaker card the user is merely
+                    inspecting would credit it with the winner's upside. */}
+                {isShowingBest && upside > 0 && (
                   <p className="so-upside">
                     Picking this over your weakest card is worth{" "}
                     <span className="so-mono so-accent font-semibold">
@@ -1004,6 +1136,33 @@ export default function SpendOptimizerPage() {
                         · runner-up {runnerUp.cardName} (
                         {inr(runnerUp.bestSavingsInInr)})
                       </>
+                    )}
+                  </p>
+                )}
+
+                {!isShowingBest && best && (
+                  <p className="so-upside">
+                    You&apos;re viewing {shown.cardName}.{" "}
+                    <button
+                      onClick={() => {
+                        setShownCardId(null);
+                        setExploring(false);
+                      }}
+                      className="so-upside-link"
+                    >
+                      {best.cardName}
+                    </button>{" "}
+                    {/* Cards can tie on rupees — "+₹0 more" would be absurd. */}
+                    {best.bestSavingsInInr > shown.bestSavingsInInr ? (
+                      <>
+                        earns{" "}
+                        <span className="so-mono so-accent font-semibold">
+                          +{inr(best.bestSavingsInInr - shown.bestSavingsInInr)}
+                        </span>{" "}
+                        more.
+                      </>
+                    ) : (
+                      "earns the same here."
                     )}
                   </p>
                 )}
@@ -1032,9 +1191,11 @@ export default function SpendOptimizerPage() {
                       {results.map((c) => (
                         <div
                           key={c.cardId}
-                          className={`so-compare-row ${c.isBestCard ? "is-best" : ""}`}
+                          className={`so-compare-row ${c.isBestCard ? "is-best" : ""} ${
+                            c.cardId === shown?.cardId ? "is-shown" : ""
+                          }`}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="so-compare-card">
                             <Image
                               width={16}
                               height={16}
@@ -1049,6 +1210,23 @@ export default function SpendOptimizerPage() {
                                 <span className="so-best-tag">Winner</span>
                               )}
                             </div>
+                            {/* Promotes this card into the ticket above. Hidden
+                                until hover/focus so the table stays readable,
+                                and absent for the card already displayed. */}
+                            {c.cardId !== shown?.cardId && (
+                              <button
+                                onClick={() => {
+                                  setShownCardId(c.cardId);
+                                  setExploring(false);
+                                  // On mobile the ticket sits above the table,
+                                  // so the promoted card would update offscreen.
+                                  scrollToResultOnMobile();
+                                }}
+                                className="so-pick-card"
+                              >
+                                View card
+                              </button>
+                            )}
                           </div>
                           <ValueCell
                             value={c.voucherSavingsInInr}
@@ -1076,9 +1254,9 @@ export default function SpendOptimizerPage() {
                         </div>
                       ))}
                       <p className="so-compare-note">
-                        <b>Voucher</b> — buy a brand gift card via your bank portal,
-                        then pay. <b>Swipe</b> — pay directly. We bold whichever
-                        earns more.
+                        <b>Voucher</b>: buy a brand gift card via your bank
+                        portal, then pay. <b>Swipe</b>: pay directly. We bold
+                        whichever earns more.
                         {!ranWith.merchant && (
                           <>
                             {" "}
@@ -1145,45 +1323,189 @@ function Segments({ parts }: { parts: Segment[] }) {
  */
 function Instruction({ instruction }: { instruction: InstructionData }) {
   const { steps, warning, capNote } = instruction;
-  const multi = steps.length > 1;
 
   return (
     <div className="so-ins">
-      <div className="so-ins-head">
+      {/* One flowing paragraph: the tag sits inline and the steps run on as
+          sentences rather than each claiming its own row. */}
+      <p className="so-instruction">
         <span className="so-instruction-tag">Do this</span>
-        {!multi && (
-          <p className="so-instruction so-ins-single">
-            <Segments parts={steps[0]} />
-          </p>
-        )}
-      </div>
+        {steps.map((parts, i) => (
+          <span key={i}>
+            {i > 0 && " "}
+            <Segments parts={parts} />
+          </span>
+        ))}
+      </p>
 
-      {multi && (
-        <ol className="so-ins-steps">
-          {steps.map((parts, i) => (
-            <li key={i} className="so-instruction">
-              <span className="so-ins-num so-mono">{i + 1}</span>
-              <span>
-                <Segments parts={parts} />
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
-
-      {warning && (
-        <p className={`so-ins-warn is-${warning.tone}`}>
-          {warning.tone === "warn" ? (
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-          ) : (
-            <TicketPercent className="h-3.5 w-3.5 shrink-0" />
+      {(warning || capNote) && (
+        <div className="so-ins-foot">
+          {warning && (
+            <p className="so-ins-warn is-tip">
+              <TicketPercent className="h-3 w-3 shrink-0" />
+              <span>{warning.text}</span>
+            </p>
           )}
-          <span>{warning.text}</span>
-        </p>
+          {capNote && <span className="so-capnote">Cap: {capNote}</span>}
+        </div>
       )}
-
-      {capNote && <p className="so-capnote">Cap: {capNote}</p>}
     </div>
+  );
+}
+
+/**
+ * Slide-over listing the best merchants per lane for the winning card.
+ *
+ * Every row is a DISTINCT payout — the builder collapses ties and reports the
+ * count, because these rates are very flat (most cards have 1-2 distinct rates
+ * per category, and on HDFC/online_shopping 76 merchants pay identically). A
+ * literal top 5 would be one real row followed by four alphabetical
+ * coin-flips; "+75 more at this rate" says the same thing honestly.
+ */
+function ExplorePanel({
+  open,
+  breakdown,
+  amount,
+  cardRoute,
+  cardMerchant,
+  onClose,
+  onPick,
+}: {
+  open: boolean;
+  breakdown: MerchantBreakdown;
+  amount: number;
+  /** The displayed card's winning lane — not necessarily the best card's. */
+  cardRoute: OptimizedCardResult["bestRoute"];
+  cardMerchant: string | null;
+  onClose: () => void;
+  onPick: (merchant: string) => void;
+}) {
+  // Start on the winning route, since that's what the headline is about — but
+  // fall back to the other lane when the winner's has nothing to show. Ties
+  // collapse hard, so a winning lane with a single distinct payout is common
+  // (Diamant/hotels: one 36% swipe rate against six identical voucher rates).
+  const initialLane =
+    (cardRoute === "voucher" ? breakdown.voucher : breakdown.swipe).length > 0
+      ? cardRoute
+      : cardRoute === "voucher"
+        ? "swipe"
+        : "voucher";
+  const [lane, setLane] = useState<"voucher" | "swipe">(initialLane);
+
+  useEffect(() => {
+    if (open) setLane(initialLane);
+  }, [open, initialLane]);
+
+  // Escape closes, matching the overlay affordance.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  const rows = lane === "voucher" ? breakdown.voucher : breakdown.swipe;
+
+  return (
+    <>
+      <div
+        className={`so-xp-scrim ${open ? "is-open" : ""}`}
+        onClick={onClose}
+        aria-hidden
+      />
+      <aside
+        className={`so-xp ${open ? "is-open" : ""}`}
+        aria-hidden={!open}
+        // Keeps the closed panel out of the tab order without unmounting it,
+        // so the slide transition still runs.
+        inert={!open}
+      >
+        <div className="so-xp-head">
+          <div>
+            <div className="so-xp-title">Where to shop</div>
+            <div className="so-xp-sub so-mono">
+              on {inr(amount)} · {rows.length} of {breakdown.totalMerchants}{" "}
+              merchants
+            </div>
+          </div>
+          <button onClick={onClose} className="so-xp-close" aria-label="Close">
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="so-xp-tabs" role="tablist">
+          {(["voucher", "swipe"] as const).map((l) => (
+            <button
+              key={l}
+              role="tab"
+              aria-selected={lane === l}
+              onClick={() => setLane(l)}
+              className={`so-xp-tab ${lane === l ? "is-on" : ""}`}
+            >
+              {l === "voucher" ? "Voucher" : "Swipe"}
+              <span className="so-xp-tab-n so-mono">
+                {l === "voucher"
+                  ? breakdown.voucher.length
+                  : breakdown.swipe.length}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        <div className="so-xp-body">
+          {rows.length === 0 ? (
+            <p className="so-xp-empty">
+              This card has no {lane === "voucher" ? "voucher" : "direct swipe"}{" "}
+              route in this category.
+            </p>
+          ) : (
+            <ul className="so-xp-list">
+              {rows.map((r) => (
+                <MerchantRow
+                  key={r.merchant}
+                  option={r}
+                  isWinner={lane === cardRoute && r.merchant === cardMerchant}
+                  onPick={() => onPick(r.merchant)}
+                />
+              ))}
+            </ul>
+          )}
+          <p className="so-xp-note">
+            Figures are for this exact amount, with caps applied. Pick a merchant
+            to re-run the comparison across all your cards.
+          </p>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function MerchantRow({
+  option,
+  isWinner,
+  onPick,
+}: {
+  option: MerchantOption;
+  isWinner: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <li>
+      <button onClick={onPick} className={`so-xp-row ${isWinner ? "is-win" : ""}`}>
+        <span className="so-xp-row-main">
+          <span className="so-xp-merch">{merchantLabel(option.merchant)}</span>
+          {isWinner && <span className="so-xp-badge">Picked</span>}
+        </span>
+        <span className="so-xp-row-val">
+          <span className="so-mono so-xp-amt">{inr(option.savingsInInr)}</span>
+          <span className="so-mono so-xp-pct">
+            {option.ratePct.toFixed(1)}%
+          </span>
+        </span>
+      </button>
+    </li>
   );
 }
 
@@ -1632,9 +1954,13 @@ function StyleBlock() {
       .so-cta:disabled { opacity: .4; box-shadow: none; }
 
       .so-ticket { position: relative; background: var(--so-paper); color: var(--so-paper-ink); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px -30px rgba(0,0,0,0.75); }
-      .so-ticket-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px dashed color-mix(in oklab, var(--so-paper-ink) 20%, transparent); }
-      .so-ticket-eyebrow { font-family: var(--so-mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--so-action); }
-      .so-restart { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--so-paper-mut); }
+      .so-ticket-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px dashed color-mix(in oklab, var(--so-paper-ink) 20%, transparent); }
+      .so-ticket-eyebrow { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; flex: 0 1 auto; font-family: var(--so-mono); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--so-action); }
+      .so-eyebrow-dot { color: color-mix(in oklab, var(--so-paper-ink) 35%, transparent); letter-spacing: 0; }
+      /* Secondary to the eyebrow: the label is the heading, the scope is the
+         qualifier. Truncates rather than pushing "Start over" off the row. */
+      .so-eyebrow-scope { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; letter-spacing: 0.08em; color: var(--so-paper-mut); }
+      .so-restart { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--so-paper-mut); cursor: pointer; }
       .so-restart:hover { color: var(--so-paper-ink); }
       .so-ticket-body { padding: 20px; }
       .so-bank-badge { display:inline-flex; align-items:center; justify-content:center; width: 40px; height: 40px; border-radius: 10px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.12); flex-shrink: 0; }
@@ -1642,39 +1968,83 @@ function StyleBlock() {
       @media (min-width: 768px) { .so-ticket-card { font-size: 1.4rem; } }
       .so-ticket-bank { font-family: var(--so-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--so-paper-mut); }
       .so-savings { margin-top: 20px; }
-      .so-savings-label { font-family: var(--so-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--so-paper-mut); }
+      .so-savings-label { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-family: var(--so-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--so-paper-mut); }
       .so-savings-amt { font-size: 2.6rem; line-height: 1; font-weight: 600; margin-top: 4px; color: var(--so-paper-ink); letter-spacing: -0.02em; }
       @media (min-width: 768px) { .so-savings-amt { font-size: 3.4rem; } }
       .so-savings-rate { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 0.82rem; font-weight: 600; color: oklch(0.52 0.15 150); }
-      .so-route { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: color-mix(in oklab, var(--primary-orange) 14%, transparent); color: var(--so-action); font-family: var(--so-mono); font-size: 0.62rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+      /* Plain text on the "You keep" line, not a chip: it qualifies the label it
+         sits beside rather than acting as a separate control, and a filled pill
+         there competed with the figure below. */
+      .so-route { display: inline-flex; align-items: center; gap: 5px; color: var(--so-action); font-family: var(--so-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; }
 
       .so-perf { position: relative; height: 0; border-top: 2px dashed color-mix(in oklab, var(--so-paper-ink) 24%, transparent); margin: 0 18px; }
       .so-notch { position: absolute; top: -10px; width: 20px; height: 20px; border-radius: 999px; background: var(--so-bg); }
       .so-notch-l { left: -28px; } .so-notch-r { right: -28px; }
 
-      .so-stub { padding: 18px 20px 20px; }
-      .so-instruction { font-size: 0.7rem; line-height: 1.5; color: color-mix(in oklab, var(--so-paper-ink) 85%, white); }
-      .so-instruction-tag { display: inline-block; margin-right: 8px; padding: 2px 7px; border-radius: 5px; background: var(--so-paper-ink); color: var(--so-paper); font-family: var(--so-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
-      .so-capnote { margin-top: 10px; font-family: var(--so-mono); font-size: 0.68rem; color: var(--so-paper-mut); }
+      .so-stub { padding: 14px 20px 16px; }
+      .so-instruction { font-size: 0.7rem; line-height: 1.45; color: color-mix(in oklab, var(--so-paper-ink) 85%, white); }
+      .so-instruction-tag { display: inline-block; margin-right: 7px; padding: 1px 6px; border-radius: 5px; background: var(--so-paper-ink); color: var(--so-paper); font-family: var(--so-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
+      .so-capnote { font-family: var(--so-mono); font-size: 0.6rem; color: var(--so-paper-mut); }
 
       /* "Do this" block. A single step keeps the tag inline with the sentence;
          a multi-step route stacks the tag above a numbered list. */
-      .so-ins-head { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; }
-      .so-ins-single { display: inline; }
       .so-ins-strong { font-weight: 650; color: var(--so-paper-ink); }
       .so-ins-link { font-weight: 650; color: var(--so-action); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
       .so-ins-link:hover { text-decoration-thickness: 2px; }
-      .so-ins-steps { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
-      .so-ins-steps li { display: flex; align-items: flex-start; gap: 8px; }
-      /* Fixed-width numeral so step text aligns on a single left edge. */
-      .so-ins-num { flex-shrink: 0; width: 15px; height: 15px; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: color-mix(in oklab, var(--so-paper-ink) 12%, transparent); color: var(--so-paper-ink); font-size: 0.56rem; font-weight: 600; }
       /* The costly-mistake line. Tinted rather than loud — it sits under advice
          the user is being told to follow, so it must read as a caveat. */
-      .so-ins-warn { margin-top: 10px; display: flex; align-items: flex-start; gap: 6px; padding: 7px 9px; border-radius: 7px; font-size: 0.66rem; line-height: 1.45; font-weight: 500; }
-      .so-ins-warn.is-warn { background: color-mix(in oklab, var(--so-action) 10%, transparent); color: color-mix(in oklab, var(--so-action) 75%, var(--so-paper-ink)); }
+      /* Warning and cap note share a row, wrapping only when cramped. */
+      .so-ins-foot { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .so-ins-warn { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 6px; font-size: 0.63rem; line-height: 1.35; font-weight: 500; }
       /* A tip points at a BETTER-paying route, so it must not borrow the
          warning's alarm colour — neutral ink on a plain tint reads as a nudge. */
       .so-ins-warn.is-tip { background: color-mix(in oklab, var(--so-paper-ink) 7%, transparent); color: color-mix(in oklab, var(--so-paper-ink) 78%, white); }
+
+      /* "Other options" opens the merchant slide-over. Sits under the route badge,
+         quiet enough not to compete with the primary CTA on the stub. */
+      /* Primary-toned: this is the ticket's secondary action, and as a grey outline
+         it read as disabled next to the route badge. */
+      .so-explore-btn { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid color-mix(in oklab, var(--so-action) 40%, transparent); background: color-mix(in oklab, var(--so-action) 10%, transparent); color: var(--so-action); font-family: var(--so-mono); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; cursor: pointer; transition: background 0.15s, border-color 0.15s; }
+      .so-explore-btn:hover { background: color-mix(in oklab, var(--so-action) 18%, transparent); border-color: color-mix(in oklab, var(--so-action) 65%, transparent); }
+
+      /* Merchant explore slide-over. Clipped by .so-ticket's overflow:hidden,
+         so it reads as a drawer inside the card rather than a page-level modal.
+         Half the ticket on desktop; nearly full width on phones, where 50%
+         would leave the merchant names unreadable. */
+      .so-xp-scrim { position: absolute; inset: 0; z-index: 4; background: color-mix(in oklab, var(--so-paper-ink) 26%, transparent); opacity: 0; pointer-events: none; transition: opacity 0.26s ease; }
+      .so-xp-scrim.is-open { opacity: 1; pointer-events: auto; }
+      .so-xp { position: absolute; top: 0; right: 0; bottom: 0; z-index: 5; width: 86%; display: flex; flex-direction: column; background: var(--so-paper); border-left: 1px solid color-mix(in oklab, var(--so-paper-ink) 14%, transparent); box-shadow: -18px 0 40px -24px rgba(0,0,0,0.55); transform: translateX(100%); transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+      @media (min-width: 640px) { .so-xp { width: 50%; } }
+      .so-xp.is-open { transform: translateX(0); }
+      @media (prefers-reduced-motion: reduce) {
+        .so-xp, .so-xp-scrim { transition: none; }
+      }
+
+      .so-xp-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 14px 16px 10px; border-bottom: 1px dashed color-mix(in oklab, var(--so-paper-ink) 18%, transparent); }
+      .so-xp-title { font-size: 0.82rem; font-weight: 650; color: var(--so-paper-ink); letter-spacing: -0.01em; }
+      .so-xp-sub { margin-top: 2px; font-size: 0.58rem; color: var(--so-paper-mut); }
+      .so-xp-close { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; color: var(--so-paper-mut); cursor: pointer; transition: background 0.15s, color 0.15s; }
+      .so-xp-close:hover { background: color-mix(in oklab, var(--so-paper-ink) 9%, transparent); color: var(--so-paper-ink); }
+
+      .so-xp-tabs { display: flex; gap: 4px; padding: 10px 16px 0; }
+      .so-xp-tab { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 7px; color: var(--so-paper-mut); font-size: 0.66rem; font-weight: 600; cursor: pointer; transition: background 0.15s, color 0.15s; }
+      .so-xp-tab:hover { color: var(--so-paper-ink); }
+      .so-xp-tab.is-on { background: var(--so-paper-ink); color: var(--so-paper); }
+      .so-xp-tab-n { font-size: 0.56rem; opacity: 0.75; }
+
+      .so-xp-body { flex: 1; overflow-y: auto; padding: 10px 12px 14px; }
+      .so-xp-list { display: flex; flex-direction: column; gap: 3px; }
+      .so-xp-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 9px; border-radius: 8px; text-align: left; cursor: pointer; transition: background 0.15s; }
+      .so-xp-row:hover { background: color-mix(in oklab, var(--so-paper-ink) 7%, transparent); }
+      .so-xp-row.is-win { background: color-mix(in oklab, var(--so-action) 11%, transparent); }
+      .so-xp-row-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+      .so-xp-merch { font-size: 0.7rem; font-weight: 600; color: var(--so-paper-ink); overflow-wrap: anywhere; }
+      .so-xp-badge { align-self: flex-start; font-family: var(--so-mono); font-size: 0.5rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--so-action); }
+      .so-xp-row-val { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; }
+      .so-xp-amt { font-size: 0.74rem; font-weight: 650; color: var(--so-paper-ink); }
+      .so-xp-pct { font-size: 0.56rem; color: var(--so-paper-mut); }
+      .so-xp-empty { padding: 18px 8px; font-size: 0.68rem; line-height: 1.5; color: var(--so-paper-mut); }
+      .so-xp-note { margin-top: 12px; padding: 0 2px; font-size: 0.56rem; line-height: 1.5; color: var(--so-paper-mut); }
 
       /* Actions sit on the ticket's paper stub, not the dark panel, so they
          carry their own palette rather than reusing .so-cta. Both buttons share
@@ -1720,11 +2090,27 @@ function StyleBlock() {
       .so-notice { border-color: color-mix(in oklab, var(--primary-orange) 40%, transparent); }
 
       .so-compare { margin-top: 16px; border: 1px solid var(--so-outline); border-radius: 14px; background: var(--so-surface-low); overflow: hidden; }
-      .so-compare-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; font-size: 0.85rem; color: var(--so-ink); }
+      .so-compare-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; font-size: 0.85rem; color: var(--so-ink); cursor: pointer; }
       .so-compare-body { border-top: 1px solid var(--so-outline); padding: 6px; }
       .so-compare-head { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 8px; padding: 8px 12px; font-family: var(--so-mono); font-size: 0.6rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--so-mut); }
       .so-compare-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 9px; }
       .so-compare-row.is-best { background: color-mix(in oklab, var(--primary-orange) 12%, transparent); }
+      .so-compare-row:hover { background: color-mix(in oklab, var(--so-ink) 7%, transparent); }
+      .so-compare-row.is-best:hover { background: color-mix(in oklab, var(--primary-orange) 16%, transparent); }
+      /* The row currently mirrored in the ticket above. */
+      .so-compare-row.is-shown { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--primary-orange) 45%, transparent); }
+
+      .so-compare-card { position: relative; display: flex; align-items: center; gap: 8px; min-width: 0; }
+      /* Hidden until the row is hovered or the button is focused, so the table
+         reads as data at rest and only offers the action on approach. Kept in
+         the layout (opacity, not display) so nothing shifts on hover. */
+      .so-pick-card { position: absolute; right: 0; top: 50%; transform: translateY(-50%); padding: 3px 9px; border-radius: 999px; background: var(--so-primary); color: var(--so-paper-ink); font-family: var(--so-mono); font-size: 0.54rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity 0.15s; }
+      .so-compare-row:hover .so-pick-card, .so-pick-card:focus-visible { opacity: 1; pointer-events: auto; }
+      /* Touch has no hover, so the affordance would never appear. */
+      @media (hover: none) {
+        .so-pick-card { position: static; transform: none; opacity: 1; pointer-events: auto; margin-left: auto; }
+      }
+      .so-upside-link { color: var(--so-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
       .so-best-tag { font-family: var(--so-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--so-action); }
       /* Brand attribution under a voucher figure — without it, a high number on a
          category-wide query reads as a promise the user can't act on. */

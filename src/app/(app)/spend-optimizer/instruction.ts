@@ -35,17 +35,55 @@ export interface Instruction {
   /** Ordered steps. Rendered as a list when more than one. */
   steps: Segment[][];
   /**
-   * A note about the other lane, or null when the two are close enough that
-   * saying anything is noise.
-   *
-   * `tone` matters: "warn" is a mistake that costs money (the losing lane is
-   * genuinely worse), while "tip" is an opportunity (the other lane pays MORE
-   * but is suppressed because a voucher can't win a category-wide run). Styling
-   * them alike would tell users not to do the better-paying thing.
+   * An opportunity worth surfacing: the OTHER lane pays more but is suppressed
+   * because a voucher can't win a category-wide run. Never a "don't do this"
+   * warning — the losing lane is already priced in the comparison table, and
+   * repeating it on the winning card's own instruction was noise.
    */
-  warning: { text: string; tone: "warn" | "tip" } | null;
+  warning: { text: string; tone: "tip" } | null;
   /** Cap text, folded in from the engine. */
   capNote: string | null;
+}
+
+/**
+ * Restate a cap note in monthly terms.
+ *
+ * Cap notes arrive in whatever period the underlying rule uses: the direct lane
+ * emits the rule's own period ("12,000 points/month", "…/year"), while the
+ * voucher lane annualises internally and always emits "/yr". Showing both to
+ * the same user makes two caps look incomparable when they aren't, so every
+ * figure is converted to a monthly rate here.
+ *
+ * Only the display is converted — the engine's arithmetic is untouched. A
+ * yearly figure divides by 12, a quarterly one by 3; daily is left alone, since
+ * multiplying it up would assert 30 qualifying days a month that the rule never
+ * promised.
+ */
+function toMonthlyCapNote(note: string | null): string | null {
+  if (!note) return null;
+
+  return note.replace(
+    // "₹20,000/yr", "12,000 points/month", "5,000 pts/quarter"
+    /(₹?)([\d,]+(?:\.\d+)?)(\s*)([A-Za-z]*)\/(yr|year|annually|quarter|quarterly|month|monthly|day|daily)/gi,
+    (full, currency, num, gap, unit, period) => {
+      const p = period.toLowerCase();
+      const divisor = /^(yr|year|annually)$/.test(p)
+        ? 12
+        : /^(quarter|quarterly)$/.test(p)
+          ? 3
+          : 1;
+      if (divisor === 1) {
+        // Already monthly (or daily, which we leave as-is).
+        return /^(month|monthly)$/.test(p)
+          ? `${currency}${num}${gap}${unit}/month`
+          : full;
+      }
+      const value = Number(num.replace(/,/g, ""));
+      if (!Number.isFinite(value)) return full;
+      const monthly = Math.round(value / divisor);
+      return `${currency}${monthly.toLocaleString("en-IN")}${gap}${unit}/month`;
+    },
+  );
 }
 
 const s = (text: string): Segment => ({ text });
@@ -57,9 +95,10 @@ const link = (text: string, href: string): Segment => ({
 });
 
 /**
- * A lane has to beat the other by this much before we tell the user not to use
- * it. Below this the two routes are effectively the same and a "do not" line is
- * noise — most merchants in a category tie on rate, so small gaps are common.
+ * How far the suppressed voucher lane must be AHEAD before it is worth pointing
+ * the user at it. Below this the two routes are effectively the same and the
+ * nudge is noise — most merchants in a category tie on rate, so small gaps are
+ * common.
  */
 const MATERIAL_GAP_INR = 50;
 
@@ -69,7 +108,7 @@ export function buildInstruction(
   ranMerchant: string,
   portal: VoucherPortal | null,
 ): Instruction {
-  const capNote = card.capNote;
+  const capNote = toMonthlyCapNote(card.capNote);
 
   // No route on file: the figure is the card's general earn rate, so naming a
   // route or a merchant would invent detail the data doesn't have.
@@ -104,8 +143,7 @@ export function buildInstruction(
     };
   }
 
-  // Signed, not absolute: which lane is actually ahead decides whether there is
-  // a mistake to warn about at all.
+  // Signed, not absolute: only a voucher lane that is AHEAD earns a mention.
   const voucherLead = card.voucherSavingsInInr - card.directSwipeSavingsInInr;
   const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 
@@ -138,19 +176,7 @@ export function buildInstruction(
       ],
     ];
 
-    return {
-      steps,
-      // The voucher won, so swiping is the mistake — but only worth flagging
-      // when the swipe is materially worse.
-      warning:
-        voucherLead >= MATERIAL_GAP_INR
-          ? {
-              text: `Do not swipe directly at checkout — you'd earn ${inr(voucherLead)} less.`,
-              tone: "warn",
-            }
-          : null,
-      capNote,
-    };
+    return { steps, warning: null, capNote };
   }
 
   // Direct swipe. `directMerchant` is the channel the winning rule is tied to;
@@ -174,7 +200,7 @@ export function buildInstruction(
     steps.push([
       s("This rate applies at "),
       b(where),
-      s(" only — other merchants in this category earn the card's base rate."),
+      s(" only. Other merchants in this category earn the card's base rate."),
     ]);
   }
 
@@ -190,24 +216,13 @@ export function buildInstruction(
       steps,
       warning: {
         text: brand
-          ? `Buying a ${brand} voucher earns ${inr(voucherLead)} more — pick ${brand} above to price it.`
-          : `A voucher earns ${inr(voucherLead)} more here — pick a specific merchant above to price it.`,
+          ? `Buying a ${brand} voucher earns ${inr(voucherLead)} more. Pick ${brand} above to price it.`
+          : `A voucher earns ${inr(voucherLead)} more here. Pick a specific merchant above to price it.`,
         tone: "tip",
       },
       capNote,
     };
   }
 
-  return {
-    steps,
-    // Swipe genuinely ahead: the voucher is the costlier route.
-    warning:
-      card.voucherSavingsInInr > 0 && -voucherLead >= MATERIAL_GAP_INR
-        ? {
-            text: `Don't buy a voucher for this — you'd earn ${inr(-voucherLead)} less.`,
-            tone: "warn",
-          }
-        : null,
-    capNote,
-  };
+  return { steps, warning: null, capNote };
 }

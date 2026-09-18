@@ -11,6 +11,10 @@ import {
   toEngineCategory,
   toMerchantSlug,
 } from "@/lib/logic/advisor/spendOptimizer";
+import {
+  buildMerchantBreakdown,
+  type MerchantBreakdown,
+} from "@/lib/logic/advisor/merchantBreakdown";
 import { voucherPortalsForCards } from "@/lib/advisor/voucherPortal";
 import { spendOptimizerInputSchema } from "@/schemas/spendOptimizer";
 import type { MockCard } from "@/lib/logic/advisor/cards";
@@ -125,9 +129,11 @@ export async function POST(req: Request) {
 
     const knownMerchant = merchantKnown ? merchantSlug : null;
 
+    const bestOfIndex = buildBestOfIndex(bestOf);
+
     const result = optimizeSpend(
       cards,
-      buildBestOfIndex(bestOf),
+      bestOfIndex,
       { amountInr, category: engineCategory, merchant: knownMerchant },
       rules,
     );
@@ -139,11 +145,33 @@ export async function POST(req: Request) {
       result.map((c) => c.cardId),
     );
 
+    // Per-merchant breakdown for the explore panel, computed for every scored
+    // card in this same response rather than behind a second endpoint. The
+    // rules are already in memory and each card costs ~1-2ms even on the
+    // largest category (77 merchants), so a round-trip and a loading state buy
+    // nothing. Category-wide runs only: with a merchant already named there is
+    // nothing left to explore.
+    const merchantBreakdowns: Record<string, MerchantBreakdown> = {};
+    if (!knownMerchant) {
+      for (const card of cards) {
+        const mine = rules.filter((r) => r.cardId === card._id);
+        if (mine.length === 0) continue;
+        merchantBreakdowns[card._id] = buildMerchantBreakdown(
+          card,
+          engineCategory,
+          amountInr,
+          bestOfIndex,
+          mine,
+        );
+      }
+    }
+
     return ApiResponse.success("ok", 200, {
       cards: result,
       category: engineCategory,
       merchant: knownMerchant,
       voucherPortals,
+      merchantBreakdowns,
       // Surfaces "we ignored the merchant you picked" so the UI can say the
       // answer is category-wide rather than merchant-specific.
       merchantMatched: Boolean(knownMerchant),
