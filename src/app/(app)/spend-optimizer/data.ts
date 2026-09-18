@@ -230,6 +230,8 @@ export interface OptimizedCardResult {
   merchant: string | null;
   /** Brand the voucher figure belongs to — vouchers are always brand-bound. */
   voucherMerchant: string | null;
+  /** Merchant the direct-swipe figure earns through, when rule-specific. */
+  directMerchant: string | null;
   capNote: string | null;
   isBaseRateFallback: boolean;
 }

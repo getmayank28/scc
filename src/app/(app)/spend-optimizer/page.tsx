@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   CirclePlus,
   ExternalLink,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Select,
@@ -51,6 +52,12 @@ import {
   type OptimizedCardResult,
   type PortalOption,
 } from "./data";
+import {
+  buildInstruction,
+  type Instruction as InstructionData,
+  type Segment,
+  type VoucherPortal,
+} from "./instruction";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -109,6 +116,10 @@ export default function SpendOptimizerPage() {
     amount: 0,
     merchantMatched: true,
     unsupportedCards: [] as string[],
+    // Bank voucher portals for the scored cards, keyed by card slug. Lets the
+    // instruction name where a voucher is bought ("via ICICI iShop") instead of
+    // saying "your bank portal"; absent for banks with no giftor on file.
+    voucherPortals: {} as Record<string, VoucherPortal>,
   });
 
   useEffect(() => {
@@ -403,6 +414,7 @@ export default function SpendOptimizerPage() {
         amount: numericAmount,
         merchantMatched: res?.result?.merchantMatched ?? true,
         unsupportedCards: res?.result?.unsupportedCards ?? [],
+        voucherPortals: res?.result?.voucherPortals ?? {},
       });
       setStatus("done");
 
@@ -943,15 +955,13 @@ export default function SpendOptimizerPage() {
                   </div>
 
                   <div className="so-stub">
-                    <p className="so-instruction">
-                      <span className="so-instruction-tag">Do this</span>
-                      {winner.bestRoute === "voucher"
-                        ? `Buy an online shopping voucher on your bank portal using ${winner.cardName}. Load the voucher into your merchant wallet and pay using the balance. Check the T&C of the voucher before buying.`
-                        : `Pay directly with ${winner.cardName}${ranWith.merchant ? ` at ${ranWith.merchant}` : ""}.`}
-                    </p>
-                    {winner.capNote && (
-                      <p className="so-capnote">Cap: {winner.capNote}</p>
-                    )}
+                    <Instruction
+                      instruction={buildInstruction(
+                        winner,
+                        ranWith.merchant,
+                        ranWith.voucherPortals[winner.cardId] ?? null,
+                      )}
+                    />
 
                     <SpendActions
                       card={winner}
@@ -1056,6 +1066,12 @@ export default function SpendOptimizerPage() {
                             value={c.directSwipeSavingsInInr}
                             amount={ranWith.amount}
                             highlight={c.bestRoute === "swipe"}
+                            via={
+                              !ranWith.merchant && c.directMerchant
+                                ? merchantLabel(c.directMerchant)
+                                : null
+                            }
+                            viaTitle="Earned by paying at"
                           />
                         </div>
                       ))}
@@ -1094,6 +1110,83 @@ export default function SpendOptimizerPage() {
  * CTA deliberately stays secondary: promoting it would contradict the "you
  * keep ₹X" figure directly above, which is the swipe number.
  */
+/** Renders one instruction segment run, bolding and linking as marked. */
+function Segments({ parts }: { parts: Segment[] }) {
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.href ? (
+          <a
+            key={i}
+            href={p.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="so-ins-link"
+          >
+            {p.text}
+          </a>
+        ) : p.strong ? (
+          <b key={i} className="so-ins-strong">
+            {p.text}
+          </b>
+        ) : (
+          <span key={i}>{p.text}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+/**
+ * The "Do this" block. A single step stays inline next to the tag; several
+ * become a numbered list, because a voucher route is genuinely two actions
+ * (buy, then pay with the balance) and running them into one sentence is what
+ * made the old copy easy to misread.
+ */
+function Instruction({ instruction }: { instruction: InstructionData }) {
+  const { steps, warning, capNote } = instruction;
+  const multi = steps.length > 1;
+
+  return (
+    <div className="so-ins">
+      <div className="so-ins-head">
+        <span className="so-instruction-tag">Do this</span>
+        {!multi && (
+          <p className="so-instruction so-ins-single">
+            <Segments parts={steps[0]} />
+          </p>
+        )}
+      </div>
+
+      {multi && (
+        <ol className="so-ins-steps">
+          {steps.map((parts, i) => (
+            <li key={i} className="so-instruction">
+              <span className="so-ins-num so-mono">{i + 1}</span>
+              <span>
+                <Segments parts={parts} />
+              </span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      {warning && (
+        <p className={`so-ins-warn is-${warning.tone}`}>
+          {warning.tone === "warn" ? (
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <TicketPercent className="h-3.5 w-3.5 shrink-0" />
+          )}
+          <span>{warning.text}</span>
+        </p>
+      )}
+
+      {capNote && <p className="so-capnote">Cap: {capNote}</p>}
+    </div>
+  );
+}
+
 function SpendActions({
   card,
   merchant,
@@ -1193,12 +1286,15 @@ function ValueCell({
   amount,
   highlight,
   via,
+  viaTitle = "Voucher bought for",
 }: {
   value: number;
   amount: number;
   highlight: boolean;
   /** Brand this figure is earned through, shown so the number is interpretable. */
   via?: string | null;
+  /** Tooltip prefix — the two lanes earn through a brand in different ways. */
+  viaTitle?: string;
 }) {
   const pct = amount > 0 ? (value / amount) * 100 : 0;
   return (
@@ -1214,7 +1310,7 @@ function ValueCell({
         </div>
       )}
       {value > 0 && via && (
-        <div className="so-via" title={`Voucher bought for ${via}`}>
+        <div className="so-via" title={`${viaTitle} ${via}`}>
           via {via}
         </div>
       )}
@@ -1560,6 +1656,25 @@ function StyleBlock() {
       .so-instruction { font-size: 0.7rem; line-height: 1.5; color: color-mix(in oklab, var(--so-paper-ink) 85%, white); }
       .so-instruction-tag { display: inline-block; margin-right: 8px; padding: 2px 7px; border-radius: 5px; background: var(--so-paper-ink); color: var(--so-paper); font-family: var(--so-mono); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 1px; }
       .so-capnote { margin-top: 10px; font-family: var(--so-mono); font-size: 0.68rem; color: var(--so-paper-mut); }
+
+      /* "Do this" block. A single step keeps the tag inline with the sentence;
+         a multi-step route stacks the tag above a numbered list. */
+      .so-ins-head { display: flex; align-items: flex-start; gap: 0; flex-wrap: wrap; }
+      .so-ins-single { display: inline; }
+      .so-ins-strong { font-weight: 650; color: var(--so-paper-ink); }
+      .so-ins-link { font-weight: 650; color: var(--so-action); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+      .so-ins-link:hover { text-decoration-thickness: 2px; }
+      .so-ins-steps { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+      .so-ins-steps li { display: flex; align-items: flex-start; gap: 8px; }
+      /* Fixed-width numeral so step text aligns on a single left edge. */
+      .so-ins-num { flex-shrink: 0; width: 15px; height: 15px; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; background: color-mix(in oklab, var(--so-paper-ink) 12%, transparent); color: var(--so-paper-ink); font-size: 0.56rem; font-weight: 600; }
+      /* The costly-mistake line. Tinted rather than loud — it sits under advice
+         the user is being told to follow, so it must read as a caveat. */
+      .so-ins-warn { margin-top: 10px; display: flex; align-items: flex-start; gap: 6px; padding: 7px 9px; border-radius: 7px; font-size: 0.66rem; line-height: 1.45; font-weight: 500; }
+      .so-ins-warn.is-warn { background: color-mix(in oklab, var(--so-action) 10%, transparent); color: color-mix(in oklab, var(--so-action) 75%, var(--so-paper-ink)); }
+      /* A tip points at a BETTER-paying route, so it must not borrow the
+         warning's alarm colour — neutral ink on a plain tint reads as a nudge. */
+      .so-ins-warn.is-tip { background: color-mix(in oklab, var(--so-paper-ink) 7%, transparent); color: color-mix(in oklab, var(--so-paper-ink) 78%, white); }
 
       /* Actions sit on the ticket's paper stub, not the dark panel, so they
          carry their own palette rather than reusing .so-cta. Both buttons share

@@ -11,6 +11,7 @@ import {
   toEngineCategory,
   toMerchantSlug,
 } from "@/lib/logic/advisor/spendOptimizer";
+import { voucherPortalsForCards } from "@/lib/advisor/voucherPortal";
 import { spendOptimizerInputSchema } from "@/schemas/spendOptimizer";
 import type { MockCard } from "@/lib/logic/advisor/cards";
 
@@ -131,10 +132,18 @@ export async function POST(req: Request) {
       rules,
     );
 
+    // Named voucher portals for the scored cards, so the instruction can say
+    // "via ICICI iShop" instead of "your bank portal". Resolved after scoring so
+    // only the cards actually returned are looked up.
+    const voucherPortals = await voucherPortalsForCards(
+      result.map((c) => c.cardId),
+    );
+
     return ApiResponse.success("ok", 200, {
       cards: result,
       category: engineCategory,
       merchant: knownMerchant,
+      voucherPortals,
       // Surfaces "we ignored the merchant you picked" so the UI can say the
       // answer is category-wide rather than merchant-specific.
       merchantMatched: Boolean(knownMerchant),

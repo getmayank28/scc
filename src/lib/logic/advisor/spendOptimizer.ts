@@ -72,6 +72,15 @@ export interface OptimizedCard {
    * category-wide query, where the best voucher is often a niche brand.
    */
   voucherMerchant: string | null;
+  /**
+   * Merchant the direct-swipe figure earns through, when a merchant-specific
+   * rule won the direct lane. Same purpose as `voucherMerchant`, for the other
+   * column: on a category-wide query the winning direct rule is often tied to
+   * one channel (e.g. a bank's own portal), and an unlabelled rate reads as if
+   * the whole category pays it. null when the category floor won, which is
+   * genuinely category-wide and has no merchant to name.
+   */
+  directMerchant: string | null;
   /** Human-readable cap note from the engine, when the winner is capped. */
   capNote: string | null;
   /** True when this card has no rule data and fell back to its base rate. */
@@ -331,6 +340,14 @@ function scoreCard(
     // uninterpretable on a category-wide query — 50% back "on online shopping"
     // reads as a lie, while 50% back "via Vrott" reads as a niche deal.
     voucherMerchant: voucher?.merchant ?? null,
+    // The brand the direct figure belongs to. Read off `direct`, not `winner` —
+    // on a voucher win `winner.merchant` is the voucher's brand, which would
+    // mislabel the swipe column with a merchant it doesn't earn through. Null
+    // when the clamp above replaced the engine's answer with the category
+    // floor: that rate is the merchant-null base rule's, so naming a merchant
+    // would attribute it to a channel that didn't earn it.
+    directMerchant:
+      direct.source === "fallback" && baseRule ? null : direct.merchant,
     capNote: winner.capNote,
     // True only when the category has nothing on file for this card at all —
     // no precomputed row and no rule — so the figure above is the card's
