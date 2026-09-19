@@ -114,15 +114,8 @@ export const categories: Category[] = [
   { value: "rent", label: "Rent", icon: Home },
 ];
 
-/** One-tap category shortcuts. */
-export const TOP_CATEGORIES = [
-  "hotels",
-  "flights",
-  "dining",
-  "online-shopping",
-  "fuel",
-  "utilities",
-] as const;
+/** One-tap category shortcuts. Everything else lives behind the "More" tile. */
+export const TOP_CATEGORIES = ["hotels", "flights"] as const;
 
 export interface QuickMerchant {
   value: string;

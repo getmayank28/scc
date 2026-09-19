@@ -571,7 +571,7 @@ export default function SpendOptimizerPage() {
             <section>
               <h3 className="so-eyecaps">Jump straight to</h3>
               <div className="mt-3 grid grid-cols-3 gap-2">
-                {TOP_CATEGORIES.slice(0, -1).map((value) => {
+                {TOP_CATEGORIES.map((value) => {
                   const c = categories.find((x) => x.value === value);
                   if (!c) return null;
                   const on = !ranWith.merchant && ranWith.category === value;
