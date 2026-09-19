@@ -200,6 +200,8 @@ export const quickMerchants: QuickMerchant[] = [
 export interface PortalOption {
   _id: string;
   name: string;
+  /** Portal's own slug. A second key into the same row — see `merchantKey`. */
+  slug?: string;
   affiliateLink?: string | null;
   websiteUrl?: string;
 }
@@ -235,4 +237,20 @@ export function merchantLabel(slug: string): string {
     .split("_")
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
+}
+
+/**
+ * Collapse a merchant name or slug to a comparison key.
+ *
+ * Rule merchants and portal records are authored in different vocabularies:
+ * rules use underscored slugs ("marks_spencer"), portals use display names
+ * ("Marks & Spencer") and hyphenated slugs ("marks-spencer"). Matching on
+ * `merchantLabel(slug) === portal.name` alone resolves 428 of the 677 active
+ * rule merchants; folding away case, separators and punctuation recovers 91
+ * more — mostly high-volume brands that differ by an apostrophe or ampersand
+ * ("domino_s_pizza" / "Domino's Pizza"). The remaining ~158 are genuinely
+ * absent from `portals` and must stay unresolved rather than be guessed at.
+ */
+export function merchantKey(nameOrSlug: string): string {
+  return nameOrSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
 }

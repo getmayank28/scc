@@ -204,6 +204,12 @@ interface SpendOptimizerActionProperties extends BaseProperties {
   amount: number;
   merchant: string;
   savingsAmount: number;
+  /**
+   * Swipe CTA only: whether the click opened the merchant's site or the
+   * in-app merchant picker. Without it the funnel reads a picker open as an
+   * outbound click. Absent on the voucher CTA, which always has a destination.
+   */
+  hasDestination?: boolean;
 }
 
 interface SpendOptimizerPortalProperties extends BaseProperties {

@@ -14,6 +14,7 @@ import {
   CirclePlus,
   ExternalLink,
   LayoutGrid,
+  Store,
   X,
 } from "lucide-react";
 import {
@@ -49,6 +50,7 @@ import {
   TOP_CATEGORIES,
   MAX_SELECTED,
   AMOUNT_CHIPS,
+  merchantKey,
   merchantLabel,
   type OptimizedCardResult,
   type PortalOption,
@@ -66,6 +68,16 @@ import type {
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
+
+/**
+ * What the swipe CTA can offer, narrowest first. Kept as one value rather than
+ * a pair of booleans so the button, its label and its click handler can never
+ * disagree about which case they are in.
+ */
+type SwipeTarget =
+  | { kind: "linked"; name: string; url: string }
+  | { kind: "named"; name: string; url: null }
+  | { kind: "unknown"; name: null; url: null };
 
 const inr = (n: number) => formatCurrency(String(Math.round(n)));
 
@@ -174,17 +186,29 @@ export default function SpendOptimizerPage() {
   );
 
   // The searchbox only needs a name, but the result CTA needs somewhere to send
-  // the user — so the portal rows are also kept whole, keyed by the same name
-  // the searchbox writes into `merchantValue`.
+  // the user — so the portal rows are also kept whole.
+  //
+  // Keyed by `merchantKey` rather than the raw lowercased name, and indexed
+  // under both the portal's name and its slug, because two different callers
+  // look rows up here with two different vocabularies: the searchbox writes a
+  // display name into `merchantValue`, while `directMerchant` arrives from the
+  // engine as a rule slug. Keying on the name alone silently failed for every
+  // merchant whose slug and name differ by punctuation.
+  //
+  // Name is inserted after slug so that on a collision the display name wins —
+  // it is the field the searchbox round-trips.
   const portalsByName = useMemo(() => {
     const map = new Map<string, PortalOption>();
     for (const p of (portals ?? []) as (PortalProps & { _id: string })[]) {
-      map.set(p.name.toLowerCase(), {
+      const row: PortalOption = {
         _id: p._id,
         name: p.name,
+        slug: p.slug,
         affiliateLink: p.affiliateLink,
         websiteUrl: p.websiteUrl,
-      });
+      };
+      if (p.slug) map.set(merchantKey(p.slug), row);
+      map.set(merchantKey(p.name), row);
     }
     return map;
   }, [portals]);
@@ -277,17 +301,37 @@ export default function SpendOptimizerPage() {
       ? ranWith.merchant
       : (ranCategory?.label ?? null);
 
+  // Where the swipe CTA should send the user, in three tiers.
+  //
   // Resolved off `ranWith`, not the live `merchantValue`: the results belong to
   // the merchant the run was made with, and editing the field mid-result would
   // otherwise point the CTA at a site the numbers aren't about.
   //
-  // Category runs have no merchant and therefore no destination — the swipe CTA
-  // is dropped entirely in that case rather than rendered dead.
-  const directSwipeLink = useMemo(() => {
-    if (!ranWith.merchant) return null;
-    const portal = portalsByName.get(ranWith.merchant.toLowerCase());
-    return portal?.affiliateLink || portal?.websiteUrl || null;
-  }, [ranWith.merchant, portalsByName]);
+  // The merchant is whichever the swipe figure actually earns through — the one
+  // the user named, or, on a category run, the channel the winning rule is tied
+  // to (`directMerchant`, which the engine leaves null when the category floor
+  // won and the rate is genuinely category-wide). Knowing that name is not the
+  // same as being able to link to it: ~158 of 677 active rule merchants have no
+  // `portals` row at all, including `ishop`, which carries 64 active rules. So
+  // "named" and "linkable" are tracked separately and the CTA degrades:
+  //
+  //   linked   — name + url. "Pay at Marks & Spencer", opens the site.
+  //   named    — name, no url. States where the rate applies; opens the
+  //              merchant picker instead of a dead tab.
+  //   unknown  — no merchant. Asks the user to name one.
+  const swipeTarget = useMemo((): SwipeTarget => {
+    const slug = shown?.directMerchant ?? null;
+    const name = ranWith.merchant || (slug ? merchantLabel(slug) : null);
+    if (!name) return { kind: "unknown", name: null, url: null };
+
+    // Look the portal up by whichever token we have. `ranWith.merchant` is a
+    // display name, `directMerchant` a rule slug; `merchantKey` folds both.
+    const portal = portalsByName.get(merchantKey(ranWith.merchant || slug!));
+    const url = portal?.affiliateLink || portal?.websiteUrl || null;
+    return url
+      ? { kind: "linked", name: portal?.name ?? name, url }
+      : { kind: "named", name, url: null };
+  }, [ranWith.merchant, shown?.directMerchant, portalsByName]);
 
   // Shared by both CTAs so the two events carry identical card/context props.
   const actionProps = useCallback(
@@ -318,7 +362,12 @@ export default function SpendOptimizerPage() {
         // undefined url would land the user on about:blank.
         const url = res?.[0]?.url;
         if (!url) {
-          toast.error(`No voucher partner listed for ${card.bankName} yet`);
+          // Deliberately does NOT name the bank. `card.bankName` is mapped from
+          // the card's `bankName` field, which holds the NETWORK ("visa",
+          // "mastercard") on 306 of 308 active cards — so naming it produced
+          // "No voucher partner listed for visa yet". The card name is a fact
+          // we can state correctly.
+          toast.error(`No voucher partner listed for ${card.cardName} yet`);
           return;
         }
         window.open(url, "_blank", "noopener,noreferrer");
@@ -329,17 +378,30 @@ export default function SpendOptimizerPage() {
     [giftorsByCardSlug, isGiftorLoading, track, actionProps],
   );
 
+  // A `named` or `unknown` target has nowhere to send the user, so the click
+  // opens the merchant picker instead — which is the actual next step in both
+  // cases: pick a merchant and the run re-prices against it. The event still
+  // fires either way, with `hasDestination` separating the two so the funnel
+  // doesn't read an in-app picker open as an outbound click.
   const handleDirectSwipe = useCallback(
     (card: OptimizedCardResult) => {
-      if (!directSwipeLink) return;
-      track(
-        EventName.SPEND_OPTIMIZER_DIRECT_SWIPE_CLICKED,
-        actionProps(card, card.directSwipeSavingsInInr),
-      );
-      window.open(directSwipeLink, "_blank", "noopener,noreferrer");
+      track(EventName.SPEND_OPTIMIZER_DIRECT_SWIPE_CLICKED, {
+        ...actionProps(card, card.directSwipeSavingsInInr),
+        hasDestination: swipeTarget.kind === "linked",
+      });
+      if (swipeTarget.kind === "linked") {
+        window.open(swipeTarget.url, "_blank", "noopener,noreferrer");
+        return;
+      }
+      setExploring(true);
     },
-    [directSwipeLink, track, actionProps],
+    [swipeTarget, track, actionProps],
   );
+
+  // The picker only exists when there is a breakdown to show it. Without this
+  // the unlinkable tiers would render a button whose click does nothing —
+  // the dead-CTA bug in a new place. `SpendActions` falls back to plain text.
+  const canPickMerchant = !!shownBreakdown;
 
   // On mobile the result panel sits below the inputs, so a tap on a category or
   // merchant tile appears to do nothing — the answer renders off-screen. Bring
@@ -1078,8 +1140,8 @@ export default function SpendOptimizerPage() {
 
                     <SpendActions
                       card={shown}
-                      merchant={ranWith.merchant}
-                      hasSwipeLink={!!directSwipeLink}
+                      swipeTarget={swipeTarget}
+                      canPickMerchant={canPickMerchant}
                       isVoucherLoading={isGiftorLoading}
                       onBuyVoucher={() => handleBuyVoucher(shown)}
                       onDirectSwipe={() => handleDirectSwipe(shown)}
@@ -1511,15 +1573,15 @@ function MerchantRow({
 
 function SpendActions({
   card,
-  merchant,
-  hasSwipeLink,
+  swipeTarget,
+  canPickMerchant,
   isVoucherLoading,
   onBuyVoucher,
   onDirectSwipe,
 }: {
   card: OptimizedCardResult;
-  merchant: string;
-  hasSwipeLink: boolean;
+  swipeTarget: SwipeTarget;
+  canPickMerchant: boolean;
   isVoucherLoading: boolean;
   onBuyVoucher: () => void;
   onDirectSwipe: () => void;
@@ -1536,12 +1598,21 @@ function SpendActions({
   // it reads as a charge or a discount rather than a comparison. Also hidden
   // when the gap is zero or negative, where it would be noise.
   const delta =
-    hasSwipeLink && hasVoucherRoute
+    swipeTarget.kind !== "unknown" && hasVoucherRoute
       ? Math.round(
           Math.abs(card.voucherSavingsInInr - card.directSwipeSavingsInInr),
         )
       : 0;
-  const swipeLabel = merchant ? `Pay at ${merchant}` : "Pay direct";
+  // "Pay at X" promises a destination, so it is reserved for the linked tier.
+  // A named-but-unlinkable merchant still gets its name in front of the user —
+  // that is the actionable fact — but phrased as the question the click
+  // actually answers, since the button opens the picker rather than the site.
+  const swipeLabel =
+    swipeTarget.kind === "linked"
+      ? `Pay at ${swipeTarget.name}`
+      : swipeTarget.kind === "named"
+        ? `Best at ${swipeTarget.name}`
+        : "Got a merchant in mind?";
 
   const voucher = hasVoucherRoute ? (
     <button
@@ -1557,20 +1628,40 @@ function SpendActions({
     </button>
   ) : null;
 
-  const swipe = hasSwipeLink ? (
+  // The swipe route now holds its slot in every tier. It used to be dropped
+  // whenever no URL resolved, which on a category run left the LOSING voucher
+  // route as the only button on screen — reading as the recommendation while
+  // contradicting the swipe figure directly above it.
+  //
+  // The one case with no click worth offering is an unlinkable merchant with no
+  // picker to fall back on: that states the fact as text, since the name is
+  // still the useful part — it tells the user where the rate applies.
+  const swipeIsInert = swipeTarget.kind !== "linked" && !canPickMerchant;
+
+  const swipe = swipeIsInert ? (
+    swipeTarget.kind === "named" ? (
+      <p className="so-act-note">
+        Best rate is at <strong>{swipeTarget.name}</strong>.
+      </p>
+    ) : null
+  ) : (
     <button
       onClick={onDirectSwipe}
       className={
         voucherWins ? "so-act so-act-secondary" : "so-act so-act-primary"
       }
     >
-      <ExternalLink className="h-3.5 w-3.5" />
+      {swipeTarget.kind === "linked" ? (
+        <ExternalLink className="h-3.5 w-3.5" />
+      ) : (
+        <Store className="h-3.5 w-3.5" />
+      )}
       {swipeLabel}
       {voucherWins && delta > 0 && (
         <span className="so-act-delta so-mono">−{inr(delta)}</span>
       )}
     </button>
-  ) : null;
+  );
 
   return (
     <div className="so-actions">
@@ -2079,6 +2170,15 @@ function StyleBlock() {
       /* The cost of taking the road not recommended. Tucked to a lighter weight
          so it annotates the label instead of competing with it. */
       .so-act-delta { font-size: 0.66rem; font-weight: 500; opacity: 0.65; letter-spacing: 0; }
+      /* Stands in for the swipe button when the merchant is known but neither
+         linkable nor pickable. Deliberately not button-shaped — there is
+         nothing to click — but it takes the same row slot so the actions row
+         keeps its shape. */
+      .so-act-note {
+        flex: 1 1 auto; min-width: 0; align-self: center;
+        font-size: 0.78rem; line-height: 1.4; opacity: 0.75;
+      }
+      .so-act-note strong { font-weight: 600; opacity: 0.95; }
 
       .so-ticket--loading { min-height: 300px; }
       .so-skel, .so-skel-dark { border-radius: 8px; background-size: 200% 100%; animation: so-shimmer 1.3s ease infinite; }
