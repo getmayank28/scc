@@ -22,8 +22,9 @@ import {
   Ticket,
   LucideIcon,
 } from "lucide-react";
+import { OTHER_SPEND_CATEGORY } from "@/lib/logic/advisor/spendOptimizer";
 
-interface Category {
+export interface Category {
   value: string;
   label: string;
   /** Used in the precision-panel dropdown, where a flat glyph reads better. */
@@ -113,6 +114,25 @@ export const categories: Category[] = [
   { value: "gift-card", label: "Gift card purchase", icon: Gift },
   { value: "rent", label: "Rent", icon: Home },
 ];
+
+/**
+ * The catch-all a run falls back to when the spend can't be placed — an
+ * unrecognised merchant. Deliberately NOT a member of `categories`: it is never
+ * a choice the user picks from the dropdown, and it must not appear among a
+ * merchant's own category options either. `categoryLabel` covers both lists so
+ * callers can label a run with it without special-casing.
+ */
+export const OTHER_SPEND: Category = {
+  value: OTHER_SPEND_CATEGORY,
+  label: "Other spend",
+  icon: Wallet,
+};
+
+/** Display label for any run category, including the off-list catch-all. */
+export function categoryLabel(value: string): string | null {
+  if (value === OTHER_SPEND.value) return OTHER_SPEND.label;
+  return categories.find((c) => c.value === value)?.label ?? null;
+}
 
 /** One-tap category shortcuts. Everything else lives behind the "More" tile. */
 export const TOP_CATEGORIES = ["hotels", "flights"] as const;

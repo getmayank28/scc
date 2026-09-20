@@ -88,10 +88,17 @@ export interface OptimizedCard {
 }
 
 /**
+ * The UI value for "we don't know what this spend is" — scored at each card's
+ * base rate. Named rather than inlined because the client, the input schema and
+ * the map below all have to agree on the exact string.
+ */
+export const OTHER_SPEND_CATEGORY = "other-spend";
+
+/**
  * UI category value -> engine category. The UI uses hyphenated labels inherited
  * from the old bot prompt; the engine's vocabulary is snake_case and finer
  * grained (dining splits online/offline). Mapping is explicit so a renamed UI
- * option fails loudly here rather than silently scoring as "other".
+ * option fails loudly here rather than silently scoring as the catch-all.
  */
 export const UI_CATEGORY_TO_ENGINE: Record<string, Category> = {
   "online-shopping": CATEGORIES.ONLINE_SHOPPING,
@@ -117,7 +124,34 @@ export const UI_CATEGORY_TO_ENGINE: Record<string, Category> = {
   "wallet-load": CATEGORIES.WALLET_RELOADS,
   jewellery: CATEGORIES.WATCHES_JEWELRY,
   "gift-card": CATEGORIES.VOUCHER,
+  // The catch-all. No card carries `other` rules or a bestOf row, so every card
+  // scores at its own base earn rate — which is exactly the right answer for a
+  // spend we can't place in any named category (an unrecognised merchant).
+  [OTHER_SPEND_CATEGORY]: CATEGORIES.OTHER,
 };
+
+/**
+ * Categories where a voucher may win the headline even on a category-wide run.
+ *
+ * The general rule (see `scoreCard`) keeps vouchers out of the headline unless
+ * the user named a merchant, because the top-earning voucher brand in a
+ * category is usually something obscure — online shopping's frontier is led by
+ * Vinci Botanicals and Typsy Beauty, and "buy a Typsy Beauty voucher" is no
+ * answer to "where should I shop online".
+ *
+ * Flights and hotels are the exception, and the data is what makes them one.
+ * Their voucher frontiers hold 7 and 17 merchants respectively, and every one
+ * is a mainstream booking portal or hotel chain — Cleartrip, MakeMyTrip,
+ * EaseMyTrip, Ixigo, Air India, ITC, Marriott. A traveller books a trip, not a
+ * portal, and is indifferent about which of these sells it, so naming one costs
+ * them nothing. Suppressing the voucher there just hides the better answer: on
+ * hotels the Amex MRCC earns 15.9% through a Cleartrip voucher against 2% on a
+ * direct swipe.
+ */
+const VOUCHER_HEADLINE_CATEGORIES = new Set<Category>([
+  CATEGORIES.FLIGHTS,
+  CATEGORIES.HOTELS,
+]);
 
 export function toEngineCategory(uiValue: string): Category | null {
   return UI_CATEGORY_TO_ENGINE[uiValue] ?? null;
@@ -126,8 +160,15 @@ export function toEngineCategory(uiValue: string): Category | null {
 // Reverse map, for turning a merchant's rule categories back into UI options.
 // Several engine categories have no UI value (the UI deliberately exposes a
 // shorter list); those simply don't appear as choices.
+//
+// The catch-all is excluded in this direction: it exists so an unplaceable
+// spend can be scored at base rate, and offering it as one of a merchant's
+// categories would present it as a thing the user chose rather than the
+// fallback it is.
 const ENGINE_TO_UI_CATEGORY = new Map<string, string>(
-  Object.entries(UI_CATEGORY_TO_ENGINE).map(([ui, engine]) => [engine, ui]),
+  Object.entries(UI_CATEGORY_TO_ENGINE)
+    .filter(([ui]) => ui !== OTHER_SPEND_CATEGORY)
+    .map(([ui, engine]) => [engine, ui]),
 );
 
 export function toUiCategory(engineValue: string): string | null {
@@ -311,15 +352,17 @@ function scoreCard(
     ? Math.max(0, Math.round(voucher.returnInr))
     : 0;
 
-  // A voucher may only take the headline when the user named the merchant.
-  // Otherwise the recommendation would be "buy a Vrott voucher" to someone who
-  // asked about online shopping generally — the figure is still reported in
-  // `voucherSavingsInInr` (labelled with `voucherMerchant`), it just can't win.
+  // A voucher may normally only take the headline when the user named the
+  // merchant. Otherwise the recommendation would be "buy a Vrott voucher" to
+  // someone who asked about online shopping generally — the figure is still
+  // reported in `voucherSavingsInInr` (labelled with `voucherMerchant`), it
+  // just can't win.
   //
   // Ties go to the direct swipe: same rupees for less friction (no voucher to
   // buy, no validity window, no partial-redemption leftovers).
   const voucherWins =
-    merchant !== null && voucherSavingsInInr > directSwipeSavingsInInr;
+    (merchant !== null || VOUCHER_HEADLINE_CATEGORIES.has(category)) &&
+    voucherSavingsInInr > directSwipeSavingsInInr;
   const winner = voucherWins ? voucher! : direct;
   const bestSavingsInInr = voucherWins
     ? voucherSavingsInInr

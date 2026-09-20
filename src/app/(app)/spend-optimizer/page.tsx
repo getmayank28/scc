@@ -46,6 +46,8 @@ import type { CreditCard } from "@/types/card";
 import type { PortalProps } from "@/models/Portal";
 import {
   categories,
+  categoryLabel,
+  OTHER_SPEND,
   quickMerchants,
   TOP_CATEGORIES,
   MAX_SELECTED,
@@ -231,6 +233,14 @@ export default function SpendOptimizerPage() {
     !isMerchantCatsLoading &&
     merchantCats?.result?.known === false;
 
+  // The category an unknown merchant is scored as. Whatever `category` happens
+  // to hold is a leftover from the last run or the last merchant, and scoring a
+  // Radisson stay as "hotels" only by accident — or a hardware shop as "hotels"
+  // because hotels was picked earlier — quotes a rate the purchase would never
+  // earn. With nothing on file for the merchant, the honest answer is the
+  // catch-all: every card at its own base rate.
+  const effectiveCategory = merchantIsUnknown ? OTHER_SPEND.value : category;
+
   // Adopt the merchant's category automatically. When it has exactly one, that
   // is the answer; when it has several, seed the picker with the first so the
   // form is never in an impossible state (e.g. Ajio + Hotels).
@@ -287,7 +297,7 @@ export default function SpendOptimizerPage() {
   }, [shown, ranWith.merchantBreakdowns]);
 
   const ranCategory = useMemo(
-    () => categories.find((c) => c.value === ranWith.category),
+    () => categoryLabel(ranWith.category),
     [ranWith.category],
   );
 
@@ -299,7 +309,7 @@ export default function SpendOptimizerPage() {
   const scopeLabel =
     ranWith.merchant && ranWith.merchantMatched
       ? ranWith.merchant
-      : (ranCategory?.label ?? null);
+      : ranCategory;
 
   // Where the swipe CTA should send the user, in three tiers.
   //
@@ -597,7 +607,7 @@ export default function SpendOptimizerPage() {
       runFor(category, "");
     } else {
       const quick = quickMerchants.find((m) => m.label === merchantValue);
-      runFor(quick?.category ?? category, merchantValue);
+      runFor(quick?.category ?? effectiveCategory, merchantValue);
     }
   }
 
@@ -970,14 +980,9 @@ export default function SpendOptimizerPage() {
                           )}
                         {merchantValue && merchantIsUnknown && (
                           <p className="so-field-note">
-                            No {merchantValue}-specific offers yet. We&apos;ll use
-                            the best card for{" "}
-                            <b>
-                              {categories
-                                .find((c) => c.value === category)
-                                ?.label.toLowerCase()}
-                            </b>
-                            .
+                            No {merchantValue}-specific offers yet. We&apos;ll
+                            score this as <b>other spend</b> — each card at its
+                            base rate.
                           </p>
                         )}
                       </div>
@@ -1167,8 +1172,10 @@ export default function SpendOptimizerPage() {
 
                 {!ranWith.merchantMatched && ranWith.merchant && (
                   <p className="so-notice">
-                    We don&apos;t have {ranWith.merchant}-specific offers yet. This
-                    is the best card for {ranCategory?.label.toLowerCase()} overall.
+                    We don&apos;t have {ranWith.merchant}-specific offers yet.{" "}
+                    {ranWith.category === OTHER_SPEND.value
+                      ? "This is the best card on base rewards alone."
+                      : `This is the best card for ${(ranCategory ?? "").toLowerCase()} overall.`}
                   </p>
                 )}
 
