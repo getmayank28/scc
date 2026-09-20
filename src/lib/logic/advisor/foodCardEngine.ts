@@ -121,6 +121,10 @@ type FoodSubSpec =
       spend: number;
       category: Category;
       merchant: Merchant;
+      // Ordered fallbacks tried when the card has no rule for `merchant`, most
+      // specific first (e.g. swiggy_dineout → swiggy). When the card carries
+      // none of them the sub-stream falls back to the category rate.
+      merchantPreference?: readonly Merchant[];
     }
   | {
       kind: "category-best";
@@ -199,6 +203,40 @@ function merchantBestOf(
   return computeBestOfForCard(card, subset)[0];
 }
 
+// Resolve the first merchant in `preference` that the card actually carries a
+// rule for, and score against it. Dining needs this because the platforms are
+// modelled under channel-specific merchant ids that are unevenly populated:
+// offline dining is keyed to swiggy_dineout / zomato_district, but a card may
+// only carry the plain swiggy / zomato rule. Trying the offline id first and
+// the plain id second uses the most specific rule available without inventing
+// one. Returns undefined when the card has none of them — the caller then
+// falls back to the category rate.
+//
+// Note `merchantBestOf` also admits `merchant === null` category rules, which
+// every card has; matching on those would make the first preference always
+// "win" and defeat the ordering. So candidacy is decided on merchant-specific
+// rules only, and the category rule re-enters through the returned best-of.
+function preferredMerchantBestOf(
+  card: MockCard,
+  category: Category,
+  preference: readonly Merchant[],
+  rules: MockRule[],
+): { bestOf: MockBestOf; merchant: Merchant } | undefined {
+  for (const merchant of preference) {
+    const hasOwnRule = rules.some(
+      (r) =>
+        r.cardId === card._id &&
+        r.category === category &&
+        r.merchant === merchant &&
+        r.is_active,
+    );
+    if (!hasOwnRule) continue;
+    const bestOf = merchantBestOf(card, category, merchant, rules);
+    if (bestOf) return { bestOf, merchant };
+  }
+  return undefined;
+}
+
 function diningFallbackRate(card: MockCard, category: Category): number {
   if (card.excluded_categories?.includes(category)) return 0;
   return card.rewards.base_reward_rate;
@@ -246,6 +284,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       spend: swiggy,
       category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY_DINEOUT,
+      merchantPreference: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
     });
   }
   if (zomato > 0) {
@@ -255,6 +294,11 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       spend: zomato,
       category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO_DISTRICT,
+      merchantPreference: [
+        MERCHANTS.ZOMATO_DISTRICT,
+        MERCHANTS.DISTRICT_BY_ZOMATO,
+        MERCHANTS.ZOMATO,
+      ],
     });
   }
   if (other > 0) {
@@ -290,9 +334,18 @@ function evaluateSpec(
     };
   }
 
+  // A merchant spec resolves against the first merchant in its preference
+  // chain the card actually carries (defaulting to `merchant` alone). When the
+  // card carries none, `bestOf` is undefined and computeCategoryReturn scores
+  // the category rate — the intended fallback.
   const bestOf =
     spec.kind === "merchant"
-      ? merchantBestOf(card, spec.category, spec.merchant, rules)
+      ? preferredMerchantBestOf(
+          card,
+          spec.category,
+          spec.merchantPreference ?? [spec.merchant],
+          rules,
+        )?.bestOf
       : index.get(`${card._id}::${spec.category}`);
 
   const cat: CategoryReturn = computeCategoryReturn(

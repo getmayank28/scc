@@ -181,6 +181,10 @@ type SubAllocationSpec =
       share: number;
       category: Category;
       merchants: [Merchant, Merchant];
+      // Optional per-slot fallback chains, most specific first. Slot i resolves
+      // against the first merchant in `merchantPreference[i]` the card carries
+      // a rule for; without it, only `merchants[i]` is tried.
+      merchantPreference?: [readonly Merchant[], readonly Merchant[]];
       topShare: number;
       tailShare: number;
     }
@@ -267,11 +271,27 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
       },
     ],
     offline: [
+      // Offline dining mirrors the online leg: Swiggy/Zomato first, fallback
+      // when the card carries neither. The platforms are keyed to their
+      // dine-out merchant ids here (swiggy_dineout / zomato_district); a card
+      // holding only the plain swiggy/zomato rule is picked up by the
+      // preference chain in expandSpec.
       {
-        kind: "fallback",
+        kind: "merchant-pair",
         label: "Dining offline",
         share: 1.0,
         category: CATEGORIES.OFFLINE_FOOD_DINING,
+        merchants: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.ZOMATO_DISTRICT],
+        merchantPreference: [
+          [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+          [
+            MERCHANTS.ZOMATO_DISTRICT,
+            MERCHANTS.DISTRICT_BY_ZOMATO,
+            MERCHANTS.ZOMATO,
+          ],
+        ],
+        topShare: 0.7,
+        tailShare: 0.3,
       },
     ],
   },
@@ -526,14 +546,30 @@ function expandSpec(
     }));
   }
   if (spec.kind !== "merchant-pair") return [spec];
-  const [mA, mB] = spec.merchants;
-  const boA = merchantBestOf(card, spec.category, mA, rules);
-  const boB = merchantBestOf(card, spec.category, mB, rules);
+  // Resolve each slot to the first merchant in its preference chain the card
+  // carries a rule for (the slot's own merchant when no chain is configured).
+  // Everything below then treats the slot as that single merchant.
+  const resolveSlot = (
+    slot: 0 | 1,
+  ): { merchant: Merchant; bestOf: MockBestOf | undefined } => {
+    const chain = spec.merchantPreference?.[slot] ?? [spec.merchants[slot]];
+    for (const candidate of chain) {
+      const bo = merchantBestOf(card, spec.category, candidate, rules);
+      if (bo) return { merchant: candidate, bestOf: bo };
+    }
+    return { merchant: spec.merchants[slot], bestOf: undefined };
+  };
+  const slotA = resolveSlot(0);
+  const slotB = resolveSlot(1);
+  const mA = slotA.merchant;
+  const mB = slotB.merchant;
+  const boA = slotA.bestOf;
+  const boB = slotB.bestOf;
   if (!boA && !boB) {
     return [
       {
         kind: "fallback",
-        label: `${spec.label} (no ${mA}/${mB} rule — fallback)`,
+        label: `${spec.label} (fallback)`,
         share: spec.share,
       },
     ];

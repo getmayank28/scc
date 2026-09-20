@@ -498,16 +498,73 @@ function buildVoucherCapNote(
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
+export interface CategoryReturnOptions {
+  // Score voucher routes on the card's reward leg alone
+  // (`voucher_reward_percentage`), dropping the merchant's own voucher discount
+  // and the convenience fee from the rate.
+  //
+  // A voucher's headline `totalPercentage` is `discount + reward − fee`, where
+  // `discount` is the MERCHANT's promo on the gift voucher — value you'd get
+  // paying with any card — and only `reward` is card-attributable. That total is
+  // the right number when the user actually named the merchant, but not for a
+  // generic "other spend" bucket: there the engine picks the merchant itself,
+  // so crediting a niche brand's promo to spend the user never said they'd make
+  // there overstates the card. Callers modelling unattributed spend opt in here.
+  rewardLegOnly?: boolean;
+
+  // Score using the category-wide rate alone: the `merchant === null` rule
+  // (`baseTier`), falling back to the card's base rate when there isn't one.
+  // Every merchant-specific route — direct and voucher — is ignored.
+  //
+  // For a bucket the user never attributed to a merchant, a merchant rule is a
+  // route the ENGINE picked; crediting it says "this card is worth X" when the
+  // truthful claim is "worth X if you shop at that one brand". This option
+  // drops those routes entirely rather than re-rating them.
+  //
+  // Note this is usually the card's plain base rate in practice: ~74% of
+  // `merchant === null` rules merely restate the base rate, and `bestOf` prunes
+  // any candidate that doesn't beat it, so `baseTier` is null for most cards.
+  // That is the intended, conservative reading of an unattributed bucket.
+  categoryRateOnly?: boolean;
+}
+
+// Strip the merchant discount / convenience fee from a voucher candidate so the
+// lane scores on the card's reward leg alone. Caps are untouched: the reward leg
+// still budgets against exactly the same purchase and reward caps.
+function toRewardLegOnly(v: BestVoucher): BestVoucher {
+  if (v.breakdown.discount === 0 && v.breakdown.fee === 0) return v;
+  return {
+    ...v,
+    breakdown: { ...v.breakdown, discount: 0, fee: 0 },
+    totalPercentage: v.breakdown.reward,
+  };
+}
+
 export function computeCategoryReturn(
   spend: number,
   category: Category,
   card: MockCard,
   bestOf: MockBestOf | undefined,
   bookingsPerYear: number,
+  options: CategoryReturnOptions = {},
 ): CategoryReturn {
   const baseRate = card.rewards.base_reward_rate;
-  const directFrontier = bestOf?.directFrontier ?? [];
-  const voucherFrontier = bestOf?.voucherFrontier ?? [];
+  // categoryRateOnly drops every merchant-specific route, leaving the direct
+  // waterfall with nothing but `baseTier` and the floor rate below it.
+  const directFrontier = options.categoryRateOnly
+    ? []
+    : (bestOf?.directFrontier ?? []);
+  const rawVoucherFrontier = options.categoryRateOnly
+    ? []
+    : (bestOf?.voucherFrontier ?? []);
+  // Re-sort after stripping: the frontier is ordered by `totalPercentage`, and
+  // dropping the discount can reorder it (every rule may share one reward rate,
+  // in which case the ranking collapses to a tie and caps decide the winner).
+  const voucherFrontier = options.rewardLegOnly
+    ? rawVoucherFrontier
+        .map(toRewardLegOnly)
+        .sort((a, b) => b.totalPercentage - a.totalPercentage)
+    : rawVoucherFrontier;
   const baseTier = bestOf?.baseTier ?? null;
 
   // When the category's catch-all (the merchant-null base tier) is a `total`

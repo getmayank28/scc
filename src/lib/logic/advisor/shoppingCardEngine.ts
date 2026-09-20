@@ -206,6 +206,17 @@ type ShoppingSubSpec =
       label: string;
       spend: number;
       category: Category;
+      // Unattributed spend: the user named no merchant, so the engine picks one.
+      // Voucher routes then score on the card's reward leg alone — see
+      // `CategoryReturnOptions.rewardLegOnly`.
+      rewardLegOnly?: boolean;
+      // Unattributed spend scored on the category-wide rate alone, ignoring
+      // every merchant route — see `CategoryReturnOptions.categoryRateOnly`.
+      categoryRateOnly?: boolean;
+      // Restrict the bucket to these merchants, most specific first, instead of
+      // letting best-of pick whichever merchant in the category scores highest.
+      // Falls back to the category rate when the card carries none of them.
+      merchantPreference?: readonly Merchant[];
     }
   | { kind: "fallback"; label: string; spend: number; category: Category };
 
@@ -277,6 +288,48 @@ function merchantBestOf(
   return computeBestOfForCard(card, subset)[0];
 }
 
+// Resolve the first merchant in `preference` the card actually carries a rule
+// for. Mirrors the food engine: dining platforms are modelled under
+// channel-specific merchant ids that are unevenly populated, so the dine-out id
+// is tried first and the plain id second. Returns undefined when the card has
+// none of them — the caller then falls back to the category rate.
+//
+// Candidacy is tested against merchant-specific rules only. `merchantBestOf`
+// also admits `merchant === null` category rules, which every card has, so
+// matching on those would make the first preference always win and defeat the
+// ordering. The category rule still re-enters through the returned best-of.
+function preferredMerchantBestOf(
+  card: MockCard,
+  category: Category,
+  preference: readonly Merchant[],
+  rules: MockRule[],
+): MockBestOf | undefined {
+  for (const merchant of preference) {
+    const hasOwnRule = rules.some(
+      (r) =>
+        r.cardId === card._id &&
+        r.category === category &&
+        r.merchant === merchant &&
+        r.is_active,
+    );
+    if (!hasOwnRule) continue;
+    const bestOf = merchantBestOf(card, category, merchant, rules);
+    if (bestOf) return bestOf;
+  }
+  return undefined;
+}
+
+// Offline dining resolves to the delivery/dine-out platforms only, most
+// specific id first — never to whichever restaurant chain happens to score
+// highest. A card carrying none of them falls back to the category rate.
+const OFFLINE_DINING_MERCHANT_PREFERENCE: readonly Merchant[] = [
+  MERCHANTS.SWIGGY_DINEOUT,
+  MERCHANTS.ZOMATO_DISTRICT,
+  MERCHANTS.DISTRICT_BY_ZOMATO,
+  MERCHANTS.SWIGGY,
+  MERCHANTS.ZOMATO,
+];
+
 function fallbackRate(card: MockCard, category: Category): number {
   if (card.excluded_categories?.includes(category)) return 0;
   return card.rewards.base_reward_rate;
@@ -302,10 +355,15 @@ function buildOnlineSpecs(
             // "others" bucket: no specific merchant, but still routes through
             // best-of so a category-wide (merchant === null) rule applies before
             // the card base rate. Falls to base rate when no category rule.
+            //
+            // The user named no merchant here, so any voucher route is one the
+            // engine chose — score it on the card's reward leg only, without the
+            // merchant's own voucher discount.
             kind: "category-best",
             label: a.label,
             spend: a.spend,
             category: CATEGORIES.ONLINE_SHOPPING,
+            rewardLegOnly: true,
           },
     );
 }
@@ -345,11 +403,27 @@ function categoryNominalRate(
 function rankOfflineCategories(
   card: MockCard,
   index: Map<string, MockBestOf>,
+  rules: MockRule[],
 ): Category[] {
   const baseRate = card.rewards.base_reward_rate;
   return OFFLINE_CATEGORY_CANDIDATES.map((cat) => ({
     category: cat,
-    rate: categoryNominalRate(card, index.get(`${card._id}::${cat}`)),
+    // Rank each category on the rate it will actually be scored at. Dining is
+    // restricted to the Swiggy/Zomato platforms, so ranking it on the
+    // category-wide best-of would let it win a slot on a restaurant-chain rate
+    // it never earns.
+    rate:
+      cat === CATEGORIES.OFFLINE_FOOD_DINING
+        ? categoryNominalRate(
+            card,
+            preferredMerchantBestOf(
+              card,
+              cat,
+              OFFLINE_DINING_MERCHANT_PREFERENCE,
+              rules,
+            ),
+          )
+        : categoryNominalRate(card, index.get(`${card._id}::${cat}`)),
   }))
     .filter((c) => c.rate > baseRate)
     .sort((a, b) => b.rate - a.rate)
@@ -361,10 +435,11 @@ function buildOfflineSpecs(
   alloc: { label: string; spend: number },
   card: MockCard,
   index: Map<string, MockBestOf>,
+  rules: MockRule[],
 ): ShoppingSubSpec[] {
   if (alloc.spend <= 0) return [];
 
-  const ranked = rankOfflineCategories(card, index);
+  const ranked = rankOfflineCategories(card, index, rules);
   const specs: ShoppingSubSpec[] = [];
   let baseShare = OFFLINE_BASE_SHARE;
 
@@ -379,6 +454,12 @@ function buildOfflineSpecs(
       } (${rankLabel} offline)`,
       spend: alloc.spend * OFFLINE_TOP_SHARES[i],
       category: cat,
+      // Dining resolves to the Swiggy/Zomato platforms only; grocery and fuel
+      // keep their normal best-of merchant selection.
+      merchantPreference:
+        cat === CATEGORIES.OFFLINE_FOOD_DINING
+          ? OFFLINE_DINING_MERCHANT_PREFERENCE
+          : undefined,
     });
   });
 
@@ -387,11 +468,17 @@ function buildOfflineSpecs(
     baseShare += OFFLINE_TOP_SHARES[i];
   }
 
+  // The OFFLINE_SHOPPING catch-all: generic offline spend the user attributed
+  // to no merchant, so it is scored on the category-wide rate alone (and the
+  // card's base rate when the card has no category rule). The ranked
+  // dining/grocery/fuel buckets above keep their merchant routes — only this
+  // OFFLINE_SHOPPING bucket is scored this way.
   specs.push({
     kind: "category-best",
     label: alloc.label,
     spend: alloc.spend * baseShare,
     category: CATEGORIES.OFFLINE_SHOPPING,
+    categoryRateOnly: true,
   });
 
   return specs;
@@ -417,10 +504,20 @@ function evaluateSpec(
     };
   }
 
+  // A category-best spec with a merchant preference resolves against the first
+  // of those merchants the card carries; undefined (no match) means
+  // computeCategoryReturn scores the category rate — the intended fallback.
   const bestOf =
     spec.kind === "merchant"
       ? merchantBestOf(card, spec.category, spec.merchant, rules)
-      : index.get(`${card._id}::${spec.category}`);
+      : spec.merchantPreference
+        ? preferredMerchantBestOf(
+            card,
+            spec.category,
+            spec.merchantPreference,
+            rules,
+          )
+        : index.get(`${card._id}::${spec.category}`);
 
   const cat: CategoryReturn = computeCategoryReturn(
     spec.spend,
@@ -428,6 +525,12 @@ function evaluateSpec(
     card,
     bestOf,
     ANNUAL_CAP_PERIODS,
+    {
+      rewardLegOnly:
+        spec.kind === "category-best" && spec.rewardLegOnly === true,
+      categoryRateOnly:
+        spec.kind === "category-best" && spec.categoryRateOnly === true,
+    },
   );
 
   // Same exclusion override as the food / all-rounder engines: when best-of
@@ -498,7 +601,7 @@ function scoreCard(
     rules,
   );
   const offlineSubs = evaluateSubs(
-    buildOfflineSpecs(spend.offlineAllocation, card, index),
+    buildOfflineSpecs(spend.offlineAllocation, card, index, rules),
     card,
     index,
     rules,
@@ -687,7 +790,7 @@ function scoreCardTwo(
     rules,
   );
   const offlineSubs = evaluateSubs(
-    buildOfflineSpecs(spend.offlineAllocation, card, index),
+    buildOfflineSpecs(spend.offlineAllocation, card, index, rules),
     card,
     index,
     rules,
