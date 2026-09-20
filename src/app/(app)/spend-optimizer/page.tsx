@@ -15,6 +15,7 @@ import {
   ExternalLink,
   LayoutGrid,
   Store,
+  Info,
   X,
 } from "lucide-react";
 import {
@@ -67,6 +68,7 @@ import type {
   MerchantBreakdown,
   MerchantOption,
 } from "@/lib/logic/advisor/merchantBreakdown";
+import { isDirectSwipeOnlyUiCategory } from "@/lib/logic/advisor/spendOptimizer";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -115,7 +117,7 @@ export default function SpendOptimizerPage() {
   const [selected, setSelected] = useState<string[]>([]);
   const [cardsOpen, setCardsOpen] = useState(false);
   const [mode, setMode] = useState<Mode>("category");
-  const [category, setCategory] = useState("online-shopping");
+  const [category, setCategory] = useState("flights");
   const [merchantValue, setMerchantValue] = useState("");
   const [amount, setAmount] = useState("5000");
 
@@ -300,6 +302,18 @@ export default function SpendOptimizerPage() {
     () => categoryLabel(ranWith.category),
     [ranWith.category],
   );
+
+  // Fee caveat for bill-type categories, where banks commonly levy a
+  // convenience or processing fee that the reward figures know nothing about.
+  // Read off `ranWith`, not the live inputs, so it describes the result on
+  // screen rather than whatever the form has since been changed to.
+  //
+  // Category-wide runs only: on a merchant run the answer is about one
+  // merchant's own checkout, which is not what this caveat is about.
+  const feeNote =
+    !ranWith.merchant && isDirectSwipeOnlyUiCategory(ranWith.category)
+      ? "Reward points shown don't account for any fees your bank may charge on a transaction."
+      : null;
 
   // What the result is scoped to. A matched merchant is the narrower, more
   // useful fact, so it wins; otherwise the category. `merchantMatched` guards
@@ -1116,7 +1130,7 @@ export default function SpendOptimizerPage() {
                       <div className="so-savings-label">
                         <span>You keep</span>
                         <span className="so-eyebrow-dot">·</span>
-                        <RouteBadge route={shown.bestRoute} />
+                        <RouteBadge route={shown.bestRoute} note={feeNote} />
                       </div>
                       <div className="so-savings-amt so-mono">
                         {inr(shown.bestSavingsInInr)}
@@ -1687,8 +1701,48 @@ function SpendActions({
   );
 }
 
-function RouteBadge({ route }: { route: OptimizedCardResult["bestRoute"] }) {
+function RouteBadge({
+  route,
+  note,
+}: {
+  route: OptimizedCardResult["bestRoute"];
+  /**
+   * Caveat shown behind an info affordance next to the route. A button, not a
+   * bare icon with `title`: that gives it keyboard focus and a tap target, so
+   * the text is reachable on touch devices where there is no hover.
+   */
+  note?: string | null;
+}) {
   const isVoucher = route === "voucher";
+
+  // How much room the bubble has before it would reach the ticket's right edge.
+  // Measured rather than assumed: the ticket clips its overflow, and the badge's
+  // distance from that edge changes with viewport width, card name length and
+  // which route label is showing. Written to a CSS variable the bubble caps its
+  // own width against, so the text wraps instead of being cut off.
+  const fitTip = (el: HTMLElement | null) => {
+    if (!el) return;
+    const ticket = el.closest(".so-ticket");
+    if (!ticket) return;
+    const box = ticket.getBoundingClientRect();
+    const icon = el.getBoundingClientRect();
+    // Usable width inside the ticket's 20px padding.
+    const inner = Math.max(0, box.width - 40);
+    const width = Math.min(304, inner);
+    // Where the bubble would start if it grew rightwards from the icon, and how
+    // far it must slide back to stay inside the padding. On a narrow phone the
+    // badge can sit so close to the right edge that the bubble has to shift
+    // well left of the icon — hence a shift rather than a width floor, which
+    // would have pushed it back out through the edge.
+    const wantLeft = icon.left - 8;
+    const maxLeft = box.right - 20 - width;
+    const left = Math.max(box.left + 20, Math.min(wantLeft, maxLeft));
+    el.style.setProperty("--so-tip-w", `${width}px`);
+    el.style.setProperty("--so-tip-shift", `${left - icon.left}px`);
+    // Keep the arrow under the icon even after the bubble has slid.
+    el.style.setProperty("--so-tip-arrow", `${icon.left - left + icon.width / 2}px`);
+  };
+
   return (
     <span className="so-route">
       {isVoucher ? (
@@ -1697,6 +1751,25 @@ function RouteBadge({ route }: { route: OptimizedCardResult["bestRoute"] }) {
         <CreditCardIcon className="h-3 w-3" />
       )}
       {routeLabel[route]}
+      {note && (
+        <button
+          type="button"
+          className="so-route-info"
+          aria-label={note}
+          onMouseEnter={(e) => fitTip(e.currentTarget)}
+          onFocus={(e) => fitTip(e.currentTarget)}
+          // Tapping must not bubble into whatever the badge sits inside.
+          onClick={(e) => {
+            e.stopPropagation();
+            fitTip(e.currentTarget);
+          }}
+        >
+          <Info className="h-3 w-3" aria-hidden />
+          <span className="so-route-tip" role="tooltip">
+            {note}
+          </span>
+        </button>
+      )}
     </span>
   );
 }
@@ -2074,6 +2147,48 @@ function StyleBlock() {
          sits beside rather than acting as a separate control, and a filled pill
          there competed with the figure below. */
       .so-route { display: inline-flex; align-items: center; gap: 5px; color: var(--so-action); font-family: var(--so-mono); font-size: 0.64rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; white-space: nowrap; }
+
+      /* Info affordance on the route badge. A button so it is focusable and
+         tappable; the bubble shows on hover AND focus-visible, which is what
+         makes the caveat reachable without a pointer. */
+      .so-route-info { position: relative; display: inline-flex; align-items: center; justify-content: center; margin-left: 1px; padding: 0; border: 0; background: none; color: inherit; opacity: 0.7; cursor: help; vertical-align: middle; }
+      .so-route-info:hover, .so-route-info:focus-visible { opacity: 1; }
+      .so-route-info:focus-visible { outline: 2px solid var(--so-action); outline-offset: 2px; border-radius: 3px; }
+      /* The bubble is anchored to the icon's LEFT edge, not centred on it.
+         .so-ticket has overflow:hidden for its rounded corners and notches,
+         so anything escaping the ticket is clipped rather than drawn over it —
+         and the badge sits near the left edge, so a centred bubble ran off the
+         right side and lost its last words. Growing rightwards from the icon
+         keeps the whole sentence inside the ticket.
+
+         The width is capped against the ticket's own padding (20px a side) so
+         the text wraps to a second line instead of reaching the edge. */
+      .so-route-tip {
+        position: absolute; bottom: calc(100% + 8px);
+        left: var(--so-tip-shift, -8px); transform: translateY(2px);
+        z-index: 20; width: max-content;
+        max-width: var(--so-tip-w, 19rem);
+        padding: 8px 10px; border-radius: 8px;
+        background: var(--so-paper-ink); color: var(--so-paper);
+        font-family: var(--so-sans, inherit); font-size: 0.68rem; font-weight: 500;
+        letter-spacing: 0; line-height: 1.4; text-transform: none; text-align: left;
+        white-space: normal; overflow-wrap: anywhere;
+        box-shadow: 0 8px 22px rgb(0 0 0 / 0.28);
+        opacity: 0; visibility: hidden; pointer-events: none;
+        transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
+      }
+      .so-route-info:hover .so-route-tip,
+      .so-route-info:focus-visible .so-route-tip {
+        opacity: 1; visibility: visible; transform: translateY(0);
+      }
+      /* Arrow tracks the icon, wherever the bubble ended up sliding to. */
+      .so-route-tip::after {
+        content: ""; position: absolute; top: 100%;
+        left: clamp(10px, var(--so-tip-arrow, 14px), calc(100% - 10px));
+        transform: translateX(-50%);
+        border: 5px solid transparent; border-top-color: var(--so-paper-ink);
+      }
+      @media (prefers-reduced-motion: reduce) { .so-route-tip { transition: none; } }
 
       .so-perf { position: relative; height: 0; border-top: 2px dashed color-mix(in oklab, var(--so-paper-ink) 24%, transparent); margin: 0 18px; }
       .so-notch { position: absolute; top: -10px; width: 20px; height: 20px; border-radius: 999px; background: var(--so-bg); }

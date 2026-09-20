@@ -101,29 +101,35 @@ export const OTHER_SPEND_CATEGORY = "other-spend";
  * option fails loudly here rather than silently scoring as the catch-all.
  */
 export const UI_CATEGORY_TO_ENGINE: Record<string, Category> = {
+  // Not offered in the category dropdown (see `categories` in the optimizer's
+  // data.ts), but kept here because the quick-merchant tiles run them: Amazon
+  // and Flipkart are online shopping, Swiggy and Zomato are food delivery.
+  // Removing them would make those tiles POST a category the schema rejects,
+  // since the enum below is derived from this map.
   "online-shopping": CATEGORIES.ONLINE_SHOPPING,
-  "offline-retail": CATEGORIES.OFFLINE_SHOPPING,
   "food-delivery": CATEGORIES.ONLINE_FOOD_DINING,
-  dining: CATEGORIES.OFFLINE_FOOD_DINING,
+
   flights: CATEGORIES.FLIGHTS,
   hotels: CATEGORIES.HOTELS,
-  "travel-ground": CATEGORIES.TRAVEL_CABS,
   international: CATEGORIES.INTERNATIONAL_SPEND,
-  forex: CATEGORIES.FOREX,
   utilities: CATEGORIES.UTILITY_BILLS,
   fuel: CATEGORIES.FUEL,
   rent: CATEGORIES.RENT,
-  groceries: CATEGORIES.GROCERIES_SUPERMARKETS,
-  electronics: CATEGORIES.ELECTRONICS,
   healthcare: CATEGORIES.HEALTHCARE,
-  entertainment: CATEGORIES.ENTERTAINMENT,
   education: CATEGORIES.EDUCATION,
   insurance: CATEGORIES.INSURANCE,
-  ott: CATEGORIES.OTT,
   "mobile-recharge": CATEGORIES.MOBILE_RECHARGE,
-  "wallet-load": CATEGORIES.WALLET_RELOADS,
   jewellery: CATEGORIES.WATCHES_JEWELRY,
-  "gift-card": CATEGORIES.VOUCHER,
+  taxes: CATEGORIES.TAXES,
+  "government-payments": CATEGORIES.GOVERNMENT_PAYMENTS,
+  "emi-spend": CATEGORIES.EMI_SPEND,
+  investment: CATEGORIES.INVESTMENT,
+  "forex-charge": CATEGORIES.FOREX_CHARGE,
+  internet: CATEGORIES.INTERNET,
+  "business-expenses": CATEGORIES.BUSINESS_EXPENSES,
+  pharmacy: CATEGORIES.PHARMACY,
+  "parking-toll": CATEGORIES.PARKING_TOLL,
+  "auto-services": CATEGORIES.AUTO_SERVICES,
   // The catch-all. No card carries `other` rules or a bestOf row, so every card
   // scores at its own base earn rate — which is exactly the right answer for a
   // spend we can't place in any named category (an unrecognised merchant).
@@ -153,8 +159,60 @@ const VOUCHER_HEADLINE_CATEGORIES = new Set<Category>([
   CATEGORIES.HOTELS,
 ]);
 
+/**
+ * Categories that always recommend the direct swipe, even when a voucher pays
+ * more and even when the user named the merchant.
+ *
+ * These are bill-type and regulated spends where a gift voucher is the wrong
+ * instrument regardless of the arithmetic: the payee is a utility, a tax
+ * authority, an insurer, a landlord or a fuel pump, and either won't accept a
+ * voucher at all or the spend is a fixed obligation that can't be reshaped
+ * around one. Recommending "buy a voucher" for a tax payment is not a better
+ * deal, it's unusable advice — so the voucher figure stays reported in
+ * `voucherSavingsInInr` but can never take the headline.
+ *
+ * This is a stronger rule than the default: the default merely requires the
+ * user to have named a merchant, whereas these categories suppress the voucher
+ * headline outright. Where both could apply, this one wins.
+ */
+const DIRECT_SWIPE_ONLY_CATEGORIES = new Set<Category>([
+  CATEGORIES.UTILITY_BILLS,
+  CATEGORIES.TAXES,
+  CATEGORIES.EDUCATION,
+  CATEGORIES.INTERNATIONAL_SPEND,
+  CATEGORIES.FUEL,
+  CATEGORIES.INSURANCE,
+  CATEGORIES.GOVERNMENT_PAYMENTS,
+  CATEGORIES.EMI_SPEND,
+  CATEGORIES.RENT,
+  CATEGORIES.INVESTMENT,
+  CATEGORIES.FOREX_CHARGE,
+  CATEGORIES.MOBILE_RECHARGE,
+  CATEGORIES.INTERNET,
+  CATEGORIES.BUSINESS_EXPENSES,
+  CATEGORIES.HEALTHCARE,
+  CATEGORIES.PHARMACY,
+  CATEGORIES.PARKING_TOLL,
+  CATEGORIES.AUTO_SERVICES,
+  // Kept although the picker no longer offers jewellery (the category has no
+  // rules at all): the policy should already be right if the data lands later.
+  CATEGORIES.WATCHES_JEWELRY,
+]);
+
 export function toEngineCategory(uiValue: string): Category | null {
   return UI_CATEGORY_TO_ENGINE[uiValue] ?? null;
+}
+
+/**
+ * True when a category always recommends the direct swipe, addressed by its UI
+ * value rather than its engine one.
+ *
+ * Derived from DIRECT_SWIPE_ONLY_CATEGORIES rather than listed again, so the
+ * scoring policy and anything the UI says about it cannot drift apart.
+ */
+export function isDirectSwipeOnlyUiCategory(uiValue: string): boolean {
+  const engine = UI_CATEGORY_TO_ENGINE[uiValue];
+  return engine !== undefined && DIRECT_SWIPE_ONLY_CATEGORIES.has(engine);
 }
 
 // Reverse map, for turning a merchant's rule categories back into UI options.
@@ -352,8 +410,11 @@ function scoreCard(
     ? Math.max(0, Math.round(voucher.returnInr))
     : 0;
 
-  // A voucher may normally only take the headline when the user named the
-  // merchant. Otherwise the recommendation would be "buy a Vrott voucher" to
+  // Bill-type categories never headline a voucher, whatever it pays — see
+  // DIRECT_SWIPE_ONLY_CATEGORIES.
+  //
+  // Otherwise a voucher may normally only take the headline when the user named
+  // the merchant. Otherwise the recommendation would be "buy a Vrott voucher" to
   // someone who asked about online shopping generally — the figure is still
   // reported in `voucherSavingsInInr` (labelled with `voucherMerchant`), it
   // just can't win.
@@ -361,6 +422,7 @@ function scoreCard(
   // Ties go to the direct swipe: same rupees for less friction (no voucher to
   // buy, no validity window, no partial-redemption leftovers).
   const voucherWins =
+    !DIRECT_SWIPE_ONLY_CATEGORIES.has(category) &&
     (merchant !== null || VOUCHER_HEADLINE_CATEGORIES.has(category)) &&
     voucherSavingsInInr > directSwipeSavingsInInr;
   const winner = voucherWins ? voucher! : direct;
