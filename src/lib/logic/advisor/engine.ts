@@ -526,6 +526,19 @@ export interface CategoryReturnOptions {
   // any candidate that doesn't beat it, so `baseTier` is null for most cards.
   // That is the intended, conservative reading of an unattributed bucket.
   categoryRateOnly?: boolean;
+
+  // Floor this category at its own declared `merchant === null` rate instead of
+  // the card's base rate — including when that rate is 0.
+  //
+  // `bestOf` prunes any candidate that doesn't beat the base rate, so a
+  // category rule at or below base leaves `baseTier` null and the waterfall
+  // pays the base rate. That is right for a category with no rule of its own,
+  // but wrong where the issuer has *declared* a lower rate: utility spend
+  // commonly earns 0, and paying the base rate on it invents a return the card
+  // does not give. Pass the declared rate here to honour it verbatim.
+  //
+  // Only meaningful with `categoryRateOnly`; merchant routes are unaffected.
+  declaredCategoryRate?: number;
 }
 
 // Strip the merchant discount / convenience fee from a voucher candidate so the
@@ -571,7 +584,12 @@ export function computeCategoryReturn(
   // group, spend that overflows its cap earns nothing — so the waterfall's
   // trailing floor is 0 instead of the card base rate. Every other case keeps
   // the card base rate.
-  const floorRate = isTotalCapGroup(baseTier?.sharedCapGroup) ? 0 : baseRate;
+  const floorRate =
+    options.declaredCategoryRate !== undefined
+      ? options.declaredCategoryRate
+      : isTotalCapGroup(baseTier?.sharedCapGroup)
+        ? 0
+        : baseRate;
 
   const directResult = directWaterfallInr(
     spend,

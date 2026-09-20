@@ -313,16 +313,29 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
     offline: [],
   },
   utilityBills: {
+    // Utility spend is scored on the utility_bills category rate on BOTH legs,
+    // never the card base rate. Cards commonly set this rate to 0 deliberately
+    // (utility spend is excluded from earning), and that 0 is the correct,
+    // intentional answer — falling back to the base rate would silently pay out
+    // on spend the issuer says earns nothing.
+    //
+    // Note the category is `utility_bills`, matching the rule data; the legacy
+    // `utilities` id has no rules at all.
     online: [
       {
         kind: "best-of",
         label: "Utilities (90% of utility online pot)",
         share: 1.0,
-        category: CATEGORIES.UTILITIES,
+        category: CATEGORIES.UTILITY_BILLS,
       },
     ],
     offline: [
-      { kind: "fallback", label: "Utility offline (fallback)", share: 1.0 },
+      {
+        kind: "best-of",
+        label: "Utility offline",
+        share: 1.0,
+        category: CATEGORIES.UTILITY_BILLS,
+      },
     ],
   },
   fuel: {
@@ -350,7 +363,9 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
         categories: [
           CATEGORIES.RENT,
           CATEGORIES.INSURANCE,
-          CATEGORIES.FEES_TAXES,
+          // The rule data files this under `taxes`; the legacy `fees_taxes` id
+          // carries no rules, so it always scored the card base rate.
+          CATEGORIES.TAXES,
         ],
       },
     ],
@@ -452,13 +467,13 @@ const CATEGORY_DISPLAY_LABELS: Partial<Record<Category, string>> = {
   [CATEGORIES.FOREX]: "Forex",
   [CATEGORIES.ONLINE_FOOD_DINING]: "Dining",
   [CATEGORIES.FUEL]: "Fuel",
-  [CATEGORIES.GROCERY]: "Grocery",
+  [CATEGORIES.GROCERIES_SUPERMARKETS]: "Grocery",
   [CATEGORIES.ONLINE_SHOPPING]: "Online Shopping",
-  [CATEGORIES.UTILITIES]: "Utilities",
+  [CATEGORIES.UTILITY_BILLS]: "Utilities",
   [CATEGORIES.OTHER]: "Other",
   [CATEGORIES.RENT]: "Rent",
   [CATEGORIES.INSURANCE]: "Insurance",
-  [CATEGORIES.FEES_TAXES]: "Fees & Taxes",
+  [CATEGORIES.TAXES]: "Fees & Taxes",
 };
 
 function humanizeCategory(cat: Category): string {
@@ -626,11 +641,40 @@ const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
   travel: CATEGORIES.OTHER,
   foodAndDining: CATEGORIES.ONLINE_FOOD_DINING,
   onlineShopping: CATEGORIES.ONLINE_SHOPPING,
-  utilityBills: CATEGORIES.UTILITIES,
+  utilityBills: CATEGORIES.UTILITY_BILLS,
   fuel: CATEGORIES.FUEL,
   rentInsuranceFees: CATEGORIES.OTHER,
   others: CATEGORIES.OTHER,
 };
+
+// Categories scored on their own declared `merchant === null` rate rather than
+// the card base rate, so an intentional 0 is paid out as 0. See
+// `CategoryReturnOptions.declaredCategoryRate`.
+const DECLARED_RATE_CATEGORIES: readonly Category[] = [
+  CATEGORIES.UTILITY_BILLS,
+];
+
+// The card's own category-wide rate for `category`, or undefined when the card
+// declares no such rule (the caller then keeps normal base-rate behaviour).
+// Reads the raw rule rather than best-of because best-of prunes anything at or
+// below the base rate — which is exactly the case this needs to see.
+function declaredCategoryRate(
+  card: MockCard,
+  category: Category,
+  rules: MockRule[],
+): number | undefined {
+  let rate: number | undefined;
+  for (const r of rules) {
+    if (r.cardId !== card._id) continue;
+    if (r.category !== category) continue;
+    if (r.merchant !== null) continue;
+    if (!r.is_active) continue;
+    const pct = r.reward.direct_swipe_percentage;
+    // Several rules can share a category; keep the best the card declares.
+    if (rate === undefined || pct > rate) rate = pct;
+  }
+  return rate;
+}
 
 function effectiveFallbackRate(card: MockCard, category: Category): number {
   if (card.excluded_categories?.includes(category)) return 0;
@@ -682,12 +726,19 @@ function evaluateSpec(
     bestOf = merchantBestOf(card, spec.category, spec.merchant, rules);
   }
 
+  // Utility-style categories are floored at the rate the card itself declares
+  // (0 included) instead of the base rate.
+  const declaredRate = DECLARED_RATE_CATEGORIES.includes(category)
+    ? declaredCategoryRate(card, category, rules)
+    : undefined;
+
   const cat: CategoryReturn = computeCategoryReturn(
     spend,
     category,
     card,
     bestOf,
     ANNUAL_CAP_PERIODS,
+    { declaredCategoryRate: declaredRate },
   );
 
   // When the best-of / merchant lookup falls through to base rate AND the

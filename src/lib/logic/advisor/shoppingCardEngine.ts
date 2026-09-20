@@ -375,7 +375,9 @@ function buildOnlineSpecs(
 // their share folds into the OFFLINE_SHOPPING base bucket.
 const OFFLINE_CATEGORY_CANDIDATES = [
   CATEGORIES.OFFLINE_FOOD_DINING,
-  CATEGORIES.GROCERY,
+  // The rule data files grocery under `groceries_supermarkets`; the legacy
+  // `grocery` id carries no rules, so ranking on it always scored the base rate.
+  CATEGORIES.GROCERIES_SUPERMARKETS,
   CATEGORIES.FUEL,
 ] as const;
 const OFFLINE_TOP_SHARES = [0.2, 0.1] as const;
@@ -386,7 +388,7 @@ const OFFLINE_CATEGORY_LABELS: Record<
   string
 > = {
   [CATEGORIES.OFFLINE_FOOD_DINING]: "Dining",
-  [CATEGORIES.GROCERY]: "Grocery",
+  [CATEGORIES.GROCERIES_SUPERMARKETS]: "Grocery",
   [CATEGORIES.FUEL]: "Fuel",
 };
 

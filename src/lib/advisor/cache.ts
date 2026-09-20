@@ -63,7 +63,11 @@ export const ENGINE_CATEGORIES = {
     "online_shopping",
     "offline_shopping",
     "offline_food_dining",
+    // Grocery rules live under `groceries_supermarkets`; the legacy `grocery`
+    // id carries none. Both are loaded so cap groups keyed off the legacy id
+    // still resolve.
     "grocery",
+    "groceries_supermarkets",
     "fuel",
     "utilities",
   ],
@@ -75,11 +79,18 @@ export const ENGINE_CATEGORIES = {
     "offline_food_dining",
     "online_shopping",
     "grocery",
+    "groceries_supermarkets",
     "fuel",
+    // The utility bucket scores `utility_bills`, which is where the rule data
+    // lives; `utilities` is kept because the bucket's cap groups still key off
+    // it, but it carries no rules of its own.
     "utilities",
+    "utility_bills",
     "rent",
     "insurance",
+    // Fees/taxes rules live under `taxes`; `fees_taxes` carries none.
     "fees_taxes",
+    "taxes",
     "other",
   ],
 } as const;
