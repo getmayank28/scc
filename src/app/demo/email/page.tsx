@@ -333,10 +333,10 @@ export default function EmailDemoPage() {
               <strong className="text-white">{data.withAttachments}</strong>{" "}
               with attachments
             </span>
-            <span>{data.queriedDomains.length} domains queried</span>
-            {data.failedDomains.length > 0 && (
+            <span>{data.source === "synced-now" ? "synced from Unipile" : "from cache"}</span>
+            {data.syncFailed.length > 0 && (
               <span className="text-amber-400">
-                failed: {data.failedDomains.join(", ")}
+                failed: {data.syncFailed.join(", ")}
               </span>
             )}
           </div>

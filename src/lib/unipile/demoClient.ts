@@ -32,9 +32,13 @@ export interface DemoMessage {
 }
 
 export interface MessagesResult {
+  /** "synced-now" when this request pulled from Unipile, "db" when served from cache. */
+  source: "synced-now" | "db";
   accounts: Array<{ accountId: string; emailAddress: string | null }>;
-  queriedDomains: string[];
-  failedDomains: string[];
+  /** Mailboxes this request had to sync (empty on a cache hit). */
+  syncedNow: string[];
+  /** Issuer domains whose sync query failed. */
+  syncFailed: string[];
   total: number;
   withAttachments: number;
   messages: DemoMessage[];
