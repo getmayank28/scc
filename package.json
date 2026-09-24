@@ -9,7 +9,9 @@
     "lint": "next lint",
     "bestof:recompute": "npx tsx --env-file=.env.local scripts/recompute-bestof.ts",
     "smoke:recommend": "npx tsx --env-file=.env.local scripts/smoke-recommend.ts",
-    "insights:smoke": "npx tsx --env-file=.env.local scripts/insights-smoke.ts"
+    "insights:smoke": "npx tsx --env-file=.env.local scripts/insights-smoke.ts",
+    "detect:smoke": "npx tsx --env-file=.env.local scripts/detect-smoke.ts",
+    "detect:cases": "npx tsx --env-file=.env.local scripts/detect-cases.ts"
   },
   "dependencies": {
     "@amplitude/analytics-browser": "^2.37.2",

@@ -13,6 +13,7 @@ npx tsc --noEmit            # type-check without emitting
 
 npm run bestof:recompute    # rebuild the CardBestOf precompute cache for every card
 npm run smoke:recommend     # run all 4 phase-2 engines against live Atlas data, print top result
+npm run detect:smoke        # run email card-detection over every stored mailbox, print the verdict table
 ```
 
 - There is **no test runner** configured. Verify pure advisor helpers by importing them directly (see `ai-advisor-logic.md` §6) and verify wiring with `smoke:recommend` + curling endpoints.
@@ -46,6 +47,8 @@ Known data hazards (from memory): ~342 empty `card_*` duplicate records corrupt 
 
 - **Routing** uses App Router route groups: `src/app/(app)/*` (authenticated app: home, spend-optimizer, card-info, redemption, admin, chat, tools, etc.), `src/app/(auth)/*` (sign-in / sign-up / verify), and public pages at the root (`/`, `/about`, `/terms`, `/privacy-policy`, `/legal-compliance`, `/card`, `/demo`).
 - **`/demo`** (`src/app/demo/page.tsx`) is the advisor test harness: 8 forms, one per engine/phase, sharing `ProfileFields.tsx`, POSTing via `fetchRecommend` (`src/lib/advisor/client.ts`).
+- **Card detection from email** (`/demo/email` → "Find my cards"): `src/lib/carddetect/*` reads already-synced `StoredEmail` rows (no Unipile calls) and answers three independent questions per card — **existence** (is there a real card at this issuer+last4?), **resolution** (which catalog slug is it?) and **liveness** (is it still open?). It is a **two-pass join**, because the last4 and the product name usually live in different emails: pass A groups by `(issuer, last4)`, pass B collects product phrases, then they join per-tail. The verdict (`AUTO_ADD` / `CONFIRM` / `SUPPRESS` / `IGNORE`) is a discrete lookup over those three axes, not a tuned score, so every row can explain itself. `signals.ts` and `resolve.ts` are pure (script-testable); `catalog.ts` and the route hold the DB access. Verify changes with `npm run detect:smoke` — the regexes are tuned against the real corpus and several guards exist to stop specific false positives (savings-account alerts, promo fine print, T&C closure wording).
+
 - **Sale funnel** lives in `src/features/sale/*` (self-contained: components/data/hooks/lib). Note: `sale/[merchant]` pages use Satoshi only — no ButlerPro serif.
 
 ## Auth & access control

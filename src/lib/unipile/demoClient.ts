@@ -143,3 +143,67 @@ export function attachmentDownloadUrl(params: {
   if (params.accountId) qs.set("account_id", params.accountId);
   return `/api/demo/email/attachment?${qs.toString()}`;
 }
+
+// --- Card detection ("Find my cards") --------------------------------------
+
+export type DetectSignalType =
+  | "STATEMENT"
+  | "TRANSACTION"
+  | "PAYMENT_DUE"
+  | "ACTIVATION"
+  | "MARKETING";
+export type DetectVerdict = "AUTO_ADD" | "CONFIRM" | "SUPPRESS" | "IGNORE";
+export type DetectResolutionStatus = "UNIQUE" | "AMBIGUOUS" | "NO_MATCH";
+export type DetectLiveness = "ACTIVE" | "DORMANT" | "STALE";
+
+export interface DetectedCard {
+  issuer: string;
+  last4: string | null;
+  existence: {
+    score: number;
+    strongest: DetectSignalType;
+    signals: DetectSignalType[];
+  };
+  resolution: {
+    phrase: string | null;
+    candidates: Array<{
+      slug: string;
+      name: string;
+      bankName: string;
+      cardId: string;
+      score: number;
+    }>;
+    status: DetectResolutionStatus;
+  };
+  liveness: {
+    lastSeen: string | null;
+    daysAgo: number | null;
+    negative: "CLOSED" | "BLOCKED" | "REPLACED" | null;
+    status: DetectLiveness;
+  };
+  verdict: DetectVerdict;
+  reason: string;
+  evidence: Array<{
+    type: DetectSignalType;
+    emailId: string;
+    date: string | null;
+    subject: string;
+  }>;
+}
+
+export interface DetectionResult {
+  emailsScanned: number;
+  emailsWithCardContext: number;
+  issuersSeen: string[];
+  cards: DetectedCard[];
+  accounts: Array<{ accountId: string; emailAddress: string | null }>;
+  lookbackDays: number;
+}
+
+export function detectCards(params?: { accountId?: string; lookbackDays?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.accountId) qs.set("account_id", params.accountId);
+  if (params?.lookbackDays) qs.set("lookback_days", String(params.lookbackDays));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return call<DetectionResult>(`/api/demo/email/detect-cards${suffix}`);
+}

@@ -17,6 +17,7 @@ import { ISSUER_FILTERS } from "@/lib/unipile/issuers";
 import {
   attachmentDownloadUrl,
   connectAccount,
+  detectCards,
   fetchStatus,
   fetchEmailDetail,
   fetchMessages,
@@ -24,8 +25,10 @@ import {
   type EmailDetail,
   type ConnectionStatus,
   type AttachmentProbe,
+  type DetectionResult,
   type MessagesResult,
 } from "@/lib/unipile/demoClient";
+import DetectedCards from "./DetectedCards";
 
 const VERDICT_STYLES: Record<AttachmentProbe["verdict"], string> = {
   open: "bg-green-500/15 text-green-400 border border-green-500/30",
@@ -134,6 +137,8 @@ export default function EmailDemoPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [detection, setDetection] = useState<DetectionResult | null>(null);
+  const [detecting, setDetecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function refreshStatus() {
@@ -181,6 +186,19 @@ export default function EmailDemoPage() {
       setData(null);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onFindCards() {
+    setDetecting(true);
+    setError(null);
+    try {
+      setDetection(await detectCards());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Detection failed");
+      setDetection(null);
+    } finally {
+      setDetecting(false);
     }
   }
 
@@ -314,6 +332,18 @@ export default function EmailDemoPage() {
               {loading ? "Fetching…" : "Fetch issuer mail"}
             </Button>
           </div>
+
+          <div className="space-y-2 border-t border-white/10 pt-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={onFindCards} disabled={detecting}>
+                {detecting ? "Reading your mail…" : "Find my cards"}
+              </Button>
+              <p className="text-xs text-white/45">
+                Groups issuer mail by (issuer, last 4), resolves the product name
+                to a catalog card, and checks whether it is still live.
+              </p>
+            </div>
+          </div>
         </section>
       )}
 
@@ -322,6 +352,8 @@ export default function EmailDemoPage() {
           {error}
         </div>
       )}
+
+      {detection && <DetectedCards data={detection} />}
 
       {data && (
         <section className="space-y-3">
