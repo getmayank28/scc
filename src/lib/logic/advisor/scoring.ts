@@ -74,11 +74,29 @@ export function annualIncomeInrForProfile(
   return monthly === undefined ? null : monthly * 12;
 }
 
+// True when the card is offered to this profile's employment type. An absent
+// or empty `eligible_employment_type` means the card carries no employment
+// restriction; an absent profile employment type means we cannot judge, so the
+// card is kept rather than silently dropped.
+export function matchesEmploymentType(
+  card: MockCard,
+  profile?: UserProfile,
+): boolean {
+  const allowed = card.eligible_employment_type;
+  if (!allowed || allowed.length === 0) return true;
+  if (!profile?.employmentType) return true;
+  return allowed.includes(profile.employmentType);
+}
+
 export function isCardEligible(
   card: MockCard,
   profile?: UserProfile,
 ): boolean {
   if (card.invitation_only) return false;
+  // Only an explicit `false` withholds a card; undefined means the card
+  // predates the flag and stays recommendable.
+  if (card.is_recommendable === false) return false;
+  if (!matchesEmploymentType(card, profile)) return false;
 
   const income = annualIncomeInrForProfile(profile);
   if (income === null) return true;

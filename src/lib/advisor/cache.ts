@@ -151,6 +151,11 @@ export function toMockCard(doc: LeanCard): MockCard {
     not_ideal_for: doc.not_ideal_for as string[],
     is_active: doc.is_active as boolean,
     invitation_only: (doc.invitation_only as boolean) ?? false,
+    // Undefined (card predates the field) stays undefined so the eligibility
+    // filter can treat it as unrestricted rather than as an explicit `false`.
+    is_recommendable: doc.is_recommendable as boolean | undefined,
+    eligible_employment_type:
+      doc.eligible_employment_type as MockCard["eligible_employment_type"],
     excluded_categories:
       doc.excluded_categories as MockCard["excluded_categories"],
     transfer_partners:
@@ -187,7 +192,7 @@ async function hydrate(): Promise<void> {
   const [cardDocs, bestOfDocs, milestoneDocs] = await Promise.all([
     CardAdvisorModel.find({ is_active: true })
       .select(
-        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only excluded_categories rulesVersion",
+        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only is_recommendable eligible_employment_type excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>(),
     CardBestOfModel.find({})
@@ -333,7 +338,7 @@ export const AdvisorCache = {
     await dbConnect();
     const docs = await CardAdvisorModel.find({ slug: { $in: missing } })
       .select(
-        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only excluded_categories rulesVersion",
+        "name slug bankName bankId network eligibility fees forex_markup_percentage rewards categories welcome_benefit lounge ideal_for not_ideal_for is_active invitation_only is_recommendable eligible_employment_type excluded_categories rulesVersion",
       )
       .lean<LeanCard[]>();
 

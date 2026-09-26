@@ -1,3 +1,5 @@
+import type { EmploymentTypeValue } from "@/schemas/userInfoSchema";
+
 export const CATEGORIES = {
   FLIGHTS: "flights",
   HOTELS: "hotels",
@@ -154,6 +156,16 @@ export interface MockCard {
   // Invite-only cards are never recommended. Optional; undefined means the
   // card is openly available.
   invitation_only?: boolean;
+
+  // Editorial switch: false withholds the card from advisor output even when
+  // it is active and otherwise eligible. Undefined means "not classified" and
+  // is treated as recommendable.
+  is_recommendable?: boolean;
+
+  // Employment types the issuer actually offers this card to, in the same
+  // vocabulary as UserProfile.employmentType. Undefined or empty means the
+  // card carries no employment restriction.
+  eligible_employment_type?: EmploymentTypeValue[];
 
   // Categories where the card's base reward rate does NOT apply. Specific
   // merchant rules still earn at their declared rate; spend that doesn't match
