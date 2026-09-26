@@ -6,6 +6,10 @@ import type {
   WelcomeBenefitType,
   LoungeAccess,
 } from "@/lib/logic/advisor/cards";
+import {
+  EMPLOYMENT_TYPE_VALUES,
+  type EmploymentTypeValue,
+} from "@/schemas/userInfoSchema";
 import mongoose, { Document, Schema, Types } from "mongoose";
 
 // The single card collection. Cards are identified by the stable string `slug`
@@ -66,6 +70,20 @@ export interface Card extends Document {
   miles_and_hotel_partners?: string[];
   max_value_on_transfer?: string[];
   is_active?: boolean;
+
+  // Editorial switch, independent of `is_active`. A card can be live in the
+  // catalogue (browsable on /card-info, attachable to a wallet) while being
+  // withheld from advisor output — e.g. invite-only proxies, add-on cards and
+  // co-brands we do not want to push. The advisor drops these; the rest of the
+  // app ignores the flag. Undefined means "not yet classified" and is treated
+  // as recommendable so cards added before this field shipped keep working.
+  is_recommendable?: boolean;
+
+  // Employment types this card is actually issued to. Uses the same enum as
+  // User.employmentType so a profile value can be matched directly. Undefined
+  // or empty means "no employment restriction".
+  eligible_employment_type?: EmploymentTypeValue[];
+
   excluded_categories?: Category[];
   // Bumped on any rule write for this card; used to detect stale CardBestOf
   // payloads during the request-time staleness check.
@@ -124,6 +142,12 @@ const CardSchema: Schema<Card> = new Schema(
     miles_and_hotel_partners: { type: [String], default: undefined },
     max_value_on_transfer: { type: [String], default: undefined },
     is_active: { type: Boolean, index: true },
+    is_recommendable: { type: Boolean, index: true },
+    eligible_employment_type: {
+      type: [String],
+      enum: EMPLOYMENT_TYPE_VALUES,
+      default: undefined,
+    },
     excluded_categories: { type: [String], default: undefined },
     rulesVersion: { type: Number },
   },
