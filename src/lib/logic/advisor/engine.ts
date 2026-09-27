@@ -9,6 +9,7 @@ import {
   isTotalCapGroup,
   type CapPeriod,
   type DirectSwipeSchedule,
+  type MockRule,
 } from "./rules";
 
 const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
@@ -541,6 +542,39 @@ export interface CategoryReturnOptions {
   declaredCategoryRate?: number;
 }
 
+// The card's own category-wide rate for `category`, or undefined when the card
+// declares no such rule (the caller then keeps normal base-rate behaviour).
+// Reads the raw rule rather than best-of because best-of prunes anything at or
+// below the base rate — which is exactly the case this needs to see.
+//
+// Applied to EVERY category, not a curated list: issuers zero-rate far more
+// than utilities. Across the live rule set 312 cards declare 0% on
+// wallet_reloads, 282 on rent, 253 on taxes and 149 on insurance, and each of
+// those was silently paid the card base rate instead. A category the card
+// declares no rule for returns undefined, keeping normal base-rate behaviour.
+//
+// Shared by the all-rounder and shopping engines; pass the result as
+// `CategoryReturnOptions.declaredCategoryRate`, or use it directly where a
+// `fallback` leg bypasses computeCategoryReturn entirely.
+export function declaredCategoryRate(
+  card: MockCard,
+  category: Category,
+  rules: MockRule[],
+): number | undefined {
+  let rate: number | undefined;
+  for (const r of rules) {
+    if (r.cardId !== card._id) continue;
+    if (r.category !== category) continue;
+    if (r.merchant !== null) continue;
+    if (!r.is_active) continue;
+    const pct = r.reward.direct_swipe_percentage;
+    // Several rules can share a category; keep the best the card declares.
+    if (rate === undefined || pct > rate) rate = pct;
+  }
+  return rate;
+}
+
+
 // Strip the merchant discount / convenience fee from a voucher candidate so the
 // lane scores on the card's reward leg alone. Caps are untouched: the reward leg
 // still budgets against exactly the same purchase and reward caps.
@@ -695,12 +729,19 @@ function buildSegment(
   index: Map<string, MockBestOf>,
   bookingsPerYear: number,
 ): SegmentReturn {
+  // Every travel bucket is unattributed — the travel inputs describe trips and
+  // spend, never a booking platform — so the engine picks the voucher merchant
+  // itself. Score all three on the card's reward leg alone; see
+  // `CategoryReturnOptions.rewardLegOnly`.
+  const unattributed = { rewardLegOnly: true } as const;
+
   const flights = computeCategoryReturn(
     spend.flights,
     CATEGORIES.FLIGHTS,
     card,
     index.get(`${card._id}::${CATEGORIES.FLIGHTS}`),
     bookingsPerYear,
+    unattributed,
   );
   const hotels = computeCategoryReturn(
     spend.hotels,
@@ -708,6 +749,7 @@ function buildSegment(
     card,
     index.get(`${card._id}::${CATEGORIES.HOTELS}`),
     bookingsPerYear,
+    unattributed,
   );
   const other = computeCategoryReturn(
     spend.other,
@@ -715,6 +757,7 @@ function buildSegment(
     card,
     index.get(`${card._id}::${CATEGORIES.OTHER}`),
     bookingsPerYear,
+    unattributed,
   );
 
   return {

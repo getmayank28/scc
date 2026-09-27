@@ -3,6 +3,7 @@ import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import {
   computeCategoryReturn,
+  declaredCategoryRate,
   reallocateAcrossCategories,
   type CategoryReturn,
   type SettledCapPool,
@@ -321,7 +322,11 @@ function evaluateSpec(
   rules: MockRule[],
 ): FoodSubReturn {
   if (spec.kind === "fallback") {
-    const rate = diningFallbackRate(card, spec.category);
+    // A category the card declares a rate for pays that rate, 0 included; this
+    // leg never reaches computeCategoryReturn, so it is applied here directly.
+    const rate =
+      declaredCategoryRate(card, spec.category, rules) ??
+      diningFallbackRate(card, spec.category);
     return {
       label: spec.label,
       spend: spec.spend,
@@ -335,10 +340,9 @@ function evaluateSpec(
   }
 
   // A merchant spec resolves against the first merchant in its preference
-  // chain the card actually carries (defaulting to `merchant` alone). When the
-  // card carries none, `bestOf` is undefined and computeCategoryReturn scores
-  // the category rate — the intended fallback.
-  const bestOf =
+  // chain the card actually carries (defaulting to `merchant` alone).
+  const categoryBestOf = index.get(`${card._id}::${spec.category}`);
+  const resolvedMerchantBestOf =
     spec.kind === "merchant"
       ? preferredMerchantBestOf(
           card,
@@ -346,7 +350,23 @@ function evaluateSpec(
           spec.merchantPreference ?? [spec.merchant],
           rules,
         )?.bestOf
-      : index.get(`${card._id}::${spec.category}`);
+      : undefined;
+
+  // When a merchant leg finds no rule for its own platform, fall back to the
+  // category best-of — but scored with `categoryRateOnly`, so only the
+  // card's category-wide (`merchant === null`) rule applies.
+  //
+  // Both halves matter. Passing undefined leaves computeCategoryReturn with no
+  // baseTier, so it pays the card base rate and discards a category-wide rule
+  // the card does have (HSBC Live+ declares a flat 10% on offline_food_dining
+  // and was scoring 1.5%). But passing the category best-of unrestricted is
+  // just as wrong: its frontier carries every restaurant chain the card has a
+  // rule for, so the Swiggy Dineout leg would score whichever chain ranks
+  // highest — SimplySAVE SBI paying an 18% `machaan` voucher on spend the user
+  // told us goes to Swiggy Dineout.
+  const merchantLegFellBack =
+    spec.kind === "merchant" && resolvedMerchantBestOf === undefined;
+  const bestOf = resolvedMerchantBestOf ?? categoryBestOf;
 
   const cat: CategoryReturn = computeCategoryReturn(
     spec.spend,
@@ -354,6 +374,16 @@ function evaluateSpec(
     card,
     bestOf,
     ANNUAL_CAP_PERIODS,
+    {
+      // Unattributed bucket: the food inputs name no merchant, so a voucher
+      // route here is the engine's own pick. Score it on the card's reward leg
+      // alone. `merchant` specs resolve a named delivery/dine-out platform, so
+      // their discount is attributable and stays in the rate.
+      rewardLegOnly: spec.kind === "category-best",
+      // A merchant leg that fell back to the category best-of keeps only the
+      // category-wide rule — never another merchant's route.
+      categoryRateOnly: merchantLegFellBack,
+    },
   );
 
   // Same exclusion override as allrounder: when best-of falls through to the

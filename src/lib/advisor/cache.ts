@@ -69,7 +69,11 @@ export const ENGINE_CATEGORIES = {
     "grocery",
     "groceries_supermarkets",
     "fuel",
+    // The utility bucket scores `utility_bills`, which is where the rule data
+    // lives; `utilities` is kept because cap groups still key off it, but it
+    // carries no rules of its own.
     "utilities",
+    "utility_bills",
   ],
   allrounder: [
     "flights",

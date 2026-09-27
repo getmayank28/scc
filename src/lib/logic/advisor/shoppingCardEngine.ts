@@ -3,6 +3,7 @@ import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import {
   computeCategoryReturn,
+  declaredCategoryRate,
   reallocateAcrossCategories,
   type CategoryReturn,
   type SettledCapPool,
@@ -493,7 +494,11 @@ function evaluateSpec(
   rules: MockRule[],
 ): ShoppingSubReturn {
   if (spec.kind === "fallback") {
-    const rate = fallbackRate(card, spec.category);
+    // A category the card declares a rate for pays that rate, 0 included,
+    // rather than the base rate. This leg never reaches computeCategoryReturn,
+    // so the declared rate is resolved here directly.
+    const declared = declaredCategoryRate(card, spec.category, rules);
+    const rate = declared ?? fallbackRate(card, spec.category);
     return {
       label: spec.label,
       spend: spec.spend,
@@ -507,9 +512,9 @@ function evaluateSpec(
   }
 
   // A category-best spec with a merchant preference resolves against the first
-  // of those merchants the card carries; undefined (no match) means
-  // computeCategoryReturn scores the category rate — the intended fallback.
-  const bestOf =
+  // of those merchants the card carries.
+  const categoryBestOf = index.get(`${card._id}::${spec.category}`);
+  const resolvedMerchantBestOf =
     spec.kind === "merchant"
       ? merchantBestOf(card, spec.category, spec.merchant, rules)
       : spec.merchantPreference
@@ -519,7 +524,19 @@ function evaluateSpec(
             spec.merchantPreference,
             rules,
           )
-        : index.get(`${card._id}::${spec.category}`);
+        : undefined;
+
+  // A merchant-scoped leg that finds no rule for its own platform falls back to
+  // the category best-of, scored with `categoryRateOnly` so only the card's
+  // category-wide rule applies. Passing undefined would discard that rule and
+  // pay the base rate; passing the frontier unrestricted would let an unrelated
+  // merchant win a slot the user attributed to a named platform. See the same
+  // fix in foodCardEngine.
+  const merchantScoped =
+    spec.kind === "merchant" || spec.merchantPreference !== undefined;
+  const merchantLegFellBack =
+    merchantScoped && resolvedMerchantBestOf === undefined;
+  const bestOf = resolvedMerchantBestOf ?? categoryBestOf;
 
   const cat: CategoryReturn = computeCategoryReturn(
     spec.spend,
@@ -531,7 +548,11 @@ function evaluateSpec(
       rewardLegOnly:
         spec.kind === "category-best" && spec.rewardLegOnly === true,
       categoryRateOnly:
-        spec.kind === "category-best" && spec.categoryRateOnly === true,
+        (spec.kind === "category-best" && spec.categoryRateOnly === true) ||
+        merchantLegFellBack,
+      // Floor the category at the rate the card itself declares (0 included)
+      // instead of the base rate, wherever the card declares one.
+      declaredCategoryRate: declaredCategoryRate(card, spec.category, rules),
     },
   );
 
@@ -743,9 +764,15 @@ export function buildShoppingSpendBreakdownTwo(
   };
 }
 
-// Recipe from the spec: online side asks best-of UTILITIES (or fallback when
-// the card has no rule); offline side runs straight at the card's fallback
-// rate for utilities.
+// Recipe from the spec: online side asks best-of utility_bills (or fallback
+// when the card has no rule); offline side runs straight at the card's
+// fallback rate for utilities.
+//
+// The category is `utility_bills`, matching the rule data — the legacy
+// `utilities` id carries no rules at all, so scoring against it always missed
+// and silently paid the card base rate. Both legs are floored at the rate the
+// card itself declares (0 included); see
+// `CategoryReturnOptions.declaredCategoryRate`.
 function buildUtilitySpecs(utility: UtilityPotBreakdown): ShoppingSubSpec[] {
   const out: ShoppingSubSpec[] = [];
   if (utility.annualOnline > 0) {
@@ -753,7 +780,7 @@ function buildUtilitySpecs(utility: UtilityPotBreakdown): ShoppingSubSpec[] {
       kind: "category-best",
       label: "Utilities online (best-of)",
       spend: utility.annualOnline,
-      category: CATEGORIES.UTILITIES,
+      category: CATEGORIES.UTILITY_BILLS,
     });
   }
   if (utility.annualOffline > 0) {
@@ -761,7 +788,7 @@ function buildUtilitySpecs(utility: UtilityPotBreakdown): ShoppingSubSpec[] {
       kind: "fallback",
       label: "Utility offline (fallback)",
       spend: utility.annualOffline,
-      category: CATEGORIES.UTILITIES,
+      category: CATEGORIES.UTILITY_BILLS,
     });
   }
   return out;
