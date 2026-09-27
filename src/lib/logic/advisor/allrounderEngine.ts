@@ -3,6 +3,7 @@ import { computeBestOfForCard, type MockBestOf } from "./bestOf";
 import { MERCHANTS, type Merchant, type MockRule } from "./rules";
 import {
   computeCategoryReturn,
+  declaredCategoryRate,
   reallocateAcrossCategories,
   type CategoryReturn,
   type SettledCapPool,
@@ -170,6 +171,12 @@ type SubAllocationSpec =
       share: number;
       category: Category;
       merchant: Merchant;
+      // True when the ENGINE chose this merchant (a `top-n` ranking picked
+      // whichever brand scored highest) rather than the recipe naming a real
+      // platform the user's spend actually goes to. Engine-picked merchants
+      // score on the card's reward leg alone — see
+      // `CategoryReturnOptions.rewardLegOnly`.
+      enginePicked?: boolean;
     }
   | {
       // Expanded at evaluation time into 1-2 `merchant` specs (or fallback if
@@ -532,6 +539,9 @@ function expandSpec(
           share: sh,
           category: spec.category,
           merchant: top[i].merchant,
+          // Ranked out of every merchant in the category, not named by the
+          // user — so the merchant's own voucher discount isn't attributable.
+          enginePicked: true,
         };
       }
       return {
@@ -647,35 +657,6 @@ const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
   others: CATEGORIES.OTHER,
 };
 
-// Categories scored on their own declared `merchant === null` rate rather than
-// the card base rate, so an intentional 0 is paid out as 0. See
-// `CategoryReturnOptions.declaredCategoryRate`.
-const DECLARED_RATE_CATEGORIES: readonly Category[] = [
-  CATEGORIES.UTILITY_BILLS,
-];
-
-// The card's own category-wide rate for `category`, or undefined when the card
-// declares no such rule (the caller then keeps normal base-rate behaviour).
-// Reads the raw rule rather than best-of because best-of prunes anything at or
-// below the base rate — which is exactly the case this needs to see.
-function declaredCategoryRate(
-  card: MockCard,
-  category: Category,
-  rules: MockRule[],
-): number | undefined {
-  let rate: number | undefined;
-  for (const r of rules) {
-    if (r.cardId !== card._id) continue;
-    if (r.category !== category) continue;
-    if (r.merchant !== null) continue;
-    if (!r.is_active) continue;
-    const pct = r.reward.direct_swipe_percentage;
-    // Several rules can share a category; keep the best the card declares.
-    if (rate === undefined || pct > rate) rate = pct;
-  }
-  return rate;
-}
-
 function effectiveFallbackRate(card: MockCard, category: Category): number {
   if (card.excluded_categories?.includes(category)) return 0;
   return card.rewards.base_reward_rate;
@@ -696,10 +677,14 @@ function evaluateSpec(
   // maps to a category distinct from the bucket default, else the bucket's).
   // No cap handling — these represent spend that doesn't match any merchant rule.
   if (spec.kind === "fallback") {
-    const fallbackRate = effectiveFallbackRate(
-      card,
-      spec.category ?? bucketFallbackCategory,
-    );
+    const fallbackCategory = spec.category ?? bucketFallbackCategory;
+    // A category the card declares a rate for pays that rate, 0 included. This
+    // leg never reaches computeCategoryReturn, so the declared rate is applied
+    // here directly — otherwise e.g. the fuel-online leg pays the base rate on
+    // spend the card declares as zero-earning.
+    const fallbackRate =
+      declaredCategoryRate(card, fallbackCategory, rules) ??
+      effectiveFallbackRate(card, fallbackCategory);
     return {
       label: spec.label,
       share: spec.share,
@@ -717,20 +702,30 @@ function evaluateSpec(
   let category: Category;
   let bestOf: MockBestOf | undefined;
 
+  // Set when a `merchant` leg found no rule for its own merchant and fell back
+  // to the category best-of. That fallback is then scored with
+  // `categoryRateOnly` so only the card's category-wide rule applies: passing
+  // undefined would discard that rule and pay the base rate, while passing the
+  // frontier unrestricted would let an unrelated merchant win a slot the recipe
+  // attributed to a named platform. See the same fix in foodCardEngine.
+  let merchantLegFellBack = false;
+
   if (spec.kind === "best-of") {
     category = spec.category;
     bestOf = index.get(`${card._id}::${spec.category}`);
   } else {
     // kind === "merchant"
     category = spec.category;
-    bestOf = merchantBestOf(card, spec.category, spec.merchant, rules);
+    const resolved = merchantBestOf(card, spec.category, spec.merchant, rules);
+    merchantLegFellBack = resolved === undefined;
+    bestOf = resolved ?? index.get(`${card._id}::${spec.category}`);
   }
 
-  // Utility-style categories are floored at the rate the card itself declares
-  // (0 included) instead of the base rate.
-  const declaredRate = DECLARED_RATE_CATEGORIES.includes(category)
-    ? declaredCategoryRate(card, category, rules)
-    : undefined;
+  // Floor the category at the rate the card itself declares (0 included)
+  // instead of the base rate, for whichever categories declare one. Applies to
+  // all of them: fuel, insurance and taxes are commonly zero-rated, and paying
+  // the base rate there invents a return the card does not give.
+  const declaredRate = declaredCategoryRate(card, category, rules);
 
   const cat: CategoryReturn = computeCategoryReturn(
     spend,
@@ -738,7 +733,24 @@ function evaluateSpec(
     card,
     bestOf,
     ANNUAL_CAP_PERIODS,
-    { declaredCategoryRate: declaredRate },
+    {
+      declaredCategoryRate: declaredRate,
+      // Unattributed spend scores on the card's reward leg alone, rather than
+      // crediting a niche brand's voucher promo to spend the user never said
+      // they'd make there. Two cases qualify:
+      //   - `best-of`: the recipe names only a category.
+      //   - `merchant` with `enginePicked`: a `top-n` ranking chose whichever
+      //     brand scored highest (e.g. auric at 53% on online_shopping).
+      // Recipe-named merchants (Swiggy/Zomato dining) are exempt: those are
+      // real platforms the bucket's spend actually goes to, so the merchant's
+      // discount is attributable.
+      rewardLegOnly:
+        spec.kind === "best-of" ||
+        (spec.kind === "merchant" && spec.enginePicked === true),
+      // A merchant leg that fell back to the category best-of keeps only the
+      // category-wide rule — never another merchant's route.
+      categoryRateOnly: merchantLegFellBack,
+    },
   );
 
   // When the best-of / merchant lookup falls through to base rate AND the
