@@ -614,13 +614,37 @@ export function computeCategoryReturn(
     : rawVoucherFrontier;
   const baseTier = bestOf?.baseTier ?? null;
 
+  // `floorRate` is the waterfall's TRAILING rate: it pays every rupee that no
+  // capped candidate absorbed, so by construction nothing limits it. Only a
+  // rate that genuinely has no cap may be placed here.
+  //
+  // `declaredCategoryRate` is the raw `direct_swipe_percentage` of the card's
+  // `merchant === null` rule, with its `reward_cap` stripped. That is safe only
+  // where the rule earns at or below the card base rate: `bestOf` prunes those
+  // candidates, so `baseTier` is null and there is no cap to lose — which is
+  // exactly the zero-rated-utility case the option exists for.
+  //
+  // Above the base rate the same rule ALSO arrives as `baseTier`, carrying its
+  // `rewardCapPerPeriodValueInr`. Using the declared rate as the floor there
+  // let the uncapped copy absorb the whole spend before `baseTier`'s budget
+  // could bind, silently discarding the cap (a 10%/₹1,000-per-month utility
+  // rule paid 10% on ₹4.2L — ₹42,188 instead of ₹12,000). So when a capped
+  // `baseTier` already covers the declared rate, leave the floor at the base
+  // rate and let the waterfall spend `baseTier`'s capped budget instead.
+  const declared = options.declaredCategoryRate;
+  const declaredIsCapped =
+    declared !== undefined &&
+    baseTier !== null &&
+    baseTier.rewardCapPerPeriodValueInr !== null &&
+    baseTier.percentage >= declared;
+
   // When the category's catch-all (the merchant-null base tier) is a `total`
   // group, spend that overflows its cap earns nothing — so the waterfall's
   // trailing floor is 0 instead of the card base rate. Every other case keeps
   // the card base rate.
   const floorRate =
-    options.declaredCategoryRate !== undefined
-      ? options.declaredCategoryRate
+    declared !== undefined && !declaredIsCapped
+      ? declared
       : isTotalCapGroup(baseTier?.sharedCapGroup)
         ? 0
         : baseRate;
