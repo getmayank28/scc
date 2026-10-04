@@ -177,6 +177,10 @@ type SubAllocationSpec =
       // score on the card's reward leg alone — see
       // `CategoryReturnOptions.rewardLegOnly`.
       enginePicked?: boolean;
+      // True for an offline dining leg that borrowed the platform's delivery
+      // rule (merchant-pair `deliveryMirror`). evaluateBucket scores it together
+      // with the matching online leg so the rule's cap is spent once.
+      mirrorsDelivery?: boolean;
     }
   | {
       // Expanded at evaluation time into 1-2 `merchant` specs (or fallback if
@@ -192,6 +196,12 @@ type SubAllocationSpec =
       // against the first merchant in `merchantPreference[i]` the card carries
       // a rule for; without it, only `merchants[i]` is tried.
       merchantPreference?: [readonly Merchant[], readonly Merchant[]];
+      // Optional per-slot delivery platform, tried under online_food_dining
+      // when the slot's own chain finds nothing: Swiggy/Zomato dining pays the
+      // same voucher / direct-swipe rule as delivery. The catalog keys those
+      // rules to online_food_dining only, so without this the dining slot
+      // always fell back to the category rate.
+      deliveryMirror?: [Merchant, Merchant];
       topShare: number;
       tailShare: number;
     }
@@ -297,6 +307,7 @@ const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
             MERCHANTS.ZOMATO,
           ],
         ],
+        deliveryMirror: [MERCHANTS.SWIGGY, MERCHANTS.ZOMATO],
         topShare: 0.7,
         tailShare: 0.3,
       },
@@ -576,18 +587,57 @@ function expandSpec(
   // Everything below then treats the slot as that single merchant.
   const resolveSlot = (
     slot: 0 | 1,
-  ): { merchant: Merchant; bestOf: MockBestOf | undefined } => {
+  ): {
+    merchant: Merchant;
+    bestOf: MockBestOf | undefined;
+    category: Category;
+    mirrorsDelivery: boolean;
+  } => {
     const chain = spec.merchantPreference?.[slot] ?? [spec.merchants[slot]];
     for (const candidate of chain) {
       const bo = merchantBestOf(card, spec.category, candidate, rules);
-      if (bo) return { merchant: candidate, bestOf: bo };
+      if (bo) {
+        return {
+          merchant: candidate,
+          bestOf: bo,
+          category: spec.category,
+          mirrorsDelivery: false,
+        };
+      }
     }
-    return { merchant: spec.merchants[slot], bestOf: undefined };
+    const mirror = spec.deliveryMirror?.[slot];
+    if (mirror) {
+      const bo = merchantBestOf(
+        card,
+        CATEGORIES.ONLINE_FOOD_DINING,
+        mirror,
+        rules,
+      );
+      if (bo) {
+        return {
+          merchant: mirror,
+          bestOf: bo,
+          category: CATEGORIES.ONLINE_FOOD_DINING,
+          mirrorsDelivery: true,
+        };
+      }
+    }
+    return {
+      merchant: spec.merchants[slot],
+      bestOf: undefined,
+      category: spec.category,
+      mirrorsDelivery: false,
+    };
   };
   const slotA = resolveSlot(0);
   const slotB = resolveSlot(1);
   const mA = slotA.merchant;
   const mB = slotB.merchant;
+  // A slot that borrowed a delivery rule is scored in that rule's category.
+  const slotFields = (s: typeof slotA) => ({
+    category: s.category,
+    ...(s.mirrorsDelivery ? { mirrorsDelivery: true } : {}),
+  });
   const boA = slotA.bestOf;
   const boB = slotB.bestOf;
   if (!boA && !boB) {
@@ -605,8 +655,8 @@ function expandSpec(
         kind: "merchant",
         label: `${spec.label} · ${mA} (100%)`,
         share: spec.share,
-        category: spec.category,
         merchant: mA,
+        ...slotFields(slotA),
       },
     ];
   }
@@ -616,30 +666,30 @@ function expandSpec(
         kind: "merchant",
         label: `${spec.label} · ${mB} (100%)`,
         share: spec.share,
-        category: spec.category,
         merchant: mB,
+        ...slotFields(slotB),
       },
     ];
   }
   const rateA = merchantNominalRate(boA, card.rewards.base_reward_rate);
   const rateB = merchantNominalRate(boB, card.rewards.base_reward_rate);
-  const [top, tail] = rateA >= rateB ? [mA, mB] : [mB, mA];
+  const [top, tail] = rateA >= rateB ? [slotA, slotB] : [slotB, slotA];
   const topPct = Math.round(spec.topShare * 100);
   const tailPct = Math.round(spec.tailShare * 100);
   return [
     {
       kind: "merchant",
-      label: `${spec.label} · ${top} (best ${topPct}%)`,
+      label: `${spec.label} · ${top.merchant} (best ${topPct}%)`,
       share: spec.share * spec.topShare,
-      category: spec.category,
-      merchant: top,
+      merchant: top.merchant,
+      ...slotFields(top),
     },
     {
       kind: "merchant",
-      label: `${spec.label} · ${tail} (${tailPct}%)`,
+      label: `${spec.label} · ${tail.merchant} (${tailPct}%)`,
       share: spec.share * spec.tailShare,
-      category: spec.category,
-      merchant: tail,
+      merchant: tail.merchant,
+      ...slotFields(tail),
     },
   ];
 }
@@ -806,16 +856,59 @@ function evaluateBucket(
   const offlinePot = alloc.offline * 12;
   const bucketFallbackCategory = BUCKET_FALLBACK_CATEGORY[bucket];
 
-  const onlineSubs = recipe.online
-    .flatMap((s) => expandSpec(s, card, rules))
-    .map((s) =>
-      evaluateSpec(s, onlinePot, card, index, rules, bucketFallbackCategory),
+  const onlineSpecs = recipe.online.flatMap((s) => expandSpec(s, card, rules));
+  const offlineSpecs = recipe.offline.flatMap((s) =>
+    expandSpec(s, card, rules),
+  );
+  const onlineSubs = onlineSpecs.map((s) =>
+    evaluateSpec(s, onlinePot, card, index, rules, bucketFallbackCategory),
+  );
+  const offlineSubs = offlineSpecs.map((s) =>
+    evaluateSpec(s, offlinePot, card, index, rules, bucketFallbackCategory),
+  );
+
+  // An offline dining leg that borrowed a platform's delivery rule shares that
+  // rule's cap with the online leg on the same platform. Scored apart, each
+  // would earn the full cap. Re-score the two as one spend on the rule and
+  // split the return back by spend.
+  offlineSpecs.forEach((spec, j) => {
+    if (spec.kind !== "merchant" || !spec.mirrorsDelivery) return;
+    const i = onlineSpecs.findIndex(
+      (o) =>
+        o.kind === "merchant" &&
+        o.merchant === spec.merchant &&
+        o.category === spec.category,
     );
-  const offlineSubs = recipe.offline
-    .flatMap((s) => expandSpec(s, card, rules))
-    .map((s) =>
-      evaluateSpec(s, offlinePot, card, index, rules, bucketFallbackCategory),
+    if (i < 0) return;
+    const onSpend = onlineSubs[i].spend;
+    const offSpend = offlineSubs[j].spend;
+    const total = onSpend + offSpend;
+    if (total <= 0) return;
+    const combined = evaluateSpec(
+      { ...spec, share: 1 },
+      total,
+      card,
+      index,
+      rules,
+      bucketFallbackCategory,
     );
+    const split = (sub: SubBucketReturn, spend: number): SubBucketReturn => ({
+      ...combined,
+      label: sub.label,
+      share: sub.share,
+      spend,
+      returnInr: (combined.returnInr * spend) / total,
+      // Both legs go on to the card-level pool reconciler, which reads each
+      // member's coveredSpend. Leaving the combined figure on each leg would
+      // count the shared spend twice and overpay the pool.
+      sharedCapPool: combined.sharedCapPool && {
+        ...combined.sharedCapPool,
+        coveredSpend: (combined.sharedCapPool.coveredSpend * spend) / total,
+      },
+    });
+    onlineSubs[i] = split(onlineSubs[i], onSpend);
+    offlineSubs[j] = split(offlineSubs[j], offSpend);
+  });
 
   const onlineReturn = onlineSubs.reduce((acc, s) => acc + s.returnInr, 0);
   const offlineReturn = offlineSubs.reduce((acc, s) => acc + s.returnInr, 0);

@@ -218,6 +218,9 @@ type ShoppingSubSpec =
       // letting best-of pick whichever merchant in the category scores highest.
       // Falls back to the category rate when the card carries none of them.
       merchantPreference?: readonly Merchant[];
+      // When the card carries none of `merchantPreference`, try these
+      // online_food_dining merchants next — see `resolveDiningPlatform`.
+      deliveryMirror?: readonly Merchant[];
     }
   | { kind: "fallback"; label: string; spend: number; category: Category };
 
@@ -331,6 +334,41 @@ const OFFLINE_DINING_MERCHANT_PREFERENCE: readonly Merchant[] = [
   MERCHANTS.ZOMATO,
 ];
 
+// Dining pays the same way delivery does on Swiggy/Zomato: when the card has no
+// dine-out rule for the platform, its online_food_dining delivery rule (voucher
+// or direct swipe) applies. The catalog keys those rules to online_food_dining
+// only, so without this the dining slot always fell back to the category rate.
+// Same rule as foodCardEngine's `deliveryMirrorFor`. This engine has no
+// delivery leg, so the borrowed rule's cap is not shared with anything here.
+const DINING_DELIVERY_MIRROR: readonly Merchant[] = [
+  MERCHANTS.SWIGGY,
+  MERCHANTS.ZOMATO,
+];
+
+// Resolve a merchant-preference leg: its own preference chain first, then the
+// delivery platforms it mirrors. `category` is the category the winning rule
+// lives in, so the leg is scored (declared rate, exclusions) against it.
+function resolvePreferredBestOf(
+  card: MockCard,
+  category: Category,
+  preference: readonly Merchant[],
+  deliveryMirror: readonly Merchant[] | undefined,
+  rules: MockRule[],
+): { bestOf: MockBestOf; category: Category } | undefined {
+  const own = preferredMerchantBestOf(card, category, preference, rules);
+  if (own) return { bestOf: own, category };
+  if (!deliveryMirror) return undefined;
+  const mirrored = preferredMerchantBestOf(
+    card,
+    CATEGORIES.ONLINE_FOOD_DINING,
+    deliveryMirror,
+    rules,
+  );
+  return mirrored
+    ? { bestOf: mirrored, category: CATEGORIES.ONLINE_FOOD_DINING }
+    : undefined;
+}
+
 // Phase 1 and phase 2 share allocation shape, so these helpers consume only the
 // minimal slices they need — letting both phases feed them directly.
 function buildOnlineSpecs(
@@ -414,12 +452,13 @@ function rankOfflineCategories(
       cat === CATEGORIES.OFFLINE_FOOD_DINING
         ? categoryNominalRate(
             card,
-            preferredMerchantBestOf(
+            resolvePreferredBestOf(
               card,
               cat,
               OFFLINE_DINING_MERCHANT_PREFERENCE,
+              DINING_DELIVERY_MIRROR,
               rules,
-            ),
+            )?.bestOf,
           )
         : categoryNominalRate(card, index.get(`${card._id}::${cat}`)),
   }))
@@ -457,6 +496,10 @@ function buildOfflineSpecs(
       merchantPreference:
         cat === CATEGORIES.OFFLINE_FOOD_DINING
           ? OFFLINE_DINING_MERCHANT_PREFERENCE
+          : undefined,
+      deliveryMirror:
+        cat === CATEGORIES.OFFLINE_FOOD_DINING
+          ? DINING_DELIVERY_MIRROR
           : undefined,
     });
   });
@@ -537,17 +580,23 @@ function evaluateSpec(
   // A category-best spec with a merchant preference resolves against the first
   // of those merchants the card carries.
   const categoryBestOf = index.get(`${card._id}::${spec.category}`);
+  const resolvedPreferred =
+    spec.kind === "category-best" && spec.merchantPreference
+      ? resolvePreferredBestOf(
+          card,
+          spec.category,
+          spec.merchantPreference,
+          spec.deliveryMirror,
+          rules,
+        )
+      : undefined;
   const resolvedMerchantBestOf =
     spec.kind === "merchant"
       ? merchantBestOf(card, spec.category, spec.merchant, rules)
-      : spec.merchantPreference
-        ? preferredMerchantBestOf(
-            card,
-            spec.category,
-            spec.merchantPreference,
-            rules,
-          )
-        : undefined;
+      : resolvedPreferred?.bestOf;
+  // A dining leg that borrowed a delivery rule is scored in that rule's
+  // category; every other leg in its own.
+  const scoringCategory = resolvedPreferred?.category ?? spec.category;
 
   // A merchant-scoped leg that finds no rule for its own platform falls back to
   // the category best-of, scored with `categoryRateOnly` so only the card's
@@ -563,7 +612,7 @@ function evaluateSpec(
 
   const cat: CategoryReturn = computeCategoryReturn(
     spec.spend,
-    spec.category,
+    scoringCategory,
     card,
     bestOf,
     ANNUAL_CAP_PERIODS,
@@ -575,7 +624,7 @@ function evaluateSpec(
         merchantLegFellBack,
       // Floor the category at the rate the card itself declares (0 included)
       // instead of the base rate, wherever the card declares one.
-      declaredCategoryRate: declaredCategoryRate(card, spec.category, rules),
+      declaredCategoryRate: declaredCategoryRate(card, scoringCategory, rules),
     },
   );
 
@@ -584,7 +633,7 @@ function evaluateSpec(
   // 0%. Specific merchant rules (direct/voucher) keep their declared rate.
   const excluded =
     cat.source === "fallback" &&
-    card.excluded_categories?.includes(spec.category) === true;
+    card.excluded_categories?.includes(scoringCategory) === true;
 
   return {
     label: spec.label,
