@@ -126,6 +126,10 @@ type FoodSubSpec =
       // specific first (e.g. swiggy_dineout → swiggy). When the card carries
       // none of them the sub-stream falls back to the category rate.
       merchantPreference?: readonly Merchant[];
+      // Dining legs only: the delivery platform whose online_food_dining rule
+      // this leg inherits when the card has no dine-out rule of its own. See
+      // `deliveryMirrorFor`.
+      deliveryMirror?: Merchant;
     }
   | {
       kind: "category-best";
@@ -238,6 +242,38 @@ function preferredMerchantBestOf(
   return undefined;
 }
 
+// A dine-out leg on Swiggy/Zomato pays the same way the platform's delivery
+// leg does: whatever voucher / direct-swipe rule the card carries for the
+// platform under online_food_dining applies to dining too. The catalog keys
+// those rules to online_food_dining only (no card carries an offline
+// swiggy/zomato rule), so without this every dining leg fell back to the
+// category rate — IndiGo Kotak paid Swiggy delivery 3.5% via voucher but
+// Swiggy dining a flat 2%.
+//
+// Returns the online merchant to inherit from, or undefined when the leg has
+// its own dine-out rule (that stays authoritative) or the card has no
+// delivery rule for the platform either.
+function deliveryMirrorFor(
+  spec: FoodSubSpec,
+  card: MockCard,
+  rules: MockRule[],
+): Merchant | undefined {
+  if (spec.kind !== "merchant" || !spec.deliveryMirror) return undefined;
+  const preference = spec.merchantPreference ?? [spec.merchant];
+  if (preferredMerchantBestOf(card, spec.category, preference, rules)) {
+    return undefined;
+  }
+  const mirror = spec.deliveryMirror;
+  const hasDeliveryRule = rules.some(
+    (r) =>
+      r.cardId === card._id &&
+      r.category === CATEGORIES.ONLINE_FOOD_DINING &&
+      r.merchant === mirror &&
+      r.is_active,
+  );
+  return hasDeliveryRule ? mirror : undefined;
+}
+
 function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
   const out: FoodSubSpec[] = [];
   const { swiggy, zomato, other } = spend.deliveryAllocation;
@@ -281,6 +317,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
       category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY_DINEOUT,
       merchantPreference: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+      deliveryMirror: MERCHANTS.SWIGGY,
     });
   }
   if (zomato > 0) {
@@ -295,6 +332,7 @@ function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
         MERCHANTS.DISTRICT_BY_ZOMATO,
         MERCHANTS.ZOMATO,
       ],
+      deliveryMirror: MERCHANTS.ZOMATO,
     });
   }
   if (other > 0) {
@@ -431,15 +469,6 @@ function evaluateSpec(
   };
 }
 
-function evaluateSubs(
-  specs: FoodSubSpec[],
-  card: MockCard,
-  index: Map<string, MockBestOf>,
-  rules: MockRule[],
-): FoodSubReturn[] {
-  return specs.map((s) => evaluateSpec(s, card, index, rules));
-}
-
 function streamOf(subs: FoodSubReturn[], totalSpend: number): FoodStreamReturn {
   return {
     spend: totalSpend,
@@ -461,20 +490,88 @@ function scoreCardFromStreams(
   rules: MockRule[],
   options?: EngineScoringOptions,
 ): CardFoodReturn {
-  const deliverySubs = evaluateSubs(deliverySpecs, card, index, rules);
-  const diningSubs = evaluateSubs(diningSpecs, card, index, rules);
+  // Dining legs that inherit a delivery platform's rule (deliveryMirrorFor) are
+  // scored together with that platform's delivery leg as ONE sub-stream on the
+  // delivery rule, then split back by spend. Scoring them separately would let
+  // each leg earn the rule's full reward / voucher cap — the same cap counted
+  // twice. Every other leg is scored on its own as before.
+  type Unit = {
+    spec: FoodSubSpec;
+    members: { spec: FoodSubSpec; slot: FoodSubReturn[]; i: number }[];
+  };
+  const deliverySubs: FoodSubReturn[] = new Array(deliverySpecs.length);
+  const diningSubs: FoodSubReturn[] = new Array(diningSpecs.length);
+  const units: Unit[] = [];
+  const mirrorUnits = new Map<Merchant, Unit>();
+  diningSpecs.forEach((spec, i) => {
+    const mirror = deliveryMirrorFor(spec, card, rules);
+    const member = { spec, slot: diningSubs, i };
+    if (!mirror) {
+      units.push({ spec, members: [member] });
+      return;
+    }
+    const unit = mirrorUnits.get(mirror);
+    if (unit) {
+      unit.members.push(member);
+      return;
+    }
+    const created: Unit = {
+      spec: {
+        kind: "merchant",
+        label: spec.label,
+        spend: 0,
+        category: CATEGORIES.ONLINE_FOOD_DINING,
+        merchant: mirror,
+      },
+      members: [member],
+    };
+    mirrorUnits.set(mirror, created);
+    units.push(created);
+  });
+  deliverySpecs.forEach((spec, i) => {
+    const member = { spec, slot: deliverySubs, i };
+    const unit =
+      spec.kind === "merchant" ? mirrorUnits.get(spec.merchant) : undefined;
+    if (unit) unit.members.push(member);
+    else units.push({ spec, members: [member] });
+  });
+  for (const unit of mirrorUnits.values()) {
+    unit.spec = {
+      ...unit.spec,
+      spend: unit.members.reduce((acc, m) => acc + m.spec.spend, 0),
+    };
+  }
+
+  const unitSubs = units.map((u) => evaluateSpec(u.spec, card, index, rules));
 
   // Reconcile combined pools that span delivery + dining (e.g. HSBC Live+'s one
   // food cashback cap across online_food_dining + offline_food_dining). Without
   // this each category earns the full cap independently — double-counting. The
   // reconciler re-splits each shared pool's single annual budget across the
   // sub-streams that share it and rewrites their returns in place.
-  const all = [...deliverySubs, ...diningSubs].map((s) => ({ cat: s }));
+  const all = unitSubs.map((s) => ({ cat: s }));
   const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
   overrides.forEach((returnInr, i) => {
     all[i].cat.returnInr = returnInr;
     all[i].cat.effectiveRateAfterCap =
       all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+  });
+
+  // Fan each unit back out to its delivery / dining legs, pro rata by spend.
+  units.forEach((unit, u) => {
+    const sub = unitSubs[u];
+    for (const m of unit.members) {
+      const share = sub.spend > 0 ? m.spec.spend / sub.spend : 0;
+      m.slot[m.i] =
+        unit.members.length === 1
+          ? sub
+          : {
+              ...sub,
+              label: m.spec.label,
+              spend: m.spec.spend,
+              returnInr: sub.returnInr * share,
+            };
+    }
   });
 
   const delivery = streamOf(deliverySubs, deliverySpend);
@@ -714,6 +811,8 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       spend: swiggyDineout,
       category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.SWIGGY_DINEOUT,
+      merchantPreference: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+      deliveryMirror: MERCHANTS.SWIGGY,
     });
   }
   if (zomatoDistrict > 0) {
@@ -723,6 +822,12 @@ function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
       spend: zomatoDistrict,
       category: CATEGORIES.OFFLINE_FOOD_DINING,
       merchant: MERCHANTS.ZOMATO_DISTRICT,
+      merchantPreference: [
+        MERCHANTS.ZOMATO_DISTRICT,
+        MERCHANTS.DISTRICT_BY_ZOMATO,
+        MERCHANTS.ZOMATO,
+      ],
+      deliveryMirror: MERCHANTS.ZOMATO,
     });
   }
   if (eazyDiner > 0) {
