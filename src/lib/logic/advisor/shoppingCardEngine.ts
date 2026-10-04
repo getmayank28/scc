@@ -331,11 +331,6 @@ const OFFLINE_DINING_MERCHANT_PREFERENCE: readonly Merchant[] = [
   MERCHANTS.ZOMATO,
 ];
 
-function fallbackRate(card: MockCard, category: Category): number {
-  if (card.excluded_categories?.includes(category)) return 0;
-  return card.rewards.base_reward_rate;
-}
-
 // Phase 1 and phase 2 share allocation shape, so these helpers consume only the
 // minimal slices they need — letting both phases feed them directly.
 function buildOnlineSpecs(
@@ -494,20 +489,48 @@ function evaluateSpec(
   rules: MockRule[],
 ): ShoppingSubReturn {
   if (spec.kind === "fallback") {
-    // A category the card declares a rate for pays that rate, 0 included,
-    // rather than the base rate. This leg never reaches computeCategoryReturn,
-    // so the declared rate is resolved here directly.
+    // An unattributed bucket: the user named no merchant, so only the card's
+    // category-wide rule may apply — hence `categoryRateOnly`.
+    //
+    // This MUST go through computeCategoryReturn rather than applying the
+    // declared rate directly. The category-wide rule can carry its own reward
+    // cap (and a `combined` group whose pool the card-level reconciler needs),
+    // and only computeCategoryReturn enforces that cap and surfaces the pool.
+    // Short-circuiting here paid the declared rate uncapped: PhonePe HDFC
+    // Ultimo's 10% utility_bills rule, capped at 1,000 pts/month, was paying
+    // 10% flat on the whole "Utility offline" leg. See the same fix in
+    // foodCardEngine.
+    //
+    // `declaredCategoryRate` still rides along so a category the card declares
+    // at or below its base rate — 0% included — is honoured verbatim; bestOf
+    // prunes those, so without it they would silently earn the base rate.
     const declared = declaredCategoryRate(card, spec.category, rules);
-    const rate = declared ?? fallbackRate(card, spec.category);
+    const cat = computeCategoryReturn(
+      spec.spend,
+      spec.category,
+      card,
+      index.get(`${card._id}::${spec.category}`),
+      ANNUAL_CAP_PERIODS,
+      { categoryRateOnly: true, declaredCategoryRate: declared },
+    );
+
+    // Same exclusion override as the merchant path: an excluded category that
+    // fell through to the base rate earns nothing and draws no pool.
+    const excluded =
+      cat.source === "fallback" &&
+      card.excluded_categories?.includes(spec.category) === true;
+
     return {
       label: spec.label,
       spend: spec.spend,
-      effectivePercentage: rate,
-      effectiveRateAfterCap: rate,
+      effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+      effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
+      // This leg is still an unattributed bucket regardless of which rule paid
+      // it; keep the label stable so the UI grouping doesn't shift.
       source: "fallback",
       merchant: null,
-      returnInr: (spec.spend * rate) / 100,
-      sharedCapPool: null,
+      returnInr: excluded ? 0 : cat.returnInr,
+      sharedCapPool: excluded ? null : cat.sharedCapPool,
     };
   }
 

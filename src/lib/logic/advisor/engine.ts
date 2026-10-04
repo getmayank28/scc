@@ -8,7 +8,9 @@ import {
 import {
   isTotalCapGroup,
   type CapPeriod,
+  type CapScope,
   type DirectSwipeSchedule,
+  type Merchant,
   type MockRule,
 } from "./rules";
 
@@ -553,9 +555,11 @@ export interface CategoryReturnOptions {
 // those was silently paid the card base rate instead. A category the card
 // declares no rule for returns undefined, keeping normal base-rate behaviour.
 //
-// Shared by the all-rounder and shopping engines; pass the result as
-// `CategoryReturnOptions.declaredCategoryRate`, or use it directly where a
-// `fallback` leg bypasses computeCategoryReturn entirely.
+// Shared by the food, shopping and all-rounder engines; pass the result as
+// `CategoryReturnOptions.declaredCategoryRate`. Every leg — including an
+// unattributed `fallback` one — must route through `computeCategoryReturn`
+// rather than applying this rate directly, or the category rule's own reward
+// cap (and any combined pool it belongs to) is silently discarded.
 export function declaredCategoryRate(
   card: MockCard,
   category: Category,
@@ -585,6 +589,48 @@ function toRewardLegOnly(v: BestVoucher): BestVoucher {
     breakdown: { ...v.breakdown, discount: 0, fee: 0 },
     totalPercentage: v.breakdown.reward,
   };
+}
+
+// Build the `SettledCapPool` a category return hands to the reconciler.
+//
+// Two kinds of pool reach it, and both need reconciling once an engine scores
+// several sub-streams against the same category:
+//
+//   - a `combined` group (`pool` non-null): one budget shared across DIFFERENT
+//     categories, keyed by the group so members find each other.
+//   - a PRIVATE reward cap (`pool` null, but the winning route carries a
+//     `rewardCapPerPeriodValueInr`): one budget belonging to this category's own
+//     rule. `computeCategoryReturn` already enforces it per call, but an engine
+//     that splits a category across legs — shopping's "Utilities online" +
+//     "Utility offline", food's Swiggy/Zomato — calls it once per leg, so each
+//     leg spent the full cap independently. Keying by category pools them back
+//     onto the single budget the rule actually grants.
+//
+// An uncapped route yields no pool: there is nothing to re-split.
+function settledPoolFor(
+  pool: { key: string; capPeriod: CapPeriod | null } | null,
+  category: Category,
+  scope: CapScope | null,
+  merchant: Merchant | null,
+  settled: Omit<SettledCapPool, "key">,
+): SettledCapPool | null {
+  if (pool) {
+    // A combined group's own period governs the shared budget.
+    return { ...settled, key: pool.key, capPeriod: pool.capPeriod };
+  }
+  if (settled.perPeriodCapInr === null) return null;
+  // A `merchant`-scoped cap is granted PER MERCHANT: Flipkart SBI gives Flipkart
+  // and Myntra ₹4,000/quarter each, so two legs on different merchants must not
+  // share one budget. Only `category`/`card` scoped caps (and the merchant-null
+  // category floor) pool across the legs of a category.
+  //
+  // `private::` cannot collide with a combined group's key, which `bestOf`
+  // builds as `<multiplier>::<merchant>`.
+  const key =
+    scope === "merchant" && merchant !== null
+      ? `private::${category}::${merchant}`
+      : `private::${category}`;
+  return { ...settled, key };
 }
 
 export function computeCategoryReturn(
@@ -688,18 +734,17 @@ export function computeCategoryReturn(
       capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
       cappedAnnualSpendInr: voucherCap,
       returnInr: voucherResult.totalInr,
-      sharedCapPool: v.sharedCapPool
-        ? {
-            key: v.sharedCapPool.key,
-            capPeriod: v.sharedCapPool.capPeriod,
-            perPeriodCapInr: v.rewardCapPerPeriodValueInr,
-            rate: v.breakdown.reward,
-            fallbackRate: v.fallbackPercentage,
-            discount: v.breakdown.discount,
-            fee: v.breakdown.fee,
-            coveredSpend,
-          }
-        : null,
+      // A voucher lane is always bound to one merchant, so its private reward
+      // cap is per-merchant and must not pool with another merchant's lane.
+      sharedCapPool: settledPoolFor(v.sharedCapPool, category, "merchant", v.merchant, {
+        perPeriodCapInr: v.rewardCapPerPeriodValueInr,
+        capPeriod: v.capPeriod,
+        rate: v.breakdown.reward,
+        fallbackRate: v.fallbackPercentage,
+        discount: v.breakdown.discount,
+        fee: v.breakdown.fee,
+        coveredSpend,
+      }),
     });
   }
 
@@ -719,18 +764,15 @@ export function computeCategoryReturn(
       capNote: d.capNote,
       cappedAnnualSpendInr: directRewardCap,
       returnInr: directResult.totalInr,
-      sharedCapPool: d.sharedCapPool
-        ? {
-            key: d.sharedCapPool.key,
-            capPeriod: d.sharedCapPool.capPeriod,
-            perPeriodCapInr: d.rewardCapPerPeriodValueInr,
-            rate: d.percentage,
-            fallbackRate: d.fallbackPercentage,
-            discount: 0,
-            fee: 0,
-            coveredSpend: spend,
-          }
-        : null,
+      sharedCapPool: settledPoolFor(d.sharedCapPool, category, d.capScope, d.merchant, {
+        perPeriodCapInr: d.rewardCapPerPeriodValueInr,
+        capPeriod: d.capPeriod,
+        rate: d.percentage,
+        fallbackRate: d.fallbackPercentage,
+        discount: 0,
+        fee: 0,
+        coveredSpend: spend,
+      }),
     });
   }
 
