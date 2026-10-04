@@ -657,11 +657,6 @@ const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
   others: CATEGORIES.OTHER,
 };
 
-function effectiveFallbackRate(card: MockCard, category: Category): number {
-  if (card.excluded_categories?.includes(category)) return 0;
-  return card.rewards.base_reward_rate;
-}
-
 function evaluateSpec(
   spec: ConcreteSpec,
   parentPot: number,
@@ -672,30 +667,55 @@ function evaluateSpec(
 ): SubBucketReturn {
   const spend = parentPot * spec.share;
 
-  // Fallback specs short-circuit through the base reward rate, honoring the
-  // card's exclusion list for the leg's category (`spec.category` when the leg
-  // maps to a category distinct from the bucket default, else the bucket's).
-  // No cap handling — these represent spend that doesn't match any merchant rule.
+  // Fallback specs are spend that matches no merchant rule. They score on the
+  // card's category-wide rate for the leg's category (`spec.category` when the
+  // leg maps to one distinct from the bucket default, else the bucket's),
+  // honoring the card's exclusion list — and, since they go through
+  // `computeCategoryReturn`, that category rule's own reward cap.
   if (spec.kind === "fallback") {
     const fallbackCategory = spec.category ?? bucketFallbackCategory;
-    // A category the card declares a rate for pays that rate, 0 included. This
-    // leg never reaches computeCategoryReturn, so the declared rate is applied
-    // here directly — otherwise e.g. the fuel-online leg pays the base rate on
-    // spend the card declares as zero-earning.
-    const fallbackRate =
-      declaredCategoryRate(card, fallbackCategory, rules) ??
-      effectiveFallbackRate(card, fallbackCategory);
+    // An unattributed bucket: the recipe names no merchant, so only the card's
+    // category-wide rule may apply — hence `categoryRateOnly`.
+    //
+    // This MUST go through computeCategoryReturn rather than applying the
+    // declared rate directly. The category-wide rule can carry its own reward
+    // cap (and a `combined` group whose pool the card-level reconciler needs),
+    // and only computeCategoryReturn enforces that cap and surfaces the pool.
+    // Short-circuiting here paid the declared rate uncapped and hid the spend
+    // from the pool. See the same fix in foodCardEngine / shoppingCardEngine.
+    //
+    // `declaredCategoryRate` still rides along so a category the card declares
+    // at or below its base rate — 0% included — is honoured verbatim (e.g. the
+    // fuel-online leg, which must not pay the base rate on zero-earning spend).
+    const declared = declaredCategoryRate(card, fallbackCategory, rules);
+    const cat = computeCategoryReturn(
+      spend,
+      fallbackCategory,
+      card,
+      index.get(`${card._id}::${fallbackCategory}`),
+      ANNUAL_CAP_PERIODS,
+      { categoryRateOnly: true, declaredCategoryRate: declared },
+    );
+
+    // Same exclusion override as the merchant path, keyed on the resolved
+    // fallback category since this leg may map to one the spec didn't name.
+    const excluded =
+      cat.source === "fallback" &&
+      card.excluded_categories?.includes(fallbackCategory) === true;
+
     return {
       label: spec.label,
       share: spec.share,
       spend,
-      effectivePercentage: fallbackRate,
-      effectiveRateAfterCap: fallbackRate,
+      effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+      effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
       source: "fallback",
       merchant: null,
+      // Unattributed legs report no category, as before — the UI groups them
+      // by bucket, not by the category that happened to price them.
       category: null,
-      returnInr: (spend * fallbackRate) / 100,
-      sharedCapPool: null,
+      returnInr: excluded ? 0 : cat.returnInr,
+      sharedCapPool: excluded ? null : cat.sharedCapPool,
     };
   }
 
