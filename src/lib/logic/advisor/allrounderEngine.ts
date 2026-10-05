@@ -899,11 +899,15 @@ function evaluateBucket(
       spend,
       returnInr: (combined.returnInr * spend) / total,
       // Both legs go on to the card-level pool reconciler, which reads each
-      // member's coveredSpend. Leaving the combined figure on each leg would
-      // count the shared spend twice and overpay the pool.
+      // member's coveredSpend and direct alternative. Leaving the combined
+      // figures on each leg would count the shared spend twice.
       sharedCapPool: combined.sharedCapPool && {
         ...combined.sharedCapPool,
         coveredSpend: (combined.sharedCapPool.coveredSpend * spend) / total,
+        directAlternativeInr:
+          combined.sharedCapPool.directAlternativeInr === null
+            ? null
+            : (combined.sharedCapPool.directAlternativeInr * spend) / total,
       },
     });
     onlineSubs[i] = split(onlineSubs[i], onSpend);

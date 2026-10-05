@@ -95,6 +95,13 @@ export interface SettledCapPool {
   // cap); overflow beyond it already earns the merchant's direct rate and never
   // touches the shared reward pool. Equals `spend` for direct routes.
   coveredSpend: number;
+  // Voucher lanes only: what this leg earns on its direct route instead
+  // (computeCategoryReturn's direct waterfall), when that route is uncapped and
+  // unpooled. The reconciler falls back to it when the shared pool can't make
+  // the voucher pay more, and ranks pool members by their gain over it. Null
+  // for direct lanes and capped direct routes, whose alternative is the
+  // fallback rate.
+  directAlternativeInr: number | null;
 }
 
 export interface CategoryReturn {
@@ -387,6 +394,52 @@ interface VoucherWaterfallResult {
   primary: BestVoucher | null;
 }
 
+// A voucher whose convenience fee outweighs its merchant discount: past the
+// reward cap every voucher rupee loses money, so the buyer stops buying there.
+// Shared by the lane (voucherEffectiveAnnualCap) and the pool reconcilers
+// (pooledMemberReturn) so both draw the line in the same place.
+//
+// Deliberately `< 0`, not "below the fallback rate": the lane prices spend
+// past the cap at discount − fee, but the reconcilers price it at
+// discount − fee + the fallback rate. Only a negative net discount loses to
+// swiping under both, so only that case changes; every other voucher keeps
+// its existing treatment.
+function voucherLosesPastRewardCap(discount: number, fee: number): boolean {
+  return discount - fee < 0;
+}
+
+// Annual spend a rational buyer routes through the voucher: its purchase cap,
+// and — for a voucher that loses money past its reward cap — the reward cap
+// too.
+//
+// HDFC's Flipkart/Amazon vouchers pay a 10% reward but carry a 2.95% fee and
+// no merchant discount. Pushing all spend through the voucher charged the fee
+// on every rupee: Diners Club Metal's Flipkart voucher scored ₹8,777 on ₹9.2L
+// and lost to a 3.33% swipe (₹30,689), when voucher-to-cap-then-swipe earns
+// ₹44,068.
+//
+// The swiped remainder is priced at the fallback rate, not the merchant's
+// direct rate: that direct rule may carry its own cap, which this lane can't
+// see. A merchant whose direct swipe beats this mix is still caught, because
+// the direct waterfall competes with the voucher lane in computeCategoryReturn.
+function voucherEffectiveAnnualCap(
+  v: BestVoucher,
+  bookingsPerYear: number,
+  avgBookingInr: number,
+): number | null {
+  const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+  if (!voucherLosesPastRewardCap(v.breakdown.discount, v.breakdown.fee)) {
+    return purchaseCap;
+  }
+  const rewardCap = tripAwareAnnualCapInr(
+    v.caps.rewardSpendPerPeriodInr,
+    v.capPeriod,
+    bookingsPerYear,
+  );
+  if (rewardCap === null) return purchaseCap;
+  return purchaseCap === null ? rewardCap : Math.min(purchaseCap, rewardCap);
+}
+
 // Voucher lane: top-totalPercentage voucher absorbs spend up to its annual
 // purchase cap, next voucher absorbs the next slice, etc. Spend that can't be
 // routed through any voucher spills into the *direct* waterfall (not the card
@@ -394,6 +447,8 @@ interface VoucherWaterfallResult {
 // One merchant per evaluation: the voucher absorbs spend up to its own annual
 // cap at the voucher rate; every rupee above that cap earns the SAME merchant's
 // direct-swipe rate (not another merchant's voucher, not the card base rate).
+// Spend the buyer declines to run through the voucher past its reward cap (see
+// voucherEffectiveAnnualCap) earns the fallback rate instead.
 function singleVoucherInr(
   v: BestVoucher,
   spend: number,
@@ -401,8 +456,15 @@ function singleVoucherInr(
   avgBookingInr: number,
 ): number {
   const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
-  const absorbed =
+  const purchasable =
     purchaseCap === null ? spend : Math.min(spend, purchaseCap);
+  const effectiveCap = voucherEffectiveAnnualCap(
+    v,
+    bookingsPerYear,
+    avgBookingInr,
+  );
+  const absorbed =
+    effectiveCap === null ? spend : Math.min(spend, effectiveCap);
 
   // Within the absorbed slice, accelerated reward can be capped separately; the
   // part beyond that reward cap earns only the discount at the voucher merchant.
@@ -419,11 +481,14 @@ function singleVoucherInr(
     (absorbed * v.breakdown.fee) / 100 +
     (acceleratedV * v.breakdown.reward) / 100;
 
+  // Purchasable spend not worth buying as vouchers is swiped at fallback.
+  const swipedEarned = ((purchasable - absorbed) * v.fallbackPercentage) / 100;
+
   // Spend above the voucher cap falls back to this merchant's direct rate.
-  const overflow = Math.max(0, spend - absorbed);
+  const overflow = Math.max(0, spend - purchasable);
   const overflowEarned = (overflow * v.directSwipePercentage) / 100;
 
-  return voucherEarned + overflowEarned;
+  return voucherEarned + swipedEarned + overflowEarned;
 }
 
 // Pick the single best voucher merchant for this spend and return its total.
@@ -477,7 +542,8 @@ function voucherAnnualCap(
       ? monthlyPurchaseInr * 12
       : null;
 
-  if (annualFromBookings === null && annualFromPurchaseCap === null) return null;
+  if (annualFromBookings === null && annualFromPurchaseCap === null)
+    return null;
   if (annualFromBookings === null) return annualFromPurchaseCap;
   if (annualFromPurchaseCap === null) return annualFromBookings;
   return Math.min(annualFromBookings, annualFromPurchaseCap);
@@ -577,7 +643,6 @@ export function declaredCategoryRate(
   }
   return rate;
 }
-
 
 // Strip the merchant discount / convenience fee from a voucher candidate so the
 // lane scores on the card's reward leg alone. Caps are untouched: the reward leg
@@ -708,10 +773,36 @@ export function computeCategoryReturn(
       ? voucherWaterfallInr(spend, voucherFrontier, bookingsPerYear)
       : null;
 
+  // A voucher that earns its keep only by stopping at its reward cap and
+  // swiping the rest (voucherEffectiveAnnualCap) must strictly beat the direct
+  // swipe. On a tie the two routes are the same swipe plus a capped bonus, and
+  // taking the voucher would move the spend into the card's shared voucher pool
+  // for nothing — Millennia's Amazon voucher (5%, ₹1,000/month) tied its own
+  // capped 5% swipe and then starved the card's other voucher legs. A voucher
+  // whose cap doesn't bind keeps the long-standing tie-goes-to-voucher rule.
+  const avgSpendPerBooking = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+  const voucherStopsAtRewardCap = (v: BestVoucher): boolean => {
+    const effective = voucherEffectiveAnnualCap(
+      v,
+      bookingsPerYear,
+      avgSpendPerBooking,
+    );
+    const purchaseCap = voucherAnnualCap(
+      v,
+      bookingsPerYear,
+      avgSpendPerBooking,
+    );
+    return (
+      effective !== null &&
+      effective < Math.min(spend, purchaseCap ?? Number.POSITIVE_INFINITY)
+    );
+  };
   if (
     voucherResult &&
     voucherResult.primary &&
-    voucherResult.totalInr >= directResult.totalInr
+    (voucherStopsAtRewardCap(voucherResult.primary)
+      ? voucherResult.totalInr > directResult.totalInr + 0.5
+      : voucherResult.totalInr >= directResult.totalInr)
   ) {
     const v = voucherResult.primary;
     const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
@@ -721,10 +812,17 @@ export function computeCategoryReturn(
       v.capPeriod,
       bookingsPerYear,
     );
-    // Spend the voucher actually absorbed (its purchase cap); overflow past it
-    // already earns the merchant's direct rate and never draws from the pool.
+    // Spend the voucher actually absorbed (its purchase cap, or its reward cap
+    // when vouchers past it lose to swiping — see voucherEffectiveAnnualCap);
+    // overflow past it already earns the merchant's direct rate and never
+    // draws from the pool.
+    const effectiveCap = voucherEffectiveAnnualCap(
+      v,
+      bookingsPerYear,
+      avgBookingInr,
+    );
     const coveredSpend =
-      voucherCap === null ? spend : Math.min(spend, voucherCap);
+      effectiveCap === null ? spend : Math.min(spend, effectiveCap);
     return withEffectiveRate({
       category,
       spend,
@@ -732,19 +830,40 @@ export function computeCategoryReturn(
       source: "voucher",
       merchant: v.merchant,
       capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
+      // Travel's reconciler reads this as the voucher's covered spend against
+      // the raw voucher terms; it stays the purchase cap. The reward-cap stop
+      // reaches the flat engines through `coveredSpend` below.
       cappedAnnualSpendInr: voucherCap,
       returnInr: voucherResult.totalInr,
       // A voucher lane is always bound to one merchant, so its private reward
       // cap is per-merchant and must not pool with another merchant's lane.
-      sharedCapPool: settledPoolFor(v.sharedCapPool, category, "merchant", v.merchant, {
-        perPeriodCapInr: v.rewardCapPerPeriodValueInr,
-        capPeriod: v.capPeriod,
-        rate: v.breakdown.reward,
-        fallbackRate: v.fallbackPercentage,
-        discount: v.breakdown.discount,
-        fee: v.breakdown.fee,
-        coveredSpend,
-      }),
+      sharedCapPool: settledPoolFor(
+        v.sharedCapPool,
+        category,
+        "merchant",
+        v.merchant,
+        {
+          perPeriodCapInr: v.rewardCapPerPeriodValueInr,
+          capPeriod: v.capPeriod,
+          rate: v.breakdown.reward,
+          fallbackRate: v.fallbackPercentage,
+          discount: v.breakdown.discount,
+          fee: v.breakdown.fee,
+          coveredSpend,
+          // Only an uncapped, unpooled direct route is a safe fallback: its
+          // isolated return can't be double-counted against a budget other
+          // legs also draw from.
+          directAlternativeInr: [
+            ...directFrontier,
+            ...(baseTier ? [baseTier] : []),
+          ].every(
+            (c) =>
+              c.rewardCapPerPeriodValueInr === null && c.sharedCapPool === null,
+          )
+            ? directResult.totalInr
+            : null,
+        },
+      ),
     });
   }
 
@@ -764,15 +883,22 @@ export function computeCategoryReturn(
       capNote: d.capNote,
       cappedAnnualSpendInr: directRewardCap,
       returnInr: directResult.totalInr,
-      sharedCapPool: settledPoolFor(d.sharedCapPool, category, d.capScope, d.merchant, {
-        perPeriodCapInr: d.rewardCapPerPeriodValueInr,
-        capPeriod: d.capPeriod,
-        rate: d.percentage,
-        fallbackRate: d.fallbackPercentage,
-        discount: 0,
-        fee: 0,
-        coveredSpend: spend,
-      }),
+      sharedCapPool: settledPoolFor(
+        d.sharedCapPool,
+        category,
+        d.capScope,
+        d.merchant,
+        {
+          perPeriodCapInr: d.rewardCapPerPeriodValueInr,
+          capPeriod: d.capPeriod,
+          rate: d.percentage,
+          fallbackRate: d.fallbackPercentage,
+          discount: 0,
+          fee: 0,
+          coveredSpend: spend,
+          directAlternativeInr: null,
+        },
+      ),
     });
   }
 
@@ -994,7 +1120,9 @@ function reallocateSharedPools(
       (p.purchasePool &&
         (purchaseMemberCount.get(p.purchasePool.key) ?? 0) > 1),
   );
-  toProcess.sort((a, b) => b.rate - a.rate);
+  const drain = (p: SharedCapParticipant) =>
+    poolDrainValue({ ...p, fallbackRate: p.baseRate });
+  toProcess.sort((a, b) => drain(b) - drain(a) || b.rate - a.rate);
 
   for (const m of toProcess) {
     // Shared purchase budget clamps the voucher spend this category can route
@@ -1029,23 +1157,78 @@ function reallocateSharedPools(
   }
 }
 
+// Spend a pool member routes through its voucher only to draw the pool: a
+// voucher that loses money past its reward cap (voucherLosesPastRewardCap) is
+// bought for the rewarded slice alone and the rest is swiped. Direct lanes and
+// every other voucher keep the existing pricing.
+function boughtOnlyForPool(m: PoolMemberTerms): boolean {
+  return voucherLosesPastRewardCap(m.discount, m.fee);
+}
+
+interface PoolMemberTerms {
+  spend: number;
+  coveredSpend: number;
+  rate: number;
+  fallbackRate: number;
+  discount: number;
+  fee: number;
+}
+
+// Order in which members drain a shared pool: by the value each ₹1 of pool
+// reward adds over the member's alternative, highest first. Without the pool a
+// member earns `pooledMemberReturn(m, 0)` — its spend at the fallback rate, or
+// a voucher bought regardless still earning discount − fee — or, when given,
+// `alternativeInr`, the leg's own direct route.
+//
+// Ranking on the headline reward rate alone tied HDFC's Myntra (10%, no fee)
+// with Flipkart (10%, 2.95% fee) and could hand the pool to Flipkart, paying the
+// fee for the same reward. And without the direct alternative, PAYTM HDFC's
+// Myntra voucher (5%, beating its own uncapped 2% swipe by ₹384) drained the
+// card's whole voucher pool ahead of a leg that had nothing but the 1% fallback.
+function poolDrainValue(
+  m: PoolMemberTerms,
+  alternativeInr: number | null = null,
+): number {
+  const potential = (m.coveredSpend * m.rate) / 100;
+  if (potential <= 0) return 0;
+  const alternative = Math.max(
+    pooledMemberReturn(m, 0),
+    alternativeInr ?? Number.NEGATIVE_INFINITY,
+  );
+  return (pooledMemberReturn(m, potential) - alternative) / potential;
+}
+
+// Annual return of a pool member once the pool has granted it `accelerated` ₹
+// of reward. Shared by the travel and the flat-engine reconcilers.
+function pooledMemberReturn(m: PoolMemberTerms, accelerated: number): number {
+  const spendAtRate = m.rate > 0 ? (accelerated * 100) / m.rate : 0;
+  if (boughtOnlyForPool(m)) {
+    return (
+      accelerated +
+      (spendAtRate * (m.discount - m.fee)) / 100 +
+      ((m.spend - spendAtRate) * m.fallbackRate) / 100
+    );
+  }
+  // Existing pricing (direct lanes, and vouchers bought regardless): all covered
+  // spend earns discount − fee, and everything the pool doesn't reward earns
+  // the fallback rate.
+  const overflowSpend = Math.max(0, m.coveredSpend - spendAtRate);
+  const nonCovered = Math.max(0, m.spend - m.coveredSpend);
+  return (
+    accelerated +
+    (m.coveredSpend * (m.discount - m.fee)) / 100 +
+    (overflowSpend * m.fallbackRate) / 100 +
+    (nonCovered * m.fallbackRate) / 100
+  );
+}
+
 function participantReturn(
   p: SharedCapParticipant,
   acceleratedValue: number,
 ): number {
-  const spendAtRate = p.rate > 0 ? (acceleratedValue * 100) / p.rate : 0;
-  const overflowSpend = Math.max(0, p.coveredSpend - spendAtRate);
-  const nonCovered = Math.max(0, p.spend - p.coveredSpend);
-
-  if (p.source === "direct") {
-    return acceleratedValue + (overflowSpend * p.baseRate) / 100;
-  }
-  return (
-    (nonCovered * p.baseRate) / 100 +
-    (p.coveredSpend * p.discount) / 100 -
-    (p.coveredSpend * p.fee) / 100 +
-    acceleratedValue +
-    (overflowSpend * p.baseRate) / 100
+  return pooledMemberReturn(
+    { ...p, fallbackRate: p.baseRate },
+    acceleratedValue,
   );
 }
 
@@ -1115,7 +1298,18 @@ export function reallocateAcrossCategories<T extends { cat: SharedPoolReturn }>(
         it.cat.sharedCapPool &&
         (memberCount.get(it.cat.sharedCapPool.key) ?? 0) > 1,
     )
-    .sort((a, b) => b.it.cat.sharedCapPool!.rate - a.it.cat.sharedCapPool!.rate);
+    .sort((a, b) => {
+      const pa = a.it.cat.sharedCapPool!;
+      const pb = b.it.cat.sharedCapPool!;
+      const drain = (it: { cat: SharedPoolReturn }) => {
+        const pool = it.cat.sharedCapPool!;
+        return poolDrainValue(
+          { ...pool, spend: it.cat.spend },
+          pool.directAlternativeInr,
+        );
+      };
+      return drain(b.it) - drain(a.it) || pb.rate - pa.rate;
+    });
 
   const remaining = new Map(poolBudget);
   for (const { it, index } of shared) {
@@ -1125,19 +1319,22 @@ export function reallocateAcrossCategories<T extends { cat: SharedPoolReturn }>(
     const accelerated = Math.min(potential, headroom);
 
     // Recompute the sub-stream's return with only `accelerated` reward from the
-    // pool; the rest of covered spend overflows to the fallback rate. Mirrors
-    // participantReturn so travel and the flat engines agree numerically.
-    const spendAtRate = pool.rate > 0 ? (accelerated * 100) / pool.rate : 0;
-    const overflowSpend = Math.max(0, pool.coveredSpend - spendAtRate);
-    const nonCovered = Math.max(0, it.cat.spend - pool.coveredSpend);
-    const corrected =
-      accelerated +
-      (pool.coveredSpend * pool.discount) / 100 -
-      (pool.coveredSpend * pool.fee) / 100 +
-      (nonCovered * pool.fallbackRate) / 100 +
-      (overflowSpend * pool.fallbackRate) / 100;
+    // pool. Same pricing as travel's participantReturn, so the engines agree.
+    const pooled = pooledMemberReturn(
+      { ...pool, spend: it.cat.spend },
+      accelerated,
+    );
 
-    overrides.set(index, corrected);
+    // A voucher leg the pool can no longer make worthwhile swipes on its direct
+    // route instead and leaves the budget to the members after it.
+    if (
+      pool.directAlternativeInr !== null &&
+      pool.directAlternativeInr >= pooled
+    ) {
+      overrides.set(index, pool.directAlternativeInr);
+      continue;
+    }
+    overrides.set(index, pooled);
     remaining.set(pool.key, Math.max(0, headroom - accelerated));
   }
 
