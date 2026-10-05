@@ -813,6 +813,20 @@ export function sharedCapGroupKey(group: SharedCapGroup): string {
   return `${group.multiplier ?? "*"}::${group.merchant ?? "*"}`;
 }
 
+// Pool key for a groupless reward_cap with `scope: "card"`. Such a cap is one
+// budget for the whole card, not the category it happens to be filed under:
+// HDFC BizBlack's SmartBuy rules on flights, hotels and online_shopping each
+// repeat the same 10,000 pts/month cap, and all SmartBuy spend draws from it.
+// Rules on a card pool when they declare the same cap (value, metric, period)
+// — a card can carry several distinct card-scope caps (Swiggy BLCK: 1,500 on
+// 5% online, 500 on 1% other spends), which stay separate. Namespaced so it
+// can never merge with a group key or an engine `private::` key.
+export function cardScopeCapKey(
+  cap: NonNullable<MockRule["caps"]["reward_cap"]>,
+): string {
+  return `card::${cap.value}::${cap.metric}::${cap.period}`;
+}
+
 // Pool key for a VOUCHER-lane shared group. Namespaced so a voucher pool can
 // never merge with a direct-lane pool, even when both use the same group token
 // (SmartBuy: direct rules pool a reward cap under "10::smartbuy" while voucher

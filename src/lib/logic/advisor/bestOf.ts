@@ -1,5 +1,6 @@
 import { type Category, type MockCard } from "./cards";
 import {
+  cardScopeCapKey,
   sharedCapGroupKey,
   voucherPoolKey,
   groupFallbackRate,
@@ -148,16 +149,21 @@ function describeSharedCapGroup(group: SharedCapGroup): string {
   return parts.length > 0 ? parts.join(" ") : "shared pool";
 }
 
-// The combined pool a rule belongs to, if any. Only `combined` groups pool with
-// other rules; `standalone` (and groupless) rules keep a private cap (null). The
-// budget always derives from the rule's own reward_cap in the engine.
+// The pool a rule's reward cap belongs to, if any. A `combined` group pools
+// under its group key. A groupless `scope: "card"` cap pools card-wide with
+// every rule declaring the same cap (see `cardScopeCapKey`). `standalone` and
+// the remaining groupless rules keep a private cap (null). The budget always
+// derives from the rule's own reward_cap in the engine.
 function sharedCapPoolFor(r: MockRule): SharedCapPool | null {
   const g = r.shared_cap_group;
-  if (!g || g.capType !== "combined") return null;
-  return {
-    key: sharedCapGroupKey(g),
-    capPeriod: r.caps.reward_cap?.period ?? null,
-  };
+  const cap = r.caps.reward_cap;
+  if (g?.capType === "combined") {
+    return { key: sharedCapGroupKey(g), capPeriod: cap?.period ?? null };
+  }
+  if (!g && cap?.scope === "card") {
+    return { key: cardScopeCapKey(cap), capPeriod: cap.period };
+  }
+  return null;
 }
 
 function capNoteFor(rule: MockRule): string | null {
@@ -170,7 +176,9 @@ function capNoteFor(rule: MockRule): string | null {
   const shared =
     g && g.capType === "combined"
       ? ` combined across ${describeSharedCapGroup(g)}`
-      : "";
+      : !g && cap.scope === "card"
+        ? " shared card-wide"
+        : "";
   return `${valueStr} ${metric}/${period}${shared}`;
 }
 
