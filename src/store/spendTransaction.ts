@@ -41,4 +41,5 @@ export const {
   useAddSpendTransactionMutation,
   useOptimizeSpendMutation,
   useGetMerchantCategoriesQuery,
+  useLazyGetMerchantCategoriesQuery,
 } = spendTransaction;

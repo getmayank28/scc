@@ -19,6 +19,12 @@ interface SearchboxInputProps {
   options: SearchboxOption[];
   value: string;
   onChange: (value: string) => void;
+  /**
+   * Every change to the text in the box, committed or not — for callers that
+   * must react to typing (e.g. enabling a submit button) without waiting for
+   * a commit.
+   */
+  onInputChange?: (text: string) => void;
   badgeColors?: Record<string, string>;
   error?: string;
   label?: string;
@@ -35,6 +41,7 @@ export function SearchboxInput({
   options,
   value,
   onChange,
+  onInputChange,
   error,
   label,
   placeholder = "Search or type...",
@@ -56,9 +63,16 @@ export function SearchboxInput({
     setInputValue(value ?? "");
   }, [value]);
 
-  // Close on outside click
+  // Report the live text, including when it's replaced from `value`.
   React.useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    onInputChange?.(inputValue);
+  }, [inputValue]);
+
+  // Close on outside click. `pointerdown`, not `mousedown`: mobile browsers
+  // only synthesize mousedown after a completed tap, and never on a disabled
+  // control — so a tap on a disabled CTA left typed text uncommitted.
+  React.useEffect(() => {
+    const handler = (e: PointerEvent) => {
       if (
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
@@ -67,8 +81,8 @@ export function SearchboxInput({
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
   });
 
   // ── Filtering ──────────────────────────────────────────────────────────────
@@ -98,7 +112,9 @@ export function SearchboxInput({
 
   const commitFreeText = () => {
     const trimmed = inputValue?.trim();
-    if (trimmed) onChange(trimmed);
+    // Skip a no-op commit: blur and outside taps now fire it far more often,
+    // and every onChange is tracked as a merchant selection by the caller.
+    if (trimmed && trimmed !== value) onChange(trimmed);
   };
 
   const clearInput = () => {
@@ -181,6 +197,12 @@ export function SearchboxInput({
             setHighlighted(-1);
           }}
           onKeyDown={handleKeyDown}
+          // Free text must commit however the field is left. On mobile that is
+          // usually dismissing the keyboard, which fires no key or click event
+          // at all — only blur. Picking an option doesn't blur first: its
+          // onMouseDown prevents the focus change.
+          onBlur={commitFreeText}
+          enterKeyHint="done"
           className={cn(
             "h-12 pr-10 text-white",
             error ? "border-destructive" : "border-primary-orange"
