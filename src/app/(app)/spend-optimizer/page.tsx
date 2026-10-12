@@ -40,6 +40,7 @@ import {
   useAddSpendTransactionMutation,
   useOptimizeSpendMutation,
   useGetMerchantCategoriesQuery,
+  useLazyGetMerchantCategoriesQuery,
 } from "@/store/spendTransaction";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
@@ -47,6 +48,7 @@ import type { CreditCard } from "@/types/card";
 import type { PortalProps } from "@/models/Portal";
 import {
   categories,
+  merchantOnlyCategories,
   categoryLabel,
   OTHER_SPEND,
   quickMerchants,
@@ -85,6 +87,17 @@ type SwipeTarget =
 
 const inr = (n: number) => formatCurrency(String(Math.round(n)));
 
+/**
+ * A merchant's rule categories as UI options. Merchant-only categories count
+ * too: most shopping/delivery merchants have rules in nothing else, and leaving
+ * them out left no option to adopt.
+ */
+function merchantCategoryChoices(values: string[]) {
+  return [...categories, ...merchantOnlyCategories].filter((c) =>
+    values.includes(c.value),
+  );
+}
+
 const routeLabel: Record<OptimizedCardResult["bestRoute"], string> = {
   voucher: "Voucher first",
   swipe: "Swipe direct",
@@ -119,6 +132,10 @@ export default function SpendOptimizerPage() {
   const [mode, setMode] = useState<Mode>("category");
   const [category, setCategory] = useState("flights");
   const [merchantValue, setMerchantValue] = useState("");
+  // Live text in the merchant box. `merchantValue` only updates on a commit
+  // (pick, Enter, blur); the CTA follows this instead so it enables as soon as
+  // anything is typed.
+  const [merchantText, setMerchantText] = useState("");
   const [amount, setAmount] = useState("5000");
 
   // "More" tiles hand off to the precision panel: switch tab, then open that
@@ -224,24 +241,24 @@ export default function SpendOptimizerPage() {
       skip: mode !== "merchant" || !merchantValue,
     });
 
-  const merchantCategoryOptions = useMemo(() => {
-    const values: string[] = merchantCats?.result?.categories ?? [];
-    return categories.filter((c) => values.includes(c.value));
-  }, [merchantCats]);
+  const merchantCategoryOptions = useMemo(
+    () => merchantCategoryChoices(merchantCats?.result?.categories ?? []),
+    [merchantCats],
+  );
 
-  // A merchant we hold no rules for: the query resolved, but with nothing in it.
+  // Same lookup, on demand: a run can start from text that was typed but never
+  // committed, whose categories the query above hasn't fetched yet.
+  const [fetchMerchantCats] = useLazyGetMerchantCategoriesQuery();
+
+  // A merchant we can't score on its own rules: either we hold none for it, or
+  // every rule sits in a category the UI has no value for. Both resolve to the
+  // catch-all below rather than whatever `category` was left holding.
   const merchantIsUnknown =
     !!merchantValue &&
     !isMerchantCatsLoading &&
-    merchantCats?.result?.known === false;
-
-  // The category an unknown merchant is scored as. Whatever `category` happens
-  // to hold is a leftover from the last run or the last merchant, and scoring a
-  // Radisson stay as "hotels" only by accident — or a hardware shop as "hotels"
-  // because hotels was picked earlier — quotes a rate the purchase would never
-  // earn. With nothing on file for the merchant, the honest answer is the
-  // catch-all: every card at its own base rate.
-  const effectiveCategory = merchantIsUnknown ? OTHER_SPEND.value : category;
+    !!merchantCats?.result &&
+    (merchantCats.result.known === false ||
+      merchantCategoryOptions.length === 0);
 
   // Adopt the merchant's category automatically. When it has exactly one, that
   // is the answer; when it has several, seed the picker with the first so the
@@ -255,12 +272,21 @@ export default function SpendOptimizerPage() {
     );
   }, [mode, merchantCategoryOptions]);
 
+  // The category dropdown only lists `categories`. A merchant-only value
+  // adopted above would render it blank, so fall back to the first entry.
+  useEffect(() => {
+    if (mode !== "category") return;
+    setCategory((prev) =>
+      categories.some((c) => c.value === prev) ? prev : categories[0].value,
+    );
+  }, [mode]);
+
   const numericAmount = Number(amount.replace(/[^\d]/g, "")) || 0;
   const atMax = selected.length >= MAX_SELECTED;
   const canSubmit =
     selected.length > 0 &&
     numericAmount > 0 &&
-    (mode === "category" ? !!category : !!merchantValue) &&
+    (mode === "category" ? !!category : !!merchantText.trim()) &&
     !isOptimizing;
 
   const best = results[0];
@@ -616,13 +642,44 @@ export default function SpendOptimizerPage() {
     }
   }
 
-  function handleOptimize() {
+  async function handleOptimize() {
     if (mode === "category") {
       runFor(category, "");
-    } else {
-      const quick = quickMerchants.find((m) => m.label === merchantValue);
-      runFor(quick?.category ?? effectiveCategory, merchantValue);
+      return;
     }
+    // The box may hold text that was never committed (typed, then straight to
+    // the CTA — the norm on mobile). Run on what's in the box, not on the last
+    // commit, and resolve its category here rather than trusting `category`,
+    // which is only adopted once a committed merchant's lookup has landed.
+    const name = merchantText.trim();
+    if (name !== merchantValue) {
+      track(EventName.SPEND_OPTIMIZER_MERCHANT_SELECTED, { merchant: name });
+      setMerchantValue(name);
+    }
+    const quick = quickMerchants.find((m) => m.label === name);
+    if (quick) {
+      runFor(quick.category, name);
+      return;
+    }
+    let runCategory: string;
+    try {
+      const res = await fetchMerchantCats(name, true).unwrap();
+      const options = merchantCategoryChoices(res?.result?.categories ?? []);
+      // Nothing scoreable on file → the catch-all. Whatever `category` holds is
+      // a leftover from the last run, and scoring a Radisson stay as "flights"
+      // only by accident quotes a rate the purchase would never earn; the
+      // honest answer is every card at its own base rate.
+      runCategory =
+        options.length === 0
+          ? OTHER_SPEND.value
+          : options.some((c) => c.value === category)
+            ? category
+            : options[0].value;
+    } catch {
+      toast.error("Couldn't optimize this spend. Please try again.");
+      return;
+    }
+    runFor(runCategory, name);
   }
 
   function reset() {
@@ -937,6 +994,7 @@ export default function SpendOptimizerPage() {
                           disabled={isPortalFetching}
                           options={merchantOptions}
                           value={merchantValue}
+                          onInputChange={setMerchantText}
                           onChange={(val) => {
                             if (val) {
                               track(
@@ -1042,7 +1100,7 @@ export default function SpendOptimizerPage() {
                     <p className="so-hint">Add a card to compare.</p>
                   ) : selected.length === 0 ? (
                     <p className="so-hint">Select at least one card.</p>
-                  ) : mode === "merchant" && !merchantValue ? (
+                  ) : mode === "merchant" && !merchantText.trim() ? (
                     <p className="so-hint">Pick a merchant, or tap one above.</p>
                   ) : (
                     <span />

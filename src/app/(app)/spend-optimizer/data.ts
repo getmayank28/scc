@@ -20,6 +20,8 @@ import {
   Pill,
   CircleParking,
   Wrench,
+  ShoppingBag,
+  UtensilsCrossed,
   LucideIcon,
 } from "lucide-react";
 import { OTHER_SPEND_CATEGORY } from "@/lib/logic/advisor/spendOptimizer";
@@ -110,10 +112,26 @@ export const categories: Category[] = [
 ];
 
 /**
+ * Categories reachable only through a merchant — never offered in the category
+ * dropdown, because a category-wide "online shopping" run has no sensible
+ * answer (its voucher frontier is led by niche brands). They still have to be
+ * valid merchant categories: most shopping and delivery merchants have rules
+ * ONLY here, and leaving them out of a merchant's options left the run on
+ * whatever category was selected before (usually "flights"), so the merchant's
+ * rules — vouchers included — were never read.
+ *
+ * Same contract as `categories`: every `value` must be in UI_CATEGORY_TO_ENGINE.
+ */
+export const merchantOnlyCategories: Category[] = [
+  { value: "online-shopping", label: "Online shopping", icon: ShoppingBag },
+  { value: "food-delivery", label: "Food delivery", icon: UtensilsCrossed },
+];
+
+/**
  * The catch-all a run falls back to when the spend can't be placed — an
  * unrecognised merchant. Deliberately NOT a member of `categories`: it is never
  * a choice the user picks from the dropdown, and it must not appear among a
- * merchant's own category options either. `categoryLabel` covers both lists so
+ * merchant's own category options either. `categoryLabel` covers every list so
  * callers can label a run with it without special-casing.
  */
 export const OTHER_SPEND: Category = {
@@ -125,7 +143,10 @@ export const OTHER_SPEND: Category = {
 /** Display label for any run category, including the off-list catch-all. */
 export function categoryLabel(value: string): string | null {
   if (value === OTHER_SPEND.value) return OTHER_SPEND.label;
-  return categories.find((c) => c.value === value)?.label ?? null;
+  return (
+    [...categories, ...merchantOnlyCategories].find((c) => c.value === value)
+      ?.label ?? null
+  );
 }
 
 /** One-tap category shortcuts. Everything else lives behind the "More" tile. */
