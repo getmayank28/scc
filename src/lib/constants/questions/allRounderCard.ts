@@ -24,7 +24,7 @@ export const allRounderCard = [
   {
     m_id: "online-spend",
     source: MESSAGE_SOURCE.ASSISTANT,
-    content: "Out of this, roughly how much is spent online?",
+    content: "Out of this, roughly how much is spent online per month?",
     botContent: " my monthly online spend is ",
     order: 2,
     type: MESSAGE_TYPE.SLIDER,
@@ -101,7 +101,7 @@ export const allRounderCard = [
       {
         m_id: "food-and-dining",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Food delivery & Dining",
+        content: "Monthly food delivery & Dining",
         botContent: " my food delivery & dining spend is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,
@@ -113,7 +113,7 @@ export const allRounderCard = [
       {
         m_id: "bill-payments",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Bill Payment",
+        content: "Monthly bill Payment",
         botContent: " my bill payment spend is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,
@@ -126,7 +126,7 @@ export const allRounderCard = [
         m_id: "online-shopping",
         source: MESSAGE_SOURCE.ASSISTANT,
         content:
-          "Shopping on online platform ( fashion, groceries, daily needs etc.)",
+          "Monthly shopping on online platform ( fashion, groceries, daily needs etc.)",
         botContent:
           " my online shopping platform(fashion,groceries,daily needs) spend is ",
         order: 6,
@@ -147,7 +147,7 @@ export const allRounderCard = [
       {
         m_id: "fuel",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Payment of fuel using a credit card",
+        content: "Monthly payment of fuel using a credit card",
         botContent: " my fuel spend is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,
@@ -159,7 +159,8 @@ export const allRounderCard = [
       {
         m_id: "taxes-insurance-rent",
         source: MESSAGE_SOURCE.ASSISTANT,
-        content: "Payment of taxes, insurance, or rent using a credit card",
+        content:
+          "Monthly payment of taxes, insurance, or rent using a credit card",
         botContent: " my spend on taxes, insurance or rent  is ",
         order: 6,
         type: MESSAGE_TYPE.SLIDER,

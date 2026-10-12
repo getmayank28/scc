@@ -3,6 +3,7 @@ import Giftor from "@/models/Giftor";
 import "@/models/Bank";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardModel from "@/models/Card";
+import { resolveBankForCardSlug } from "@/lib/utils/resolveCardBank";
 
 // GET single giftor
 export async function GET(
@@ -13,19 +14,27 @@ export async function GET(
   const { id } = await context.params;
 
   try {
-    const card = await CardModel.find({ slug: id }).lean();
+    const card = await CardModel.findOne({ slug: id }).lean<{
+      bankId?: unknown;
+    } | null>();
 
-    const giftor = await Giftor.find({ bankId: card?.[0]?.bankId }).populate(
-      "bankId",
-      "name",
-    );
-
-    if (!giftor) {
-      return NextResponse.json(
-        { message: "Giftor not found" },
-        { status: 404 },
-      );
+    if (!card) {
+      return NextResponse.json({ message: "Card not found" }, { status: 404 });
     }
+
+    // `bankId` is the intended join, but it is currently null on every active
+    // card, so fall back to recovering the bank from the slug. See
+    // `resolveCardBank` for why the card's own `bankName` cannot be used — it
+    // holds the network ("visa"), which is what this route used to surface as
+    // a bank name in the caller's error message.
+    const bankId =
+      card.bankId ?? (await resolveBankForCardSlug(id))?._id ?? null;
+
+    if (!bankId) {
+      return NextResponse.json([]);
+    }
+
+    const giftor = await Giftor.find({ bankId }).populate("bankId", "name");
 
     return NextResponse.json(giftor);
   } catch (error) {

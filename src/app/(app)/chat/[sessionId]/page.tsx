@@ -8,6 +8,7 @@ import { useChatScroll } from "@/lib/hooks/useChatScroll";
 import LoggedInHeader from "@/components/LoggedInHeader";
 import ChatSidebar from "@/components/ChatSidebar/ChatSidebar";
 import useChatActions from "@/lib/hooks/useChatActions";
+import { useSocketReplyTimeout } from "@/lib/hooks/useSocketReplyTimeout";
 import { useChatContext } from "@/contexts/ChatContext";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { INPUT_MESSAGE_SOURCE } from "@/lib/constants/chatJourney";
@@ -29,17 +30,23 @@ export default function ChatbotUI() {
     chatInputDisabled,
     setInputValue,
     messages,
+    timedOutReply,
   } = useChatContext();
 
-  const { addUserMessage } = useChatState();
+  const { addUserMessage, restoreLocalReplay } = useChatState();
   const messagesEndRef = useChatScroll(messages);
   const {
     handleSendMessage,
     handleKeyPressSendMessage,
     handleAssistantSocketMessage,
+    retryTimedOutMessage,
   } = useChatActions();
 
-  const { lastMessage, isSocketLoading } = useAppWebSocketConnection();
+  // Release the screen if the partner goes quiet on a turn we sent.
+  useSocketReplyTimeout();
+
+  const { lastMessage, isSocketLoading, isChatLoading } =
+    useAppWebSocketConnection();
 
   useEffect(() => {
     track(EventName.CHAT_SESSION_VIEWED, {
@@ -60,13 +67,22 @@ export default function ChatbotUI() {
     handleAssistantSocketMessage(parsed);
   }, [lastMessage]);
 
+  // Bootstrap the journey as soon as the screen is renderable. This must not
+  // wait on the socket: a new chat holds the connection closed until the
+  // journey produces a recommendation, so gating here would deadlock.
+  //
+  // A reload can land after a recommendation but before the partner has minted
+  // a session id, in which case there is no history frame coming — restore from
+  // the local stash first so the cards are not lost.
   useEffect(() => {
-    if (!messages.length && !isSocketLoading) {
-      addUserMessage(
-        selectedCardCategoryJourney?.at(0) as BaseMessage | undefined
-      );
-    }
-  }, [isSocketLoading, messages?.length]);
+    if (messages.length || isChatLoading) return;
+
+    if (restoreLocalReplay()) return;
+
+    addUserMessage(
+      selectedCardCategoryJourney?.at(0) as BaseMessage | undefined
+    );
+  }, [isChatLoading, messages?.length]);
 
 
   const handleSendWrapper = (
@@ -83,24 +99,34 @@ export default function ChatbotUI() {
     <div className="flex">
       <ChatSidebar />
       
-      <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background">
+      <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background min-w-0">
         <CardSelectorSkeleton
-          className={`${isSocketLoading ? "inline" : "hidden"}`}
+          className={`${isChatLoading ? "inline" : "hidden"}`}
         />
         <LoggedInHeader />
         {/* Messages Area - Scrollable */}
         <ChatbotScrollableArea
-          isSocketLoading={isSocketLoading}
+          isSocketLoading={isChatLoading}
           currentMessageId={currentMessageId}
           messages={messages}
           handleSend={handleSendWrapper}
           messagesEndRef={messagesEndRef}
           isTyping={showTypingLoader}
+          hasReplyTimedOut={!!timedOutReply}
+          onRetryTimedOutReply={retryTimedOutMessage}
         />
 
         {/* Input Area - Fixed at Bottom */}
         <ChatbotInput
-          disabled={chatInputDisabled || showTypingLoader || isSocketLoading}
+          // The journey drives `chatInputDisabled` on its own; the socket only
+          // matters once the input is actually enabled, i.e. for free-text
+          // follow-up, which is the one thing that needs the partner.
+          disabled={
+            chatInputDisabled ||
+            showTypingLoader ||
+            isChatLoading ||
+            isSocketLoading
+          }
           inputValue={inputValue}
           onInputChange={setInputValue}
           onSend={() =>

@@ -1,0 +1,1713 @@
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import {
+  type BestDirectSwipe,
+  type BestVoucher,
+  type MockBestOf,
+  type SharedCapPool,
+} from "./bestOf";
+import {
+  isTotalCapGroup,
+  type CapPeriod,
+  type CapScope,
+  type DirectSwipeSchedule,
+  type Merchant,
+  type MockRule,
+} from "./rules";
+
+const PERIODS_PER_YEAR: Record<CapPeriod, number> = {
+  daily: 365,
+  monthly: 12,
+  quarterly: 4,
+  annually: 1,
+};
+
+// Travel bookings are lumpy: all of a trip's spend lands inside a single cap
+// period. So the annual accelerated headroom is the per-period cap repeated
+// across however many *cap periods actually contain a trip*. For monthly caps
+// that's min(trips/yr, 12); quarterly is min(trips, 4); annually min(trips, 1).
+function tripAwareAnnualCapInr(
+  perPeriodInr: number | null,
+  period: CapPeriod | null,
+  tripsPerYear: number,
+): number | null {
+  if (perPeriodInr === null || period === null) return null;
+  const periodsPerYear = PERIODS_PER_YEAR[period];
+  const activePeriods = Math.min(tripsPerYear, periodsPerYear);
+  return perPeriodInr * activePeriods;
+}
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
+import {
+  travelCardPhaseOneRecommendation,
+  travelCardPhaseTwoRecommendation,
+  type CategorySplit,
+  type TravelCardPhaseOneInput,
+  type TravelCardPhaseOneOutput,
+  type TravelCardPhaseTwoInput,
+  type TravelCardPhaseTwoOutput,
+  type TravelPriority,
+} from "./travel";
+
+// Forex filter: applies only when foreign travel exceeds this share of trips,
+// and eliminates cards whose markup (including GST) is above the ceiling.
+const LOW_FOREX_MIN_INTL_PERCENTAGE = 40;
+const LOW_FOREX_GST_MULTIPLIER = 1.18;
+const LOW_FOREX_MAX_WITH_GST_PERCENTAGE = 2.36;
+
+// Lounge filter: total free annual visits must cover at least this fraction of
+// `trips × 1.5`.
+const LOUNGE_TRIPS_MULTIPLIER = 1.5;
+const LOUNGE_MIN_COVERAGE_RATIO = 0.3;
+
+export type ReturnSource = "voucher" | "direct" | "fallback";
+
+// The combined shared-cap pool a category return drew its accelerated reward
+// from, surfaced so callers (the food / shopping / all-rounder engines) can
+// reconcile pools that span MULTIPLE categories — a concern computeCategory
+// Return can't see on its own, since it scores one category at a time. Carries
+// everything reallocateAcrossCategories needs to re-split the single pool
+// budget across every category that shares its `key`. Null when the winning
+// route has no combined pool (a private cap, or the base-rate fallback).
+export interface SettledCapPool {
+  key: string;
+  capPeriod: CapPeriod | null;
+  // The pool's per-period reward-value cap (₹ of reward per capPeriod). The
+  // reconciler annualizes this trip-aware — the same annualization computeCat
+  // egoryReturn used to clamp the winner in isolation — then re-splits it across
+  // the categories sharing `key`. Null → unbounded pool (nothing to re-split).
+  perPeriodCapInr: number | null;
+  // The accelerated rate the winning route earns at (voucher reward % or direct
+  // swipe %), used to rank categories top-down when the shared budget is split.
+  rate: number;
+  // Rate the pool's overflow spend falls back to (card base rate, or 0 for a
+  // `total` group). Applied to spend the shared budget can no longer cover.
+  fallbackRate: number;
+  // Voucher lanes earn a discount (minus convenience fee) on ALL absorbed spend
+  // regardless of the reward cap; only the reward leg draws from the pool. Zero
+  // for direct routes.
+  discount: number;
+  fee: number;
+  // For a voucher route, the spend the voucher actually absorbed (its purchase
+  // cap); overflow beyond it already earns the merchant's direct rate and never
+  // touches the shared reward pool. Equals `spend` for direct routes.
+  coveredSpend: number;
+  // Voucher lanes only: what this leg earns on its direct route instead
+  // (computeCategoryReturn's direct waterfall), when that route is uncapped and
+  // unpooled. The reconciler falls back to it when the shared pool can't make
+  // the voucher pay more, and ranks pool members by their gain over it. Null
+  // for direct lanes and capped direct routes, whose alternative is the
+  // fallback rate.
+  directAlternativeInr: number | null;
+}
+
+export interface CategoryReturn {
+  category: Category;
+  spend: number;
+  effectivePercentage: number;
+  effectiveRateAfterCap: number;
+  source: ReturnSource;
+  merchant: string | null;
+  capNote: string | null;
+  cappedAnnualSpendInr: number | null;
+  returnInr: number;
+  // Set when the winning route draws from a `combined` shared pool. Lets a
+  // caller pool this category's reward with other categories sharing the key.
+  sharedCapPool: SettledCapPool | null;
+}
+
+function withEffectiveRate(
+  cat: Omit<CategoryReturn, "effectiveRateAfterCap">,
+): CategoryReturn {
+  return {
+    ...cat,
+    effectiveRateAfterCap:
+      cat.spend > 0 ? (cat.returnInr / cat.spend) * 100 : 0,
+  };
+}
+
+export interface SegmentReturn {
+  flights: CategoryReturn;
+  hotels: CategoryReturn;
+  other: CategoryReturn;
+  totalSpend: number;
+  totalReturnInr: number;
+}
+
+export interface ForexReturn {
+  applicableSpend: number;
+  markupPercentage: number;
+  gstPercentage: number;
+  markupCostInr: number;
+  gstOnMarkupInr: number;
+  totalCostInr: number;
+}
+
+export interface CardTravelReturn extends CardScoreBreakdown {
+  cardId: string;
+  cardName: string;
+  domestic: SegmentReturn;
+  international: SegmentReturn;
+  extraFlights: SegmentReturn | null;
+  forex: ForexReturn;
+  grossReturnInr: number;
+  netReturnInr: number;
+}
+
+export interface TravelEngineResult {
+  input: TravelCardPhaseOneInput;
+  travel: TravelCardPhaseOneOutput;
+  byCard: CardTravelReturn[];
+  best: CardTravelReturn | null;
+}
+
+export interface TravelEngineAdvancedResult {
+  input: TravelCardPhaseTwoInput;
+  travel: TravelCardPhaseTwoOutput;
+  byCard: CardTravelReturn[];
+  best: CardTravelReturn | null;
+  filteredCardCount: number;
+  totalCardCount: number;
+}
+
+function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
+  const index = new Map<string, MockBestOf>();
+  for (const entry of bestOfList) {
+    index.set(`${entry.cardId}::${entry.category}`, entry);
+  }
+  return index;
+}
+
+// The single pool a direct candidate draws from, for waterfall cap accounting.
+// A `combined` candidate draws from the shared pool keyed by its group; every
+// other candidate gets a private pool. In both cases the budget is the rule's
+// own reward cap (combined members are validated to agree on it).
+interface CandidatePool {
+  key: string;
+  capPeriod: CapPeriod | null;
+}
+
+function directCandidatePool(c: BestDirectSwipe): CandidatePool {
+  if (c.sharedCapPool) {
+    return {
+      key: `shared::${c.sharedCapPool.key}`,
+      capPeriod: c.sharedCapPool.capPeriod,
+    };
+  }
+  return {
+    key: `unshared::${c.merchant ?? "base"}::${c.percentage}::${
+      c.cappedSpendPerPeriodInr ?? "null"
+    }`,
+    capPeriod: c.capPeriod,
+  };
+}
+
+interface DirectWaterfallResult {
+  totalInr: number;
+  primary: BestDirectSwipe | null;
+}
+
+// Annual spend threshold for a tier's per-period floor, annualized the same way
+// reward caps are (so tier thresholds and caps stay consistent). A 0 floor maps
+// to 0 (the first tier always applies from the bottom).
+function tierAnnualThreshold(
+  perPeriodInr: number,
+  schedule: DirectSwipeSchedule,
+  bookingsPerYear: number,
+): number {
+  return (
+    tripAwareAnnualCapInr(perPeriodInr, schedule.period, bookingsPerYear) ?? 0
+  );
+}
+
+// "whole" mode: the highest tier whose annual threshold the spend reaches sets
+// one rate applied to ALL the spend.
+function resolveWholeRate(
+  schedule: DirectSwipeSchedule,
+  spend: number,
+  bookingsPerYear: number,
+): number {
+  let rate = schedule.tiers[0]?.rate ?? 0;
+  for (const t of schedule.tiers) {
+    const threshold = tierAnnualThreshold(
+      t.min_spend_per_period_inr,
+      schedule,
+      bookingsPerYear,
+    );
+    if (spend >= threshold) rate = t.rate;
+  }
+  return rate;
+}
+
+// "marginal" mode: each spend slice [tier_k, tier_k+1) earns tier_k's rate. The
+// rule's reward_cap (if any) ceilings the accelerated reward in spend order;
+// once it's exhausted, the remaining spend earns the base rate.
+function marginalTieredInr(
+  c: BestDirectSwipe,
+  spend: number,
+  baseRate: number,
+  bookingsPerYear: number,
+): number {
+  const schedule = c.schedule!;
+  const tiers = schedule.tiers;
+  const annualCap =
+    tripAwareAnnualCapInr(
+      c.rewardCapPerPeriodValueInr,
+      c.capPeriod,
+      bookingsPerYear,
+    ) ?? Number.POSITIVE_INFINITY;
+
+  let total = 0;
+  let rewardSoFar = 0;
+  let baseSpend = 0;
+  let capReached = false;
+  for (let i = 0; i < tiers.length; i++) {
+    const lo = tierAnnualThreshold(
+      tiers[i].min_spend_per_period_inr,
+      schedule,
+      bookingsPerYear,
+    );
+    const hi =
+      i + 1 < tiers.length
+        ? tierAnnualThreshold(
+            tiers[i + 1].min_spend_per_period_inr,
+            schedule,
+            bookingsPerYear,
+          )
+        : Number.POSITIVE_INFINITY;
+    const slice = Math.max(0, Math.min(spend, hi) - lo);
+    if (slice <= 0) continue;
+
+    if (capReached) {
+      baseSpend += slice;
+      continue;
+    }
+    const rate = tiers[i].rate;
+    const capHeadroom = annualCap - rewardSoFar;
+    const maxSliceByCap = rate > 0 ? (capHeadroom * 100) / rate : slice;
+    const accelSlice = Math.min(slice, maxSliceByCap);
+    const earned = (accelSlice * rate) / 100;
+    total += earned;
+    rewardSoFar += earned;
+    baseSpend += slice - accelSlice;
+    if (accelSlice < slice) capReached = true;
+  }
+  total += (baseSpend * baseRate) / 100;
+  return total;
+}
+
+// Flat waterfall: drain spend top-down through the candidates (highest rate
+// first), respecting per-rule and shared-pool caps; leftover falls to base.
+function flatWaterfallInr(
+  spend: number,
+  candidates: BestDirectSwipe[],
+  baseRate: number,
+  bookingsPerYear: number,
+): DirectWaterfallResult {
+  const sorted = [...candidates].sort((a, b) => b.percentage - a.percentage);
+
+  // Resolve each pool's annual reward budget once (first candidate to claim the
+  // key sets it; shared-pool members agree on their reward cap by validation).
+  const poolCapReward = new Map<string, number>();
+  for (const c of sorted) {
+    const pool = directCandidatePool(c);
+    if (poolCapReward.has(pool.key)) continue;
+    const annual = tripAwareAnnualCapInr(
+      c.rewardCapPerPeriodValueInr,
+      pool.capPeriod,
+      bookingsPerYear,
+    );
+    poolCapReward.set(pool.key, annual ?? Number.POSITIVE_INFINITY);
+  }
+  const poolUsedReward = new Map<string, number>();
+
+  let remaining = spend;
+  let totalInr = 0;
+  let primary: BestDirectSwipe | null = null;
+
+  for (const c of sorted) {
+    if (remaining <= 0) break;
+    if (c.percentage <= 0) continue;
+    const pool = directCandidatePool(c);
+    const headroom =
+      poolCapReward.get(pool.key)! - (poolUsedReward.get(pool.key) ?? 0);
+    if (headroom <= 0) continue;
+    const maxSpend = (headroom * 100) / c.percentage;
+    const absorbed = Math.min(remaining, maxSpend);
+    if (absorbed <= 0) continue;
+    const earned = (absorbed * c.percentage) / 100;
+    totalInr += earned;
+    remaining -= absorbed;
+    poolUsedReward.set(pool.key, (poolUsedReward.get(pool.key) ?? 0) + earned);
+    if (!primary) primary = c;
+  }
+
+  totalInr += (remaining * baseRate) / 100;
+  return { totalInr, primary };
+}
+
+// Resolve the direct frontier including spend-tiered rules:
+//   - flat rules + "whole" tiers (pre-resolved to a single rate) go through the
+//     flat waterfall, exactly as before;
+//   - each "marginal" tiered rule is evaluated piecewise over the full category
+//     spend (it covers all of it), and the best-earning structure is chosen.
+// With no tiered rules present this reduces to the flat waterfall verbatim.
+function directWaterfallInr(
+  spend: number,
+  directFrontier: BestDirectSwipe[],
+  baseTier: BestDirectSwipe | null,
+  baseRate: number,
+  bookingsPerYear: number,
+): DirectWaterfallResult {
+  const all: BestDirectSwipe[] = [...directFrontier];
+  if (baseTier) all.push(baseTier);
+
+  // "whole" tiers depend only on total spend → resolve to a flat-rate copy.
+  const resolved = all.map((c) =>
+    c.schedule && c.schedule.mode === "whole"
+      ? {
+          ...c,
+          percentage: resolveWholeRate(c.schedule, spend, bookingsPerYear),
+          schedule: null,
+        }
+      : c,
+  );
+
+  const marginal = resolved.filter(
+    (c) => c.schedule && c.schedule.mode === "marginal",
+  );
+  const flat = resolved.filter((c) => !c.schedule);
+
+  let best = flatWaterfallInr(spend, flat, baseRate, bookingsPerYear);
+  for (const m of marginal) {
+    const totalInr = marginalTieredInr(m, spend, baseRate, bookingsPerYear);
+    if (totalInr > best.totalInr) best = { totalInr, primary: m };
+  }
+  return best;
+}
+
+interface VoucherWaterfallResult {
+  totalInr: number;
+  primary: BestVoucher | null;
+}
+
+// A voucher whose convenience fee outweighs its merchant discount: past the
+// reward cap every voucher rupee loses money, so the buyer stops buying there.
+// Shared by the lane (voucherEffectiveAnnualCap) and the pool reconcilers
+// (pooledMemberReturn) so both draw the line in the same place.
+//
+// Deliberately `< 0`, not "below the fallback rate": the lane prices spend
+// past the cap at discount − fee, but the reconcilers price it at
+// discount − fee + the fallback rate. Only a negative net discount loses to
+// swiping under both, so only that case changes; every other voucher keeps
+// its existing treatment.
+function voucherLosesPastRewardCap(discount: number, fee: number): boolean {
+  return discount - fee < 0;
+}
+
+// Annual spend a rational buyer routes through the voucher: its purchase cap,
+// and — for a voucher that loses money past its reward cap — the reward cap
+// too.
+//
+// HDFC's Flipkart/Amazon vouchers pay a 10% reward but carry a 2.95% fee and
+// no merchant discount. Pushing all spend through the voucher charged the fee
+// on every rupee: Diners Club Metal's Flipkart voucher scored ₹8,777 on ₹9.2L
+// and lost to a 3.33% swipe (₹30,689), when voucher-to-cap-then-swipe earns
+// ₹44,068.
+//
+// The swiped remainder is priced at the fallback rate, not the merchant's
+// direct rate: that direct rule may carry its own cap, which this lane can't
+// see. A merchant whose direct swipe beats this mix is still caught, because
+// the direct waterfall competes with the voucher lane in computeCategoryReturn.
+function voucherEffectiveAnnualCap(
+  v: BestVoucher,
+  bookingsPerYear: number,
+  avgBookingInr: number,
+): number | null {
+  const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+  if (!voucherLosesPastRewardCap(v.breakdown.discount, v.breakdown.fee)) {
+    return purchaseCap;
+  }
+  const rewardCap = tripAwareAnnualCapInr(
+    v.caps.rewardSpendPerPeriodInr,
+    v.capPeriod,
+    bookingsPerYear,
+  );
+  if (rewardCap === null) return purchaseCap;
+  return purchaseCap === null ? rewardCap : Math.min(purchaseCap, rewardCap);
+}
+
+// Voucher lane: top-totalPercentage voucher absorbs spend up to its annual
+// purchase cap, next voucher absorbs the next slice, etc. Spend that can't be
+// routed through any voucher spills into the *direct* waterfall (not the card
+// base rate) — this is the key correctness fix vs. the old single-rule lane.
+// One merchant per evaluation: the voucher absorbs spend up to its own annual
+// cap at the voucher rate; every rupee above that cap earns the SAME merchant's
+// direct-swipe rate (not another merchant's voucher, not the card base rate).
+// Spend the buyer declines to run through the voucher past its reward cap (see
+// voucherEffectiveAnnualCap) earns the fallback rate instead.
+function singleVoucherInr(
+  v: BestVoucher,
+  spend: number,
+  bookingsPerYear: number,
+  avgBookingInr: number,
+): number {
+  const purchaseCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+  const purchasable =
+    purchaseCap === null ? spend : Math.min(spend, purchaseCap);
+  const effectiveCap = voucherEffectiveAnnualCap(
+    v,
+    bookingsPerYear,
+    avgBookingInr,
+  );
+  const absorbed =
+    effectiveCap === null ? spend : Math.min(spend, effectiveCap);
+
+  // Within the absorbed slice, accelerated reward can be capped separately; the
+  // part beyond that reward cap earns only the discount at the voucher merchant.
+  const rewardCap = tripAwareAnnualCapInr(
+    v.caps.rewardSpendPerPeriodInr,
+    v.capPeriod,
+    bookingsPerYear,
+  );
+  const acceleratedV =
+    rewardCap === null ? absorbed : Math.min(absorbed, rewardCap);
+
+  const voucherEarned =
+    (absorbed * v.breakdown.discount) / 100 -
+    (absorbed * v.breakdown.fee) / 100 +
+    (acceleratedV * v.breakdown.reward) / 100;
+
+  // Purchasable spend not worth buying as vouchers is swiped at fallback.
+  const swipedEarned = ((purchasable - absorbed) * v.fallbackPercentage) / 100;
+
+  // Spend above the voucher cap falls back to this merchant's direct rate.
+  const overflow = Math.max(0, spend - purchasable);
+  const overflowEarned = (overflow * v.directSwipePercentage) / 100;
+
+  return voucherEarned + swipedEarned + overflowEarned;
+}
+
+// Pick the single best voucher merchant for this spend and return its total.
+// "Best" is by rupees earned (not headline rate), since the capped-slice +
+// direct-overflow structure means a lower-rate voucher can out-earn a higher
+// one once caps bite.
+function voucherWaterfallInr(
+  spend: number,
+  voucherFrontier: BestVoucher[],
+  bookingsPerYear: number,
+): VoucherWaterfallResult {
+  const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+
+  let primary: BestVoucher | null = null;
+  let totalInr = 0;
+  for (const v of voucherFrontier) {
+    const earned = singleVoucherInr(v, spend, bookingsPerYear, avgBookingInr);
+    if (primary === null || earned > totalInr) {
+      primary = v;
+      totalInr = earned;
+    }
+  }
+
+  return { totalInr, primary };
+}
+
+function voucherAnnualCap(
+  voucher: BestVoucher,
+  bookingsPerYear: number,
+  avgBookingInr: number,
+): number | null {
+  const { maxVoucherInr, perBooking, monthlyPurchaseInr } = voucher.caps;
+
+  const perBookingCeiling =
+    maxVoucherInr !== null && perBooking !== null
+      ? maxVoucherInr * perBooking
+      : null;
+
+  const annualFromBookings =
+    perBookingCeiling !== null
+      ? bookingsPerYear * Math.min(avgBookingInr, perBookingCeiling)
+      : null;
+
+  // Purchase-volume cap from the voucher_cap-derived pool. Payloads written
+  // before voucherPurchasePool existed carry only monthlyPurchaseInr — fall
+  // back to the legacy ×12 annualization for those.
+  const pool = voucher.voucherPurchasePool;
+  const annualFromPurchaseCap = pool
+    ? pool.annualLimitInr
+    : monthlyPurchaseInr !== null
+      ? monthlyPurchaseInr * 12
+      : null;
+
+  if (annualFromBookings === null && annualFromPurchaseCap === null)
+    return null;
+  if (annualFromBookings === null) return annualFromPurchaseCap;
+  if (annualFromPurchaseCap === null) return annualFromBookings;
+  return Math.min(annualFromBookings, annualFromPurchaseCap);
+}
+
+function formatInr(value: number): string {
+  return `₹${Math.round(value).toLocaleString("en-IN")}`;
+}
+
+function buildVoucherCapNote(
+  purchaseCap: number | null,
+  rewardCap: number | null,
+): string | null {
+  const parts: string[] = [];
+  if (purchaseCap !== null) {
+    parts.push(`voucher covers ${formatInr(purchaseCap)}/yr`);
+  }
+  if (rewardCap !== null && (purchaseCap === null || rewardCap < purchaseCap)) {
+    parts.push(`accelerated reward to ${formatInr(rewardCap)}/yr`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+export interface CategoryReturnOptions {
+  // Score voucher routes on the card's reward leg alone
+  // (`voucher_reward_percentage`), dropping the merchant's own voucher discount
+  // and the convenience fee from the rate.
+  //
+  // A voucher's headline `totalPercentage` is `discount + reward − fee`, where
+  // `discount` is the MERCHANT's promo on the gift voucher — value you'd get
+  // paying with any card — and only `reward` is card-attributable. That total is
+  // the right number when the user actually named the merchant, but not for a
+  // generic "other spend" bucket: there the engine picks the merchant itself,
+  // so crediting a niche brand's promo to spend the user never said they'd make
+  // there overstates the card. Callers modelling unattributed spend opt in here.
+  rewardLegOnly?: boolean;
+
+  // Score using the category-wide rate alone: the `merchant === null` rule
+  // (`baseTier`), falling back to the card's base rate when there isn't one.
+  // Every merchant-specific route — direct and voucher — is ignored.
+  //
+  // For a bucket the user never attributed to a merchant, a merchant rule is a
+  // route the ENGINE picked; crediting it says "this card is worth X" when the
+  // truthful claim is "worth X if you shop at that one brand". This option
+  // drops those routes entirely rather than re-rating them.
+  //
+  // Note this is usually the card's plain base rate in practice: ~74% of
+  // `merchant === null` rules merely restate the base rate, and `bestOf` prunes
+  // any candidate that doesn't beat it, so `baseTier` is null for most cards.
+  // That is the intended, conservative reading of an unattributed bucket.
+  categoryRateOnly?: boolean;
+
+  // Floor this category at its own declared `merchant === null` rate instead of
+  // the card's base rate — including when that rate is 0.
+  //
+  // `bestOf` prunes any candidate that doesn't beat the base rate, so a
+  // category rule at or below base leaves `baseTier` null and the waterfall
+  // pays the base rate. That is right for a category with no rule of its own,
+  // but wrong where the issuer has *declared* a lower rate: utility spend
+  // commonly earns 0, and paying the base rate on it invents a return the card
+  // does not give. Pass the declared rate here to honour it verbatim.
+  //
+  // Only meaningful with `categoryRateOnly`; merchant routes are unaffected.
+  declaredCategoryRate?: number;
+}
+
+// The card's own category-wide rate for `category`, or undefined when the card
+// declares no such rule (the caller then keeps normal base-rate behaviour).
+// Reads the raw rule rather than best-of because best-of prunes anything at or
+// below the base rate — which is exactly the case this needs to see.
+//
+// Applied to EVERY category, not a curated list: issuers zero-rate far more
+// than utilities. Across the live rule set 312 cards declare 0% on
+// wallet_reloads, 282 on rent, 253 on taxes and 149 on insurance, and each of
+// those was silently paid the card base rate instead. A category the card
+// declares no rule for returns undefined, keeping normal base-rate behaviour.
+//
+// Shared by the food, shopping and all-rounder engines; pass the result as
+// `CategoryReturnOptions.declaredCategoryRate`. Every leg — including an
+// unattributed `fallback` one — must route through `computeCategoryReturn`
+// rather than applying this rate directly, or the category rule's own reward
+// cap (and any combined pool it belongs to) is silently discarded.
+export function declaredCategoryRate(
+  card: MockCard,
+  category: Category,
+  rules: MockRule[],
+): number | undefined {
+  let rate: number | undefined;
+  for (const r of rules) {
+    if (r.cardId !== card._id) continue;
+    if (r.category !== category) continue;
+    if (r.merchant !== null) continue;
+    if (!r.is_active) continue;
+    const pct = r.reward.direct_swipe_percentage;
+    // Several rules can share a category; keep the best the card declares.
+    if (rate === undefined || pct > rate) rate = pct;
+  }
+  return rate;
+}
+
+// Strip the merchant discount / convenience fee from a voucher candidate so the
+// lane scores on the card's reward leg alone. Caps are untouched: the reward leg
+// still budgets against exactly the same purchase and reward caps.
+function toRewardLegOnly(v: BestVoucher): BestVoucher {
+  if (v.breakdown.discount === 0 && v.breakdown.fee === 0) return v;
+  return {
+    ...v,
+    breakdown: { ...v.breakdown, discount: 0, fee: 0 },
+    totalPercentage: v.breakdown.reward,
+  };
+}
+
+// Build the `SettledCapPool` a category return hands to the reconciler.
+//
+// Two kinds of pool reach it, and both need reconciling once an engine scores
+// several sub-streams against the same category:
+//
+//   - a `combined` group (`pool` non-null): one budget shared across DIFFERENT
+//     categories, keyed by the group so members find each other.
+//   - a PRIVATE reward cap (`pool` null, but the winning route carries a
+//     `rewardCapPerPeriodValueInr`): one budget belonging to this category's own
+//     rule. `computeCategoryReturn` already enforces it per call, but an engine
+//     that splits a category across legs — shopping's "Utilities online" +
+//     "Utility offline", food's Swiggy/Zomato — calls it once per leg, so each
+//     leg spent the full cap independently. Keying by category pools them back
+//     onto the single budget the rule actually grants.
+//
+// An uncapped route yields no pool: there is nothing to re-split.
+function settledPoolFor(
+  pool: { key: string; capPeriod: CapPeriod | null } | null,
+  category: Category,
+  scope: CapScope | null,
+  merchant: Merchant | null,
+  settled: Omit<SettledCapPool, "key">,
+): SettledCapPool | null {
+  if (pool) {
+    // A combined group's own period governs the shared budget.
+    return { ...settled, key: pool.key, capPeriod: pool.capPeriod };
+  }
+  if (settled.perPeriodCapInr === null) return null;
+  // A `merchant`-scoped cap is granted PER MERCHANT: Flipkart SBI gives Flipkart
+  // and Myntra ₹4,000/quarter each, so two legs on different merchants must not
+  // share one budget. Only `category`/`card` scoped caps (and the merchant-null
+  // category floor) pool across the legs of a category.
+  //
+  // `private::` cannot collide with a combined group's key, which `bestOf`
+  // builds as `<multiplier>::<merchant>`.
+  const key =
+    scope === "merchant" && merchant !== null
+      ? `private::${category}::${merchant}`
+      : `private::${category}`;
+  return { ...settled, key };
+}
+
+export function computeCategoryReturn(
+  spend: number,
+  category: Category,
+  card: MockCard,
+  bestOf: MockBestOf | undefined,
+  bookingsPerYear: number,
+  options: CategoryReturnOptions = {},
+): CategoryReturn {
+  const baseRate = card.rewards.base_reward_rate;
+  // categoryRateOnly drops every merchant-specific route, leaving the direct
+  // waterfall with nothing but `baseTier` and the floor rate below it.
+  const directFrontier = options.categoryRateOnly
+    ? []
+    : (bestOf?.directFrontier ?? []);
+  const rawVoucherFrontier = options.categoryRateOnly
+    ? []
+    : (bestOf?.voucherFrontier ?? []);
+  // Re-sort after stripping: the frontier is ordered by `totalPercentage`, and
+  // dropping the discount can reorder it (every rule may share one reward rate,
+  // in which case the ranking collapses to a tie and caps decide the winner).
+  const voucherFrontier = options.rewardLegOnly
+    ? rawVoucherFrontier
+        .map(toRewardLegOnly)
+        .sort((a, b) => b.totalPercentage - a.totalPercentage)
+    : rawVoucherFrontier;
+  const baseTier = bestOf?.baseTier ?? null;
+
+  // `floorRate` is the waterfall's TRAILING rate: it pays every rupee that no
+  // capped candidate absorbed, so by construction nothing limits it. Only a
+  // rate that genuinely has no cap may be placed here.
+  //
+  // `declaredCategoryRate` is the raw `direct_swipe_percentage` of the card's
+  // `merchant === null` rule, with its `reward_cap` stripped. That is safe only
+  // where the rule earns at or below the card base rate: `bestOf` prunes those
+  // candidates, so `baseTier` is null and there is no cap to lose — which is
+  // exactly the zero-rated-utility case the option exists for.
+  //
+  // Above the base rate the same rule ALSO arrives as `baseTier`, carrying its
+  // `rewardCapPerPeriodValueInr`. Using the declared rate as the floor there
+  // let the uncapped copy absorb the whole spend before `baseTier`'s budget
+  // could bind, silently discarding the cap (a 10%/₹1,000-per-month utility
+  // rule paid 10% on ₹4.2L — ₹42,188 instead of ₹12,000). So when a capped
+  // `baseTier` already covers the declared rate, leave the floor at the base
+  // rate and let the waterfall spend `baseTier`'s capped budget instead.
+  const declared = options.declaredCategoryRate;
+  const declaredIsCapped =
+    declared !== undefined &&
+    baseTier !== null &&
+    baseTier.rewardCapPerPeriodValueInr !== null &&
+    baseTier.percentage >= declared;
+
+  // When the category's catch-all (the merchant-null base tier) is a `total`
+  // group, spend that overflows its cap earns nothing — so the waterfall's
+  // trailing floor is 0 instead of the card base rate. Every other case keeps
+  // the card base rate.
+  const floorRate =
+    declared !== undefined && !declaredIsCapped
+      ? declared
+      : isTotalCapGroup(baseTier?.sharedCapGroup)
+        ? 0
+        : baseRate;
+
+  const directResult = directWaterfallInr(
+    spend,
+    directFrontier,
+    baseTier,
+    floorRate,
+    bookingsPerYear,
+  );
+
+  const voucherResult =
+    voucherFrontier.length > 0
+      ? voucherWaterfallInr(spend, voucherFrontier, bookingsPerYear)
+      : null;
+
+  // A voucher that earns its keep only by stopping at its reward cap and
+  // swiping the rest (voucherEffectiveAnnualCap) must strictly beat the direct
+  // swipe. On a tie the two routes are the same swipe plus a capped bonus, and
+  // taking the voucher would move the spend into the card's shared voucher pool
+  // for nothing — Millennia's Amazon voucher (5%, ₹1,000/month) tied its own
+  // capped 5% swipe and then starved the card's other voucher legs. A voucher
+  // whose cap doesn't bind keeps the long-standing tie-goes-to-voucher rule.
+  const avgSpendPerBooking = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+  const voucherStopsAtRewardCap = (v: BestVoucher): boolean => {
+    const effective = voucherEffectiveAnnualCap(
+      v,
+      bookingsPerYear,
+      avgSpendPerBooking,
+    );
+    const purchaseCap = voucherAnnualCap(
+      v,
+      bookingsPerYear,
+      avgSpendPerBooking,
+    );
+    return (
+      effective !== null &&
+      effective < Math.min(spend, purchaseCap ?? Number.POSITIVE_INFINITY)
+    );
+  };
+  if (
+    voucherResult &&
+    voucherResult.primary &&
+    (voucherStopsAtRewardCap(voucherResult.primary)
+      ? voucherResult.totalInr > directResult.totalInr + 0.5
+      : voucherResult.totalInr >= directResult.totalInr)
+  ) {
+    const v = voucherResult.primary;
+    const avgBookingInr = bookingsPerYear > 0 ? spend / bookingsPerYear : 0;
+    const voucherCap = voucherAnnualCap(v, bookingsPerYear, avgBookingInr);
+    const voucherRewardCap = tripAwareAnnualCapInr(
+      v.caps.rewardSpendPerPeriodInr,
+      v.capPeriod,
+      bookingsPerYear,
+    );
+    // Spend the voucher actually absorbed (its purchase cap, or its reward cap
+    // when vouchers past it lose to swiping — see voucherEffectiveAnnualCap);
+    // overflow past it already earns the merchant's direct rate and never
+    // draws from the pool.
+    const effectiveCap = voucherEffectiveAnnualCap(
+      v,
+      bookingsPerYear,
+      avgBookingInr,
+    );
+    const coveredSpend =
+      effectiveCap === null ? spend : Math.min(spend, effectiveCap);
+    return withEffectiveRate({
+      category,
+      spend,
+      effectivePercentage: v.totalPercentage,
+      source: "voucher",
+      merchant: v.merchant,
+      capNote: buildVoucherCapNote(voucherCap, voucherRewardCap),
+      // Travel's reconciler reads this as the voucher's covered spend against
+      // the raw voucher terms; it stays the purchase cap. The reward-cap stop
+      // reaches the flat engines through `coveredSpend` below.
+      cappedAnnualSpendInr: voucherCap,
+      returnInr: voucherResult.totalInr,
+      // A voucher lane is always bound to one merchant, so its private reward
+      // cap is per-merchant and must not pool with another merchant's lane.
+      sharedCapPool: settledPoolFor(
+        v.sharedCapPool,
+        category,
+        "merchant",
+        v.merchant,
+        {
+          perPeriodCapInr: v.rewardCapPerPeriodValueInr,
+          capPeriod: v.capPeriod,
+          rate: v.breakdown.reward,
+          fallbackRate: v.fallbackPercentage,
+          discount: v.breakdown.discount,
+          fee: v.breakdown.fee,
+          coveredSpend,
+          // Only an uncapped, unpooled direct route is a safe fallback: its
+          // isolated return can't be double-counted against a budget other
+          // legs also draw from.
+          directAlternativeInr: [
+            ...directFrontier,
+            ...(baseTier ? [baseTier] : []),
+          ].every(
+            (c) =>
+              c.rewardCapPerPeriodValueInr === null && c.sharedCapPool === null,
+          )
+            ? directResult.totalInr
+            : null,
+        },
+      ),
+    });
+  }
+
+  if (directResult.primary) {
+    const d = directResult.primary;
+    const directRewardCap = tripAwareAnnualCapInr(
+      d.cappedSpendPerPeriodInr,
+      d.capPeriod,
+      bookingsPerYear,
+    );
+    return withEffectiveRate({
+      category,
+      spend,
+      effectivePercentage: d.percentage,
+      source: "direct",
+      merchant: d.merchant,
+      capNote: d.capNote,
+      cappedAnnualSpendInr: directRewardCap,
+      returnInr: directResult.totalInr,
+      sharedCapPool: settledPoolFor(
+        d.sharedCapPool,
+        category,
+        d.capScope,
+        d.merchant,
+        {
+          perPeriodCapInr: d.rewardCapPerPeriodValueInr,
+          capPeriod: d.capPeriod,
+          rate: d.percentage,
+          fallbackRate: d.fallbackPercentage,
+          discount: 0,
+          fee: 0,
+          coveredSpend: spend,
+          directAlternativeInr: null,
+        },
+      ),
+    });
+  }
+
+  return withEffectiveRate({
+    category,
+    spend,
+    effectivePercentage: floorRate,
+    source: "fallback",
+    merchant: null,
+    capNote: null,
+    cappedAnnualSpendInr: null,
+    returnInr: directResult.totalInr,
+    sharedCapPool: null,
+  });
+}
+
+function buildSegment(
+  spend: CategorySplit,
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+  bookingsPerYear: number,
+): SegmentReturn {
+  // Every travel bucket is unattributed — the travel inputs describe trips and
+  // spend, never a booking platform — so the engine picks the voucher merchant
+  // itself. Score all three on the card's reward leg alone; see
+  // `CategoryReturnOptions.rewardLegOnly`.
+  const unattributed = { rewardLegOnly: true } as const;
+
+  const flights = computeCategoryReturn(
+    spend.flights,
+    CATEGORIES.FLIGHTS,
+    card,
+    index.get(`${card._id}::${CATEGORIES.FLIGHTS}`),
+    bookingsPerYear,
+    unattributed,
+  );
+  const hotels = computeCategoryReturn(
+    spend.hotels,
+    CATEGORIES.HOTELS,
+    card,
+    index.get(`${card._id}::${CATEGORIES.HOTELS}`),
+    bookingsPerYear,
+    unattributed,
+  );
+  const other = computeCategoryReturn(
+    spend.other,
+    CATEGORIES.OTHER,
+    card,
+    index.get(`${card._id}::${CATEGORIES.OTHER}`),
+    bookingsPerYear,
+    unattributed,
+  );
+
+  return {
+    flights,
+    hotels,
+    other,
+    totalSpend: spend.flights + spend.hotels + spend.other,
+    totalReturnInr: flights.returnInr + hotels.returnInr + other.returnInr,
+  };
+}
+
+interface ParticipantPool {
+  key: string;
+  budgetAnnualInr: number;
+}
+
+interface SharedCapParticipant {
+  segment: "domestic" | "international";
+  category: Category;
+  source: "direct" | "voucher";
+  spend: number;
+  coveredSpend: number;
+  rate: number;
+  baseRate: number;
+  discount: number;
+  fee: number;
+  // Reward-value pool (null when the candidate has no shared reward cap — a
+  // voucher can still participate purely through its purchase pool).
+  pool: ParticipantPool | null;
+  // Purchase-volume pool (vouchers with a shared purchase_inr voucher_cap
+  // only): bounds the ₹ of vouchers bought across categories before the reward
+  // pool applies.
+  purchasePool: ParticipantPool | null;
+}
+
+// Resolve the combined pool (with annual budget) a candidate participates in.
+// Only `combined` candidates carry a `sharedCapPool`; the budget derives from
+// the rule's own reward cap. Returns null when there is no pool or no cap.
+function annualParticipantPool(
+  candidate: {
+    sharedCapPool: SharedCapPool | null;
+    rewardCapPerPeriodValueInr: number | null;
+  },
+  trips: number,
+): ParticipantPool | null {
+  const p = candidate.sharedCapPool;
+  if (!p) return null;
+  const annual = tripAwareAnnualCapInr(
+    candidate.rewardCapPerPeriodValueInr,
+    p.capPeriod,
+    trips,
+  );
+  if (annual === null) return null;
+  return { key: p.key, budgetAnnualInr: annual };
+}
+
+function collectSharedCapParticipants(
+  cardId: string,
+  segLabel: "domestic" | "international",
+  segment: SegmentReturn,
+  index: Map<string, MockBestOf>,
+  tripsPerYearForGroup: number,
+): SharedCapParticipant[] {
+  const out: SharedCapParticipant[] = [];
+  for (const cat of [segment.flights, segment.hotels, segment.other]) {
+    if (cat.source === "fallback") continue;
+    const bestOf = index.get(`${cardId}::${cat.category}`);
+    if (!bestOf) continue;
+
+    if (cat.source === "voucher") {
+      const v = bestOf.bestVoucher;
+      if (!v) continue;
+      const pool = annualParticipantPool(v, tripsPerYearForGroup);
+      // Shared purchase pool (purchase_inr voucher_cap with a combined voucher
+      // group). A voucher participates when it has either shared budget.
+      const pp = v.voucherPurchasePool;
+      const purchasePool: ParticipantPool | null =
+        pp && pp.key !== null
+          ? { key: pp.key, budgetAnnualInr: pp.annualLimitInr }
+          : null;
+      if (!pool && !purchasePool) continue;
+      // cat.cappedAnnualSpendInr was set to the voucher purchase cap in
+      // computeCategoryReturn — reuse rather than recomputing voucherAnnualCap.
+      const coveredSpend =
+        cat.cappedAnnualSpendInr === null
+          ? cat.spend
+          : Math.min(cat.spend, cat.cappedAnnualSpendInr);
+      out.push({
+        segment: segLabel,
+        category: cat.category,
+        source: "voucher",
+        spend: cat.spend,
+        coveredSpend,
+        rate: v.breakdown.reward,
+        baseRate: v.fallbackPercentage,
+        discount: v.breakdown.discount,
+        fee: v.breakdown.fee,
+        pool,
+        purchasePool,
+      });
+    } else {
+      const d = bestOf.bestDirectSwipe;
+      if (!d) continue;
+      const pool = annualParticipantPool(d, tripsPerYearForGroup);
+      if (!pool) continue;
+      out.push({
+        segment: segLabel,
+        category: cat.category,
+        source: "direct",
+        spend: cat.spend,
+        coveredSpend: cat.spend,
+        rate: d.percentage,
+        baseRate: d.fallbackPercentage,
+        discount: 0,
+        fee: 0,
+        pool,
+        purchasePool: null,
+      });
+    }
+  }
+  return out;
+}
+
+// Re-allocate each combined pool's annual budget across the categories that
+// share it, top-down by rate. Returns overrides keyed by `${segLabel}::${cat}`.
+// Lone members of a pool are left untouched (their per-category cap was already
+// applied upstream); only genuinely shared pools (>1 member) are re-allocated.
+function reallocateSharedPools(
+  participants: SharedCapParticipant[],
+  segLabelFor: (p: SharedCapParticipant) => string,
+  overrides: Map<string, number>,
+): void {
+  const remaining = new Map<string, number>();
+  const memberCount = new Map<string, number>();
+  const remainingPurchase = new Map<string, number>();
+  const purchaseMemberCount = new Map<string, number>();
+  for (const p of participants) {
+    if (p.pool) {
+      memberCount.set(p.pool.key, (memberCount.get(p.pool.key) ?? 0) + 1);
+      const prev = remaining.get(p.pool.key);
+      remaining.set(
+        p.pool.key,
+        prev === undefined
+          ? p.pool.budgetAnnualInr
+          : Math.min(prev, p.pool.budgetAnnualInr),
+      );
+    }
+    if (p.purchasePool) {
+      purchaseMemberCount.set(
+        p.purchasePool.key,
+        (purchaseMemberCount.get(p.purchasePool.key) ?? 0) + 1,
+      );
+      const prev = remainingPurchase.get(p.purchasePool.key);
+      remainingPurchase.set(
+        p.purchasePool.key,
+        prev === undefined
+          ? p.purchasePool.budgetAnnualInr
+          : Math.min(prev, p.purchasePool.budgetAnnualInr),
+      );
+    }
+  }
+
+  // Re-allocate only genuinely shared pools (>1 member on either budget); a
+  // lone member's per-category caps were already applied upstream.
+  const toProcess = participants.filter(
+    (p) =>
+      (p.pool && (memberCount.get(p.pool.key) ?? 0) > 1) ||
+      (p.purchasePool &&
+        (purchaseMemberCount.get(p.purchasePool.key) ?? 0) > 1),
+  );
+  const drain = (p: SharedCapParticipant) =>
+    poolDrainValue({ ...p, fallbackRate: p.baseRate });
+  toProcess.sort((a, b) => drain(b) - drain(a) || b.rate - a.rate);
+
+  for (const m of toProcess) {
+    // Shared purchase budget clamps the voucher spend this category can route
+    // before its reward draws from the reward pool.
+    let coveredSpend = m.coveredSpend;
+    if (
+      m.purchasePool &&
+      (purchaseMemberCount.get(m.purchasePool.key) ?? 0) > 1
+    ) {
+      const headroom = Math.max(
+        0,
+        remainingPurchase.get(m.purchasePool.key) ?? 0,
+      );
+      coveredSpend = Math.min(coveredSpend, headroom);
+      remainingPurchase.set(m.purchasePool.key, headroom - coveredSpend);
+    }
+    const potential = (coveredSpend * m.rate) / 100;
+    const cap = m.pool
+      ? (remaining.get(m.pool.key) ?? Number.POSITIVE_INFINITY)
+      : Number.POSITIVE_INFINITY;
+    const accelerated = Math.min(potential, cap);
+    overrides.set(
+      `${segLabelFor(m)}::${m.category}`,
+      participantReturn({ ...m, coveredSpend }, accelerated),
+    );
+    if (m.pool) {
+      remaining.set(
+        m.pool.key,
+        Math.max(0, (remaining.get(m.pool.key) ?? 0) - accelerated),
+      );
+    }
+  }
+}
+
+// Spend a pool member routes through its voucher only to draw the pool: a
+// voucher that loses money past its reward cap (voucherLosesPastRewardCap) is
+// bought for the rewarded slice alone and the rest is swiped. Direct lanes and
+// every other voucher keep the existing pricing.
+function boughtOnlyForPool(m: PoolMemberTerms): boolean {
+  return voucherLosesPastRewardCap(m.discount, m.fee);
+}
+
+interface PoolMemberTerms {
+  spend: number;
+  coveredSpend: number;
+  rate: number;
+  fallbackRate: number;
+  discount: number;
+  fee: number;
+}
+
+// Order in which members drain a shared pool: by the value each ₹1 of pool
+// reward adds over the member's alternative, highest first. Without the pool a
+// member earns `pooledMemberReturn(m, 0)` — its spend at the fallback rate, or
+// a voucher bought regardless still earning discount − fee — or, when given,
+// `alternativeInr`, the leg's own direct route.
+//
+// Ranking on the headline reward rate alone tied HDFC's Myntra (10%, no fee)
+// with Flipkart (10%, 2.95% fee) and could hand the pool to Flipkart, paying the
+// fee for the same reward. And without the direct alternative, PAYTM HDFC's
+// Myntra voucher (5%, beating its own uncapped 2% swipe by ₹384) drained the
+// card's whole voucher pool ahead of a leg that had nothing but the 1% fallback.
+function poolDrainValue(
+  m: PoolMemberTerms,
+  alternativeInr: number | null = null,
+): number {
+  const potential = (m.coveredSpend * m.rate) / 100;
+  if (potential <= 0) return 0;
+  const alternative = Math.max(
+    pooledMemberReturn(m, 0),
+    alternativeInr ?? Number.NEGATIVE_INFINITY,
+  );
+  return (pooledMemberReturn(m, potential) - alternative) / potential;
+}
+
+// Annual return of a pool member once the pool has granted it `accelerated` ₹
+// of reward. Shared by the travel and the flat-engine reconcilers.
+function pooledMemberReturn(m: PoolMemberTerms, accelerated: number): number {
+  const spendAtRate = m.rate > 0 ? (accelerated * 100) / m.rate : 0;
+  if (boughtOnlyForPool(m)) {
+    return (
+      accelerated +
+      (spendAtRate * (m.discount - m.fee)) / 100 +
+      ((m.spend - spendAtRate) * m.fallbackRate) / 100
+    );
+  }
+  // Existing pricing (direct lanes, and vouchers bought regardless): all covered
+  // spend earns discount − fee, and everything the pool doesn't reward earns
+  // the fallback rate.
+  const overflowSpend = Math.max(0, m.coveredSpend - spendAtRate);
+  const nonCovered = Math.max(0, m.spend - m.coveredSpend);
+  return (
+    accelerated +
+    (m.coveredSpend * (m.discount - m.fee)) / 100 +
+    (overflowSpend * m.fallbackRate) / 100 +
+    (nonCovered * m.fallbackRate) / 100
+  );
+}
+
+function participantReturn(
+  p: SharedCapParticipant,
+  acceleratedValue: number,
+): number {
+  return pooledMemberReturn(
+    { ...p, fallbackRate: p.baseRate },
+    acceleratedValue,
+  );
+}
+
+// ============================================================================
+// Generic cross-category shared-pool reconciliation
+// ============================================================================
+//
+// The travel machinery above is bound to the flights/hotels/other `Segment
+// Return` shape. The food, shopping and all-rounder engines slice spend into
+// flat sub-streams across categories (e.g. HSBC Live+ pools ONE ₹1200/month
+// cashback cap across both online_food_dining and offline_food_dining). Each
+// sub-stream is scored in isolation by computeCategoryReturn, so a `combined`
+// pool spanning several sub-streams gets its FULL budget once per sub-stream —
+// over-crediting. This reconciler re-splits each such pool's single annual
+// budget across the sub-streams that share it, top-down by rate.
+//
+// Callers pass any array of items that carry a scored CategoryReturn; the return
+// value is a map of array index → corrected returnInr for the items whose reward
+// changed. Items with no shared pool, or the lone member of a pool (its per
+// category cap already bit upstream), are left untouched.
+
+// The scored-category-return surface the reconciler reads from each item.
+export interface SharedPoolReturn {
+  spend: number;
+  returnInr: number;
+  sharedCapPool: SettledCapPool | null;
+}
+
+export function reallocateAcrossCategories<T extends { cat: SharedPoolReturn }>(
+  items: T[],
+  bookingsPerYear: number,
+): Map<number, number> {
+  const overrides = new Map<number, number>();
+
+  // Count members per pool key so lone members (pool size 1) are skipped — their
+  // per-category cap was already enforced by computeCategoryReturn.
+  const memberCount = new Map<string, number>();
+  for (const it of items) {
+    const p = it.cat.sharedCapPool;
+    if (p) memberCount.set(p.key, (memberCount.get(p.key) ?? 0) + 1);
+  }
+
+  // Resolve each shared pool's annual reward budget once. All members of a
+  // `combined` pool agree on their reward_cap by validation, so the first member
+  // to claim the key sets it (trip-aware annualization, matching every other
+  // cap path). A null cap → unbounded (no override needed).
+  const poolBudget = new Map<string, number>();
+  for (const it of items) {
+    const p = it.cat.sharedCapPool;
+    if (!p) continue;
+    if ((memberCount.get(p.key) ?? 0) <= 1) continue;
+    if (poolBudget.has(p.key)) continue;
+    const annual = tripAwareAnnualCapInr(
+      p.perPeriodCapInr,
+      p.capPeriod,
+      bookingsPerYear,
+    );
+    poolBudget.set(p.key, annual ?? Number.POSITIVE_INFINITY);
+  }
+
+  // Re-allocate genuinely shared pools (>1 member), top-down by accelerated
+  // rate: the highest-rate sub-stream drains the shared budget first.
+  const shared = items
+    .map((it, index) => ({ it, index }))
+    .filter(
+      ({ it }) =>
+        it.cat.sharedCapPool &&
+        (memberCount.get(it.cat.sharedCapPool.key) ?? 0) > 1,
+    )
+    .sort((a, b) => {
+      const pa = a.it.cat.sharedCapPool!;
+      const pb = b.it.cat.sharedCapPool!;
+      const drain = (it: { cat: SharedPoolReturn }) => {
+        const pool = it.cat.sharedCapPool!;
+        return poolDrainValue(
+          { ...pool, spend: it.cat.spend },
+          pool.directAlternativeInr,
+        );
+      };
+      return drain(b.it) - drain(a.it) || pb.rate - pa.rate;
+    });
+
+  const remaining = new Map(poolBudget);
+  for (const { it, index } of shared) {
+    const pool = it.cat.sharedCapPool!;
+    const potential = (pool.coveredSpend * pool.rate) / 100;
+    const headroom = remaining.get(pool.key) ?? Number.POSITIVE_INFINITY;
+    const accelerated = Math.min(potential, headroom);
+
+    // Recompute the sub-stream's return with only `accelerated` reward from the
+    // pool. Same pricing as travel's participantReturn, so the engines agree.
+    const pooled = pooledMemberReturn(
+      { ...pool, spend: it.cat.spend },
+      accelerated,
+    );
+
+    // A voucher leg the pool can no longer make worthwhile swipes on its direct
+    // route instead and leaves the budget to the members after it.
+    if (
+      pool.directAlternativeInr !== null &&
+      pool.directAlternativeInr >= pooled
+    ) {
+      overrides.set(index, pool.directAlternativeInr);
+      continue;
+    }
+    overrides.set(index, pooled);
+    remaining.set(pool.key, Math.max(0, headroom - accelerated));
+  }
+
+  return overrides;
+}
+
+function applySharedCapGroups(
+  cardId: string,
+  domestic: SegmentReturn,
+  international: SegmentReturn,
+  index: Map<string, MockBestOf>,
+  domesticTrips: number,
+  internationalTrips: number,
+): { domestic: SegmentReturn; international: SegmentReturn } {
+  // Shared cap pools are scoped per segment: each segment's pool size scales
+  // with its own trip count, and pools are consumed independently. Within a
+  // segment, participants still compete top-down by rate.
+  const overrides = new Map<string, number>();
+
+  const processSegment = (
+    segLabel: "domestic" | "international",
+    seg: SegmentReturn,
+    trips: number,
+  ) => {
+    const participants = collectSharedCapParticipants(
+      cardId,
+      segLabel,
+      seg,
+      index,
+      trips,
+    );
+    reallocateSharedPools(participants, (p) => p.segment, overrides);
+  };
+
+  processSegment("domestic", domestic, domesticTrips);
+  processSegment("international", international, internationalTrips);
+
+  const apply = (
+    segLabel: "domestic" | "international",
+    seg: SegmentReturn,
+  ): SegmentReturn => {
+    const upd = (cat: CategoryReturn): CategoryReturn => {
+      const key = `${segLabel}::${cat.category}`;
+      if (!overrides.has(key)) return cat;
+      const returnInr = overrides.get(key)!;
+      return withEffectiveRate({ ...cat, returnInr });
+    };
+    const flights = upd(seg.flights);
+    const hotels = upd(seg.hotels);
+    const other = upd(seg.other);
+    return {
+      flights,
+      hotels,
+      other,
+      totalSpend: seg.totalSpend,
+      totalReturnInr: flights.returnInr + hotels.returnInr + other.returnInr,
+    };
+  };
+
+  return {
+    domestic: apply("domestic", domestic),
+    international: apply("international", international),
+  };
+}
+
+function computeForexCost(
+  applicableSpend: number,
+  gstPercentage: number,
+  markupPercentage: number,
+): ForexReturn {
+  const markupCostInr = (applicableSpend * markupPercentage) / 100;
+  const gstOnMarkupInr = (markupCostInr * gstPercentage) / 100;
+  return {
+    applicableSpend,
+    markupPercentage,
+    gstPercentage,
+    markupCostInr,
+    gstOnMarkupInr,
+    totalCostInr: markupCostInr + gstOnMarkupInr,
+  };
+}
+
+export function recommendTravelCard(
+  input: TravelCardPhaseOneInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  options?: EngineScoringOptions,
+): TravelEngineResult {
+  const travel = travelCardPhaseOneRecommendation(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map<CardTravelReturn>((card) => {
+      const rawDomestic = buildSegment(
+        travel.categorySpend.domestic,
+        card,
+        index,
+        travel.bookings.domestic,
+      );
+      const rawInternational = buildSegment(
+        travel.categorySpend.international,
+        card,
+        index,
+        travel.bookings.international,
+      );
+      const { domestic, international } = applySharedCapGroups(
+        card._id,
+        rawDomestic,
+        rawInternational,
+        index,
+        travel.bookings.domestic,
+        travel.bookings.international,
+      );
+      const forex = computeForexCost(
+        travel.forex.applicableSpend,
+        travel.forex.gstPercentage,
+        card.forex_markup_percentage,
+      );
+      const grossReturnInr =
+        domestic.totalReturnInr + international.totalReturnInr;
+      const netReturnInr = grossReturnInr - forex.totalCostInr;
+      const annualSpendInr = domestic.totalSpend + international.totalSpend;
+      return {
+        cardId: card._id,
+        cardName: card.name,
+        domestic,
+        international,
+        extraFlights: null,
+        forex,
+        grossReturnInr,
+        netReturnInr,
+        ...finalizeCardScore(
+          card,
+          netReturnInr,
+          annualSpendInr,
+          options?.milestonesBySlug?.get(card._id),
+        ),
+      };
+    })
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+
+  // Phase 1 surfaces only the top 3 cards by final return.
+  const topCards = byCard;
+  // .slice(0, 3);
+
+  return {
+    input,
+    travel,
+    byCard: topCards,
+    best: topCards[0] ?? null,
+  };
+}
+
+export function annualLoungeVisits(card: MockCard): number {
+  const dom = card.lounge.domestic?.annualCap ?? 0;
+  const intl = card.lounge.international?.annualCap ?? 0;
+  return dom + intl;
+}
+
+export function loungeCoverageRatio(
+  card: MockCard,
+  tripsPerYear: number,
+): number | null {
+  if (tripsPerYear <= 0) return null;
+  return annualLoungeVisits(card) / (tripsPerYear * LOUNGE_TRIPS_MULTIPLIER);
+}
+
+interface PriorityFilterContext {
+  tripsPerYear: number;
+  internationalPercentage: number;
+}
+
+function filterCardsByPriority(
+  cards: MockCard[],
+  priorities: TravelPriority[],
+  ctx: PriorityFilterContext,
+): MockCard[] {
+  if (priorities.length === 0) return cards;
+  return cards.filter((card) => {
+    for (const p of priorities) {
+      if (p === "maximumRewards") continue;
+      if (p === "lowForex") {
+        // Forex filter only applies when foreign travel exceeds the threshold.
+        if (ctx.internationalPercentage <= LOW_FOREX_MIN_INTL_PERCENTAGE)
+          continue;
+        const effectiveForex =
+          card.forex_markup_percentage * LOW_FOREX_GST_MULTIPLIER;
+        if (effectiveForex > LOW_FOREX_MAX_WITH_GST_PERCENTAGE) return false;
+      }
+      if (p === "loungeAccess") {
+        const ratio = loungeCoverageRatio(card, ctx.tripsPerYear);
+        if (ratio !== null && ratio < LOUNGE_MIN_COVERAGE_RATIO) return false;
+      }
+    }
+    return true;
+  });
+}
+
+interface ThreeSegmentSharedCapEntry {
+  label: "domestic" | "international" | "extraFlights";
+  segment: SegmentReturn;
+  tripsForGroup: number;
+}
+
+function applySharedCapGroupsMulti(
+  cardId: string,
+  segments: ThreeSegmentSharedCapEntry[],
+  index: Map<string, MockBestOf>,
+): Record<"domestic" | "international" | "extraFlights", SegmentReturn | null> {
+  // Each segment (domestic / international / extraFlights) gets its own
+  // shared-cap pool sized by that segment's own trip count. Within a segment,
+  // participants in the same group still compete top-down by rate.
+  const overrides = new Map<string, number>();
+  for (const s of segments) {
+    if (s.segment.totalSpend <= 0) continue;
+    const participants = collectSharedCapParticipants(
+      cardId,
+      // segment field on participants is unused here; overrides are keyed by
+      // this entry's label. Pools are scoped per segment (own remaining map).
+      "domestic",
+      s.segment,
+      index,
+      s.tripsForGroup,
+    );
+    reallocateSharedPools(participants, () => s.label, overrides);
+  }
+
+  const apply = (
+    label: "domestic" | "international" | "extraFlights",
+    seg: SegmentReturn,
+  ): SegmentReturn => {
+    const upd = (cat: CategoryReturn): CategoryReturn => {
+      const key = `${label}::${cat.category}`;
+      if (!overrides.has(key)) return cat;
+      const returnInr = overrides.get(key)!;
+      return withEffectiveRate({ ...cat, returnInr });
+    };
+    const flights = upd(seg.flights);
+    const hotels = upd(seg.hotels);
+    const other = upd(seg.other);
+    return {
+      flights,
+      hotels,
+      other,
+      totalSpend: seg.totalSpend,
+      totalReturnInr: flights.returnInr + hotels.returnInr + other.returnInr,
+    };
+  };
+
+  const out: Record<
+    "domestic" | "international" | "extraFlights",
+    SegmentReturn | null
+  > = { domestic: null, international: null, extraFlights: null };
+  for (const s of segments) {
+    out[s.label] = apply(s.label, s.segment);
+  }
+  return out;
+}
+
+export function recommendTravelCardAdvanced(
+  input: TravelCardPhaseTwoInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  options?: EngineScoringOptions,
+): TravelEngineAdvancedResult {
+  const travel = travelCardPhaseTwoRecommendation(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const activeCards = filterEligibleCards(cards, options?.profile);
+  const filtered = filterCardsByPriority(activeCards, input.travelPriority, {
+    tripsPerYear: input.tripsPerYear,
+    internationalPercentage: travel.split.internationalPercentage,
+  });
+
+  const byCard = filtered
+    .map<CardTravelReturn>((card) => {
+      const rawDomestic = buildSegment(
+        travel.categorySpend.domestic,
+        card,
+        index,
+        travel.bookings.domestic,
+      );
+      const rawInternational = buildSegment(
+        travel.categorySpend.international,
+        card,
+        index,
+        travel.bookings.international,
+      );
+      const hasExtra = travel.additionalFlightSpend > 0;
+      const rawExtra = hasExtra
+        ? buildSegment(
+            travel.categorySpend.extraFlights,
+            card,
+            index,
+            travel.bookings.extraFlightsTrips,
+          )
+        : null;
+
+      const segmentsForCap: ThreeSegmentSharedCapEntry[] = [
+        {
+          label: "domestic",
+          segment: rawDomestic,
+          tripsForGroup: travel.bookings.domestic,
+        },
+        {
+          label: "international",
+          segment: rawInternational,
+          tripsForGroup: travel.bookings.international,
+        },
+      ];
+      if (rawExtra) {
+        segmentsForCap.push({
+          label: "extraFlights",
+          segment: rawExtra,
+          tripsForGroup: travel.bookings.extraFlightsTrips,
+        });
+      }
+
+      const adjusted = applySharedCapGroupsMulti(
+        card._id,
+        segmentsForCap,
+        index,
+      );
+
+      const domestic = adjusted.domestic ?? rawDomestic;
+      const international = adjusted.international ?? rawInternational;
+      const extraFlights = rawExtra
+        ? (adjusted.extraFlights ?? rawExtra)
+        : null;
+
+      const forex = computeForexCost(
+        travel.forex.applicableSpend,
+        travel.forex.gstPercentage,
+        card.forex_markup_percentage,
+      );
+
+      const grossReturnInr =
+        domestic.totalReturnInr +
+        international.totalReturnInr +
+        (extraFlights?.totalReturnInr ?? 0);
+      const netReturnInr = grossReturnInr - forex.totalCostInr;
+      const annualSpendInr =
+        domestic.totalSpend +
+        international.totalSpend +
+        (extraFlights?.totalSpend ?? 0);
+
+      return {
+        cardId: card._id,
+        cardName: card.name,
+        domestic,
+        international,
+        extraFlights,
+        forex,
+        grossReturnInr,
+        netReturnInr,
+        ...finalizeCardScore(
+          card,
+          netReturnInr,
+          annualSpendInr,
+          options?.milestonesBySlug?.get(card._id),
+        ),
+      };
+    })
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
+
+  return {
+    input,
+    travel,
+    byCard,
+    best: byCard[0] ?? null,
+    filteredCardCount: filtered.length,
+    totalCardCount: activeCards.length,
+  };
+}

@@ -3,16 +3,13 @@ import Link from "next/link";
 import { motion } from "motion/react";
 import { Home, SquarePen, X } from "lucide-react";
 import Typography from "../Typography/Typography";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 import { ChatSideBarSkeleton } from "../Loader/Loader";
 import useChatSidebar from "@/lib/hooks/useChatSidebar";
 import useIsMobile from "@/lib/hooks/useIsMobile";
 import useNav from "@/lib/hooks/useNav";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
-
-dayjs.extend(utc);
+import { resolveSessionTitle, type BotChatSession } from "@/lib/utils/chatSession";
 
 export const Logo = () => {
   return (
@@ -97,35 +94,25 @@ const ChatSidebarBody = ({ onClose }: { onClose?: () => void }) => {
           data?.sessions
             ?.slice(0, 5)
             ?.map(
-              (link: {
-                session_id: string;
-                timestamp: string;
-                title: string;
-                content: string;
-              }) => (
+              (link: BotChatSession) => (
                 <div
                   key={link?.session_id}
-                  className="flex gap-1 items-center"
+                  className="flex gap-1 items-center w-full min-w-0"
                 >
                   <div
                     onClick={() => handleSessionClick(link?.session_id)}
-                    className={
+                    className={`w-full min-w-0 overflow-hidden rounded-md p-2 py-1 ${
                       currentSessionId === link?.session_id
-                        ? "bg-brown-background overflow-hidden w-[190px] p-2 py-1 rounded-md border border-secondary-orange"
+                        ? "bg-brown-background border border-secondary-orange"
                         : ""
-                    }
+                    }`}
                   >
                     <Link
                       href={`/chat/${link?.session_id}`}
-                      className="text-white text-xs font-semibold truncate"
-                    // labelClassName="text-xs font-semibold"
-                    // link={{
-                    //   label: `${link?.title || link?.content}`,
-                    //   href: `/chat/${link?.session_id}`,
-                    //   icon: "",
-                    // }}
+                      className="block truncate text-white text-xs font-semibold"
+                      title={resolveSessionTitle(link)}
                     >
-                      {link?.title || link?.content}
+                      {resolveSessionTitle(link)}
                     </Link>
                   </div>
                 </div>

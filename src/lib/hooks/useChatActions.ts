@@ -16,6 +16,7 @@ import { INPUT_MESSAGE_SOURCE } from "../constants/chatJourney";
 import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { trackEvent } from "../analytics/track";
 import { EventName } from "../analytics/types";
+import { ReadyState } from "react-use-websocket";
 
 const useChatActions = () => {
   const buttonGroupInputActions = useInputButtonGroupAction();
@@ -30,7 +31,9 @@ const useChatActions = () => {
     inputValue,
     messages,
     enableTypingLoader,
-    setShowContinueJourneyMessage,
+    setPendingReply,
+    setTimedOutReply,
+    timedOutReply,
   } = useChatContext();
   const {
     addUserMessage,
@@ -38,7 +41,7 @@ const useChatActions = () => {
     loadHistory,
     setSessionIdValidation,
   } = useChatState();
-  const { sendMessageToSocket } = useAppWebSocketConnection();
+  const { sendMessageToSocket, readyState } = useAppWebSocketConnection();
 
   const handleAssistantSocketMessage = (
     message: BaseMessage | HistoryMessage | SessionMessage,
@@ -127,6 +130,53 @@ const useChatActions = () => {
     return resolvedQuestion;
   };
 
+  /**
+   * Hand a free-text turn to the partner and start waiting on it.
+   *
+   * `m_id` is reused across retries so a late reply to the original attempt
+   * still resolves the same turn rather than appearing as a second answer.
+   */
+  const sendDirectMessage = (content: string, m_id = crypto.randomUUID()) => {
+    if (readyState !== ReadyState.OPEN) return false;
+
+    const userMsg = {
+      content,
+      m_id,
+      source: MESSAGE_SOURCE.USER,
+      type: MESSAGE_TYPE.TEXT,
+      custom_metadata: [],
+    };
+    addUserMessage(userMsg as BaseMessage);
+    sendMessageToSocket(JSON.stringify(userMsg));
+    setSessionIdValidation(true);
+    disableChatInput();
+    setCurrentMessageId("");
+    enableTypingLoader();
+    // Arm the deadline: from here the turn is unanswered until a FinalMessage
+    // lands (see `useSocketReplyTimeout`).
+    setTimedOutReply(null);
+    setPendingReply({ m_id, content, startedAt: Date.now() });
+    return true;
+  };
+
+  /**
+   * Re-send the turn whose reply never arrived. Driven by the retry CTA that
+   * `useSocketReplyTimeout` surfaces.
+   */
+  const retryTimedOutMessage = () => {
+    if (!timedOutReply) return;
+
+    trackEvent(EventName.CHAT_MESSAGE_SENT, {
+      messageSource: "retry",
+      messageLength: timedOutReply.content.length,
+    });
+
+    const sent = sendDirectMessage(timedOutReply.content, timedOutReply.m_id);
+    // Still no usable connection — keep the CTA on screen instead of dropping
+    // the message silently.
+    if (!sent) setTimedOutReply(timedOutReply);
+  };
+
   const handleSendMessage = async (
     value: string | Record<string, string | number>,
     messageSource?: MessageSourceType,
@@ -134,23 +184,17 @@ const useChatActions = () => {
     if (typeof value === "string" && !value.trim()) return;
 
     if (messageSource === INPUT_MESSAGE_SOURCE.DIRECT) {
+      // Free text is answered by the partner, and the socket is deliberately
+      // closed until the journey has produced a recommendation. Sending now
+      // would drop the message silently, so ignore it and leave the user's
+      // text in the box.
+      if (readyState !== ReadyState.OPEN) return;
+
       trackEvent(EventName.CHAT_MESSAGE_SENT, {
         messageSource: "direct",
         messageLength: typeof value === "string" ? value.length : 0,
       });
-      const userMsg = {
-        content: value,
-        m_id: crypto.randomUUID(),
-        source: MESSAGE_SOURCE.USER,
-        type: MESSAGE_TYPE.TEXT,
-        custom_metadat: [],
-      };
-      addUserMessage(userMsg as BaseMessage);
-      sendMessageToSocket(JSON.stringify(userMsg));
-      setSessionIdValidation(true);
-      disableChatInput();
-      setCurrentMessageId("");
-      enableTypingLoader();
+      sendDirectMessage(value as string);
       setInputValue("");
       return;
     }
@@ -185,19 +229,26 @@ const useChatActions = () => {
       questionId: journeyCurrentQuestion?.m_id,
       questionType: journeyCurrentQuestion?.type,
       botContent: journeyCurrentQuestion?.botContent,
+      // Keep the raw per-field FORM values so the local recommendation-input
+      // assembler can read typed values (the concatenated content loses them).
+      ...(journeyCurrentQuestion?.type === MESSAGE_TYPE.FORM &&
+      typeof value === "object"
+        ? { formValues: value }
+        : {}),
     };
 
     // Add user message first
     addUserMessage(userMsg as BaseMessage);
 
     if (isSubmit) {
+      // Phase-1 (early) recommendation. The fine-tune prompt is added
+      // explicitly once the cards render (see injectLocalAssistantMessage).
       buttonGroupInputActions[
         journeyCurrentQuestion?.submit as InputButtonGroupActionTypes
       ]?.({
         updatedMessageState: [...messages, userMsg],
         action: HISTORY_ACTIONS.EARLY_RECOMMENDATION,
       });
-      setShowContinueJourneyMessage(true);
       return;
     }
 
@@ -240,6 +291,7 @@ const useChatActions = () => {
     handleSendMessage,
     handleKeyPressSendMessage,
     handleAssistantSocketMessage,
+    retryTimedOutMessage,
   };
 };
 

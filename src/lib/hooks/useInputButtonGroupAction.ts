@@ -7,16 +7,13 @@ import {
   MESSAGE_TYPE,
 } from "@/types/chatMessages";
 import { useChatState } from "@/hooks/useChatState";
-import {
-  createBotRecommendationContent,
-  filterUserMessage,
-} from "../utils/content";
+import { filterUserMessage } from "../utils/content";
+import { buildRecommendInput } from "../utils/buildRecommendInput";
 import { CardsType } from "@/types/card";
 import { saveToSessionStorage } from "../utils/sessionStorage";
 import { CARD_CATEGORY_KEY } from "../constants/storage";
 import { CARD_CATEGORY } from "../data/cards";
 import { cardCategoryJourneyData } from "../constants/chatJourney";
-import { useAppWebSocketConnection } from "@/contexts/WebSocketConnection";
 import { HistoryActions } from "@/types/actions";
 import { trackEvent } from "../analytics/track";
 import { EventName } from "../analytics/types";
@@ -35,14 +32,15 @@ const useInputButtonGroupAction = () => {
     selectedCardCategoryJourney,
     setCurrentMessageId,
     setSelectedCardCategory,
-    enableChatInput,
     messages,
-    startFollowUp,
   } = useChatContext();
 
-  const { sendMessageToSocket } = useAppWebSocketConnection();
-
-  const { addUserMessage, setSessionIdValidation } = useChatState();
+  const {
+    addUserMessage,
+    injectLocalAssistantMessage,
+    startSocketFollowUp,
+    setSessionIdValidation,
+  } = useChatState();
 
   const continueJourney = () => {
     trackEvent(EventName.CHAT_CONTINUE_JOURNEY_CLICKED, {});
@@ -69,6 +67,10 @@ const useInputButtonGroupAction = () => {
       questionId: currentQuestion?.m_id,
       botContent: currentQuestion?.botContent,
       thread: 2,
+      // Carries the submit question's id for transcript rendering, but it is
+      // an acknowledgement, not an answer to it — keep it out of the engine
+      // input so it can't clobber the real answer.
+      isAnswer: false,
     };
 
     if (currentMessageIndex + 1 < selectedCardCategoryJourney.length) {
@@ -84,7 +86,7 @@ const useInputButtonGroupAction = () => {
     }
   };
 
-  const evaluateEarly = (args: Args | undefined) => {
+  const evaluateEarly = async (args: Args | undefined) => {
     trackEvent(EventName.CHAT_RECOMMENDATION_REQUESTED, {
       category: (selectedCardCategory as string) ?? "",
       action: args?.action ?? "early",
@@ -101,18 +103,56 @@ const useInputButtonGroupAction = () => {
       });
     }
 
-    const botMessage = createBotRecommendationContent(
-      filterUserMessage(args?.updatedMessageState || messages),
-      selectedCardCategory as CardsType,
-      args?.action,
+    const category = selectedCardCategory as CardsType;
+    const isEnd = args?.action === HISTORY_ACTIONS.END_RECOMMENDATION;
+
+    // Compute the recommendation locally instead of over the partner socket.
+    const journeyMessages = filterUserMessage(
+      args?.updatedMessageState || messages,
     );
+    // The early submit has only the phase-1 answers; the fine-tune questions
+    // that feed phase 2 are answered by the time END_RECOMMENDATION fires.
+    const phase = isEnd ? 2 : 1;
+    const input = buildRecommendInput(category, phase, journeyMessages);
 
-    sendMessageToSocket(JSON.stringify(botMessage));
-    setSessionIdValidation(true);
+    try {
+      const res = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category, phase, input }),
+      });
+      const body = await res.json();
+      if (!res.ok || !body?.success) {
+        throw new Error(body?.message || "Recommendation failed");
+      }
 
-    if (args?.action === HISTORY_ACTIONS.END_RECOMMENDATION) {
-      startFollowUp.current = true;
+      // Wrap in a ```json block so it flows through the existing render path
+      // (isCardRecommendationResponse / ScrollableArea).
+      const jsonContent = "```json\n" + JSON.stringify(body.result) + "\n```";
+      injectLocalAssistantMessage(
+        jsonContent,
+        isEnd ? "end" : "early",
+        journeyMessages,
+        category,
+      );
+    } catch (err) {
+      console.error("[evaluateEarly] local recommendation failed:", err);
+      injectLocalAssistantMessage(
+        "```json\n" +
+          JSON.stringify({
+            startMessage:
+              "Sorry, I couldn't fetch a recommendation right now. Please try again.",
+            cards: [],
+            endMessage: "",
+          }) +
+          "\n```",
+        isEnd ? "end" : "early",
+        journeyMessages,
+        category,
+      );
     }
+
+    setSessionIdValidation(true);
   };
 
   const switchToAllRounder = (args?: Args) => {
@@ -133,21 +173,12 @@ const useInputButtonGroupAction = () => {
     setCurrentMessageId(question?.m_id);
   };
 
+  // "No, I am good" on the fine-tune prompt: skip phase-2 and open free
+  // follow-up Q&A over the socket, seeded with the phase-1 recommendation.
   const handleEndJourney = () => {
     trackEvent(EventName.CHAT_END_JOURNEY, {});
-    enableTypingLoader?.();
-    enableChatInput?.();
     setCurrentMessageId("");
-    sendMessageToSocket(
-      JSON.stringify({
-        source: "user",
-        content: "Start the follow up",
-        m_id: "start-follow-up",
-        ts: new Date().toISOString(),
-        type: "TextMessage",
-        custom_metadata: [],
-      }),
-    );
+    startSocketFollowUp();
   };
 
   const selectCardCategory = (args?: Args) => {

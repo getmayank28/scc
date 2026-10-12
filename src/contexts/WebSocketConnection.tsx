@@ -10,12 +10,18 @@ import { useDelayed } from "@/lib/hooks/useDelay";
 import { signOut, useSession } from "next-auth/react";
 import { AUTH_STATE } from "@/lib/constants/auth";
 import { useGetUserBotChatSessionsQuery } from "@/store/api";
+import { usePendingReplay } from "@/lib/hooks/usePendingReplay";
+import { useSocketReplaySync } from "@/lib/hooks/useSocketReplaySync";
+import { NEW_SESSION_ID } from "@/lib/constants/chat";
 
 type WebSocketContextType = {
   lastMessage: MessageEvent<string> | null;
   sendMessageToSocket: (message: string) => void;
   readyState: number;
-  isSocketLoading:boolean
+  /** Partner connection not usable yet — gate follow-up chat on this. */
+  isSocketLoading: boolean;
+  /** Nothing renderable yet — gate the screen itself on this. */
+  isChatLoading: boolean;
 };
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -49,13 +55,25 @@ export function WebSocketInner({
   const router = useRouter()
   const { isUserDataLoading } = useUserData();
   const { data: session, status } = useSession();
-  const shouldConnect = !!sessionId  && !isUserDataLoading 
   const { refetch } = useGetUserBotChatSessionsQuery({}, {skip:true});
+  const hasRecommendation = usePendingReplay();
+
+  // A brand-new chat has no partner session yet — the guided journey runs
+  // entirely on our side. Connecting before a recommendation exists would burn
+  // the agent's one read of `custom_data` on an empty context, so hold the
+  // socket closed until the journey produces something worth handing over.
+  // Resumed sessions are the opposite case: connect immediately to fetch history.
+  const isNewSession = sessionId === NEW_SESSION_ID;
+  const shouldConnect =
+    !isUserDataLoading &&
+    (isNewSession ? hasRecommendation : !!sessionId);
 
     const getUrl = useCallback(async () => {
       const url = await getSocketUrl(); // this reads fresh sessionId from localStorage each time
       return url ?? "";
-    }, [sessionId]);
+      // `hasRecommendation` participates because the context it gates is baked
+      // into the URL at connect time.
+    }, [sessionId, hasRecommendation]);
 
 
   const {
@@ -67,6 +85,11 @@ export function WebSocketInner({
     shouldReconnect: () => true,
     retryOnError: true,
   });
+
+  // Hand the replay to the partner exactly once per connection, as soon as it
+  // is open. It rides `custom_metadata`, which the partner stores and returns
+  // verbatim in the history frame — that is what a later reload rebuilds from.
+  useSocketReplaySync({ readyState, sendMessageToSocket });
 
   useEffect(() => {
     if (!session && typeof window !== 'undefined' && !PUBLIC_ROUTES?.includes(pathname) && status === AUTH_STATE.UNAUTHENTICATED) {
@@ -85,7 +108,7 @@ export function WebSocketInner({
       if (data?.type === "session" && newSessionId) {
         localStorage.setItem("chat_session_id", newSessionId);
 
-        if(sessionId === "new"){
+        if(sessionId === NEW_SESSION_ID){
           refetch?.()
           router.replace(`${ROUTES.CHAT}/${newSessionId}`);
         
@@ -98,11 +121,29 @@ export function WebSocketInner({
   }, [lastMessage]);
   
 
+  // Two distinct "not ready" states, because the socket is now deliberately
+  // absent for most of a new chat:
+  //
+  //  - isSocketLoading: the partner connection is not usable yet. Only gates
+  //    things that actually need it (free-text follow-up).
+  //  - isChatLoading:   we cannot render anything yet. During the guided
+  //    journey no socket is expected, so this must NOT wait on one — gating the
+  //    journey on the socket would leave a new chat blank forever.
   const socketLoading = isUserDataLoading || readyState !== ReadyState.OPEN;
-  const isSocketLoading = useDelayed(socketLoading,200) as boolean
+  const chatLoading = isUserDataLoading || (!isNewSession && socketLoading);
+
+  const isSocketLoading = useDelayed(socketLoading, 200) as boolean;
+  const isChatLoading = useDelayed(chatLoading, 200) as boolean;
+
   return (
     <WebSocketContext.Provider
-      value={{ lastMessage, sendMessageToSocket, readyState, isSocketLoading}}
+      value={{
+        lastMessage,
+        sendMessageToSocket,
+        readyState,
+        isSocketLoading,
+        isChatLoading,
+      }}
     >
       {children}
     </WebSocketContext.Provider>

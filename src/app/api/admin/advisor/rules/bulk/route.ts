@@ -1,0 +1,345 @@
+import * as XLSX from "xlsx";
+import { ApiResponse } from "@/lib/utils/ApiResponse";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
+import dbConnect from "@/lib/utils/dbConnet";
+import CardRuleModel from "@/models/CardRule";
+import CardAdvisorModel from "@/models/Card";
+import { recomputeBestOfForCard } from "@/lib/advisor/recompute";
+import { AdvisorCache } from "@/lib/advisor/cache";
+import {
+  mapHeader,
+  normalizeRow,
+  ruleDocToEngineRule,
+  ruleToDoc,
+  ruleKeyFor,
+  TEMPLATE_COLUMNS,
+  type RawRuleRow,
+  type RowError,
+  type NormalizedRule,
+} from "@/lib/advisor/bulkRules";
+import {
+  validateSharedCapGroups,
+  type MockRule,
+} from "@/lib/logic/advisor/rules";
+
+export const runtime = "nodejs";
+
+// POST — bulk upload rules from an .xlsx/.csv file (multipart form, field "file").
+//
+// Behaviour: PER-RULE UPSERT (no card wipe). Each row is upserted by its
+// (card, category, merchant) identity — an existing rule for that combo is
+// overwritten in place, a new combo is inserted, and every other rule on the
+// card is left untouched. Duplicate combos within one file collapse (last wins).
+// After import each affected card's bestOf cache is recomputed and the read
+// cache invalidated.
+export async function POST(req: Request) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  // ---- read the uploaded file ----
+  let file: File | null = null;
+  try {
+    const form = await req.formData();
+    const f = form.get("file");
+    if (f instanceof File) file = f;
+  } catch {
+    return ApiResponse.error("Expected multipart/form-data with a 'file' field", 400);
+  }
+  if (!file) return ApiResponse.error("No file uploaded (field 'file')", 400);
+
+  // ---- parse the sheet into raw rows ----
+  let matrix: unknown[][];
+  let physicalDataRows = 0;
+  try {
+    const buf = Buffer.from(await file.arrayBuffer());
+    const wb = XLSX.read(buf, { type: "buffer", cellDates: true });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    if (!sheet) return ApiResponse.error("Workbook has no sheets", 400);
+    // Physical data-row count from the sheet's declared range (incl. blanks),
+    // so we can report how many fully-blank rows the parser dropped.
+    const range = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : null;
+    physicalDataRows = range ? Math.max(0, range.e.r - range.s.r) : 0;
+    matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "" });
+  } catch (err) {
+    console.error("[admin/rules/bulk] parse failed:", err);
+    return ApiResponse.error("Could not parse the file as a spreadsheet", 400);
+  }
+
+  if (matrix.length < 2) {
+    return ApiResponse.error("File must have a header row and at least one data row", 400);
+  }
+
+  // ---- map headers -> canonical fields ----
+  const headerRow = matrix[0].map((c) => String(c ?? ""));
+  const colMap = headerRow.map(mapHeader); // index -> field | null
+  if (!colMap.includes("slug") || !colMap.includes("category")) {
+    return ApiResponse.error(
+      "Header row must include at least: slug, category",
+      400,
+    );
+  }
+
+  // A failed-row record = the original column values + why it was dropped.
+  // Exactly the shape we write back into the downloadable error report, so the
+  // admin can fix the offending cells and re-upload.
+  const str = (v: unknown) => (v === undefined || v === null ? "" : String(v));
+  const FAILED_CAP = 50_000;
+  const failedRows: Record<string, string | number>[] = [];
+  const pushFailed = (
+    raw: Record<string, unknown>,
+    row: number,
+    code: string,
+    reason: string,
+  ) => {
+    if (failedRows.length >= FAILED_CAP) return;
+    // Echo back every original column (so the admin can fix the offending cell
+    // and re-upload the same sheet) plus the row number, drop code and reason.
+    const record: Record<string, string | number> = { row };
+    for (const col of TEMPLATE_COLUMNS) record[col] = str(raw[col]);
+    record.code = code;
+    record.reason = reason;
+    failedRows.push(record);
+  };
+
+  // ---- normalize each data row ----
+  const errors: RowError[] = [];
+  // Keep the original raw cells + sheet row alongside each valid rule, so a row
+  // later rejected for an unknown slug can still be written to the error report.
+  const valid: { rule: NormalizedRule; raw: Record<string, unknown>; row: number }[] = [];
+  for (let i = 1; i < matrix.length; i++) {
+    const cells = matrix[i];
+    const raw: Record<string, unknown> = {};
+    colMap.forEach((field, idx) => {
+      if (field) raw[field] = cells[idx];
+    });
+    const sheetRow = i + 1; // 1-based incl. header
+    const res = normalizeRow(raw as RawRuleRow, sheetRow);
+    if (res.ok) valid.push({ rule: res.rule, raw, row: sheetRow });
+    else {
+      errors.push(res.error);
+      pushFailed(raw, res.error.row, res.error.code, res.error.message);
+    }
+  }
+
+  // ---- de-dupe by identity (slug, category, merchant, partner); last occurrence wins ----
+  // Earlier rows for the same identity are DROPPED (reported in failedRows so the
+  // admin can see exactly which rows were superseded), not silently collapsed.
+  const identityOf = (r: NormalizedRule) =>
+    `${r.cardSlug}__${r.category}__${r.merchant ?? "_base"}__${r.partner ?? "_nopartner"}`;
+  const dedupMap = new Map<
+    string,
+    { rule: NormalizedRule; raw: Record<string, unknown>; row: number }
+  >();
+  for (const v of valid) {
+    const id = identityOf(v.rule);
+    const prev = dedupMap.get(id);
+    if (prev) {
+      pushFailed(
+        prev.raw,
+        prev.row,
+        "duplicate",
+        `Duplicate (slug, category, merchant, partner) — superseded by row ${v.row}`,
+      );
+    }
+    dedupMap.set(id, v);
+  }
+  const deduped = [...dedupMap.values()];
+  const duplicateDropped = valid.length - deduped.length;
+
+  // ---- resolve slugs against known cards ----
+  try {
+    await dbConnect();
+
+    const slugs = [...new Set(deduped.map((v) => v.rule.cardSlug))];
+    const cards = await CardAdvisorModel.find({
+      slug: { $in: slugs },
+    })
+      .select("slug")
+      .lean<{ slug: string }[]>();
+    const knownSlugs = new Set(cards.map((c) => c.slug));
+
+    // Unknown card slug: count every affected ROW (not just the distinct slug),
+    // and tally per-slug so the admin can see exactly which cards are missing.
+    const unknownSlugs = slugs.filter((s) => !knownSlugs.has(s));
+    const unknownSlugRowCounts = new Map<string, number>();
+
+    // Group importable rules by card slug.
+    const byCard = new Map<string, typeof deduped>();
+    for (const v of deduped) {
+      if (!knownSlugs.has(v.rule.cardSlug)) {
+        unknownSlugRowCounts.set(
+          v.rule.cardSlug,
+          (unknownSlugRowCounts.get(v.rule.cardSlug) ?? 0) + 1,
+        );
+        pushFailed(
+          v.raw,
+          v.row,
+          "unknown_slug",
+          `Unknown card slug "${v.rule.cardSlug}" — not found in advisor cards`,
+        );
+        continue;
+      }
+      const arr = byCard.get(v.rule.cardSlug) ?? [];
+      arr.push(v);
+      byCard.set(v.rule.cardSlug, arr);
+    }
+    const unknownSlugRows = [...unknownSlugRowCounts.values()].reduce((a, b) => a + b, 0);
+
+    // ---- pre-validate combined cap groups per card (existing + incoming) ----
+    // A combined group's budget derives from its members' caps, so members must
+    // agree on them. Recompute enforces the same invariant and THROWS — after
+    // the write. Validate up front instead: a failing card's rows are dropped
+    // (reported per-row with the conflict) and the card is left untouched.
+    const existingRuleDocs = byCard.size
+      ? await CardRuleModel.find({
+          cardSlug: { $in: [...byCard.keys()] },
+          is_active: true,
+        })
+          .select(
+            "ruleKey cardSlug category merchant reward caps shared_cap_group voucher_shared_cap_group is_active",
+          )
+          .lean<Record<string, unknown>[]>()
+      : [];
+    const existingByCard = new Map<string, Record<string, unknown>[]>();
+    for (const d of existingRuleDocs) {
+      const slug = String(d.cardSlug);
+      const arr = existingByCard.get(slug) ?? [];
+      arr.push(d);
+      existingByCard.set(slug, arr);
+    }
+
+    let capGroupDroppedRows = 0;
+    const capGroupConflicts: { cardSlug: string; message: string }[] = [];
+    for (const [cardSlug, entries] of [...byCard]) {
+      const overlay = new Map<string, MockRule>();
+      for (const d of existingByCard.get(cardSlug) ?? []) {
+        overlay.set(String(d.ruleKey), ruleDocToEngineRule(d));
+      }
+      for (const e of entries) {
+        const ruleKey = ruleKeyFor(
+          cardSlug,
+          e.rule.category,
+          e.rule.merchant,
+          e.rule.partner,
+        );
+        overlay.set(
+          ruleKey,
+          ruleDocToEngineRule({ ...e.rule, ruleKey, cardSlug }),
+        );
+      }
+      try {
+        validateSharedCapGroups([...overlay.values()]);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        capGroupConflicts.push({ cardSlug, message });
+        for (const e of entries) {
+          pushFailed(e.raw, e.row, "cap_group_conflict", message);
+        }
+        capGroupDroppedRows += entries.length;
+        byCard.delete(cardSlug);
+      }
+    }
+
+    // ---- per-rule upsert (NO card wipe) ----
+    // Identity = (slug, category, merchant, partner) -> ruleKey. The rows are
+    // already de-duped by that identity above, so every op in a card's batch is
+    // a distinct ruleKey. An existing combo is overwritten; a new combo
+    // inserted; the card's other rules are untouched.
+    let inserted = 0; // newly created (upserted)
+    let replaced = 0; // matched an existing rule combo and overwrote it
+    const cardsAffected: string[] = [];
+    // Recompute errors must not 500 an import whose writes already succeeded —
+    // report them so the admin knows which cards serve a stale bestOf payload.
+    const recomputeFailures: { cardSlug: string; message: string }[] = [];
+    for (const [cardSlug, entries] of byCard) {
+      const ops = entries.map(({ rule: r }) => {
+        const ruleKey = ruleKeyFor(cardSlug, r.category, r.merchant, r.partner);
+        const { ruleKey: _k, ...rest } = ruleToDoc(r, cardSlug, ruleKey);
+        void _k;
+        return {
+          updateOne: {
+            filter: { ruleKey },
+            update: { $set: rest },
+            upsert: true,
+          },
+        };
+      });
+
+      if (ops.length) {
+        const res = await CardRuleModel.bulkWrite(ops, { ordered: false });
+        const newlyInserted = res.upsertedCount ?? 0;
+        inserted += newlyInserted;
+        // Anything that wasn't a fresh insert matched an existing rule combo.
+        replaced += ops.length - newlyInserted;
+      }
+
+      await CardAdvisorModel.updateOne(
+        { slug: cardSlug },
+        { $inc: { rulesVersion: 1 } },
+      );
+      try {
+        await recomputeBestOfForCard(cardSlug);
+      } catch (err) {
+        console.error(`[admin/rules/bulk] recompute failed for ${cardSlug}:`, err);
+        recomputeFailures.push({
+          cardSlug,
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+      cardsAffected.push(cardSlug);
+    }
+
+    if (cardsAffected.length) AdvisorCache.invalidate();
+
+    // ---- reconcile counts so every dropped row is accounted for ----
+    const parsedDataRows = matrix.length - 1; // after blank-row removal
+    const blankRowsSkipped = Math.max(0, physicalDataRows - parsedDataRows);
+
+    // Tally validation drops by reason code.
+    const reasonCounts: Record<string, number> = {};
+    for (const e of errors) {
+      reasonCounts[e.code] = (reasonCounts[e.code] ?? 0) + 1;
+    }
+    if (blankRowsSkipped > 0) reasonCounts["blank_row"] = blankRowsSkipped;
+    if (unknownSlugRows > 0) reasonCounts["unknown_slug"] = unknownSlugRows;
+    if (duplicateDropped > 0) reasonCounts["duplicate"] = duplicateDropped;
+    if (capGroupDroppedRows > 0)
+      reasonCounts["cap_group_conflict"] = capGroupDroppedRows;
+
+    const dropReasons = Object.entries(reasonCounts)
+      .map(([code, count]) => ({ code, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Every row in the file is one of: written (inserted | replaced) or dropped.
+    // Dropped = blank + validation + unknown slug + duplicate-superseded.
+    // rowsInFile = inserted + replaced + totalDropped.
+    const totalDropped =
+      blankRowsSkipped +
+      errors.length +
+      unknownSlugRows +
+      duplicateDropped +
+      capGroupDroppedRows;
+
+    return ApiResponse.success("Upload processed", 200, {
+      rowsInFile: physicalDataRows, // data rows (excl. header), incl. blanks
+      inserted, // new (slug,category,merchant) combos created
+      replaced, // existing combos overwritten in place
+      written: inserted + replaced,
+      duplicateDropped, // earlier rows superseded by a same-identity later row
+      totalDropped,
+      blankRowsSkipped,
+      validationDropped: errors.length,
+      unknownSlugRows,
+      cardsAffected,
+      dropReasons, // [{ code, count }] sorted desc — accounts for every dropped row
+      unknownSlugs, // distinct card slugs not found in advisor cards
+      capGroupConflicts, // cards skipped entirely: shared-cap group members disagree
+      recomputeFailures, // cards written but serving a stale bestOf payload
+      failedRows, // every dropped row (orig. columns + reason) for download
+      failedRowsTruncated: failedRows.length >= FAILED_CAP,
+    });
+  } catch (err) {
+    console.error("[admin/rules/bulk] import failed:", err);
+    return ApiResponse.error("Failed to import rules", 500);
+  }
+}

@@ -22,18 +22,22 @@ export const travelCard: BaseMessage[] = [
       {
         label: "1-2",
         value: "1-2",
+        engineValue: 2,
       },
       {
         label: "2-3",
         value: "2-3",
+        engineValue: 3,
       },
       {
         label: "4-5",
         value: "4-5",
+        engineValue: 5,
       },
       {
         label: "6+",
         value: "6+",
+        engineValue: 7,
       },
     ],
   },
@@ -48,18 +52,22 @@ export const travelCard: BaseMessage[] = [
       {
         label: "Only domestic",
         value: "Only domestic",
+        engineValue: "only_domestic",
       },
       {
         label: "Mostly domestic",
         value: "Mostly domestic",
+        engineValue: "mostly_domestic",
       },
       {
         label: "Mostly international",
         value: "Mostly international",
+        engineValue: "mostly_international",
       },
       {
         label: "Roughly equal",
         value: "Roughly equal",
+        engineValue: "balanced",
       },
     ],
   },
@@ -75,22 +83,27 @@ export const travelCard: BaseMessage[] = [
       {
         label: "Less than ₹50,000",
         value: "Less than ₹50,000",
+        engineValue: 40000,
       },
       {
         label: "₹50,000 – ₹1,00,000",
         value: "₹50,000 – ₹1,00,000",
+        engineValue: 75000,
       },
       {
         label: "₹1 – ₹1.5 lakhs",
         value: "₹1 – ₹1.5 lakhs",
+        engineValue: 125000,
       },
       {
         label: "₹1.5 – ₹2 lakhs",
         value: "₹1.5 – ₹2 lakhs",
+        engineValue: 175000,
       },
       {
         label: "₹2 lakhs+",
         value: "₹2 lakhs+",
+        engineValue: 250000,
       },
     ],
   },
@@ -105,22 +118,27 @@ export const travelCard: BaseMessage[] = [
       {
         label: "Free flights(miles & airline transfers)",
         value: "Free flights(miles & airline transfers)",
+        engineValue: "maximumRewards",
       },
       {
         label: "Airport lounge access",
         value: "Airport lounge access",
+        engineValue: "loungeAccess",
       },
       {
         label: "Luxury travel perks(upgrades, concierge, golf, elite status)",
         value: "Luxury travel perks(upgrades, concierge, golf, elite status)",
+        engineValue: "maximumRewards",
       },
       {
         label: "Low forex markup",
         value: "Low forex markup",
+        engineValue: "lowForex",
       },
       {
         label: "Maximum rewards",
         value: "Maximum rewards",
+        engineValue: "maximumRewards",
       },
     ],
   },
@@ -165,18 +183,22 @@ export const travelCard: BaseMessage[] = [
       {
         label: "Less than ₹1 lakh",
         value: "Less than ₹1 lakh",
+        engineValue: 75000,
       },
       {
         label: "₹1 – ₹1.5 lakhs",
         value: "₹1 – ₹1.5 lakhs",
+        engineValue: 125000,
       },
       {
         label: "₹1.5 – ₹2 lakhs",
         value: "₹1.5 – ₹2 lakhs",
+        engineValue: 175000,
       },
       {
         label: "₹3 lakhs+",
         value: "₹3 lakhs+",
+        engineValue: 300000,
       },
     ],
   },
@@ -191,22 +213,27 @@ export const travelCard: BaseMessage[] = [
       {
         label: "None",
         value: "none",
+        engineValue: 0,
       },
       {
         label: "Up to ~₹50,000",
         value: "Up to ~₹50,000",
+        engineValue: 40000,
       },
       {
         label: "₹50,000 - ₹1 lakh",
         value: "₹50,000 - ₹1 lakh",
+        engineValue: 75000,
       },
       {
         label: "₹1 lakhs - ₹2 Lakhs",
         value: "₹1 lakhs - ₹2 Lakhs",
+        engineValue: 150000,
       },
       {
         label: "₹2 lakhs+",
         value: "₹2 lakhs+",
+        engineValue: 250000,
       },
     ],
   },

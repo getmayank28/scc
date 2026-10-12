@@ -8,6 +8,7 @@ import {
 } from "@/lib/utils/markdown";
 import ChatCard from "../ChatCard/ChatCard";
 import { MultiStepChatLoader } from "../MultiStepChatLoader/MultiStepChatLoader";
+import { ChatReplyTimeout } from "../ChatReplyTimeout/ChatReplyTimeout";
 import { renderInput } from "@/lib/utils/renderInput";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 import { chatLoaderStates } from "@/lib/constants/loader";
@@ -28,6 +29,9 @@ interface ChatbotScrollableAreaProps {
     id?: string
   ) => void;
   isSocketLoading?: boolean
+  /** Set when the partner never answered the last turn — shows the retry CTA. */
+  hasReplyTimedOut?: boolean
+  onRetryTimedOutReply?: () => void
 }
 
 export const ChatbotScrollableArea = ({
@@ -36,7 +40,9 @@ export const ChatbotScrollableArea = ({
   isTyping,
   messagesEndRef,
   handleSend,
-  isSocketLoading
+  isSocketLoading,
+  hasReplyTimedOut,
+  onRetryTimedOutReply
 }: ChatbotScrollableAreaProps) => {
   const [visibleMessages, setVisibleMessages] = useState<Set<string>>(
     new Set()
@@ -119,15 +125,36 @@ export const ChatbotScrollableArea = ({
                           ,
                         }}
                       ></p>}
-                      <div className="flex gap-6 my-6 max-md:flex-col">
-                        {(safeParseJson<RecommendationPayload>(message?.content || ""))?.cards.map(
-                          (item: BotRecommendationCreditCardProps, index: number) => {
-                            return (
-                              <ChatCard key={index} {...item} />
-                            );
-                          }
-                        )}
-                      </div>
+                      {(() => {
+                        const cards =
+                          safeParseJson<RecommendationPayload>(
+                            message?.content || "",
+                          )?.cards ?? [];
+                        // Whether the milestone slot is drawn is a property of
+                        // the row, not of a single card: if any card has a
+                        // milestone, every card reserves the space so the three
+                        // stay the same height.
+                        const reserveMilestoneSlot = cards.some(
+                          (c: BotRecommendationCreditCardProps) =>
+                            (c?.milestones?.length ?? 0) > 0,
+                        );
+                        return (
+                          <div className="flex items-stretch gap-6 my-6 max-md:flex-col">
+                            {cards.map(
+                              (
+                                item: BotRecommendationCreditCardProps,
+                                index: number,
+                              ) => (
+                                <ChatCard
+                                  key={index}
+                                  {...item}
+                                  reserveMilestoneSlot={reserveMilestoneSlot}
+                                />
+                              ),
+                            )}
+                          </div>
+                        );
+                      })()}
                       {(safeParseJson<RecommendationPayload>(message?.content || ""))?.endMessage && <p
                         className="text-sm max-md:text-xs leading-relaxed whitespace-pre-wrap border rounded-lg px-4 py-3 border-brown-border bg-brown-sidebar"
                         dangerouslySetInnerHTML={{
@@ -159,6 +186,9 @@ export const ChatbotScrollableArea = ({
             </div>
           ))}
           {isTyping && <MultiStepChatLoader loadingStates={chatLoaderStates} />}
+          {hasReplyTimedOut && !isTyping && (
+            <ChatReplyTimeout onRetry={() => onRetryTimedOutReply?.()} />
+          )}
           <div ref={messagesEndRef} />
         </div>
       </ScrollArea>

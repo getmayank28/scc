@@ -1,0 +1,888 @@
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import { computeBestOfForCard, type MockBestOf } from "./bestOf";
+import { MERCHANTS, type Merchant, type MockRule } from "./rules";
+import {
+  computeCategoryReturn,
+  declaredCategoryRate,
+  reallocateAcrossCategories,
+  type CategoryReturn,
+  type SettledCapPool,
+} from "./engine";
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
+
+// ============================================================================
+// Phase 1 — frequency-based food card recommendation
+// ============================================================================
+//
+// Maps two frequency inputs (online food delivery, dining-out) plus a platform
+// preference into a yearly spend distribution, then scores every active card by
+// summing the per-stream returns. Steady monthly spend → bookings-per-year for
+// cap accounting is 12.
+//
+// Per-bill assumptions (constants — tweak to recalibrate without touching the
+// rest of the engine).
+const AVG_DELIVERY_ORDER_INR = 700;
+const AVG_DINING_BILL_INR = 2000;
+const MONTHS_PER_YEAR = 12;
+const ANNUAL_CAP_PERIODS = 12;
+
+export type FoodPlatformPreference = "swiggy" | "zomato" | "both" | "none";
+
+export interface FoodCardPhaseOneInput {
+  // Monthly counts. Frontend exposes preset options (e.g. 1/6/16/25 and
+  // 2/4/6/14) but the engine accepts any non-negative number.
+  onlineFoodDeliveryFrequency: number;
+  diningOutFrequency: number;
+  foodDeliveryPlatformPreference: FoodPlatformPreference;
+}
+
+interface PlatformShares {
+  swiggy: number;
+  zomato: number;
+  other: number;
+}
+
+// Fraction of the delivery pot that lands at each platform. "other" covers any
+// share that doesn't match Swiggy/Zomato — it earns the card's category
+// fallback rate, not an accelerator.
+function platformShares(pref: FoodPlatformPreference): PlatformShares {
+  switch (pref) {
+    case "swiggy":
+      return { swiggy: 0.75, zomato: 0, other: 0.25 };
+    case "zomato":
+      return { swiggy: 0, zomato: 0.75, other: 0.25 };
+    case "both":
+      return { swiggy: 0.5, zomato: 0.5, other: 0 };
+    case "none":
+      return { swiggy: 0, zomato: 0, other: 1 };
+  }
+}
+
+export interface FoodSpendBreakdown {
+  annualDeliverySpend: number;
+  annualDiningSpend: number;
+  annualTotal: number;
+  // Same platform shares apply to both pots: delivery splits across
+  // Swiggy/Zomato/other-delivery; dining splits across Swiggy Dineout /
+  // Zomato District (aggregator routes) and offline (the "other" share).
+  deliveryAllocation: {
+    swiggy: number;
+    zomato: number;
+    other: number;
+  };
+  diningAllocation: {
+    swiggy: number;
+    zomato: number;
+    other: number;
+  };
+}
+
+export function buildFoodSpendBreakdown(
+  input: FoodCardPhaseOneInput,
+): FoodSpendBreakdown {
+  const delivery =
+    Math.max(0, input.onlineFoodDeliveryFrequency) *
+    AVG_DELIVERY_ORDER_INR *
+    MONTHS_PER_YEAR;
+  const dining =
+    Math.max(0, input.diningOutFrequency) *
+    AVG_DINING_BILL_INR *
+    MONTHS_PER_YEAR;
+  const shares = platformShares(input.foodDeliveryPlatformPreference);
+  return {
+    annualDeliverySpend: delivery,
+    annualDiningSpend: dining,
+    annualTotal: delivery + dining,
+    deliveryAllocation: {
+      swiggy: delivery * shares.swiggy,
+      zomato: delivery * shares.zomato,
+      other: delivery * shares.other,
+    },
+    diningAllocation: {
+      swiggy: dining * shares.swiggy,
+      zomato: dining * shares.zomato,
+      other: dining * shares.other,
+    },
+  };
+}
+
+// ============================================================================
+// Per-card scoring
+// ============================================================================
+
+type FoodSubSpec =
+  | {
+      kind: "merchant";
+      label: string;
+      spend: number;
+      category: Category;
+      merchant: Merchant;
+      // Ordered fallbacks tried when the card has no rule for `merchant`, most
+      // specific first (e.g. swiggy_dineout → swiggy). When the card carries
+      // none of them the sub-stream falls back to the category rate.
+      merchantPreference?: readonly Merchant[];
+      // Dining legs only: the delivery platform whose online_food_dining rule
+      // this leg inherits when the card has no dine-out rule of its own. See
+      // `deliveryMirrorFor`.
+      deliveryMirror?: Merchant;
+    }
+  | {
+      kind: "category-best";
+      label: string;
+      spend: number;
+      category: Category;
+    }
+  | { kind: "fallback"; label: string; spend: number; category: Category };
+
+export interface FoodSubReturn {
+  label: string;
+  spend: number;
+  effectivePercentage: number;
+  effectiveRateAfterCap: number;
+  source: "voucher" | "direct" | "fallback";
+  merchant: string | null;
+  returnInr: number;
+  // The combined shared-cap pool this sub-stream drew from, if any. Carried so
+  // the card-level pass can pool it with sub-streams in OTHER categories that
+  // share the same cap (e.g. HSBC Live+'s single food cashback cap spanning
+  // online + offline dining). Null when the winning route has no combined pool.
+  sharedCapPool: SettledCapPool | null;
+}
+
+export interface FoodStreamReturn {
+  spend: number;
+  subs: FoodSubReturn[];
+  returnInr: number;
+}
+
+export interface CardFoodReturn extends CardScoreBreakdown {
+  cardId: string;
+  cardName: string;
+  delivery: FoodStreamReturn;
+  dining: FoodStreamReturn;
+  annualSpend: number;
+  annualReturnInr: number;
+  effectiveRatePercentage: number;
+}
+
+export interface FoodCardEngineResult {
+  input: FoodCardPhaseOneInput;
+  spend: FoodSpendBreakdown;
+  byCard: CardFoodReturn[];
+  best: CardFoodReturn | null;
+}
+
+function buildBestOfIndex(bestOfList: MockBestOf[]): Map<string, MockBestOf> {
+  const index = new Map<string, MockBestOf>();
+  for (const entry of bestOfList) {
+    index.set(`${entry.cardId}::${entry.category}`, entry);
+  }
+  return index;
+}
+
+// Merchant-scoped best-of: reruns the best-of computation against the merchant's
+// rules PLUS the category-wide (merchant === null) rules. Merchant rules feed the
+// direct frontier; the best category rule becomes the baseTier, so spend not
+// covered by a merchant accelerator falls back to the category rate before the
+// card base rate. Returns undefined only when the card has neither — caller then
+// drops to the card's base rate.
+function merchantBestOf(
+  card: MockCard,
+  category: Category,
+  merchant: Merchant,
+  rules: MockRule[],
+): MockBestOf | undefined {
+  const subset = rules.filter(
+    (r) =>
+      r.cardId === card._id &&
+      r.category === category &&
+      (r.merchant === merchant || r.merchant === null) &&
+      r.is_active,
+  );
+  if (subset.length === 0) return undefined;
+  return computeBestOfForCard(card, subset)[0];
+}
+
+// Resolve the first merchant in `preference` that the card actually carries a
+// rule for, and score against it. Dining needs this because the platforms are
+// modelled under channel-specific merchant ids that are unevenly populated:
+// offline dining is keyed to swiggy_dineout / zomato_district, but a card may
+// only carry the plain swiggy / zomato rule. Trying the offline id first and
+// the plain id second uses the most specific rule available without inventing
+// one. Returns undefined when the card has none of them — the caller then
+// falls back to the category rate.
+//
+// Note `merchantBestOf` also admits `merchant === null` category rules, which
+// every card has; matching on those would make the first preference always
+// "win" and defeat the ordering. So candidacy is decided on merchant-specific
+// rules only, and the category rule re-enters through the returned best-of.
+function preferredMerchantBestOf(
+  card: MockCard,
+  category: Category,
+  preference: readonly Merchant[],
+  rules: MockRule[],
+): { bestOf: MockBestOf; merchant: Merchant } | undefined {
+  for (const merchant of preference) {
+    const hasOwnRule = rules.some(
+      (r) =>
+        r.cardId === card._id &&
+        r.category === category &&
+        r.merchant === merchant &&
+        r.is_active,
+    );
+    if (!hasOwnRule) continue;
+    const bestOf = merchantBestOf(card, category, merchant, rules);
+    if (bestOf) return { bestOf, merchant };
+  }
+  return undefined;
+}
+
+// A dine-out leg on Swiggy/Zomato pays the same way the platform's delivery
+// leg does: whatever voucher / direct-swipe rule the card carries for the
+// platform under online_food_dining applies to dining too. The catalog keys
+// those rules to online_food_dining only (no card carries an offline
+// swiggy/zomato rule), so without this every dining leg fell back to the
+// category rate — IndiGo Kotak paid Swiggy delivery 3.5% via voucher but
+// Swiggy dining a flat 2%.
+//
+// Returns the online merchant to inherit from, or undefined when the leg has
+// its own dine-out rule (that stays authoritative) or the card has no
+// delivery rule for the platform either.
+function deliveryMirrorFor(
+  spec: FoodSubSpec,
+  card: MockCard,
+  rules: MockRule[],
+): Merchant | undefined {
+  if (spec.kind !== "merchant" || !spec.deliveryMirror) return undefined;
+  const preference = spec.merchantPreference ?? [spec.merchant];
+  if (preferredMerchantBestOf(card, spec.category, preference, rules)) {
+    return undefined;
+  }
+  const mirror = spec.deliveryMirror;
+  const hasDeliveryRule = rules.some(
+    (r) =>
+      r.cardId === card._id &&
+      r.category === CATEGORIES.ONLINE_FOOD_DINING &&
+      r.merchant === mirror &&
+      r.is_active,
+  );
+  return hasDeliveryRule ? mirror : undefined;
+}
+
+function buildDeliverySpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggy, zomato, other } = spend.deliveryAllocation;
+  if (swiggy > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy delivery",
+      spend: swiggy,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+      merchant: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomato > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato delivery",
+      spend: zomato,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+      merchant: MERCHANTS.ZOMATO,
+    });
+  }
+  if (other > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Other delivery platforms",
+      spend: other,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+    });
+  }
+  return out;
+}
+
+function buildDiningSpecs(spend: FoodSpendBreakdown): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggy, zomato, other } = spend.diningAllocation;
+  if (swiggy > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy dining",
+      spend: swiggy,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+      merchant: MERCHANTS.SWIGGY_DINEOUT,
+      merchantPreference: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+      deliveryMirror: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomato > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato dining",
+      spend: zomato,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+      merchant: MERCHANTS.ZOMATO_DISTRICT,
+      merchantPreference: [
+        MERCHANTS.ZOMATO_DISTRICT,
+        MERCHANTS.DISTRICT_BY_ZOMATO,
+        MERCHANTS.ZOMATO,
+      ],
+      deliveryMirror: MERCHANTS.ZOMATO,
+    });
+  }
+  if (other > 0) {
+    // Leftover dining share after Swiggy/Zomato — paid directly at the
+    // restaurant, earns the card's dining base rate (or 0 if excluded).
+    out.push({
+      kind: "fallback",
+      label: "Offline dining",
+      spend: other,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+    });
+  }
+  return out;
+}
+
+function evaluateSpec(
+  spec: FoodSubSpec,
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+): FoodSubReturn {
+  if (spec.kind === "fallback") {
+    // An unattributed bucket ("other delivery platforms", dining paid directly
+    // at the restaurant): the user named no merchant, so only the card's
+    // category-wide rule may apply — hence `categoryRateOnly`.
+    //
+    // This MUST go through computeCategoryReturn rather than applying the
+    // declared rate directly. The category-wide rule can carry a `combined`
+    // shared cap, and only computeCategoryReturn resolves it onto the result as
+    // `sharedCapPool` so the card-level reconciler can pool it with the other
+    // food sub-streams. Short-circuiting here paid the declared rate uncapped
+    // and hid the spend from the pool entirely: HSBC Live+'s ₹1,200/month
+    // combined food cap was bypassed by the "other delivery" and "offline
+    // dining" legs, overstating the card by ₹4,131 on a ₹1.94L food profile.
+    //
+    // `declaredCategoryRate` still rides along so a category the card declares
+    // at or below its base rate — 0% included — is honoured verbatim; bestOf
+    // prunes those, so without it they would silently earn the base rate.
+    const declared = declaredCategoryRate(card, spec.category, rules);
+    const cat = computeCategoryReturn(
+      spec.spend,
+      spec.category,
+      card,
+      index.get(`${card._id}::${spec.category}`),
+      ANNUAL_CAP_PERIODS,
+      { categoryRateOnly: true, declaredCategoryRate: declared },
+    );
+
+    // Same exclusion override as the merchant path: an excluded category that
+    // fell through to the base rate earns nothing and draws no pool.
+    const excluded =
+      cat.source === "fallback" &&
+      card.excluded_categories?.includes(spec.category) === true;
+
+    return {
+      label: spec.label,
+      spend: spec.spend,
+      effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+      effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
+      // This leg is still an unattributed bucket regardless of which rule paid
+      // it; keep the label stable so the UI grouping doesn't shift.
+      source: "fallback",
+      merchant: null,
+      returnInr: excluded ? 0 : cat.returnInr,
+      sharedCapPool: excluded ? null : cat.sharedCapPool,
+    };
+  }
+
+  // A merchant spec resolves against the first merchant in its preference
+  // chain the card actually carries (defaulting to `merchant` alone).
+  const categoryBestOf = index.get(`${card._id}::${spec.category}`);
+  const resolvedMerchantBestOf =
+    spec.kind === "merchant"
+      ? preferredMerchantBestOf(
+          card,
+          spec.category,
+          spec.merchantPreference ?? [spec.merchant],
+          rules,
+        )?.bestOf
+      : undefined;
+
+  // When a merchant leg finds no rule for its own platform, fall back to the
+  // category best-of — but scored with `categoryRateOnly`, so only the
+  // card's category-wide (`merchant === null`) rule applies.
+  //
+  // Both halves matter. Passing undefined leaves computeCategoryReturn with no
+  // baseTier, so it pays the card base rate and discards a category-wide rule
+  // the card does have (HSBC Live+ declares a flat 10% on offline_food_dining
+  // and was scoring 1.5%). But passing the category best-of unrestricted is
+  // just as wrong: its frontier carries every restaurant chain the card has a
+  // rule for, so the Swiggy Dineout leg would score whichever chain ranks
+  // highest — SimplySAVE SBI paying an 18% `machaan` voucher on spend the user
+  // told us goes to Swiggy Dineout.
+  const merchantLegFellBack =
+    spec.kind === "merchant" && resolvedMerchantBestOf === undefined;
+  const bestOf = resolvedMerchantBestOf ?? categoryBestOf;
+
+  const cat: CategoryReturn = computeCategoryReturn(
+    spec.spend,
+    spec.category,
+    card,
+    bestOf,
+    ANNUAL_CAP_PERIODS,
+    {
+      // Unattributed bucket: the food inputs name no merchant, so a voucher
+      // route here is the engine's own pick. Score it on the card's reward leg
+      // alone. `merchant` specs resolve a named delivery/dine-out platform, so
+      // their discount is attributable and stays in the rate.
+      rewardLegOnly: spec.kind === "category-best",
+      // A merchant leg that fell back to the category best-of keeps only the
+      // category-wide rule — never another merchant's route.
+      categoryRateOnly: merchantLegFellBack,
+    },
+  );
+
+  // Same exclusion override as allrounder: when best-of falls through to the
+  // base rate AND the card excludes the category, force 0%. Specific merchant
+  // rules (direct/voucher) keep earning at their declared rate.
+  const excluded =
+    cat.source === "fallback" &&
+    card.excluded_categories?.includes(spec.category) === true;
+
+  return {
+    label: spec.label,
+    spend: spec.spend,
+    effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+    effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
+    source: cat.source,
+    merchant: cat.merchant,
+    returnInr: excluded ? 0 : cat.returnInr,
+    // An excluded fallback earns nothing and can't draw a pool; otherwise carry
+    // whatever combined pool the winning route settled on.
+    sharedCapPool: excluded ? null : cat.sharedCapPool,
+  };
+}
+
+function streamOf(subs: FoodSubReturn[], totalSpend: number): FoodStreamReturn {
+  return {
+    spend: totalSpend,
+    subs,
+    returnInr: subs.reduce((acc, s) => acc + s.returnInr, 0),
+  };
+}
+
+// Phase-agnostic per-card scorer. Callers build the delivery and dining
+// specs from their own allocation rules; this collapses the per-stream
+// returns into a single ranked card row.
+function scoreCardFromStreams(
+  card: MockCard,
+  deliverySpend: number,
+  deliverySpecs: FoodSubSpec[],
+  diningSpend: number,
+  diningSpecs: FoodSubSpec[],
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): CardFoodReturn {
+  // Dining legs that inherit a delivery platform's rule (deliveryMirrorFor) are
+  // scored together with that platform's delivery leg as ONE sub-stream on the
+  // delivery rule, then split back by spend. Scoring them separately would let
+  // each leg earn the rule's full reward / voucher cap — the same cap counted
+  // twice. Every other leg is scored on its own as before.
+  type Unit = {
+    spec: FoodSubSpec;
+    members: { spec: FoodSubSpec; slot: FoodSubReturn[]; i: number }[];
+  };
+  const deliverySubs: FoodSubReturn[] = new Array(deliverySpecs.length);
+  const diningSubs: FoodSubReturn[] = new Array(diningSpecs.length);
+  const units: Unit[] = [];
+  const mirrorUnits = new Map<Merchant, Unit>();
+  diningSpecs.forEach((spec, i) => {
+    const mirror = deliveryMirrorFor(spec, card, rules);
+    const member = { spec, slot: diningSubs, i };
+    if (!mirror) {
+      units.push({ spec, members: [member] });
+      return;
+    }
+    const unit = mirrorUnits.get(mirror);
+    if (unit) {
+      unit.members.push(member);
+      return;
+    }
+    const created: Unit = {
+      spec: {
+        kind: "merchant",
+        label: spec.label,
+        spend: 0,
+        category: CATEGORIES.ONLINE_FOOD_DINING,
+        merchant: mirror,
+      },
+      members: [member],
+    };
+    mirrorUnits.set(mirror, created);
+    units.push(created);
+  });
+  deliverySpecs.forEach((spec, i) => {
+    const member = { spec, slot: deliverySubs, i };
+    const unit =
+      spec.kind === "merchant" ? mirrorUnits.get(spec.merchant) : undefined;
+    if (unit) unit.members.push(member);
+    else units.push({ spec, members: [member] });
+  });
+  for (const unit of mirrorUnits.values()) {
+    unit.spec = {
+      ...unit.spec,
+      spend: unit.members.reduce((acc, m) => acc + m.spec.spend, 0),
+    };
+  }
+
+  const unitSubs = units.map((u) => evaluateSpec(u.spec, card, index, rules));
+
+  // Reconcile combined pools that span delivery + dining (e.g. HSBC Live+'s one
+  // food cashback cap across online_food_dining + offline_food_dining). Without
+  // this each category earns the full cap independently — double-counting. The
+  // reconciler re-splits each shared pool's single annual budget across the
+  // sub-streams that share it and rewrites their returns in place.
+  const all = unitSubs.map((s) => ({ cat: s }));
+  const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
+  overrides.forEach((returnInr, i) => {
+    all[i].cat.returnInr = returnInr;
+    all[i].cat.effectiveRateAfterCap =
+      all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+  });
+
+  // Fan each unit back out to its delivery / dining legs, pro rata by spend.
+  units.forEach((unit, u) => {
+    const sub = unitSubs[u];
+    for (const m of unit.members) {
+      const share = sub.spend > 0 ? m.spec.spend / sub.spend : 0;
+      m.slot[m.i] =
+        unit.members.length === 1
+          ? sub
+          : {
+              ...sub,
+              label: m.spec.label,
+              spend: m.spec.spend,
+              returnInr: sub.returnInr * share,
+            };
+    }
+  });
+
+  const delivery = streamOf(deliverySubs, deliverySpend);
+  const dining = streamOf(diningSubs, diningSpend);
+  const annualReturnInr = delivery.returnInr + dining.returnInr;
+  const annualSpend = deliverySpend + diningSpend;
+  return {
+    cardId: card._id,
+    cardName: card.name,
+    delivery,
+    dining,
+    annualSpend,
+    annualReturnInr,
+    effectiveRatePercentage:
+      annualSpend > 0 ? (annualReturnInr / annualSpend) * 100 : 0,
+    ...finalizeCardScore(
+      card,
+      annualReturnInr,
+      annualSpend,
+      options?.milestonesBySlug?.get(card._id),
+    ),
+  };
+}
+
+function scoreCard(
+  card: MockCard,
+  spend: FoodSpendBreakdown,
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): CardFoodReturn {
+  return scoreCardFromStreams(
+    card,
+    spend.annualDeliverySpend,
+    buildDeliverySpecs(spend),
+    spend.annualDiningSpend,
+    buildDiningSpecs(spend),
+    index,
+    rules,
+    options,
+  );
+}
+
+export function recommendFoodCardPhaseOne(
+  input: FoodCardPhaseOneInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): FoodCardEngineResult {
+  const spend = buildFoodSpendBreakdown(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map((card) => scoreCard(card, spend, index, rules, options))
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
+
+  return {
+    input,
+    spend,
+    byCard,
+    best: byCard[0] ?? null,
+  };
+}
+
+// ============================================================================
+// Phase 2 — declared per-bill amounts + explicit dining payment route
+// ============================================================================
+//
+// Phase 2 replaces phase 1's flat ₹700 / ₹2000 assumptions with user-supplied
+// per-bill amounts and adds a `diningOutPlatformPreference` so the dining pot
+// can route to aggregators (Swiggy Dineout, Zomato District, EazyDiner) that
+// have their own merchant rules. Delivery preference loses the "both" option;
+// "swiggy"/"zomato" now split 80/20 (vs. 75/25 in phase 1).
+
+export type FoodDeliveryPlatformPreferenceTwo = "swiggy" | "zomato" | "others";
+
+export type FoodDiningPlatformPreference =
+  | "swiggy_dineout"
+  | "zomato_district"
+  | "eazydiner"
+  | "others";
+
+export interface FoodCardPhaseTwoInput {
+  onlineFoodDeliveryFrequency: number;
+  diningOutFrequency: number;
+  onlineFoodDeliveryAverageSpend: number;
+  diningOutAverageSpend: number;
+  foodDeliveryPlatformPreference: FoodDeliveryPlatformPreferenceTwo;
+  diningOutPlatformPreference: FoodDiningPlatformPreference;
+}
+
+interface DeliverySharesTwo {
+  swiggy: number;
+  zomato: number;
+  other: number;
+}
+
+interface DiningShares {
+  swiggyDineout: number;
+  zomatoDistrict: number;
+  eazyDiner: number;
+  other: number;
+}
+
+function deliverySharesTwo(
+  pref: FoodDeliveryPlatformPreferenceTwo,
+): DeliverySharesTwo {
+  switch (pref) {
+    case "swiggy":
+      return { swiggy: 0.8, zomato: 0, other: 0.2 };
+    case "zomato":
+      return { swiggy: 0, zomato: 0.8, other: 0.2 };
+    case "others":
+      return { swiggy: 0, zomato: 0, other: 1 };
+  }
+}
+
+function diningShares(pref: FoodDiningPlatformPreference): DiningShares {
+  switch (pref) {
+    case "swiggy_dineout":
+      return {
+        swiggyDineout: 0.7,
+        zomatoDistrict: 0,
+        eazyDiner: 0,
+        other: 0.3,
+      };
+    case "zomato_district":
+      return {
+        swiggyDineout: 0,
+        zomatoDistrict: 0.7,
+        eazyDiner: 0,
+        other: 0.3,
+      };
+    case "eazydiner":
+      return {
+        swiggyDineout: 0,
+        zomatoDistrict: 0,
+        eazyDiner: 0.7,
+        other: 0.3,
+      };
+    case "others":
+      return { swiggyDineout: 0, zomatoDistrict: 0, eazyDiner: 0, other: 1 };
+  }
+}
+
+export interface FoodSpendBreakdownTwo {
+  annualDeliverySpend: number;
+  annualDiningSpend: number;
+  annualTotal: number;
+  deliveryAllocation: {
+    swiggy: number;
+    zomato: number;
+    other: number;
+  };
+  diningAllocation: {
+    swiggyDineout: number;
+    zomatoDistrict: number;
+    eazyDiner: number;
+    other: number;
+  };
+}
+
+export function buildFoodSpendBreakdownTwo(
+  input: FoodCardPhaseTwoInput,
+): FoodSpendBreakdownTwo {
+  const delivery =
+    Math.max(0, input.onlineFoodDeliveryFrequency) *
+    Math.max(0, input.onlineFoodDeliveryAverageSpend) *
+    MONTHS_PER_YEAR;
+  const dining =
+    Math.max(0, input.diningOutFrequency) *
+    Math.max(0, input.diningOutAverageSpend) *
+    MONTHS_PER_YEAR;
+  const dShares = deliverySharesTwo(input.foodDeliveryPlatformPreference);
+  const oShares = diningShares(input.diningOutPlatformPreference);
+  return {
+    annualDeliverySpend: delivery,
+    annualDiningSpend: dining,
+    annualTotal: delivery + dining,
+    deliveryAllocation: {
+      swiggy: delivery * dShares.swiggy,
+      zomato: delivery * dShares.zomato,
+      other: delivery * dShares.other,
+    },
+    diningAllocation: {
+      swiggyDineout: dining * oShares.swiggyDineout,
+      zomatoDistrict: dining * oShares.zomatoDistrict,
+      eazyDiner: dining * oShares.eazyDiner,
+      other: dining * oShares.other,
+    },
+  };
+}
+
+function buildDeliverySpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggy, zomato, other } = spend.deliveryAllocation;
+  if (swiggy > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy delivery",
+      spend: swiggy,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+      merchant: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomato > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato delivery",
+      spend: zomato,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+      merchant: MERCHANTS.ZOMATO,
+    });
+  }
+  if (other > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Other delivery platforms",
+      spend: other,
+      category: CATEGORIES.ONLINE_FOOD_DINING,
+    });
+  }
+  return out;
+}
+
+function buildDiningSpecsTwo(spend: FoodSpendBreakdownTwo): FoodSubSpec[] {
+  const out: FoodSubSpec[] = [];
+  const { swiggyDineout, zomatoDistrict, eazyDiner, other } =
+    spend.diningAllocation;
+  if (swiggyDineout > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Swiggy Dineout",
+      spend: swiggyDineout,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+      merchant: MERCHANTS.SWIGGY_DINEOUT,
+      merchantPreference: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+      deliveryMirror: MERCHANTS.SWIGGY,
+    });
+  }
+  if (zomatoDistrict > 0) {
+    out.push({
+      kind: "merchant",
+      label: "Zomato District",
+      spend: zomatoDistrict,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+      merchant: MERCHANTS.ZOMATO_DISTRICT,
+      merchantPreference: [
+        MERCHANTS.ZOMATO_DISTRICT,
+        MERCHANTS.DISTRICT_BY_ZOMATO,
+        MERCHANTS.ZOMATO,
+      ],
+      deliveryMirror: MERCHANTS.ZOMATO,
+    });
+  }
+  if (eazyDiner > 0) {
+    out.push({
+      kind: "merchant",
+      label: "EazyDiner",
+      spend: eazyDiner,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+      merchant: MERCHANTS.EAZYDINER,
+    });
+  }
+  if (other > 0) {
+    out.push({
+      kind: "fallback",
+      label: "Direct restaurant payment",
+      spend: other,
+      category: CATEGORIES.OFFLINE_FOOD_DINING,
+    });
+  }
+  return out;
+}
+
+export interface FoodCardEngineResultTwo {
+  input: FoodCardPhaseTwoInput;
+  spend: FoodSpendBreakdownTwo;
+  byCard: CardFoodReturn[];
+  best: CardFoodReturn | null;
+}
+
+export function recommendFoodCardPhaseTwo(
+  input: FoodCardPhaseTwoInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): FoodCardEngineResultTwo {
+  const spend = buildFoodSpendBreakdownTwo(input);
+  const index = buildBestOfIndex(bestOfList);
+
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map((card) =>
+      scoreCardFromStreams(
+        card,
+        spend.annualDeliverySpend,
+        buildDeliverySpecsTwo(spend),
+        spend.annualDiningSpend,
+        buildDiningSpecsTwo(spend),
+        index,
+        rules,
+        options,
+      ),
+    )
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return.
+  // .slice(0, 3);
+
+  return { input, spend, byCard, best: byCard[0] ?? null };
+}

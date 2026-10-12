@@ -22,9 +22,26 @@ import React, {
   useState,
 } from "react";
 
+/**
+ * A turn we have handed to the partner and are still waiting on. `content` is
+ * kept so the retry CTA can re-send exactly what the user typed.
+ */
+export type PendingReply = {
+  m_id: string;
+  content: string;
+  /** When the wait started, refreshed by inbound chunks for this turn. */
+  startedAt: number;
+};
+
 export type ChatsTypes = {
   enableTypingLoader: () => void;
   disableTypingLoader: () => void;
+  /** The turn awaiting a partner reply, or null when nothing is in flight. */
+  pendingReply: PendingReply | null;
+  setPendingReply: Dispatch<SetStateAction<PendingReply | null>>;
+  /** The turn whose reply never arrived — drives the retry CTA. */
+  timedOutReply: PendingReply | null;
+  setTimedOutReply: Dispatch<SetStateAction<PendingReply | null>>;
   enableChatInput: () => void;
   disableChatInput: () => void;
   selectedCardCategory: string | null;
@@ -53,6 +70,8 @@ export function ChatContextProvider({
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [showTypingLoader, setShowTypingLoader] = useState(false);
+  const [pendingReply, setPendingReply] = useState<PendingReply | null>(null);
+  const [timedOutReply, setTimedOutReply] = useState<PendingReply | null>(null);
   const [selectedCardCategory, setSelectedCardCategory] = useState<string | null>(
     () => getFromSessionStorage(CARD_CATEGORY_KEY) || CARD_CATEGORY.TRAVEL
   );
@@ -109,6 +128,10 @@ export function ChatContextProvider({
       value={{
         enableTypingLoader,
         disableTypingLoader,
+        pendingReply,
+        setPendingReply,
+        timedOutReply,
+        setTimedOutReply,
         selectedCardCategory,
         selectedCardCategoryJourney,
         setCurrentMessageId,

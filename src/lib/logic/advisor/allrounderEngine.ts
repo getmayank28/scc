@@ -1,0 +1,1174 @@
+import { CATEGORIES, type Category, type MockCard } from "./cards";
+import { computeBestOfForCard, type MockBestOf } from "./bestOf";
+import { MERCHANTS, type Merchant, type MockRule } from "./rules";
+import {
+  computeCategoryReturn,
+  declaredCategoryRate,
+  reallocateAcrossCategories,
+  type CategoryReturn,
+  type SettledCapPool,
+} from "./engine";
+import {
+  filterEligibleCards,
+  finalizeCardScore,
+  type CardScoreBreakdown,
+  type EngineScoringOptions,
+} from "./scoring";
+
+// ============================================================================
+// Phase 1 — calibrated spend distribution
+// ============================================================================
+
+export type AllRounderCategory =
+  | "travel"
+  | "foodAndDining"
+  | "onlineShopping"
+  | "utilityBills"
+  | "fuel"
+  | "rentInsuranceFees";
+
+export type AllRounderBucket = AllRounderCategory | "others";
+
+export const ALL_ROUNDER_CATEGORIES: AllRounderCategory[] = [
+  "travel",
+  "foodAndDining",
+  "onlineShopping",
+  "utilityBills",
+  "fuel",
+  "rentInsuranceFees",
+];
+
+const ALL_BUCKETS: AllRounderBucket[] = [...ALL_ROUNDER_CATEGORIES, "others"];
+
+const DEFAULT_ONLINE_RATIO: Record<AllRounderBucket, number> = {
+  travel: 0.8,
+  foodAndDining: 0.7,
+  onlineShopping: 1.0,
+  utilityBills: 0.9,
+  fuel: 0.05,
+  rentInsuranceFees: 1.0,
+  others: 0.5,
+};
+
+export interface AllRounderPhaseOneInput {
+  averageTotalMonthlySpend: number;
+  averageOnlineMonthlySpend: number;
+  mostSpendCategory: AllRounderCategory[];
+}
+
+export interface CategoryAllocation {
+  total: number;
+  online: number;
+  offline: number;
+}
+
+export type CategoryAllocations = Record<AllRounderBucket, CategoryAllocation>;
+
+export interface AllRounderPhaseOneOutput {
+  monthlyTotal: number;
+  monthlyOnline: number;
+  monthlyOffline: number;
+  categories: CategoryAllocations;
+}
+
+function emptyBucketMap<T>(value: T): Record<AllRounderBucket, T> {
+  return ALL_BUCKETS.reduce<Record<AllRounderBucket, T>>(
+    (acc, b) => {
+      acc[b] = value;
+      return acc;
+    },
+    {} as Record<AllRounderBucket, T>,
+  );
+}
+
+function distributeCategoryTotals(
+  total: number,
+  selected: AllRounderCategory[],
+): Record<AllRounderBucket, number> {
+  const totals = emptyBucketMap(0);
+  const unique = Array.from(new Set(selected)).slice(0, 2);
+  if (unique.length === 0) {
+    totals.others = total;
+    return totals;
+  }
+  if (unique.length === 1) {
+    totals[unique[0]] = total * 0.5;
+    totals.others = total * 0.5;
+    return totals;
+  }
+  totals[unique[0]] = total * 0.35;
+  totals[unique[1]] = total * 0.35;
+  totals.others = total * 0.3;
+  return totals;
+}
+
+// Shared online/offline allocation. Given per-bucket monthly totals and the
+// target online spend `O`, applies DEFAULT_ONLINE_RATIO with a single scaling
+// factor so the realized online sum lands at `O` (clamped to [0, total] per
+// bucket). Reused by phase 1 and phase 2 — both produce the same output shape
+// once they've decided their bucket totals.
+function allocateOnlineOffline(
+  totals: Record<AllRounderBucket, number>,
+  O: number,
+): AllRounderPhaseOneOutput {
+  const monthlyTotal = ALL_BUCKETS.reduce((acc, b) => acc + totals[b], 0);
+  const targetOnline = Math.max(0, Math.min(O, monthlyTotal));
+
+  let impliedOnline = 0;
+  for (const b of ALL_BUCKETS) {
+    impliedOnline += totals[b] * DEFAULT_ONLINE_RATIO[b];
+  }
+  const k = impliedOnline > 0 ? targetOnline / impliedOnline : 0;
+
+  const categories = emptyBucketMap<CategoryAllocation>({
+    total: 0,
+    online: 0,
+    offline: 0,
+  });
+  let onlineSum = 0;
+  for (const b of ALL_BUCKETS) {
+    const adjusted = Math.min(Math.max(DEFAULT_ONLINE_RATIO[b] * k, 0), 1);
+    const total = totals[b];
+    const online = total * adjusted;
+    const offline = total - online;
+    categories[b] = { total, online, offline };
+    onlineSum += online;
+  }
+
+  return {
+    monthlyTotal,
+    monthlyOnline: onlineSum,
+    monthlyOffline: monthlyTotal - onlineSum,
+    categories,
+  };
+}
+
+export function allRounderPhaseOne(
+  input: AllRounderPhaseOneInput,
+): AllRounderPhaseOneOutput {
+  const T = Math.max(0, input.averageTotalMonthlySpend);
+  const totals = distributeCategoryTotals(T, input.mostSpendCategory);
+  return allocateOnlineOffline(totals, input.averageOnlineMonthlySpend);
+}
+
+// ============================================================================
+// Phase 2 — sub-bucket allocation and per-card reward computation
+// ============================================================================
+
+// Steady monthly spend: monthly caps refill 12×/year, quarterly 4×, annual 1×.
+const ANNUAL_CAP_PERIODS = 12;
+
+type SubAllocationSpec =
+  | {
+      kind: "best-of";
+      label: string;
+      share: number;
+      category: Category;
+    }
+  | {
+      kind: "merchant";
+      label: string;
+      share: number;
+      category: Category;
+      merchant: Merchant;
+      // True when the ENGINE chose this merchant (a `top-n` ranking picked
+      // whichever brand scored highest) rather than the recipe naming a real
+      // platform the user's spend actually goes to. Engine-picked merchants
+      // score on the card's reward leg alone — see
+      // `CategoryReturnOptions.rewardLegOnly`.
+      enginePicked?: boolean;
+      // True for an offline dining leg that borrowed the platform's delivery
+      // rule (merchant-pair `deliveryMirror`). evaluateBucket scores it together
+      // with the matching online leg so the rule's cap is spent once.
+      mirrorsDelivery?: boolean;
+    }
+  | {
+      // Expanded at evaluation time into 1-2 `merchant` specs (or fallback if
+      // neither merchant has a rule). `topShare` goes to the higher-yielding
+      // merchant, `tailShare` to the other; if only one is present, it gets
+      // the full share.
+      kind: "merchant-pair";
+      label: string;
+      share: number;
+      category: Category;
+      merchants: [Merchant, Merchant];
+      // Optional per-slot fallback chains, most specific first. Slot i resolves
+      // against the first merchant in `merchantPreference[i]` the card carries
+      // a rule for; without it, only `merchants[i]` is tried.
+      merchantPreference?: [readonly Merchant[], readonly Merchant[]];
+      // Optional per-slot delivery platform, tried under online_food_dining
+      // when the slot's own chain finds nothing: Swiggy/Zomato dining pays the
+      // same voucher / direct-swipe rule as delivery. The catalog keys those
+      // rules to online_food_dining only, so without this the dining slot
+      // always fell back to the category rate.
+      deliveryMirror?: [Merchant, Merchant];
+      topShare: number;
+      tailShare: number;
+    }
+  | {
+      // Expanded at evaluation time into `shares.length` concrete specs: the
+      // i-th highest-yielding merchant gets `shares[i]`. If fewer than N
+      // merchants have rules for the category, the unfilled slots fall back to
+      // base reward. `share` documents the total contribution (= sum of
+      // `shares`) but isn't read by the engine; `shares` are absolute
+      // fractions of the parent pot.
+      kind: "top-n";
+      label: string;
+      share: number;
+      category: Category;
+      shares: number[];
+    }
+  | {
+      // Spec form of "best-of each category, then average". Expanded into N
+      // `best-of` specs, each at `share / N`. The bucket return equals
+      // `share × mean(best-of rate per category)` — exclusions short-circuit
+      // any category with no specific merchant rule to 0%.
+      kind: "category-average";
+      label: string;
+      share: number;
+      categories: Category[];
+    }
+  | {
+      kind: "fallback";
+      label: string;
+      share: number;
+      // Category whose exclusion list governs this fallback leg. Defaults to the
+      // bucket's `BUCKET_FALLBACK_CATEGORY` when unset — set it only when a leg's
+      // spend maps to a different category than the bucket default (e.g. the
+      // offline dining leg of foodAndDining resolves against OFFLINE_FOOD_DINING
+      // while the bucket's online leg uses ONLINE_FOOD_DINING).
+      category?: Category;
+    };
+
+type ConcreteSpec = Exclude<
+  SubAllocationSpec,
+  { kind: "merchant-pair" } | { kind: "top-n" } | { kind: "category-average" }
+>;
+
+interface BucketRecipe {
+  online: SubAllocationSpec[];
+  offline: SubAllocationSpec[];
+}
+
+// Each recipe slices the bucket's online/offline pot into sub-buckets and tells
+// the engine which Category to look up (or to fall back to base reward).
+// `share` values must sum to 1 within each side; leave the array empty to skip.
+const RECIPES: Record<AllRounderBucket, BucketRecipe> = {
+  travel: {
+    online: [
+      {
+        kind: "best-of",
+        label: "Flights (40%)",
+        share: 0.4,
+        category: CATEGORIES.FLIGHTS,
+      },
+      {
+        kind: "best-of",
+        label: "Hotels (60%)",
+        share: 0.6,
+        category: CATEGORIES.HOTELS,
+      },
+    ],
+    offline: [
+      { kind: "fallback", label: "Travel offline (fallback)", share: 1.0 },
+    ],
+  },
+  foodAndDining: {
+    // Online food: only Swiggy + Zomato count. Higher-yielding gets 70%, the
+    // other gets 30%. If only one has a rule it takes 100%; if neither, fallback.
+    online: [
+      {
+        kind: "merchant-pair",
+        label: "Food delivery",
+        share: 1.0,
+        category: CATEGORIES.ONLINE_FOOD_DINING,
+        merchants: [MERCHANTS.SWIGGY, MERCHANTS.ZOMATO],
+        topShare: 0.7,
+        tailShare: 0.3,
+      },
+    ],
+    offline: [
+      // Offline dining mirrors the online leg: Swiggy/Zomato first, fallback
+      // when the card carries neither. The platforms are keyed to their
+      // dine-out merchant ids here (swiggy_dineout / zomato_district); a card
+      // holding only the plain swiggy/zomato rule is picked up by the
+      // preference chain in expandSpec.
+      {
+        kind: "merchant-pair",
+        label: "Dining offline",
+        share: 1.0,
+        category: CATEGORIES.OFFLINE_FOOD_DINING,
+        merchants: [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.ZOMATO_DISTRICT],
+        merchantPreference: [
+          [MERCHANTS.SWIGGY_DINEOUT, MERCHANTS.SWIGGY],
+          [
+            MERCHANTS.ZOMATO_DISTRICT,
+            MERCHANTS.DISTRICT_BY_ZOMATO,
+            MERCHANTS.ZOMATO,
+          ],
+        ],
+        deliveryMirror: [MERCHANTS.SWIGGY, MERCHANTS.ZOMATO],
+        topShare: 0.7,
+        tailShare: 0.3,
+      },
+    ],
+  },
+  onlineShopping: {
+    // Spec: best 40% + 2nd-best 30% + base-reward fallback 30%. The top-n
+    // expansion ranks all merchants under the online_shopping category by
+    // nominal rate and fills the first two slots; any unfilled slot (when the
+    // card has fewer than two online merchants) auto-falls-back.
+    online: [
+      {
+        kind: "top-n",
+        label: "Online shopping",
+        share: 0.7,
+        category: CATEGORIES.ONLINE_SHOPPING,
+        shares: [0.4, 0.3],
+      },
+      { kind: "fallback", label: "Fallback (30%)", share: 0.3 },
+    ],
+    offline: [],
+  },
+  utilityBills: {
+    // Utility spend is scored on the utility_bills category rate on BOTH legs,
+    // never the card base rate. Cards commonly set this rate to 0 deliberately
+    // (utility spend is excluded from earning), and that 0 is the correct,
+    // intentional answer — falling back to the base rate would silently pay out
+    // on spend the issuer says earns nothing.
+    //
+    // Note the category is `utility_bills`, matching the rule data; the legacy
+    // `utilities` id has no rules at all.
+    online: [
+      {
+        kind: "best-of",
+        label: "Utilities (90% of utility online pot)",
+        share: 1.0,
+        category: CATEGORIES.UTILITY_BILLS,
+      },
+    ],
+    offline: [
+      {
+        kind: "best-of",
+        label: "Utility offline",
+        share: 1.0,
+        category: CATEGORIES.UTILITY_BILLS,
+      },
+    ],
+  },
+  fuel: {
+    online: [{ kind: "fallback", label: "Fuel online (fallback)", share: 1.0 }],
+    offline: [
+      {
+        kind: "best-of",
+        label: "Fuel (95%)",
+        share: 1.0,
+        category: CATEGORIES.FUEL,
+      },
+    ],
+  },
+  rentInsuranceFees: {
+    // Spec: best(rent) + best(insurance) + best(fees & taxes), averaged.
+    // The `category-average` spec encapsulates the operation: it expands into
+    // N best-of slots at share/N each, so the bucket return equals
+    // `share × mean(best-of rate per category)`. Excluded categories without a
+    // specific merchant rule drop to 0% via the exclusion override.
+    online: [
+      {
+        kind: "category-average",
+        label: "Rent / Insurance / Fees",
+        share: 1.0,
+        categories: [
+          CATEGORIES.RENT,
+          CATEGORIES.INSURANCE,
+          // The rule data files this under `taxes`; the legacy `fees_taxes` id
+          // carries no rules, so it always scored the card base rate.
+          CATEGORIES.TAXES,
+        ],
+      },
+    ],
+    offline: [],
+  },
+  others: {
+    online: [{ kind: "fallback", label: "Others online", share: 1.0 }],
+    offline: [{ kind: "fallback", label: "Others offline", share: 1.0 }],
+  },
+};
+
+export interface SubBucketReturn {
+  label: string;
+  share: number;
+  spend: number;
+  effectivePercentage: number;
+  effectiveRateAfterCap: number;
+  source: "voucher" | "direct" | "fallback";
+  merchant: string | null;
+  category: Category | null;
+  returnInr: number;
+  // Combined shared-cap pool this sub-bucket drew from, if any. Carried so a
+  // card-level pass can pool it with sub-buckets in other buckets/categories
+  // that share the same cap. Null when the winning route has no combined pool.
+  sharedCapPool: SettledCapPool | null;
+}
+
+export interface BucketReturn {
+  bucket: AllRounderBucket;
+  annualSpend: number;
+  online: { pot: number; subs: SubBucketReturn[]; returnInr: number };
+  offline: { pot: number; subs: SubBucketReturn[]; returnInr: number };
+  totalReturnInr: number;
+}
+
+export interface CardAllRounderReturn extends CardScoreBreakdown {
+  cardId: string;
+  cardName: string;
+  buckets: Record<AllRounderBucket, BucketReturn>;
+  annualSpend: number;
+  annualReturnInr: number;
+  effectiveRatePercentage: number;
+}
+
+export interface AllRounderEngineResult {
+  input: AllRounderPhaseOneInput;
+  phaseOne: AllRounderPhaseOneOutput;
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+  byCard: CardAllRounderReturn[];
+  best: CardAllRounderReturn | null;
+}
+
+function buildIndex(bestOf: MockBestOf[]): Map<string, MockBestOf> {
+  const map = new Map<string, MockBestOf>();
+  for (const entry of bestOf) {
+    map.set(`${entry.cardId}::${entry.category}`, entry);
+  }
+  return map;
+}
+
+// Build a MockBestOf scoped to a single merchant by reusing the existing
+// best-of pipeline on the merchant's rule subset. Returns undefined when the
+// card has no rule for that merchant — caller should fall back.
+function merchantBestOf(
+  card: MockCard,
+  category: Category,
+  merchant: Merchant,
+  rules: MockRule[],
+): MockBestOf | undefined {
+  const subset = rules.filter(
+    (r) =>
+      r.cardId === card._id &&
+      r.category === category &&
+      r.merchant === merchant &&
+      r.is_active,
+  );
+  if (subset.length === 0) return undefined;
+  return computeBestOfForCard(card, subset)[0];
+}
+
+// Higher = better. Compares the nominal rates the merchant's rule advertises
+// (caps don't bind at low spend); fine as a tie-break for which merchant
+// deserves the larger share.
+function merchantNominalRate(
+  bestOf: MockBestOf | undefined,
+  baseRate: number,
+): number {
+  if (!bestOf) return baseRate;
+  const direct = bestOf.bestDirectSwipe?.percentage ?? 0;
+  const voucher = bestOf.bestVoucher?.totalPercentage ?? 0;
+  return Math.max(direct, voucher, baseRate);
+}
+
+const CATEGORY_DISPLAY_LABELS: Partial<Record<Category, string>> = {
+  [CATEGORIES.FLIGHTS]: "Flights",
+  [CATEGORIES.HOTELS]: "Hotels",
+  [CATEGORIES.FOREX]: "Forex",
+  [CATEGORIES.ONLINE_FOOD_DINING]: "Dining",
+  [CATEGORIES.FUEL]: "Fuel",
+  [CATEGORIES.GROCERIES_SUPERMARKETS]: "Grocery",
+  [CATEGORIES.ONLINE_SHOPPING]: "Online Shopping",
+  [CATEGORIES.UTILITY_BILLS]: "Utilities",
+  [CATEGORIES.OTHER]: "Other",
+  [CATEGORIES.RENT]: "Rent",
+  [CATEGORIES.INSURANCE]: "Insurance",
+  [CATEGORIES.TAXES]: "Fees & Taxes",
+};
+
+function humanizeCategory(cat: Category): string {
+  return CATEGORY_DISPLAY_LABELS[cat] ?? cat.replace(/_/g, " ");
+}
+
+// Rank merchants for a (card, category) by nominal effective rate, descending.
+// Only merchants whose rate beats the card's base reward are returned — sub
+// par merchants get fallback treatment via the unfilled slots.
+function topMerchantsForCategory(
+  card: MockCard,
+  category: Category,
+  n: number,
+  rules: MockRule[],
+): { merchant: Merchant; rate: number }[] {
+  const merchants = new Set<Merchant>();
+  for (const r of rules) {
+    if (r.cardId !== card._id) continue;
+    if (r.category !== category) continue;
+    if (!r.is_active) continue;
+    if (!r.merchant) continue;
+    merchants.add(r.merchant);
+  }
+  const baseRate = card.rewards.base_reward_rate;
+  const ranked: { merchant: Merchant; rate: number }[] = [];
+  for (const m of merchants) {
+    const best = merchantBestOf(card, category, m, rules);
+    const rate = merchantNominalRate(best, baseRate);
+    if (rate <= baseRate) continue;
+    ranked.push({ merchant: m, rate });
+  }
+  ranked.sort((a, b) => b.rate - a.rate);
+  return ranked.slice(0, n);
+}
+
+function expandSpec(
+  spec: SubAllocationSpec,
+  card: MockCard,
+  rules: MockRule[],
+): ConcreteSpec[] {
+  if (spec.kind === "top-n") {
+    const top = topMerchantsForCategory(
+      card,
+      spec.category,
+      spec.shares.length,
+      rules,
+    );
+    return spec.shares.map((sh, i) => {
+      const pct = Math.round(sh * 100);
+      const rankLabel =
+        i === 0 ? "best" : i === 1 ? "2nd best" : `rank ${i + 1}`;
+      if (i < top.length) {
+        return {
+          kind: "merchant",
+          label: `${spec.label} · ${top[i].merchant} (${rankLabel} ${pct}%)`,
+          share: sh,
+          category: spec.category,
+          merchant: top[i].merchant,
+          // Ranked out of every merchant in the category, not named by the
+          // user — so the merchant's own voucher discount isn't attributable.
+          enginePicked: true,
+        };
+      }
+      return {
+        kind: "fallback",
+        label: `${spec.label} · ${rankLabel} (no rule, ${pct}%)`,
+        share: sh,
+      };
+    });
+  }
+  if (spec.kind === "category-average") {
+    const n = spec.categories.length;
+    if (n === 0) {
+      return [
+        {
+          kind: "fallback",
+          label: `${spec.label} (no categories)`,
+          share: spec.share,
+        },
+      ];
+    }
+    const perShare = spec.share / n;
+    return spec.categories.map((cat) => ({
+      kind: "best-of",
+      label: humanizeCategory(cat),
+      share: perShare,
+      category: cat,
+    }));
+  }
+  if (spec.kind !== "merchant-pair") return [spec];
+  // Resolve each slot to the first merchant in its preference chain the card
+  // carries a rule for (the slot's own merchant when no chain is configured).
+  // Everything below then treats the slot as that single merchant.
+  const resolveSlot = (
+    slot: 0 | 1,
+  ): {
+    merchant: Merchant;
+    bestOf: MockBestOf | undefined;
+    category: Category;
+    mirrorsDelivery: boolean;
+  } => {
+    const chain = spec.merchantPreference?.[slot] ?? [spec.merchants[slot]];
+    for (const candidate of chain) {
+      const bo = merchantBestOf(card, spec.category, candidate, rules);
+      if (bo) {
+        return {
+          merchant: candidate,
+          bestOf: bo,
+          category: spec.category,
+          mirrorsDelivery: false,
+        };
+      }
+    }
+    const mirror = spec.deliveryMirror?.[slot];
+    if (mirror) {
+      const bo = merchantBestOf(
+        card,
+        CATEGORIES.ONLINE_FOOD_DINING,
+        mirror,
+        rules,
+      );
+      if (bo) {
+        return {
+          merchant: mirror,
+          bestOf: bo,
+          category: CATEGORIES.ONLINE_FOOD_DINING,
+          mirrorsDelivery: true,
+        };
+      }
+    }
+    return {
+      merchant: spec.merchants[slot],
+      bestOf: undefined,
+      category: spec.category,
+      mirrorsDelivery: false,
+    };
+  };
+  const slotA = resolveSlot(0);
+  const slotB = resolveSlot(1);
+  const mA = slotA.merchant;
+  const mB = slotB.merchant;
+  // A slot that borrowed a delivery rule is scored in that rule's category.
+  const slotFields = (s: typeof slotA) => ({
+    category: s.category,
+    ...(s.mirrorsDelivery ? { mirrorsDelivery: true } : {}),
+  });
+  const boA = slotA.bestOf;
+  const boB = slotB.bestOf;
+  if (!boA && !boB) {
+    return [
+      {
+        kind: "fallback",
+        label: `${spec.label} (fallback)`,
+        share: spec.share,
+      },
+    ];
+  }
+  if (!boB) {
+    return [
+      {
+        kind: "merchant",
+        label: `${spec.label} · ${mA} (100%)`,
+        share: spec.share,
+        merchant: mA,
+        ...slotFields(slotA),
+      },
+    ];
+  }
+  if (!boA) {
+    return [
+      {
+        kind: "merchant",
+        label: `${spec.label} · ${mB} (100%)`,
+        share: spec.share,
+        merchant: mB,
+        ...slotFields(slotB),
+      },
+    ];
+  }
+  const rateA = merchantNominalRate(boA, card.rewards.base_reward_rate);
+  const rateB = merchantNominalRate(boB, card.rewards.base_reward_rate);
+  const [top, tail] = rateA >= rateB ? [slotA, slotB] : [slotB, slotA];
+  const topPct = Math.round(spec.topShare * 100);
+  const tailPct = Math.round(spec.tailShare * 100);
+  return [
+    {
+      kind: "merchant",
+      label: `${spec.label} · ${top.merchant} (best ${topPct}%)`,
+      share: spec.share * spec.topShare,
+      merchant: top.merchant,
+      ...slotFields(top),
+    },
+    {
+      kind: "merchant",
+      label: `${spec.label} · ${tail.merchant} (${tailPct}%)`,
+      share: spec.share * spec.tailShare,
+      merchant: tail.merchant,
+      ...slotFields(tail),
+    },
+  ];
+}
+
+// Maps each all-rounder bucket to the underlying Category whose exclusion list
+// governs the fallback rate. Buckets with no clean category match (travel mix,
+// rent/insurance/fees, others) map to OTHER, which no card excludes today.
+const BUCKET_FALLBACK_CATEGORY: Record<AllRounderBucket, Category> = {
+  travel: CATEGORIES.OTHER,
+  foodAndDining: CATEGORIES.ONLINE_FOOD_DINING,
+  onlineShopping: CATEGORIES.ONLINE_SHOPPING,
+  utilityBills: CATEGORIES.UTILITY_BILLS,
+  fuel: CATEGORIES.FUEL,
+  rentInsuranceFees: CATEGORIES.OTHER,
+  others: CATEGORIES.OTHER,
+};
+
+function evaluateSpec(
+  spec: ConcreteSpec,
+  parentPot: number,
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+  bucketFallbackCategory: Category,
+): SubBucketReturn {
+  const spend = parentPot * spec.share;
+
+  // Fallback specs are spend that matches no merchant rule. They score on the
+  // card's category-wide rate for the leg's category (`spec.category` when the
+  // leg maps to one distinct from the bucket default, else the bucket's),
+  // honoring the card's exclusion list — and, since they go through
+  // `computeCategoryReturn`, that category rule's own reward cap.
+  if (spec.kind === "fallback") {
+    const fallbackCategory = spec.category ?? bucketFallbackCategory;
+    // An unattributed bucket: the recipe names no merchant, so only the card's
+    // category-wide rule may apply — hence `categoryRateOnly`.
+    //
+    // This MUST go through computeCategoryReturn rather than applying the
+    // declared rate directly. The category-wide rule can carry its own reward
+    // cap (and a `combined` group whose pool the card-level reconciler needs),
+    // and only computeCategoryReturn enforces that cap and surfaces the pool.
+    // Short-circuiting here paid the declared rate uncapped and hid the spend
+    // from the pool. See the same fix in foodCardEngine / shoppingCardEngine.
+    //
+    // `declaredCategoryRate` still rides along so a category the card declares
+    // at or below its base rate — 0% included — is honoured verbatim (e.g. the
+    // fuel-online leg, which must not pay the base rate on zero-earning spend).
+    const declared = declaredCategoryRate(card, fallbackCategory, rules);
+    const cat = computeCategoryReturn(
+      spend,
+      fallbackCategory,
+      card,
+      index.get(`${card._id}::${fallbackCategory}`),
+      ANNUAL_CAP_PERIODS,
+      { categoryRateOnly: true, declaredCategoryRate: declared },
+    );
+
+    // Same exclusion override as the merchant path, keyed on the resolved
+    // fallback category since this leg may map to one the spec didn't name.
+    const excluded =
+      cat.source === "fallback" &&
+      card.excluded_categories?.includes(fallbackCategory) === true;
+
+    return {
+      label: spec.label,
+      share: spec.share,
+      spend,
+      effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+      effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
+      source: "fallback",
+      merchant: null,
+      // Unattributed legs report no category, as before — the UI groups them
+      // by bucket, not by the category that happened to price them.
+      category: null,
+      returnInr: excluded ? 0 : cat.returnInr,
+      sharedCapPool: excluded ? null : cat.sharedCapPool,
+    };
+  }
+
+  let category: Category;
+  let bestOf: MockBestOf | undefined;
+
+  // Set when a `merchant` leg found no rule for its own merchant and fell back
+  // to the category best-of. That fallback is then scored with
+  // `categoryRateOnly` so only the card's category-wide rule applies: passing
+  // undefined would discard that rule and pay the base rate, while passing the
+  // frontier unrestricted would let an unrelated merchant win a slot the recipe
+  // attributed to a named platform. See the same fix in foodCardEngine.
+  let merchantLegFellBack = false;
+
+  if (spec.kind === "best-of") {
+    category = spec.category;
+    bestOf = index.get(`${card._id}::${spec.category}`);
+  } else {
+    // kind === "merchant"
+    category = spec.category;
+    const resolved = merchantBestOf(card, spec.category, spec.merchant, rules);
+    merchantLegFellBack = resolved === undefined;
+    bestOf = resolved ?? index.get(`${card._id}::${spec.category}`);
+  }
+
+  // Floor the category at the rate the card itself declares (0 included)
+  // instead of the base rate, for whichever categories declare one. Applies to
+  // all of them: fuel, insurance and taxes are commonly zero-rated, and paying
+  // the base rate there invents a return the card does not give.
+  const declaredRate = declaredCategoryRate(card, category, rules);
+
+  const cat: CategoryReturn = computeCategoryReturn(
+    spend,
+    category,
+    card,
+    bestOf,
+    ANNUAL_CAP_PERIODS,
+    {
+      declaredCategoryRate: declaredRate,
+      // Unattributed spend scores on the card's reward leg alone, rather than
+      // crediting a niche brand's voucher promo to spend the user never said
+      // they'd make there. Two cases qualify:
+      //   - `best-of`: the recipe names only a category.
+      //   - `merchant` with `enginePicked`: a `top-n` ranking chose whichever
+      //     brand scored highest (e.g. auric at 53% on online_shopping).
+      // Recipe-named merchants (Swiggy/Zomato dining) are exempt: those are
+      // real platforms the bucket's spend actually goes to, so the merchant's
+      // discount is attributable.
+      rewardLegOnly:
+        spec.kind === "best-of" ||
+        (spec.kind === "merchant" && spec.enginePicked === true),
+      // A merchant leg that fell back to the category best-of keeps only the
+      // category-wide rule — never another merchant's route.
+      categoryRateOnly: merchantLegFellBack,
+    },
+  );
+
+  // When the best-of / merchant lookup falls through to base rate AND the
+  // card excludes this category, force 0%. Specific merchant rules (source
+  // = direct or voucher) keep earning — exclusion only kills the fallback.
+  const excluded =
+    cat.source === "fallback" &&
+    card.excluded_categories?.includes(spec.category) === true;
+
+  return {
+    label: spec.label,
+    share: spec.share,
+    spend,
+    effectivePercentage: excluded ? 0 : cat.effectivePercentage,
+    effectiveRateAfterCap: excluded ? 0 : cat.effectiveRateAfterCap,
+    source: cat.source,
+    merchant: cat.merchant,
+    category: spec.category,
+    returnInr: excluded ? 0 : cat.returnInr,
+    sharedCapPool: excluded ? null : cat.sharedCapPool,
+  };
+}
+
+function evaluateBucket(
+  bucket: AllRounderBucket,
+  alloc: CategoryAllocation,
+  card: MockCard,
+  index: Map<string, MockBestOf>,
+  rules: MockRule[],
+): BucketReturn {
+  const recipe = RECIPES[bucket];
+  const onlinePot = alloc.online * 12;
+  const offlinePot = alloc.offline * 12;
+  const bucketFallbackCategory = BUCKET_FALLBACK_CATEGORY[bucket];
+
+  const onlineSpecs = recipe.online.flatMap((s) => expandSpec(s, card, rules));
+  const offlineSpecs = recipe.offline.flatMap((s) =>
+    expandSpec(s, card, rules),
+  );
+  const onlineSubs = onlineSpecs.map((s) =>
+    evaluateSpec(s, onlinePot, card, index, rules, bucketFallbackCategory),
+  );
+  const offlineSubs = offlineSpecs.map((s) =>
+    evaluateSpec(s, offlinePot, card, index, rules, bucketFallbackCategory),
+  );
+
+  // An offline dining leg that borrowed a platform's delivery rule shares that
+  // rule's cap with the online leg on the same platform. Scored apart, each
+  // would earn the full cap. Re-score the two as one spend on the rule and
+  // split the return back by spend.
+  offlineSpecs.forEach((spec, j) => {
+    if (spec.kind !== "merchant" || !spec.mirrorsDelivery) return;
+    const i = onlineSpecs.findIndex(
+      (o) =>
+        o.kind === "merchant" &&
+        o.merchant === spec.merchant &&
+        o.category === spec.category,
+    );
+    if (i < 0) return;
+    const onSpend = onlineSubs[i].spend;
+    const offSpend = offlineSubs[j].spend;
+    const total = onSpend + offSpend;
+    if (total <= 0) return;
+    const combined = evaluateSpec(
+      { ...spec, share: 1 },
+      total,
+      card,
+      index,
+      rules,
+      bucketFallbackCategory,
+    );
+    const split = (sub: SubBucketReturn, spend: number): SubBucketReturn => ({
+      ...combined,
+      label: sub.label,
+      share: sub.share,
+      spend,
+      returnInr: (combined.returnInr * spend) / total,
+      // Both legs go on to the card-level pool reconciler, which reads each
+      // member's coveredSpend and direct alternative. Leaving the combined
+      // figures on each leg would count the shared spend twice.
+      sharedCapPool: combined.sharedCapPool && {
+        ...combined.sharedCapPool,
+        coveredSpend: (combined.sharedCapPool.coveredSpend * spend) / total,
+        directAlternativeInr:
+          combined.sharedCapPool.directAlternativeInr === null
+            ? null
+            : (combined.sharedCapPool.directAlternativeInr * spend) / total,
+      },
+    });
+    onlineSubs[i] = split(onlineSubs[i], onSpend);
+    offlineSubs[j] = split(offlineSubs[j], offSpend);
+  });
+
+  const onlineReturn = onlineSubs.reduce((acc, s) => acc + s.returnInr, 0);
+  const offlineReturn = offlineSubs.reduce((acc, s) => acc + s.returnInr, 0);
+
+  return {
+    bucket,
+    annualSpend: alloc.total * 12,
+    online: { pot: onlinePot, subs: onlineSubs, returnInr: onlineReturn },
+    offline: { pot: offlinePot, subs: offlineSubs, returnInr: offlineReturn },
+    totalReturnInr: onlineReturn + offlineReturn,
+  };
+}
+
+// Reconcile combined pools that span buckets/streams (e.g. a card whose food
+// cashback cap pools across the foodAndDining online + offline legs, or the same
+// merchant appearing under two buckets). evaluateBucket scores each sub-bucket
+// in isolation, so a shared pool's full budget would be earned once per leg.
+// This gathers every sub-bucket across all buckets, re-splits each shared pool's
+// single annual budget across them, then recomputes the per-stream and per
+// bucket totals in place. Returns the corrected card-level annual return.
+function reconcileBucketPools(
+  buckets: Record<AllRounderBucket, BucketReturn>,
+): number {
+  const all: { cat: SubBucketReturn }[] = [];
+  for (const b of ALL_BUCKETS) {
+    for (const s of buckets[b].online.subs) all.push({ cat: s });
+    for (const s of buckets[b].offline.subs) all.push({ cat: s });
+  }
+
+  const overrides = reallocateAcrossCategories(all, ANNUAL_CAP_PERIODS);
+  if (overrides.size > 0) {
+    overrides.forEach((returnInr, i) => {
+      all[i].cat.returnInr = returnInr;
+      all[i].cat.effectiveRateAfterCap =
+        all[i].cat.spend > 0 ? (returnInr / all[i].cat.spend) * 100 : 0;
+    });
+  }
+
+  // Recompute stream + bucket totals from the (possibly) rewritten subs. Cheap
+  // and unconditional so the totals always match the subs.
+  let annualReturnInr = 0;
+  for (const b of ALL_BUCKETS) {
+    const br = buckets[b];
+    br.online.returnInr = br.online.subs.reduce((a, s) => a + s.returnInr, 0);
+    br.offline.returnInr = br.offline.subs.reduce((a, s) => a + s.returnInr, 0);
+    br.totalReturnInr = br.online.returnInr + br.offline.returnInr;
+    annualReturnInr += br.totalReturnInr;
+  }
+  return annualReturnInr;
+}
+
+interface DistributionScoring {
+  byCard: CardAllRounderReturn[];
+  best: CardAllRounderReturn | null;
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+}
+
+// Phase-agnostic card evaluation. Given a finalized monthly distribution
+// (totals + online/offline split per bucket), scores every active card by
+// summing per-bucket returns. Phase 1 and phase 2 differ only in how they
+// produce the distribution.
+function scoreCardsForDistribution(
+  distribution: AllRounderPhaseOneOutput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): DistributionScoring {
+  const index = buildIndex(bestOfList);
+  const annualTotal = distribution.monthlyTotal * 12;
+
+  const byCard = filterEligibleCards(cards, options?.profile)
+    .map<CardAllRounderReturn>((card) => {
+      const buckets = emptyBucketMap<BucketReturn>(
+        // placeholder; immediately overwritten below
+        {
+          bucket: "others",
+          annualSpend: 0,
+          online: { pot: 0, subs: [], returnInr: 0 },
+          offline: { pot: 0, subs: [], returnInr: 0 },
+          totalReturnInr: 0,
+        },
+      );
+      for (const b of ALL_BUCKETS) {
+        buckets[b] = evaluateBucket(
+          b,
+          distribution.categories[b],
+          card,
+          index,
+          rules,
+        );
+      }
+      // Reconcile combined pools spanning buckets/streams, then sum the corrected
+      // per-bucket totals into the card's annual return.
+      const annualReturnInr = reconcileBucketPools(buckets);
+      return {
+        cardId: card._id,
+        cardName: card.name,
+        buckets,
+        annualSpend: annualTotal,
+        annualReturnInr,
+        effectiveRatePercentage:
+          annualTotal > 0 ? (annualReturnInr / annualTotal) * 100 : 0,
+        ...finalizeCardScore(
+          card,
+          annualReturnInr,
+          annualTotal,
+          options?.milestonesBySlug?.get(card._id),
+        ),
+      };
+    })
+    .sort((a, b) => b.finalReturnInr - a.finalReturnInr);
+  // Surface only the best 3 cards by final return (both phases).
+  // .slice(0, 3);
+
+  return {
+    byCard,
+    best: byCard[0] ?? null,
+    annualTotal,
+    annualOnline: distribution.monthlyOnline * 12,
+    annualOffline: distribution.monthlyOffline * 12,
+  };
+}
+
+export function recommendAllRounderCardPhaseOne(
+  input: AllRounderPhaseOneInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): AllRounderEngineResult {
+  const phaseOne = allRounderPhaseOne(input);
+  const scoring = scoreCardsForDistribution(
+    phaseOne,
+    cards,
+    bestOfList,
+    rules,
+    options,
+  );
+  return { input, phaseOne, ...scoring };
+}
+
+// ============================================================================
+// Phase 2 — declared per-category spend
+// ============================================================================
+
+export interface AllRounderPhaseTwoInput {
+  averageTotalMonthlySpend: number;
+  averageOnlineMonthlySpend: number;
+  annualTravelSpend: number;
+  monthlyDining: number;
+  monthlyBills: number;
+  monthlyOnlineShopping: number;
+  monthlyFuel: number;
+  monthlyRentInsuranceFees: number;
+}
+
+export interface AllRounderPhaseTwoOutput extends AllRounderPhaseOneOutput {
+  // Pre-scaling declared monthly spend per category (travel already in monthly
+  // form). Useful for the UI to surface what the user typed vs. what the model
+  // settled on after scaling — but the scaling itself is an internal correction
+  // and shouldn't be exposed as a separate line item.
+  declared: Record<AllRounderCategory, number>;
+  declaredTotal: number;
+  scalingFactor: number;
+}
+
+export interface AllRounderEnginePhaseTwoResult {
+  input: AllRounderPhaseTwoInput;
+  phaseTwo: AllRounderPhaseTwoOutput;
+  annualTotal: number;
+  annualOnline: number;
+  annualOffline: number;
+  byCard: CardAllRounderReturn[];
+  best: CardAllRounderReturn | null;
+}
+
+function declaredFromPhaseTwoInput(
+  input: AllRounderPhaseTwoInput,
+): Record<AllRounderCategory, number> {
+  return {
+    travel: Math.max(0, input.annualTravelSpend) / 12,
+    foodAndDining: Math.max(0, input.monthlyDining),
+    onlineShopping: Math.max(0, input.monthlyOnlineShopping),
+    utilityBills: Math.max(0, input.monthlyBills),
+    fuel: Math.max(0, input.monthlyFuel),
+    rentInsuranceFees: Math.max(0, input.monthlyRentInsuranceFees),
+  };
+}
+
+// Phase 2 distribution: convert declared per-category spend into bucket totals
+// that sum to T. Two paths:
+//   - declared ≤ T: keep declared as-is, dump the residual into `others`.
+//   - declared > T: scale every declared category by T/declared (no others).
+// Edge case: declared sum is 0 — treat everything as `others`.
+function distributeFromDeclared(input: AllRounderPhaseTwoInput): {
+  totals: Record<AllRounderBucket, number>;
+  declared: Record<AllRounderCategory, number>;
+  declaredTotal: number;
+  scalingFactor: number;
+} {
+  const T = Math.max(0, input.averageTotalMonthlySpend);
+  const declared = declaredFromPhaseTwoInput(input);
+  const declaredTotal = ALL_ROUNDER_CATEGORIES.reduce(
+    (acc, c) => acc + declared[c],
+    0,
+  );
+
+  const totals = emptyBucketMap(0);
+
+  if (declaredTotal === 0) {
+    totals.others = T;
+    return { totals, declared, declaredTotal, scalingFactor: 1 };
+  }
+
+  if (declaredTotal <= T) {
+    for (const c of ALL_ROUNDER_CATEGORIES) totals[c] = declared[c];
+    totals.others = T - declaredTotal;
+    return { totals, declared, declaredTotal, scalingFactor: 1 };
+  }
+
+  const scalingFactor = T / declaredTotal;
+  for (const c of ALL_ROUNDER_CATEGORIES) {
+    totals[c] = declared[c] * scalingFactor;
+  }
+  return { totals, declared, declaredTotal, scalingFactor };
+}
+
+export function allRounderPhaseTwo(
+  input: AllRounderPhaseTwoInput,
+): AllRounderPhaseTwoOutput {
+  const { totals, declared, declaredTotal, scalingFactor } =
+    distributeFromDeclared(input);
+  const allocation = allocateOnlineOffline(
+    totals,
+    input.averageOnlineMonthlySpend,
+  );
+  return { ...allocation, declared, declaredTotal, scalingFactor };
+}
+
+export function recommendAllRounderCardPhaseTwo(
+  input: AllRounderPhaseTwoInput,
+  cards: MockCard[],
+  bestOfList: MockBestOf[],
+  rules: MockRule[],
+  options?: EngineScoringOptions,
+): AllRounderEnginePhaseTwoResult {
+  const phaseTwo = allRounderPhaseTwo(input);
+  const scoring = scoreCardsForDistribution(
+    phaseTwo,
+    cards,
+    bestOfList,
+    rules,
+    options,
+  );
+  return { input, phaseTwo, ...scoring };
+}

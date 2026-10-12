@@ -1,35 +1,47 @@
 import {
-  ShoppingBag,
-  UtensilsCrossed,
   Plane,
   Hotel,
-  Car,
   Globe,
   Zap,
   Fuel,
-  Store,
   Home,
   GraduationCap,
-  Gem,
   Heart,
   Wallet,
-  Gift,
+  Smartphone,
+  ShieldCheck,
+  Receipt,
+  Landmark,
+  CalendarClock,
+  TrendingUp,
+  Coins,
+  Wifi,
+  Briefcase,
+  Pill,
+  CircleParking,
+  Wrench,
+  ShoppingBag,
+  UtensilsCrossed,
   LucideIcon,
 } from "lucide-react";
-interface Category {
+import { OTHER_SPEND_CATEGORY } from "@/lib/logic/advisor/spendOptimizer";
+
+export interface Category {
   value: string;
   label: string;
+  /** Used in the precision-panel dropdown, where a flat glyph reads better. */
   icon: LucideIcon;
-}
-
-interface PaymentMethod {
-  value: string;
-  label: string;
-}
-
-interface EmiOption {
-  value: string;
-  label: string;
+  /**
+   * Illustration for the quick-pick tile. Only the TOP_CATEGORIES entries need
+   * one; the dropdown keeps using `icon` either way.
+   */
+  art?: string;
+  /**
+   * Keeps the paper chip behind the art. Needed for dark line-art (food.png is
+   * navy) that would otherwise vanish against the dark tile; full-colour
+   * illustrations read fine with no plate.
+   */
+  artOnPaper?: boolean;
 }
 
 export interface SpendTransaction {
@@ -62,54 +74,218 @@ export interface FormErrors {
   transactionMode: boolean;
 }
 
+/**
+ * Selectable categories. Every `value` here must have an entry in
+ * UI_CATEGORY_TO_ENGINE (src/lib/logic/advisor/spendOptimizer.ts) — the API
+ * schema derives its enum from that map, so an unmapped value is rejected at
+ * the boundary rather than silently scored as "other".
+ */
 export const categories: Category[] = [
+  // Travel — the two categories where a voucher may take the headline.
+  { value: "flights", label: "Flights", icon: Plane, art: "/icons/trip.png" },
+  { value: "hotels", label: "Hotels", icon: Hotel, art: "/icons/hotel.png" },
+
+  // Bill-type and regulated spends. All of these always recommend the direct
+  // swipe — see DIRECT_SWIPE_ONLY_CATEGORIES in spendOptimizer.ts.
+  { value: "utilities", label: "Utility bills", icon: Zap },
+  { value: "taxes", label: "Taxes", icon: Receipt },
+  { value: "education", label: "Education fees", icon: GraduationCap },
+  { value: "international", label: "International spend", icon: Globe },
+  { value: "fuel", label: "Fuel", icon: Fuel, art: "/icons/fuel.png" },
+  { value: "insurance", label: "Insurance", icon: ShieldCheck },
   {
-    value: "online-shopping",
-    label: "Online shopping (non-travel)",
-    icon: ShoppingBag,
+    value: "government-payments",
+    label: "Government payments",
+    icon: Landmark,
   },
-  { value: "food-delivery", label: "Food delivery", icon: UtensilsCrossed },
-  { value: "dining", label: "Dining", icon: UtensilsCrossed },
-  { value: "flights", label: "Flights", icon: Plane },
-  { value: "hotels", label: "Hotels", icon: Hotel },
-  { value: "travel-ground", label: "Travel (ground transport)", icon: Car },
-  {
-    value: "international",
-    label: "International shopping / subscriptions",
-    icon: Globe,
-  },
-  { value: "utilities", label: "Utilities & bills", icon: Zap },
-  { value: "fuel", label: "Fuel & FASTag", icon: Fuel },
-  { value: "offline-retail", label: "Offline retail", icon: Store },
-  { value: "rent", label: "Rent / insurance / government", icon: Home },
-  {
-    value: "education-domestic",
-    label: "Education (domestic)",
-    icon: GraduationCap,
-  },
-  {
-    value: "education-international",
-    label: "Education (international)",
-    icon: GraduationCap,
-  },
-  { value: "jewellery", label: "Jewellery", icon: Gem },
+  { value: "emi-spend", label: "EMI spend", icon: CalendarClock },
+  { value: "rent", label: "Rent", icon: Home },
+  { value: "investment", label: "Investment", icon: TrendingUp },
+  { value: "forex-charge", label: "Forex charge (incl GST)", icon: Coins },
+  { value: "mobile-recharge", label: "Mobile recharge", icon: Smartphone },
+  { value: "internet", label: "Internet", icon: Wifi },
+  { value: "business-expenses", label: "Business expenses", icon: Briefcase },
   { value: "healthcare", label: "Healthcare", icon: Heart },
-  { value: "wallet-load", label: "Wallet Load", icon: Wallet },
-  { value: "gift-card", label: "Gift card purchase", icon: Gift },
+  { value: "pharmacy", label: "Pharmacy", icon: Pill },
+  { value: "parking-toll", label: "Parking & toll", icon: CircleParking },
+  { value: "auto-services", label: "Auto services", icon: Wrench },
 ];
 
-export const paymentMethods: PaymentMethod[] = [
-  { value: "direct-payment", label: "Directly on the website/app" },
-  { value: "in-store-payment", label: "In-store / swipe / tap" },
+/**
+ * Categories reachable only through a merchant — never offered in the category
+ * dropdown, because a category-wide "online shopping" run has no sensible
+ * answer (its voucher frontier is led by niche brands). They still have to be
+ * valid merchant categories: most shopping and delivery merchants have rules
+ * ONLY here, and leaving them out of a merchant's options left the run on
+ * whatever category was selected before (usually "flights"), so the merchant's
+ * rules — vouchers included — were never read.
+ *
+ * Same contract as `categories`: every `value` must be in UI_CATEGORY_TO_ENGINE.
+ */
+export const merchantOnlyCategories: Category[] = [
+  { value: "online-shopping", label: "Online shopping", icon: ShoppingBag },
+  { value: "food-delivery", label: "Food delivery", icon: UtensilsCrossed },
+];
+
+/**
+ * The catch-all a run falls back to when the spend can't be placed — an
+ * unrecognised merchant. Deliberately NOT a member of `categories`: it is never
+ * a choice the user picks from the dropdown, and it must not appear among a
+ * merchant's own category options either. `categoryLabel` covers every list so
+ * callers can label a run with it without special-casing.
+ */
+export const OTHER_SPEND: Category = {
+  value: OTHER_SPEND_CATEGORY,
+  label: "Other spend",
+  icon: Wallet,
+};
+
+/** Display label for any run category, including the off-list catch-all. */
+export function categoryLabel(value: string): string | null {
+  if (value === OTHER_SPEND.value) return OTHER_SPEND.label;
+  return (
+    [...categories, ...merchantOnlyCategories].find((c) => c.value === value)
+      ?.label ?? null
+  );
+}
+
+/** One-tap category shortcuts. Everything else lives behind the "More" tile. */
+export const TOP_CATEGORIES = ["hotels", "flights"] as const;
+
+export interface QuickMerchant {
+  value: string;
+  /** Display name — must match a `portals` entry so it maps to a rule merchant. */
+  label: string;
+  /** Category the optimizer runs on, chosen so the two can't mismatch. */
+  category: string;
+  /** Brand mark under /public. Omitted merchants fall back to a letter chip. */
+  logo?: string;
+  /**
+   * True when the mark is light-on-transparent and would vanish against the
+   * paper chip — it gets an inked chip instead. Amazon's wordmark is the only
+   * one today; the others are dark or full-bleed marks made for light ground.
+   */
+  logoOnDark?: boolean;
+  /**
+   * True when the asset already carries its own background plate edge-to-edge
+   * (Zomato's red tile, Flipkart's yellow). These fill the chip so the plate
+   * becomes the chip; padded ones would show a seam of paper around the edge.
+   */
+  logoBleed?: boolean;
+  /**
+   * Scale-up for wide wordmarks whose asset bakes in wide side margins — they'd
+   * otherwise fit by width and render too small to read inside the chip. Tuned
+   * per asset: too much crops the mark itself.
+   */
+  logoScale?: number;
+  /**
+   * True for portrait marks (Swiggy 114x170) that fit by height in a square
+   * chip. They get tighter padding so the mark fills the chip without being
+   * squeezed, and stay whole rather than being cropped by the chip's radius.
+   */
+  logoPortrait?: boolean;
+}
+
+/** One-tap merchant shortcuts; the full list comes from the portals API. */
+export const quickMerchants: QuickMerchant[] = [
   {
-    value: "rewards-portal",
-    label:
-      "Through a bank rewards portal (SmartBuy / AmEx Travel / Axis Travel Edge / ICICI iShop etc.)",
+    value: "amazon",
+    label: "Amazon",
+    category: "online-shopping",
+    logo: "/icons/amazon.png",
+    logoOnDark: true,
+    logoScale: 1.15,
   },
+  {
+    value: "flipkart",
+    label: "Flipkart",
+    category: "online-shopping",
+    logo: "/icons/flipkart.png",
+    logoBleed: true,
+  },
+  {
+    value: "swiggy",
+    label: "Swiggy",
+    category: "food-delivery",
+    logo: "/icons/swiggy.png",
+    logoPortrait: true,
+  },
+  {
+    value: "zomato",
+    label: "Zomato",
+    category: "food-delivery",
+    logo: "/icons/zomato.png",
+    logoBleed: true,
+  },
+  {
+    value: "myntra",
+    label: "Myntra",
+    category: "online-shopping",
+    logo: "/icons/myntra.png",
+    logoScale: 1.9,
+  },
+  { value: "ajio", label: "Ajio", category: "online-shopping" },
 ];
 
-export const emiOptions: EmiOption[] = [
-  { value: "no-emi", label: "No (I'll pay in full)" },
-  { value: "no-cost-emi", label: "Yes, No-Cost EMI" },
-  { value: "regular-emi", label: "Yes, Regular EMI" },
-];
+/**
+ * A merchant from the portals API, kept whole. The searchbox only needs a name,
+ * but the result CTAs need the destination URL — mapping portals down to
+ * `{_id, value, name}` on the way in would throw that away.
+ */
+export interface PortalOption {
+  _id: string;
+  name: string;
+  /** Portal's own slug. A second key into the same row — see `merchantKey`. */
+  slug?: string;
+  affiliateLink?: string | null;
+  websiteUrl?: string;
+}
+
+/** Max cards compared at once. */
+export const MAX_SELECTED = 3;
+
+export const AMOUNT_CHIPS = [500, 2000, 5000, 15000, 50000];
+
+/** Shape returned by POST /api/spend-optimizer. */
+export interface OptimizedCardResult {
+  cardId: string;
+  cardName: string;
+  bankName: string;
+  voucherSavingsInInr: number;
+  directSwipeSavingsInInr: number;
+  isBestCard: boolean;
+  bestRoute: "voucher" | "swipe";
+  bestSavingsInInr: number;
+  bestRatePct: number;
+  merchant: string | null;
+  /** Brand the voucher figure belongs to — vouchers are always brand-bound. */
+  voucherMerchant: string | null;
+  /** Merchant the direct-swipe figure earns through, when rule-specific. */
+  directMerchant: string | null;
+  capNote: string | null;
+  isBaseRateFallback: boolean;
+}
+
+/** Turn a rule merchant slug ("cleartrip_hotels") into a label ("Cleartrip Hotels"). */
+export function merchantLabel(slug: string): string {
+  return slug
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+/**
+ * Collapse a merchant name or slug to a comparison key.
+ *
+ * Rule merchants and portal records are authored in different vocabularies:
+ * rules use underscored slugs ("marks_spencer"), portals use display names
+ * ("Marks & Spencer") and hyphenated slugs ("marks-spencer"). Matching on
+ * `merchantLabel(slug) === portal.name` alone resolves 428 of the 677 active
+ * rule merchants; folding away case, separators and punctuation recovers 91
+ * more — mostly high-volume brands that differ by an apostrophe or ampersand
+ * ("domino_s_pizza" / "Domino's Pizza"). The remaining ~158 are genuinely
+ * absent from `portals` and must stay unresolved rather than be guessed at.
+ */
+export function merchantKey(nameOrSlug: string): string {
+  return nameOrSlug.toLowerCase().replace(/[^a-z0-9]/g, "");
+}

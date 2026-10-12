@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import Card from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
 import { resolveLink } from "@/lib/utils/linkResolver";
@@ -19,9 +20,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Card not found" }, { status: 404 });
   }
 
+  if (!card.bankId) {
+    return NextResponse.json(
+      { error: "Card has no associated bank" },
+      { status: 404 },
+    );
+  }
+
   const link = await resolveLink({
-    cardId: card._id,
-    bankId: card?.bankId,
+    cardId: card._id as Types.ObjectId,
+    bankId: card.bankId,
   });
 
   if (!link) {
