@@ -88,6 +88,23 @@ export const SALARY_RANGES = SALARIED_INCOME_RANGES;
 
 export const indianPhoneRegex = /^[6-9]\d{9}$/;
 
+// local@domain.tld — no spaces, a dot-separated domain, a TLD of 2+ letters.
+// Shared by the profile form and the update API so both reject the same input.
+export const emailRegex =
+  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+
+export const nameSchema = z
+  .string()
+  .trim()
+  .min(3, "Name must be at least 3 characters")
+  .max(80, "Name must be at most 80 characters");
+
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .regex(emailRegex, "Enter a valid email address, like name@example.com");
+
 export const sendOtpSchema = z.object({
   phoneNumber: z
     .string()

@@ -23,17 +23,13 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
     [
       "/",
       "/about",
-      "/sign-up",
       "/sign-in",
-      "/verify",
       "/tools/saving-calculator",
       "/card-value-calculator",
-      "/change-password",
       "/privacy-policy",
       "/legal-compliance",
       "/terms",
       "/affiliate-disclosure",
-      "/user-info",
     ]?.includes(pathname);
 
   return (

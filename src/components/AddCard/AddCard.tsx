@@ -4,7 +4,6 @@ import HeaderText from "@/components/HeaderText/HeaderText";
 import SearchSelect from "@/components/SearchInput/SearchInput";
 import CreditCardSkeleton from "@/components/SkeletonLoader/CreditCardSkeletonLoader";
 import Typography from "@/components/Typography/Typography";
-import { Button } from "@/components/ui/button";
 import { bankIcon } from "@/lib/data/banks";
 import useUserData from "@/lib/hooks/useUserData";
 import {
@@ -12,7 +11,7 @@ import {
   useGetUserCardsQuery,
   useRemoveUserCardMutation,
 } from "@/store/api";
-import { CirclePlus, Loader2 } from "lucide-react";
+import { CirclePlus } from "lucide-react";
 import { useRef, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -49,16 +48,25 @@ const AddCards = () => {
 
   const [removeUserCard] = useRemoveUserCardMutation();
 
-  const handleSubmit = async () => {
-    const body = {
-      userId,
-      cardId: selected?._id,
-    };
-    try {
-      await addCard(body).unwrap();
-      toast.success("Card added successfully");
-    } catch {
-      toast.error("Failed to add card");
+  // Picking a search result adds it straight away — no separate Add step.
+  const handleSelect = async (
+    card: { _id: string; name: string; bankName: string } | null,
+  ) => {
+    setSelected(card);
+    if (!card) return;
+
+    const alreadyAdded = userCards?.some(
+      (c: { cardId?: { _id: string } }) => c?.cardId?._id === card._id,
+    );
+    if (alreadyAdded) {
+      toast("This card is already in your profile");
+    } else {
+      try {
+        await addCard({ userId, cardId: card._id }).unwrap();
+        toast.success(`${card.name} added`);
+      } catch {
+        toast.error("Failed to add card");
+      }
     }
 
     setSelected(null);
@@ -78,29 +86,18 @@ const AddCards = () => {
 
   return (
     <div className="flex flex-col mt-3">
-      <div className="flex gap-2">
-        <SearchSelect
-          searchInputRef={searchInputRef}
-          query={query}
-          setQuery={setQuery}
-          selected={selected}
-          setSelected={setSelected}
-          onClearInput={() => {
-            setQuery("");
-            setSelected(null);
-          }}
-        />
-        <Button
-          disabled={!selected?.name || isAddingCard}
-          className="rounded-full h-12 px-8 max-md:px-4"
-          onClick={handleSubmit}
-        >
-          {isAddingCard && (
-            <Loader2 className="h-6 w-6 animate-spin text-white" />
-          )}
-          Add Card
-        </Button>
-      </div>
+      <SearchSelect
+        searchInputRef={searchInputRef}
+        query={query}
+        setQuery={setQuery}
+        selected={selected}
+        setSelected={handleSelect}
+        disabled={isAddingCard}
+        onClearInput={() => {
+          setQuery("");
+          setSelected(null);
+        }}
+      />
 
       <div className="flex gap-5 flex-wrap py-6">
         {isCardsLoading ? (
@@ -124,7 +121,7 @@ const AddCards = () => {
                 bankLogo={
                   bankIcon?.[card?.cardId?.bankName] ?? bankIcon?.default
                 }
-                name={name || ""}
+                name={name || "Card Holder"}
                 onRemove={() => handleCardRemove(card?.cardId?._id)}
               />
             ),

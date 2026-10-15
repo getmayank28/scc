@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HeartHandshake, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { ROUTES } from "@/lib/constants/routes";
 import useUserData from "@/lib/hooks/useUserData";
 import Typography from "../Typography/Typography";
@@ -17,6 +17,8 @@ import { Skeleton } from "../ui/skeleton";
 export default function ProfileDropdown() {
   const router = useRouter();
   const { nameInitials, isUserDataLoading } = useUserData();
+  const { data: session } = useSession();
+  const profileIncomplete = !!session?.user?.profileIncomplete;
 
   const handleLogout = () => {
     if (typeof window === "undefined") return null;
@@ -31,13 +33,23 @@ export default function ProfileDropdown() {
           !nameInitials && isUserDataLoading ? (
             <Skeleton className="w-12 h-12 max-md:w-10 max-md:h-10  rounded-full text-brown-background bg-[#AD744A]" />
           ) : (
-            <div className="flex justify-center w-12 h-12 items-center max-md:w-10 max-md:h-10 rounded-full p-2 border border-[#452D1C] bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
-              <Typography
-                variant="body"
-                className="text-left opacity-100 font-bold text-[#C7C4C6]"
-              >
-                {nameInitials || "UN"}
-              </Typography>
+            <div className="relative flex justify-center w-12 h-12 items-center max-md:w-10 max-md:h-10 rounded-full p-2 border border-[#452D1C] bg-[linear-gradient(to_bottom,#30251E_70%,#6F4D34_100%,#AD744A_100%)]">
+              {nameInitials ? (
+                <Typography
+                  variant="body"
+                  className="text-left opacity-100 font-bold text-[#C7C4C6]"
+                >
+                  {nameInitials}
+                </Typography>
+              ) : (
+                <User className="h-5 w-5 text-[#C7C4C6]" />
+              )}
+              {profileIncomplete && (
+                <span
+                  aria-label="Profile incomplete"
+                  className="absolute top-0 right-0 h-3 w-3 rounded-full bg-primary-orange ring-2 ring-brown-background"
+                />
+              )}
             </div>
           )
         }
@@ -58,6 +70,11 @@ export default function ProfileDropdown() {
         >
           <User className="mr-2 h-4 w-4 hover:bg-black" />
           Profile
+          {profileIncomplete && (
+            <span className="ml-auto text-[10px] font-semibold text-primary-orange">
+              Complete
+            </span>
+          )}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => router.push(ROUTES.SUPPORT)}

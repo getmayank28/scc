@@ -12,12 +12,17 @@ type ModalProps = {
   onChange?: (open: boolean) => void;
   children:React.ReactNode;
   className?:string;
+  overlayClassName?: string;
 };
 
-export function Modal({ children, open, onChange, className }: ModalProps) {
+export function Modal({ children, open, onChange, className, overlayClassName }: ModalProps) {
   return (
     <Dialog open={open} onOpenChange={onChange}>
-      <DialogContent className={className} showCloseButton={false}>
+      <DialogContent
+        className={className}
+        overlayClassName={overlayClassName}
+        showCloseButton={false}
+      >
         {children}
       </DialogContent>
     </Dialog>

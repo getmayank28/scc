@@ -18,7 +18,7 @@ const GreetUser = ({component,onClick,loading}:{component?:boolean,onClick?:()=>
       if(session?.status === AUTH_STATE.AUTHENTICATED){
         router.push(ROUTES.CHAT)
       }else{
-        router.push(ROUTES.SIGN_UP)
+        router.push(ROUTES.SIGN_IN)
       }
     }
     return (

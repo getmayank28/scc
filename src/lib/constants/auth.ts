@@ -7,4 +7,5 @@ export const AUTH_STATE = {
 export const AUTH_PROVIDERS: Record<string, AuthProviderType> = {
   CREDENTIALS: "credentials",
   GOOGLE: "google",
+  WHATSAPP: "whatsapp",
 };

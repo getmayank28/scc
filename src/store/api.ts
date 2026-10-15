@@ -4,46 +4,10 @@ import { ZIJUS_API_URL } from "@/lib/constants/zijus";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // adjust backend URL
-  tagTypes: ["UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp", "Email"],
+  tagTypes: ["User", "UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp", "Email"],
   endpoints: (builder) => ({
     getQuestions: builder.query({
       query: () => "/questions",
-    }),
-    checkUsernameAvailability: builder.query({
-      query: ({ username }) => ({
-        url: "/check-username-unique",
-        params: { username },
-      }),
-    }),
-    sendVerificationCode: builder.mutation({
-      query: ({ email }) => ({
-        url: "/send-verification-code",
-        method: "POST",
-        body: {
-          email,
-        },
-      }),
-    }),
-    createAccount: builder.mutation({
-      query: (body) => ({
-        url: "/sign-up",
-        method: "POST",
-        body,
-      }),
-    }),
-    verifyCode: builder.mutation({
-      query: (body) => ({
-        url: "/verify-code",
-        method: "POST",
-        body,
-      }),
-    }),
-    changePassword: builder.mutation({
-      query: (body) => ({
-        url: "/change-password",
-        method: "POST",
-        body,
-      }),
     }),
     createChatSession: builder.mutation({
       query: (body) => ({
@@ -161,11 +125,6 @@ export const {
   useGetUserBotChatSessionsQuery,
   useGetUserChatSessionQuery,
   useGetQuestionsQuery,
-  useLazyCheckUsernameAvailabilityQuery,
-  useCreateAccountMutation,
-  useVerifyCodeMutation,
-  useSendVerificationCodeMutation,
-  useChangePasswordMutation,
   useCreateChatSessionMutation,
   useChatSessionTokenMutation,
   useUserChatSessionsMutation,

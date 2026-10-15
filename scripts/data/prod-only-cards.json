@@ -1,0 +1,570 @@
+{
+  "description": "Cards present in fisense-prod but not in fisense-staging at the 2026-10-12 engine migration. Left in prod as-is (is_active unset, so the advisor ignores them). Entries with renamedToStageSlug are the same card under a different slug; the migration rewrites the prod slug to the stage slug and applies stage data.",
+  "generatedAt": "2026-10-12",
+  "count": 80,
+  "cards": [
+    {
+      "name": "6E Rewards – IndiGo HDFC Bank Credit Card",
+      "slug": "6e-rewards-–-indigo-hdfc-bank-credit-card-hdfc-bank",
+      "bankName": "HDFC Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "6E Rewards XL – IndiGo HDFC Bank Credit Card",
+      "slug": "6e-rewards-xl-–-indigo-hdfc-bank-credit-card-hdfc-bank",
+      "bankName": "HDFC Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "AmpliFi Fi‑Federal Credit Card",
+      "slug": "amplifi-fi‑federal-credit-card-federal-bank",
+      "bankName": "Federal Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "AU Bank Xcite Edge Credit Card",
+      "slug": "au-bank-xcite-edge-credit-card-au-bank",
+      "bankName": "AU Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "AU Bank Xcite Prime Credit Card",
+      "slug": "au-bank-xcite-prime-credit-card-au-bank",
+      "bankName": "AU Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank AURA Credit Card",
+      "slug": "axis-bank-aura-credit-card-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank Club Vistara Credit Card Series",
+      "slug": "axis-bank-club-vistara-credit-card-series-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank IOCL Credit Card",
+      "slug": "axis-bank-iocl-credit-card-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank Miles & More Select Credit Card",
+      "slug": "axis-bank-miles-&-more-select-credit-card-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank Nike Credit Card",
+      "slug": "axis-bank-nike-credit-card-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank Signature Credit Card with Lifestyle Benefits",
+      "slug": "axis-bank-signature-credit-card-with-lifestyle-benefits-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-04-01",
+      "usercards": 0
+    },
+    {
+      "name": "Axis Bank Vistara Platinum Credit Card",
+      "slug": "axis-bank-vistara-platinum-credit-card-axis-bank",
+      "bankName": "Axis Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Bajaj Finserv RBL Bank SuperCard",
+      "slug": "bajaj-finserv-rbl-bank-supercard-rbl-bank",
+      "bankName": "RBL Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "BOB Corporate Credit Card",
+      "slug": "bob-corporate-credit-card-bank-of-baroda",
+      "bankName": "Bank of Baroda",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Edge CSB Bank RuPay Credit Card",
+      "slug": "edge-csb-bank-rupay-credit-card-csb-bank",
+      "bankName": "CSB Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Emirates Skywards Coral Credit Card",
+      "slug": "emirates-skywards-coral-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Etihad Guest Premier Credit Card",
+      "slug": "etihad-guest-premier-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Etihad Guest SBI Card",
+      "slug": "etihad-guest-sbi-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Etihad Guest SBI Premier Card",
+      "slug": "etihad-guest-sbi-premier-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Etihad Guest Signature Credit Card",
+      "slug": "etihad-guest-signature-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Ferrari Platinum Credit Card",
+      "slug": "ferrari-platinum-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Ferrari Signature Credit Card",
+      "slug": "ferrari-signature-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "HDFC Diners Club Black credit card",
+      "slug": "hdfc-diners-club-black-credit-card-hdfc-bank",
+      "bankName": "HDFC Bank",
+      "createdAt": "2026-04-10",
+      "usercards": 0
+    },
+    {
+      "name": "HDFC Swiggy BLCK Bank Credit Card",
+      "slug": "hdfc-swiggy-blck-bank-credit-cards-hdfc-bank",
+      "bankName": "HDFC Bank",
+      "createdAt": "2026-09-25",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST ePay Credit Card",
+      "slug": "idfc-first-epay-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST Gaj Credit Card",
+      "slug": "idfc-first-gaj-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-07-15",
+      "usercards": 0,
+      "renamedToStageSlug": "idfc-first-bank-gaj-credit-card--idfc-first-bank"
+    },
+    {
+      "name": "IDFC FIRST Indigo Credit Card",
+      "slug": "idfc-first-indigo-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST Vistara Credit Card",
+      "slug": "idfc-first-vistara-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST WOW RuPay Credit Card",
+      "slug": "idfc-first-wow-rupay-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST WOW Secured Credit Card",
+      "slug": "idfc-first-wow-secured-credit-card-idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "IDFC FIRST WOW! Black Credit Card",
+      "slug": "idfc-first-wow!-black-credit-card--idfc-first-bank",
+      "bankName": "IDFC FIRST Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0,
+      "renamedToStageSlug": "idfc-first-wow-black-credit-card--idfc-first-bank"
+    },
+    {
+      "name": "IndusInd Bank Celeste Credit Card",
+      "slug": "indusind-bank-celeste-credit-card-indusind-bank",
+      "bankName": "IndusInd Bank",
+      "createdAt": "2026-05-01",
+      "usercards": 0
+    },
+    {
+      "name": "Jupiter Edge CSB Bank RuPay Credit",
+      "slug": "jupiter-edge-csb-bank-rupay-credit-csb-bank",
+      "bankName": "CSB Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Jupiter Edge Federal Bank VISA Credit Card",
+      "slug": "jupiter-edge-federal-bank-visa-credit-card--federal-bank",
+      "bankName": "Federal Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Jupiter Edge+ RuPay Credit Card (Unsecured)",
+      "slug": "jupiter-edge+-rupay-credit-card-(unsecured)-csb-bank",
+      "bankName": "CSB Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak BPCL Credit Card",
+      "slug": "kotak-bpcl-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak Corporate Gold Credit Card",
+      "slug": "kotak-corporate-gold-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak Corporate Wealth Signature Credit Card",
+      "slug": "kotak-corporate-wealth-signature-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak Privy League Platinum Credit Card",
+      "slug": "kotak-privy-league-platinum-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak PVR Gold Credit Card",
+      "slug": "kotak-pvr-gold-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak PVR Platinum Credit Card",
+      "slug": "kotak-pvr-platinum-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak PVR Privy League Credit Card",
+      "slug": "kotak-pvr-privy-league-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak Silk Inspire Credit Card",
+      "slug": "kotak-silk-inspire-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Kotak Solaris Platinum Credit Card",
+      "slug": "kotak-solaris-platinum-credit-card-kotak-mahindra-bank",
+      "bankName": "Kotak Mahindra Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "LIFESTYLE HOME CENTRE SBI CARD",
+      "slug": "lifestyle-home-centre-sbi-card--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "LIFESTYLE HOME CENTRE SBI CARD PRIME",
+      "slug": "lifestyle-home-centre-sbi-card-prime--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "LIFESTYLE HOME CENTRE SBI CARD SELECT",
+      "slug": "lifestyle-home-centre-sbi-card-select--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "MagniFi Fi Federal Credit Card",
+      "slug": "magnifi-fi-federal-credit-card-federal-bank",
+      "bankName": "Federal Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "MakeMyTrip ICICI Bank Platinum Credit Card",
+      "slug": "makemytrip-icici-bank-platinum-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "MakeMyTrip ICICI Bank Signature Credit Card",
+      "slug": "makemytrip-icici-bank-signature-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "MANHATTAN PLATINUM CREDIT CARD (INDIA)",
+      "slug": "manhattan-platinum-credit-card-(india)-standard-chartered-bank",
+      "bankName": "Standard Chartered Bank",
+      "createdAt": "2026-04-03",
+      "usercards": 0
+    },
+    {
+      "name": "MAX SBI CARD",
+      "slug": "max-sbi-card--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "MAX SBI CARD PRIME",
+      "slug": "max-sbi-card-prime--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "MAX SBI CARD SELECT",
+      "slug": "max-sbi-card-select--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Nainital Bank RENAISSANCE Credit Card",
+      "slug": "nainital-bank-renaissance-credit-card-bank-of-baroda",
+      "bankName": "Bank of Baroda",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Novio",
+      "slug": "novio-sbm-bank-india",
+      "bankName": "SBM Bank India",
+      "createdAt": "2026-09-25",
+      "usercards": 0
+    },
+    {
+      "name": "OLA Money SBI Card",
+      "slug": "ola-money-sbi-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "OneCard Credit Card",
+      "slug": "onecard-credit-card-multiple-issuers",
+      "bankName": "Multiple Issuers",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Paytm SBI Card",
+      "slug": "paytm-sbi-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "PRAGATI Credit Card",
+      "slug": "pragati-credit-card-bank-of-baroda",
+      "bankName": "Bank of Baroda",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "SBI Advantage Platinum Credit Card",
+      "slug": "sbi-advantage-platinum-credit-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "SBI Advantage Plus Credit Card",
+      "slug": "sbi-advantage-plus-credit-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "SC Emirates World Credit card",
+      "slug": "sc-emirates-world-credit-card-standard-chartered-bank",
+      "bankName": "Standard Chartered Bank",
+      "createdAt": "2026-04-28",
+      "usercards": 0
+    },
+    {
+      "name": "SimpliFi Fi‑Federal Credit Card",
+      "slug": "simplifi-fi‑federal-credit-card-federal-bank",
+      "bankName": "Federal Bank",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Slice Credit Card",
+      "slug": "slice-credit-card-north-east-small-finance-bank",
+      "bankName": "North East Small Finance Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 2
+    },
+    {
+      "name": "SPAR SBI CARD",
+      "slug": "spar-sbi-card--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "SPAR SBI CARD PRIME",
+      "slug": "spar-sbi-card-prime--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "SPAR SBI CARD SELECT",
+      "slug": "spar-sbi-card-select--sbi",
+      "bankName": "SBI",
+      "createdAt": "2026-04-02",
+      "usercards": 0
+    },
+    {
+      "name": "Standard Chartered DigiSmart Credit Card",
+      "slug": "standard-chartered-digismart-credit-card-standard-chartered-bank",
+      "bankName": "Standard Chartered Bank",
+      "createdAt": "2026-04-03",
+      "usercards": 0
+    },
+    {
+      "name": "Uni Credit Card",
+      "slug": "uni-credit-card-yes-bank",
+      "bankName": "Yes Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Vistara Infinite Credit Card",
+      "slug": "vistara-infinite-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Vistara Platinum Credit Card",
+      "slug": "vistara-platinum-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 1
+    },
+    {
+      "name": "Vistara SBI Card PRIME",
+      "slug": "vistara-sbi-card-prime-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Vistara SBI Card",
+      "slug": "vistara-sbi-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Vistara Signature Credit Card",
+      "slug": "vistara-signature-credit-card-icici-bank",
+      "bankName": "ICICI Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "Yatra SBI Card",
+      "slug": "yatra-sbi-card-sbi-card",
+      "bankName": "SBI",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "YES Bank RESERVE Credit Card",
+      "slug": "yes-bank-reserve-credit-card-yes-bank",
+      "bankName": "YES Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "YES Bank RIO Credit Card",
+      "slug": "yes-bank-rio-credit-card-yes-bank",
+      "bankName": "YES Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    },
+    {
+      "name": "YES Bank UNI Credit Card",
+      "slug": "yes-bank-uni-credit-card-yes-bank",
+      "bankName": "YES Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0,
+      "renamedToStageSlug": "yes-bank-uni-credit-card--yes-bank"
+    },
+    {
+      "name": "YES PROSPERITY Edge Credit Card",
+      "slug": "yes-prosperity-edge-credit-card-yes-bank",
+      "bankName": "YES Bank",
+      "createdAt": "2026-03-31",
+      "usercards": 0
+    }
+  ]
+}

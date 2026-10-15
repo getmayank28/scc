@@ -346,7 +346,10 @@ export const AdvisorCache = {
       )
       .lean<LeanCard[]>();
 
-    return [...found, ...docs.map(toMockCard)];
+    // Catalogue-only cards (prod rows with no advisor data) have no `rewards`,
+    // and every scorer reads `rewards.base_reward_rate`. Leave them out so the
+    // caller reports them as unsupported instead of failing the whole wallet.
+    return [...found, ...docs.filter((d) => d.rewards).map(toMockCard)];
   },
 
   // ── Narrow, on-demand reads for the spend optimizer ────────────────────────

@@ -1,12 +1,12 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { EmploymentTypeValue, IncomeRangeValue } from "@/schemas/userInfoSchema";
 
-export type AuthProviderType = "credentials" | "google";
+export type AuthProviderType = "credentials" | "google" | "whatsapp";
 export type EmploymentType = EmploymentTypeValue;
 export type SalaryRangeType = IncomeRangeValue;
 
 export interface User extends Document {
-  email: string;
+  email?: string;
   password?: string;
   verificationCode?: string;
   verificationCodeExpiry?: Date;
@@ -25,10 +25,13 @@ export interface User extends Document {
 }
 
 const UserSchema: Schema<User> = new Schema({
+  // Optional: login is by WhatsApp number. Users can add an email from their
+  // profile. Sparse so the many email-less users don't collide on null.
   email: {
     type: String,
-    required: [true, "email is required"],
+    required: false,
     unique: true,
+    sparse: true,
     match: [/.+\@.+\..+/, "please use a valid email address"],
   },
   password: {
@@ -50,8 +53,8 @@ const UserSchema: Schema<User> = new Schema({
   provider: {
     type: [String],
     required: true,
-    enum: ["credentials", "google"],
-    default: ["credentials"],
+    enum: ["credentials", "google", "whatsapp"],
+    default: ["whatsapp"],
   },
   name: {
     type: String,
@@ -66,10 +69,11 @@ const UserSchema: Schema<User> = new Schema({
     type: Date,
     required: false,
   },
+  // The login identity. Unique among verified numbers (see index below);
+  // unverified numbers are leftovers from the old profile form and may repeat.
   phoneNumber: {
     type: String,
     required: false,
-    sparse: true,
   },
   isPhoneVerified: {
     type: Boolean,
@@ -98,6 +102,11 @@ const UserSchema: Schema<User> = new Schema({
     default: true,
   },
 });
+
+UserSchema.index(
+  { phoneNumber: 1 },
+  { unique: true, partialFilterExpression: { isPhoneVerified: true } },
+);
 
 const UserModal =
   (mongoose.models.User as mongoose.Model<User>) ||

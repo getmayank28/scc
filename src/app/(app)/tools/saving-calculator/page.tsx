@@ -36,7 +36,7 @@ const SavingCalculator = () => {
           back.
         </Typography>
        </div>
-        <ActionButton title="Get your personalised card" onClick={() => router.push(ROUTES.SIGN_UP)}/>
+        <ActionButton title="Get your personalised card" onClick={() => router.push(ROUTES.SIGN_IN)}/>
 
       </div>
       <Step1 spends={spends} setSpends={setSpends} />

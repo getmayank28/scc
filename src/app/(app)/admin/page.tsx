@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 
 export default async function Page() {
   const session = await getServerSession(authOptions);
-  const admin = isAdmin(session?.user?.email)
+  const admin = isAdmin(session?.user?.phoneNumber)
 
   if (!admin) {
     redirect("/")
