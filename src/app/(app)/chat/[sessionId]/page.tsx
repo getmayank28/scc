@@ -16,6 +16,7 @@ import { CardSelectorSkeleton } from "@/components/Loader/Loader";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
 import { usePathname } from "next/navigation";
+import AdvisorProfileGate from "@/components/AdvisorProfileGate/AdvisorProfileGate";
 
 export default function ChatbotUI() {
   const { track } = useAnalytics();
@@ -97,6 +98,7 @@ export default function ChatbotUI() {
 
   return (
     <div className="flex">
+      <AdvisorProfileGate />
       <ChatSidebar />
       
       <div className="flex w-full mx-auto flex-col pl-[180px] max-md:pl-0 pt-16 h-screen bg-brown-background min-w-0">

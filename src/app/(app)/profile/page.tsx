@@ -1,400 +1,445 @@
 "use client";
 import AddCards from "@/components/AddCard/AddCard";
+import AdvisorProfileForm from "@/components/AdvisorProfileForm/AdvisorProfileForm";
 import HeaderText from "@/components/HeaderText/HeaderText";
 import Typography from "@/components/Typography/Typography";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import useUserData from "@/lib/hooks/useUserData";
+import { trackEvent } from "@/lib/analytics/track";
+import { EventName } from "@/lib/analytics/types";
+import { missingProfileFields } from "@/lib/user/profileStatus";
 import {
-  emailVerificationSchema,
-  usernameValidations,
-} from "@/schemas/signUpSchema";
-import {
+  emailSchema,
+  nameSchema,
   EMPLOYMENT_TYPES,
   getIncomeRangesForEmployment,
   getIncomeLabel,
   EmploymentTypeValue,
-  IncomeRangeValue,
 } from "@/schemas/userInfoSchema";
 import {
   useGetUserByIdQuery,
   useUpdateUserByIdMutation,
 } from "@/store/userApi";
-import { Loader2 } from "lucide-react";
+import {
+  Check,
+  CircleCheck,
+  CircleDashed,
+  IdCard,
+  Landmark,
+  Loader2,
+  Mail,
+  TrendingUp,
+  User,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import z from "zod";
+import { z } from "zod";
 import { cn } from "@/lib/utils/index";
 
-const UserDataSchema = z.object({
-  email: emailVerificationSchema,
-  name: usernameValidations,
+const personalSchema = z.object({
+  name: nameSchema,
+  email: emailSchema,
 });
 
+type PersonalField = keyof typeof personalSchema.shape;
+
+// Empty is allowed (the field is optional); anything typed must be valid.
+function validatePersonal(field: PersonalField, value: string): string | undefined {
+  if (!value.trim()) return undefined;
+  const result = personalSchema.shape[field].safeParse(value);
+  return result.success ? undefined : result.error.issues[0].message;
+}
+
+type Status = { done: number; total: number };
+
+function StatusBadge({ done, total }: Status) {
+  const complete = done === total;
+  return (
+    <span
+      className={cn(
+        "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap",
+        complete
+          ? "bg-secondary-success/15 text-secondary-success"
+          : "bg-primary-orange/15 text-primary-orange"
+      )}
+    >
+      {complete ? (
+        <CircleCheck className="size-3.5" />
+      ) : (
+        <CircleDashed className="size-3.5" />
+      )}
+      {complete ? "Complete" : `In Progress (${done} of ${total})`}
+    </span>
+  );
+}
+
+function SectionCard({
+  icon,
+  title,
+  status,
+  onEdit,
+  editing,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  status: Status;
+  onEdit: () => void;
+  editing: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-5 max-md:p-4">
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex size-9 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
+          {icon}
+        </div>
+        <h2 className="text-base font-medium text-white mr-auto">{title}</h2>
+        <div className="flex items-center gap-3">
+          <StatusBadge {...status} />
+          {!editing && (
+            <button
+              type="button"
+              onClick={onEdit}
+              className="text-xs font-semibold text-white/80 hover:text-white cursor-pointer"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="mt-5 flex flex-1 flex-col gap-3">{children}</div>
+    </section>
+  );
+}
+
+function Tile({
+  label,
+  adornment,
+  highlight,
+  children,
+}: {
+  label: string;
+  adornment?: React.ReactNode;
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl bg-white/[0.04] p-4",
+        highlight && "border-t-2 border-primary-orange/70"
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/60">
+          {label}
+        </p>
+        {adornment}
+      </div>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
 const Profile = () => {
-  const [userData, setUserData] = useState({ name: "", email: "" });
-  const [employmentType, setEmploymentType] = useState("");
-  const [salaryRange, setSalaryRange] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
-  const [isEditingEmployment, setIsEditingEmployment] = useState(false);
   const { userId } = useUserData();
+  const { update } = useSession();
+  const [isEditingPersonal, setIsEditingPersonal] = useState(false);
+  const [isEditingEmployment, setIsEditingEmployment] = useState(false);
+  const [draft, setDraft] = useState({ name: "", email: "" });
+  const [errors, setErrors] = useState<{ name?: string; email?: string }>({});
 
-  const [errors, setErrors] = useState({
-    name: "",
-    email: "",
-  });
-  const [employmentErrors, setEmploymentErrors] = useState({
-    employmentType: "",
-    salaryRange: "",
-  });
+  const { data } = useGetUserByIdQuery(userId, { skip: !userId });
+  const [updateUser, { isLoading: isSavingPersonal }] = useUpdateUserByIdMutation();
 
-  const { data } = useGetUserByIdQuery(userId, {
-    skip: !userId,
-  });
-
-  const [updateUserInfo, { isLoading }] = useUpdateUserByIdMutation();
-  const [updateEmploymentInfo, { isLoading: isEmploymentLoading }] = useUpdateUserByIdMutation();
-
-  const incomeRanges = employmentType
-    ? getIncomeRangesForEmployment(employmentType as EmploymentTypeValue)
-    : [];
-  const incomeLabel = employmentType
-    ? getIncomeLabel(employmentType as EmploymentTypeValue)
-    : "";
-  const needsIncomeRange = employmentType && employmentType !== "student_unemployed";
+  const missing = data ? missingProfileFields(data) : [];
 
   useEffect(() => {
-    handleDataUpdate();
-  }, [data?.name, data?.email, data?.employmentType, data?.salaryRange]);
+    if (data) trackEvent(EventName.PROFILE_COMPLETION_VIEWED, { missing });
+    // Once per load, not on every edit.
+  }, [!!data]);
 
-  const handleDataUpdate = () => {
-    if (data && !data?.name) {
-      setIsEditing(true);
-      setUserData({ name: "", email: data?.email });
-      setErrors((prev) => ({ ...prev, name: "What should we call you" }));
-    } else {
-      setUserData({ name: data?.name, email: data?.email });
-    }
-    setEmploymentType(data?.employmentType || "");
-    setSalaryRange(data?.salaryRange || "");
-  };
+  if (!data) {
+    return <div className="min-h-screen bg-brown-background" />;
+  }
 
-  const handleUserSave = async () => {
-    const queryParams = { id: userId, body: userData };
-    const result = UserDataSchema.safeParse(userData);
-
-    if (!result.success) {
-      const emailErrors = result.error.format().email?._errors || [];
-      const email = emailErrors.join(" ");
-
-      const nameErrors = result.error.format().name?._errors || [];
-      const name = nameErrors.join(" ");
-
-      setErrors({ name, email });
-      return;
-    }
-    try {
-      await updateUserInfo(queryParams).unwrap();
-      toast.success("Info successfully updated");
-    } catch {
-      toast.error("Failed to update info");
-    } finally {
-      setIsEditing(false);
-    }
-  };
-
-  const handleEmploymentSave = async () => {
-    const newErrors = { employmentType: "", salaryRange: "" };
-    if (!employmentType) {
-      newErrors.employmentType = "Please select your employment type";
-    }
-    if (needsIncomeRange && !salaryRange) {
-      newErrors.salaryRange = "Please select your income range";
-    }
-    if (newErrors.employmentType || newErrors.salaryRange) {
-      setEmploymentErrors(newErrors);
-      return;
-    }
-
-    try {
-      await updateEmploymentInfo({
-        id: userId,
-        body: {
-          employmentType,
-          salaryRange: needsIncomeRange ? salaryRange : undefined,
-        },
-      }).unwrap();
-      toast.success("Employment info updated");
-    } catch {
-      toast.error("Failed to update employment info");
-    } finally {
-      setIsEditingEmployment(false);
-    }
-  };
-
+  const employmentType = data.employmentType as EmploymentTypeValue | undefined;
+  const isStudent = employmentType === "student_unemployed";
   const employmentLabel = EMPLOYMENT_TYPES.find((t) => t.value === employmentType)?.label;
-  const incomeRangeLabel = incomeRanges.find(
-    (r) => r.value === salaryRange
-  )?.label;
+  const incomeLabel = employmentType
+    ? getIncomeRangesForEmployment(employmentType).find((r) => r.value === data.salaryRange)?.label
+    : undefined;
+  const hasIncome = isStudent || !!incomeLabel;
+
+  const personalStatus = {
+    done: 1 + (data.name ? 1 : 0) + (data.email ? 1 : 0),
+    total: 3,
+  };
+  const employmentStatus = {
+    done: (employmentType ? 1 : 0) + (employmentType && hasIncome ? 1 : 0),
+    total: 2,
+  };
+
+  const startPersonalEdit = () => {
+    setDraft({ name: data.name ?? "", email: data.email ?? "" });
+    setErrors({});
+    setIsEditingPersonal(true);
+  };
+
+  const savePersonal = async () => {
+    // Only validate and send what the user actually filled in.
+    const body: { name?: string; email?: string } = {};
+    const newErrors: typeof errors = {};
+    for (const field of ["name", "email"] as const) {
+      const value = draft[field].trim();
+      if (!value || value === (data[field] ?? "")) continue;
+      const error = validatePersonal(field, value);
+      if (error) newErrors[field] = error;
+      else body[field] = personalSchema.shape[field].parse(value);
+    }
+    if (newErrors.name || newErrors.email) {
+      setErrors(newErrors);
+      return;
+    }
+    if (!body.name && !body.email) {
+      setIsEditingPersonal(false);
+      return;
+    }
+    try {
+      await updateUser({ id: userId, body }).unwrap();
+      // Refresh the JWT so the avatar's "incomplete" dot updates.
+      await update();
+      for (const field of Object.keys(body) as ("name" | "email")[]) {
+        trackEvent(EventName.PROFILE_COMPLETION_SAVED, { field });
+      }
+      toast.success("Details saved");
+      setIsEditingPersonal(false);
+    } catch (err) {
+      const message = (err as { data?: { message?: string } })?.data?.message;
+      toast.error(message || "Failed to save");
+    }
+  };
+
+  const hasInvalidDraft =
+    !!validatePersonal("name", draft.name) || !!validatePersonal("email", draft.email);
+
+  const personalField = (
+    field: PersonalField,
+    placeholder: string,
+    type = "text"
+  ) => (
+    <>
+      <Input
+        type={type}
+        value={draft[field]}
+        placeholder={placeholder}
+        aria-invalid={!!errors[field]}
+        onChange={(e) => {
+          const value = e.target.value;
+          setDraft((prev) => ({ ...prev, [field]: value }));
+          setErrors((prev) => ({ ...prev, [field]: validatePersonal(field, value) }));
+        }}
+        onKeyDown={(e) => e.key === "Enter" && !hasInvalidDraft && savePersonal()}
+        className={cn(
+          "h-10 text-sm text-white border-white/15 bg-black/20",
+          errors[field] && "border-destructive"
+        )}
+      />
+      {errors[field] && <p className="mt-1 text-xs text-destructive">{errors[field]}</p>}
+    </>
+  );
+
+  const missingPrompt = (text: string) => (
+    <button
+      type="button"
+      onClick={startPersonalEdit}
+      className="text-base font-medium text-primary-orange hover:underline cursor-pointer"
+    >
+      {text}
+    </button>
+  );
 
   return (
-    <div className="flex flex-col p-20 max-md:p-4 h-screen bg-brown-background max-md:h-fit">
+    <div className="flex flex-col p-20 max-md:p-4 min-h-screen bg-brown-background">
       <HeaderText
         containerClassName="items-start"
         title="Profile"
         titleVariant="h3"
         titleClassName="font-bold"
       />
-      <div className="mt-6">
-        <Typography variant="body" className="text-left font-bold opacity-100">
-          Basic info
-        </Typography>
-        <div className="grid grid-cols-[3fr_3fr_1fr] max-md:grid-cols-1 max-md:gap-3 gap-5 mt-2">
-          <div className="space-y-2">
-            <Label
-              htmlFor="name"
-              className="text-[14px] text-white/80 font-semibold"
-            >
-              Name
-            </Label>
-            <Input
-              disabled={!isEditing}
-              id="name"
-              type="text"
-              placeholder="Enter your name"
-              value={userData?.name}
-              onChange={(e) => {
-                setUserData((prev) => ({
-                  ...prev,
-                  name: e.target.value,
-                }));
-              }}
-              className={`h-12 text-white font-semibold
-                    ${
-                      errors.name
-                        ? "border-destructive"
-                        : "border-primary-orange"
-                    }
-                  `}
-            />
-            {errors.name && (
-              <p className="text-xs text-destructive">{errors.name}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label
-              htmlFor="email"
-              className="text-[14px]  text-white/80 font-semibold"
-            >
-              Email
-            </Label>
-            <Input
-              disabled={true}
-              id="email"
-              type="text"
-              placeholder="Enter your email"
-              value={userData?.email}
-              onChange={(e) => {
-                setUserData((prev) => ({
-                  ...prev,
-                  email: e.target.value,
-                }));
-              }}
-              className={`h-12  font-semibold text-white border-secondary-orange
-                    ${
-                      errors.email
-                        ? "border-destructive"
-                        : "border-primary-orange"
-                    }
-                  `}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email}</p>
-            )}
-          </div>
-          <div className={`${errors?.name || errors?.email?'self-center':'self-end'} w-full`}>
-            {isEditing ? (
-              <div className="flex gap-2">
-                <Button
-                  className="h-12 grow border-primary-orange"
-                  variant="outline"
-                  onClick={() => {
-                    handleDataUpdate?.();
-                    setIsEditing(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={isLoading}
-                  className="h-12 grow border-primary-orange"
-                  onClick={handleUserSave}
-                >
-                  {isLoading && (
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
-                  )}
-                  Save
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="self-end h-12 w-full"
-                onClick={() => {
-                  setIsEditing(true);
-                }}
-              >
-                Edit
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Employment & Income Section */}
-      <div className="mt-6">
-        <Typography variant="body" className="text-left font-bold opacity-100">
-          Employment & Income
-        </Typography>
-        <div className="grid grid-cols-[3fr_3fr_1fr] max-md:grid-cols-1 max-md:gap-3 gap-5 mt-2">
-          <div className="space-y-2">
-            <Label className="text-[14px] text-white/80 font-semibold">
-              Employment Type
-            </Label>
-            {isEditingEmployment ? (
-              <Select
-                value={employmentType}
-                onValueChange={(v) => {
-                  setEmploymentType(v);
-                  setSalaryRange("");
-                  setEmploymentErrors((prev) => ({ ...prev, employmentType: "", salaryRange: "" }));
-                }}
+      <div className="mt-6 grid grid-cols-[2fr_3fr] max-lg:grid-cols-1 gap-6">
+        <SectionCard
+          icon={<IdCard className="size-4" />}
+          title="Personal Details"
+          status={personalStatus}
+          onEdit={startPersonalEdit}
+          editing={isEditingPersonal}
+        >
+          <Tile
+            label="Full name"
+            adornment={<User className="size-4 text-white/70" />}
+            highlight={!data.name}
+          >
+            {isEditingPersonal
+              ? personalField("name", "What should we call you?")
+              : data.name
+                ? <p className="text-base font-medium text-white">{data.name}</p>
+                : missingPrompt("+ Add your name")}
+          </Tile>
+
+          <Tile
+            label="Email"
+            adornment={<Mail className="size-4 text-white/70" />}
+            highlight={!data.email}
+          >
+            {isEditingPersonal
+              ? personalField("email", "you@example.com", "email")
+              : data.email
+                ? <p className="text-base font-medium text-white break-all">{data.email}</p>
+                : missingPrompt("+ Add your email")}
+            {!isEditingPersonal && (
+              <p className="mt-1 text-xs text-white/40">For card statements and updates.</p>
+            )}
+          </Tile>
+
+          <Tile
+            label="Phone number"
+            adornment={
+              <span className="rounded-md bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">
+                OTP Bound
+              </span>
+            }
+          >
+            <p className="text-base font-medium text-white">
+              +91 {data.phoneNumber?.replace(/(\d{5})(\d{5})/, "$1 $2")}
+            </p>
+          </Tile>
+
+          {isEditingPersonal ? (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="h-10 grow border-white/20"
+                onClick={() => setIsEditingPersonal(false)}
               >
-                <SelectTrigger
-                  className={cn(
-                    "w-full bg-brown-background text-white border-brown-border h-12!",
-                    "data-[placeholder]:text-white/30",
-                    employmentErrors.employmentType && "border-destructive"
-                  )}
-                >
-                  <SelectValue placeholder="Select your employment type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EMPLOYMENT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input
-                disabled
-                value={employmentLabel || "Not set"}
-                className="h-12 text-white font-semibold border-primary-orange"
+                Cancel
+              </Button>
+              <Button
+                className="h-10 grow"
+                disabled={isSavingPersonal || hasInvalidDraft}
+                onClick={savePersonal}
+              >
+                {isSavingPersonal && <Loader2 className="size-4 animate-spin" />}
+                Save
+              </Button>
+            </div>
+          ) : null}
+        </SectionCard>
+
+        <SectionCard
+          icon={<Landmark className="size-4" />}
+          title="Employment & Income"
+          status={employmentStatus}
+          onEdit={() => setIsEditingEmployment(true)}
+          editing={isEditingEmployment}
+        >
+          {isEditingEmployment ? (
+            <div className="rounded-xl bg-white/[0.04] p-4">
+              <AdvisorProfileForm
+                source="profile_page"
+                initialEmploymentType={data.employmentType}
+                initialSalaryRange={data.salaryRange}
+                onSaved={() => setIsEditingEmployment(false)}
+                onCancel={() => setIsEditingEmployment(false)}
               />
-            )}
-            {employmentErrors.employmentType && (
-              <p className="text-xs text-destructive">{employmentErrors.employmentType}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-[14px] text-white/80 font-semibold">
-              {incomeLabel || "Income Range"}
-            </Label>
-            {isEditingEmployment && needsIncomeRange ? (
-              <>
-                <Select
-                  value={salaryRange}
-                  onValueChange={(v) => {
-                    setSalaryRange(v as IncomeRangeValue);
-                    setEmploymentErrors((prev) => ({ ...prev, salaryRange: "" }));
-                  }}
-                >
-                  <SelectTrigger
-                    className={cn(
-                      "w-full bg-brown-background text-white border-brown-border h-12!",
-                      "data-[placeholder]:text-white/30",
-                      employmentErrors.salaryRange && "border-destructive"
-                    )}
-                  >
-                    <SelectValue placeholder="Select your income range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {incomeRanges.map((range) => (
-                      <SelectItem key={range.value} value={range.value}>
-                        {range.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {employmentErrors.salaryRange && (
-                  <p className="text-xs text-destructive">{employmentErrors.salaryRange}</p>
-                )}
-              </>
-            ) : (
-              <Input
-                disabled
-                value={
-                  employmentType === "student_unemployed"
-                    ? "N/A"
-                    : incomeRangeLabel || "Not set"
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
+              <Tile
+                label="Employment type"
+                highlight={!employmentType}
+                adornment={
+                  employmentType ? (
+                    <Check className="size-4 text-white/70" />
+                  ) : (
+                    <span className="text-base font-bold leading-none text-primary-orange">!</span>
+                  )
                 }
-                className="h-12 text-white font-semibold border-primary-orange"
-              />
-            )}
-          </div>
-          <div className="self-end w-full">
-            {isEditingEmployment ? (
-              <div className="flex gap-2">
-                <Button
-                  className="h-12 grow border-primary-orange"
-                  variant="outline"
-                  onClick={() => {
-                    setEmploymentType(data?.employmentType || "");
-                    setSalaryRange(data?.salaryRange || "");
-                    setEmploymentErrors({ employmentType: "", salaryRange: "" });
-                    setIsEditingEmployment(false);
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  disabled={isEmploymentLoading}
-                  className="h-12 grow border-primary-orange"
-                  onClick={handleEmploymentSave}
-                >
-                  {isEmploymentLoading && (
-                    <Loader2 className="h-6 w-6 animate-spin text-white" />
-                  )}
-                  Save
-                </Button>
-              </div>
-            ) : (
-              <Button
-                className="self-end h-12 w-full"
-                onClick={() => setIsEditingEmployment(true)}
               >
-                Edit
-              </Button>
-            )}
+                <p className="text-base font-medium text-white">
+                  {employmentLabel ?? "Not set yet"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingEmployment(true)}
+                  className="mt-4 text-xs font-semibold text-primary-orange hover:underline cursor-pointer"
+                >
+                  {employmentType ? "Change employment type →" : "Set employment type →"}
+                </button>
+              </Tile>
+
+              <Tile
+                label="Income range"
+                highlight={!hasIncome}
+                adornment={
+                  hasIncome ? (
+                    <Check className="size-4 text-white/70" />
+                  ) : (
+                    <span className="text-base font-bold leading-none text-primary-orange">!</span>
+                  )
+                }
+              >
+                {isStudent ? (
+                  <>
+                    <p className="text-base font-medium text-white">Not needed</p>
+                    <p className="mt-1 text-xs text-white/60">Students don&apos;t need an income range.</p>
+                  </>
+                ) : incomeLabel ? (
+                  <>
+                    <p className="text-lg font-semibold text-primary-orange">{incomeLabel}</p>
+                    <p className="mt-1 text-xs text-white/60">{getIncomeLabel(employmentType!)}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-medium text-white/80">Not set yet</p>
+                    <p className="mt-1 text-xs text-white/60">
+                      Add it so we only suggest cards you can get.
+                    </p>
+                  </>
+                )}
+                {!isStudent && (
+                  <Button
+                    onClick={() => setIsEditingEmployment(true)}
+                    className="mt-3 h-9 w-full text-sm bg-secondary-orange text-primary-orange hover:bg-secondary-orange/80"
+                  >
+                    {incomeLabel ? "Update income range" : "Set income range"}
+                  </Button>
+                )}
+              </Tile>
+            </div>
+          )}
+
+          <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] p-4">
+            <TrendingUp className="size-4 shrink-0 text-primary-orange" />
+            <p className="text-xs leading-relaxed text-white/80">
+              <span className="font-semibold text-white">Why this matters: </span>
+              Premium cards have minimum income requirements. Setting your range keeps
+              the AI Advisor from recommending cards you&apos;re unlikely to be approved for.
+            </p>
           </div>
-        </div>
+        </SectionCard>
       </div>
 
-      <div className="mt-6 max-md:mt-10">
+      <div className="mt-8">
         <Typography variant="body" className="text-left font-bold opacity-100">
           Cards
         </Typography>
-        <AddCards/>
-        </div>
+        <AddCards />
+      </div>
     </div>
   );
 };

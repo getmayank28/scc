@@ -4,11 +4,8 @@ export const ROUTES = {
   HOME: "/",
   ABOUT: "/about",
   CHAT: "/chat",
-  SIGN_UP: "/sign-up",
   SIGN_IN: "/sign-in",
-  VERIFY_EMAIL: "/verify",
   SAVING_CALCULATOR: "/tools/saving-calculator",
-  CHANGE_PASSWORD: "/change-password",
   LOGGED_IN_HOME: "/home",
   PROFILE: "/profile",
   FAVORITES: "/favourites",
@@ -23,15 +20,12 @@ export const ROUTES = {
   SPEND_OPTIMIZER: "/spend-optimizer",
   POINTS_REDEMPTION: "/redemption",
   SUPPORT: "support",
-  USER_INFO: "/user-info",
 };
 
 export const PUBLIC_ROUTES = [
   "/about",
   "/sign-in",
-  "/verify",
   "/tools/saving-calculator",
-  "/change-password",
   "/privacy-policy",
   "/legal-compliance",
   "/terms",
@@ -40,6 +34,5 @@ export const PUBLIC_ROUTES = [
   "/chat",
   "/landing",
   "/choose-card",
-  "/user-info",
   "/sale/flipkart",
 ];

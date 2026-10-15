@@ -1,51 +1,85 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+import { z } from "zod";
 import User from "@/models/User";
-import mongoose from "mongoose";
 import dbConnect from "@/lib/utils/dbConnet";
+import {
+  emailSchema,
+  nameSchema,
+  EMPLOYMENT_TYPE_VALUES,
+  INCOME_RANGE_VALUES,
+} from "@/schemas/userInfoSchema";
+
+// Empty strings from cleared form fields mean "not provided". The outer
+// .optional() is needed: zod 4 treats a preprocessed key as required.
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z
+    .preprocess((v) => (v === "" || v === null ? undefined : v), schema.optional())
+    .optional();
+
+const updateUserSchema = z
+  .object({
+    name: optional(nameSchema),
+    email: optional(emailSchema),
+    employmentType: optional(z.enum(EMPLOYMENT_TYPE_VALUES)),
+    salaryRange: optional(z.enum(INCOME_RANGE_VALUES)),
+  })
+  .refine((d) => d.name || d.email || d.employmentType, {
+    message: "Nothing to update",
+  })
+  .refine(
+    (d) =>
+      !d.employmentType ||
+      d.employmentType === "student_unemployed" ||
+      !!d.salaryRange,
+    { message: "Please select your income range", path: ["salaryRange"] },
+  );
 
 export async function PATCH(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await context.params;
-    await dbConnect();
 
-    // Validate ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json({ message: "Invalid user ID" }, { status: 400 });
+    // A user may only edit their own profile.
+    const token = await getToken({
+      req,
+      secret: process.env.NEXT_AUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === "production",
+    });
+    if (!token?._id) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+    if (token._id !== id) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    const body = await req.json();
-    const { name, email, employmentType, salaryRange } = body;
-
-    // Ensure at least one field is provided
-    if (!name && !email && !employmentType) {
+    const parsed = updateUserSchema.safeParse(await req.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { message: "Nothing to update" },
+        { message: parsed.error.issues[0].message },
         { status: 400 }
       );
     }
+    const { name, email, employmentType, salaryRange } = parsed.data;
 
-    // Build update object safely
-    const updateData: Record<string, unknown> = {};
-
-    if (name) updateData.name = name;
-    if (email) updateData.email = email;
+    const $set: Record<string, unknown> = {};
+    const $unset: Record<string, 1> = {};
+    if (name) $set.name = name;
+    if (email) $set.email = email;
     if (employmentType) {
-      updateData.employmentType = employmentType;
-      if (employmentType === "student_unemployed") {
-        updateData.salaryRange = undefined;
-      } else if (salaryRange) {
-        updateData.salaryRange = salaryRange;
-      }
+      $set.employmentType = employmentType;
+      if (employmentType === "student_unemployed") $unset.salaryRange = 1;
+      else $set.salaryRange = salaryRange;
     }
 
+    await dbConnect();
     const updatedUser = await User.findByIdAndUpdate(
       id,
-      { $set: updateData },
+      { $set, ...(Object.keys($unset).length && { $unset }) },
       { new: true, runValidators: true }
-    ).select("name email -_id");
+    ).select("name email employmentType salaryRange -_id");
 
     if (!updatedUser) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
@@ -62,6 +96,7 @@ export async function PATCH(
       );
     }
 
+    console.error("[user/update] error:", error);
     return NextResponse.json({ message: "Server error" }, { status: 500 });
   }
 }

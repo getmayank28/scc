@@ -42,7 +42,7 @@ const Step3 = () => {
             </div>
           ))}
         </div>
-        <ActionButton title="Find my card now" onClick={() => router.push(ROUTES.SIGN_UP)}/>
+        <ActionButton title="Find my card now" onClick={() => router.push(ROUTES.SIGN_IN)}/>
       </div>
       <div className="w-[60%] relative max-md:w-[300px] z-[101] h-[392px] max-md:h-[290px]">
           <LandingAnimation cardBackground="linear-gradient(90deg, #F35A13 10%, #8D340B 100%)"/>

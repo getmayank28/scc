@@ -122,8 +122,7 @@ export enum EventName {
   CHANGE_PASSWORD_SUCCEEDED = "change_password.succeeded",
   CHANGE_PASSWORD_FAILED = "change_password.failed",
 
-  // ── WhatsApp Mobile OTP (user info) ──
-  WHATSAPP_OTP_USER_INFO_VIEWED = "whatsapp_otp.user_info_viewed",
+  // ── WhatsApp Mobile OTP (login) ──
   WHATSAPP_OTP_SEND_CLICKED = "whatsapp_otp.send_clicked",
   WHATSAPP_OTP_SEND_SUCCEEDED = "whatsapp_otp.send_succeeded",
   WHATSAPP_OTP_SEND_FAILED = "whatsapp_otp.send_failed",
@@ -132,10 +131,16 @@ export enum EventName {
   WHATSAPP_OTP_VERIFY_FAILED = "whatsapp_otp.verify_failed",
   WHATSAPP_OTP_RESEND_CLICKED = "whatsapp_otp.resend_clicked",
   WHATSAPP_OTP_EDIT_PHONE_CLICKED = "whatsapp_otp.edit_phone_clicked",
-  WHATSAPP_OTP_USER_INFO_SUBMITTED = "whatsapp_otp.user_info_submitted",
-  WHATSAPP_OTP_USER_INFO_SUCCEEDED = "whatsapp_otp.user_info_succeeded",
-  WHATSAPP_OTP_USER_INFO_FAILED = "whatsapp_otp.user_info_failed",
-  WHATSAPP_OTP_SIGN_OUT_CLICKED = "whatsapp_otp.sign_out_clicked",
+
+  // ── Advisor profile (employment + income, asked on entering the AI Advisor) ──
+  ADVISOR_PROFILE_PROMPT_SHOWN = "advisor_profile.prompt_shown",
+  ADVISOR_PROFILE_SUBMITTED = "advisor_profile.submitted",
+  ADVISOR_PROFILE_SUCCEEDED = "advisor_profile.succeeded",
+  ADVISOR_PROFILE_FAILED = "advisor_profile.failed",
+
+  // ── Profile completion (profile page) ──
+  PROFILE_COMPLETION_VIEWED = "profile_completion.viewed",
+  PROFILE_COMPLETION_SAVED = "profile_completion.saved",
 }
 
 // ─── Event Property Maps ────────────────────────────────────────────
@@ -350,7 +355,7 @@ interface SaleSampleOfferClickedProperties extends BaseProperties {
 // `reason` carries a normalized error code for failure events so the
 // dashboard can break down drop-offs by cause.
 
-type SignInMethod = "credentials" | "google";
+type SignInMethod = "credentials" | "google" | "whatsapp_otp";
 
 interface AuthBaseProperties extends BaseProperties {
   method?: SignInMethod;
@@ -396,15 +401,25 @@ interface WhatsappOtpSendSuccessProperties extends WhatsappOtpBaseProperties {
   retryAfter?: number;
 }
 
-interface WhatsappOtpUserInfoSubmittedProperties extends BaseProperties {
-  employmentType: string;
-  hasSalaryRange: boolean;
-  informationConsent: boolean;
-  promotionalConsent: boolean;
+interface AdvisorProfileBaseProperties extends BaseProperties {
+  source: "advisor_gate" | "profile_page";
 }
 
-interface WhatsappOtpUserInfoFailedProperties extends BaseProperties {
+interface AdvisorProfileSubmittedProperties extends AdvisorProfileBaseProperties {
+  employmentType: string;
+  hasSalaryRange: boolean;
+}
+
+interface AdvisorProfileFailedProperties extends AdvisorProfileBaseProperties {
   reason?: string;
+}
+
+interface ProfileCompletionProperties extends BaseProperties {
+  missing: string[];
+}
+
+interface ProfileCompletionSavedProperties extends BaseProperties {
+  field: "name" | "email";
 }
 
 // ─── Event → Properties Type Map ────────────────────────────────────
@@ -534,7 +549,6 @@ export interface EventPropertiesMap {
   [EventName.CHANGE_PASSWORD_FAILED]: AuthFailureProperties;
 
   // WhatsApp Mobile OTP
-  [EventName.WHATSAPP_OTP_USER_INFO_VIEWED]: BaseProperties;
   [EventName.WHATSAPP_OTP_SEND_CLICKED]: WhatsappOtpBaseProperties;
   [EventName.WHATSAPP_OTP_SEND_SUCCEEDED]: WhatsappOtpSendSuccessProperties;
   [EventName.WHATSAPP_OTP_SEND_FAILED]: WhatsappOtpFailureProperties;
@@ -543,8 +557,14 @@ export interface EventPropertiesMap {
   [EventName.WHATSAPP_OTP_VERIFY_FAILED]: WhatsappOtpFailureProperties;
   [EventName.WHATSAPP_OTP_RESEND_CLICKED]: WhatsappOtpBaseProperties;
   [EventName.WHATSAPP_OTP_EDIT_PHONE_CLICKED]: BaseProperties;
-  [EventName.WHATSAPP_OTP_USER_INFO_SUBMITTED]: WhatsappOtpUserInfoSubmittedProperties;
-  [EventName.WHATSAPP_OTP_USER_INFO_SUCCEEDED]: BaseProperties;
-  [EventName.WHATSAPP_OTP_USER_INFO_FAILED]: WhatsappOtpUserInfoFailedProperties;
-  [EventName.WHATSAPP_OTP_SIGN_OUT_CLICKED]: BaseProperties;
+
+  // Advisor profile
+  [EventName.ADVISOR_PROFILE_PROMPT_SHOWN]: BaseProperties;
+  [EventName.ADVISOR_PROFILE_SUBMITTED]: AdvisorProfileSubmittedProperties;
+  [EventName.ADVISOR_PROFILE_SUCCEEDED]: AdvisorProfileBaseProperties;
+  [EventName.ADVISOR_PROFILE_FAILED]: AdvisorProfileFailedProperties;
+
+  // Profile completion
+  [EventName.PROFILE_COMPLETION_VIEWED]: ProfileCompletionProperties;
+  [EventName.PROFILE_COMPLETION_SAVED]: ProfileCompletionSavedProperties;
 }
