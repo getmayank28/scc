@@ -27,6 +27,9 @@ export const metadata: Metadata = {
     statusBarStyle: 'black-translucent',
     title: 'FiSense',
   },
+  other: {
+    "cuelinks-verification": ["VERIFY-CL-ZH7RWUXH", "VERIFY-CL-QVN30VGW"],
+  },
 };
 
 export default function RootLayout({
