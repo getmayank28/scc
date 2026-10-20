@@ -5,6 +5,7 @@ import useUserData from "@/lib/hooks/useUserData"
 import { BotRecommendationCreditCardProps } from "@/types/card"
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics"
 import { EventName } from "@/lib/analytics/types"
+import { outUrl } from "@/lib/cuelinks/outUrl"
 
 const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCreditCardProps[];isLoading:boolean }) => {
   const { name } = useUserData()
@@ -42,7 +43,11 @@ const LastRecommendation = ({ cards,isLoading }: { cards: BotRecommendationCredi
               number={card?.cardName}
               name={name}
               annualFee={card?.annualFee}
-              applyLink={card?.applyLink}
+              applyLink={
+                card?.id
+                  ? outUrl({ type: "card", id: card.id, surface: "home" })
+                  : card?.applyLink
+              }
               onApplyClick={() =>
                 track(EventName.HOME_RECOMMENDATION_CARD_APPLY_CLICKED, {
                   cardName: card?.cardName,

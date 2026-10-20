@@ -3,7 +3,8 @@ import HeaderText from "@/components/HeaderText/HeaderText";
 import SearchSelect from "@/components/SearchInput/SearchInput";
 import { Button } from "@/components/ui/button";
 import { joinTextMessagesByMid } from "@/lib/utils/content";
-import { useChatCommunicationMutation, useLazyGetRedirectUrlQuery } from "@/store/api";
+import { useChatCommunicationMutation } from "@/store/api";
+import { outUrl } from "@/lib/cuelinks/outUrl";
 import { BaseMessage, MESSAGE_TYPE } from "@/types/chatMessages";
 import { useEffect, useRef, useState } from "react";
 import ContentRenderer from "./ContentRender";
@@ -43,7 +44,6 @@ const ApplyCard = () => {
   const { goToChat } = useNav();
 
   const [communicateToBot, { isLoading }] = useChatCommunicationMutation();
-  const [getRedirectUrl] = useLazyGetRedirectUrlQuery();
   const hasShownRef = useRef(false);
 
   useEffect(() => {
@@ -77,12 +77,10 @@ const ApplyCard = () => {
     setApplyLink(null);
     setActiveCard(selected);
 
-    // Kick off apply link fetch in parallel — don't await
+    // /api/out resolves and tracks the destination at click time, so the link
+    // is known immediately — no lookup to wait on.
     if (selected.slug) {
-      getRedirectUrl({ cardId: selected.slug })
-        .unwrap()
-        .then((res) => setApplyLink(res?.data ?? null))
-        .catch(() => setApplyLink(null));
+      setApplyLink(outUrl({ type: "card", id: selected.slug, surface: "card-info" }));
     }
 
     // AI text fetch (awaited so we can render content + track result)

@@ -71,6 +71,7 @@ import type {
   MerchantOption,
 } from "@/lib/logic/advisor/merchantBreakdown";
 import { isDirectSwipeOnlyUiCategory } from "@/lib/logic/advisor/spendOptimizer";
+import { outUrl } from "@/lib/cuelinks/outUrl";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -81,7 +82,9 @@ type Mode = "category" | "merchant";
  * disagree about which case they are in.
  */
 type SwipeTarget =
-  | { kind: "linked"; name: string; url: string }
+  // `slug` routes the click through /api/out; `url` is the fallback for a
+  // portal row that somehow lacks one.
+  | { kind: "linked"; name: string; url: string; slug: string | null }
   | { kind: "named"; name: string; url: null }
   | { kind: "unknown"; name: null; url: null };
 
@@ -379,7 +382,7 @@ export default function SpendOptimizerPage() {
     const portal = portalsByName.get(merchantKey(ranWith.merchant || slug!));
     const url = portal?.affiliateLink || portal?.websiteUrl || null;
     return url
-      ? { kind: "linked", name: portal?.name ?? name, url }
+      ? { kind: "linked", name: portal?.name ?? name, url, slug: portal?.slug ?? null }
       : { kind: "named", name, url: null };
   }, [ranWith.merchant, shown?.directMerchant, portalsByName]);
 
@@ -410,8 +413,8 @@ export default function SpendOptimizerPage() {
         const res = await giftorsByCardSlug(card.cardId).unwrap();
         // A bank with no giftor on file resolves to an empty list; opening the
         // undefined url would land the user on about:blank.
-        const url = res?.[0]?.url;
-        if (!url) {
+        const giftor = res?.[0];
+        if (!giftor?.url) {
           // Deliberately does NOT name the bank. `card.bankName` is mapped from
           // the card's `bankName` field, which holds the NETWORK ("visa",
           // "mastercard") on 306 of 308 active cards — so naming it produced
@@ -420,6 +423,9 @@ export default function SpendOptimizerPage() {
           toast.error(`No voucher partner listed for ${card.cardName} yet`);
           return;
         }
+        const url = giftor.slug
+          ? outUrl({ type: "voucher", id: giftor.slug, surface: "optimizer", card: card.cardId })
+          : giftor.url;
         window.open(url, "_blank", "noopener,noreferrer");
       } catch {
         toast.error("Couldn't open the voucher partner. Please try again.");
@@ -440,7 +446,10 @@ export default function SpendOptimizerPage() {
         hasDestination: swipeTarget.kind === "linked",
       });
       if (swipeTarget.kind === "linked") {
-        window.open(swipeTarget.url, "_blank", "noopener,noreferrer");
+        const url = swipeTarget.slug
+          ? outUrl({ type: "portal", id: swipeTarget.slug, surface: "optimizer", card: card.cardId })
+          : swipeTarget.url;
+        window.open(url, "_blank", "noopener,noreferrer");
         return;
       }
       setExploring(true);
