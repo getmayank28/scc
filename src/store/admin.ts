@@ -8,6 +8,11 @@ export const admin = api.injectEndpoints({
       providesTags: ["Cards"],
     }),
 
+    getAffiliateOverview: builder.query({
+      query: () => `/admin/affiliate`,
+      transformResponse: (res: { result?: unknown }) => res.result,
+    }),
+
     getAllTickets: builder.query({
       query: () => `/admin/get-all-tickets`,
     }),
@@ -245,6 +250,7 @@ export const {
   useCreatePortalMutation,
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
+  useGetAffiliateOverviewQuery,
   useGetWhatsAppMessagesQuery,
   useGetEmailMessagesQuery,
 } = admin;

@@ -37,6 +37,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { z } from "zod";
 import { cn } from "@/lib/utils/index";
+import AffiliateActivity from "./AffiliateActivity";
 
 const personalSchema = z.object({
   name: nameSchema,
@@ -432,6 +433,10 @@ const Profile = () => {
             </p>
           </div>
         </SectionCard>
+      </div>
+
+      <div className="mt-6">
+        <AffiliateActivity />
       </div>
 
       <div className="mt-8">

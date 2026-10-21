@@ -45,6 +45,65 @@ interface ConvertResponse {
   };
 }
 
+/** A row of `GET /transactions`, as documented. Amounts are decimal strings. */
+export interface ApiTransaction {
+  id: number;
+  campaign_id: number | null;
+  campaign_name: string | null;
+  campaign_type: string | null;
+  transaction_date: string | null;
+  status: string;
+  sale_amount: string | null;
+  currency: string | null;
+  user_commission: string | null;
+  order_id: string | null;
+  merchant_reference_id: string | null;
+  sub_id: string | null;
+  sub_id_2: string | null;
+  sub_id_3: string | null;
+  sub_id_4: string | null;
+  sub_id_5: string | null;
+  updated_at: string | null;
+  [key: string]: unknown;
+}
+
+export interface TransactionsPage {
+  data: ApiTransaction[];
+  nextPage: number | null;
+}
+
+/**
+ * One page of transactions changed after `updatedSince`, oldest change first.
+ * Throws on failure: the sync must not advance its cursor past a page it
+ * never read.
+ */
+export async function listTransactions(
+  updatedSince: Date,
+  page: number,
+): Promise<TransactionsPage> {
+  const apiKey = process.env.CUELINKS_API_KEY;
+  if (!apiKey) throw new Error("CUELINKS_API_KEY is not set");
+
+  const params = new URLSearchParams({
+    updated_since: updatedSince.toISOString(),
+    sort: "updated_at",
+    order: "asc",
+    per_page: "500",
+    page: String(page),
+  });
+  const res = await fetch(`${BASE_URL}/transactions?${params}`, {
+    headers: { Authorization: `Token ${apiKey}` },
+    signal: AbortSignal.timeout(20000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Cuelinks transactions: HTTP ${res.status}`);
+  const body = (await res.json()) as {
+    data?: ApiTransaction[];
+    meta?: { next_page?: number | null };
+  };
+  return { data: body.data ?? [], nextPage: body.meta?.next_page ?? null };
+}
+
 export async function convertLink({
   url,
   channelId,

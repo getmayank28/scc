@@ -1,5 +1,6 @@
 import api from "./api";
 import type { EmploymentTypeValue, IncomeRangeValue } from "@/schemas/userInfoSchema";
+import type { ActivityItem } from "@/types/affiliate";
 
 interface UpdateProfileInfoPayload {
   employmentType: EmploymentTypeValue;
@@ -8,6 +9,10 @@ interface UpdateProfileInfoPayload {
 
 export const usersApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    getAffiliateActivity: builder.query<ActivityItem[], void>({
+      query: () => `/user/affiliate-activity`,
+      transformResponse: (res: { result?: ActivityItem[] }) => res.result ?? [],
+    }),
     getUserById: builder.query({
       query: (id) => `/user/get/${id}`,
       providesTags: ["User"],
@@ -36,4 +41,5 @@ export const {
   useGetUserByIdQuery,
   useUpdateUserByIdMutation,
   useUpdateProfileInfoMutation,
+  useGetAffiliateActivityQuery,
 } = usersApi;
