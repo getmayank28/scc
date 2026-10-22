@@ -29,6 +29,8 @@ export interface Resolution {
   /** True when the click earns commission through some network. */
   affiliated: boolean;
   campaignId: number | null;
+  /** Merchant the click went to, when the caller can't infer it from the id (offers). */
+  merchant?: string | null;
 }
 
 export interface Candidate {

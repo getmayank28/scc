@@ -2,11 +2,28 @@
 
 import dayjs from "dayjs";
 import Typography from "@/components/Typography/Typography";
-import { useGetAffiliateOverviewQuery } from "@/store/admin";
+import { useState } from "react";
+import {
+  useGetAffiliateCuelinksQuery,
+  useGetAffiliateOverviewQuery,
+  useGetAffiliateReportQuery,
+} from "@/store/admin";
+import type { ReportRange } from "@/types/affiliateReport";
+import {
+  AccessTable,
+  CuelinksPanel,
+  FunnelTable,
+  KpiRow,
+  Section,
+  StepTable,
+  Trend,
+  UnearnedTable,
+} from "./ReportSections";
 
 /**
- * Cuelinks conversions overview. Read-only; fuller reporting (EPC, conversion
- * rate by card) is Phase 4.
+ * Cuelinks affiliate report: our funnel for a chosen range (headline numbers,
+ * trend, by surface/card/merchant, unearned clicks, campaigns needing access),
+ * Cuelinks' own reports with a reconciliation, then health and transactions.
  */
 
 interface Bucket {
@@ -123,19 +140,21 @@ function TxnTable({ rows }: { rows: Txn[] }) {
   );
 }
 
-const AffiliateAdmin = () => {
+const RANGES: { value: ReportRange; label: string }[] = [
+  { value: "7d", label: "7 days" },
+  { value: "30d", label: "30 days" },
+  { value: "90d", label: "90 days" },
+];
+
+/** Health, lifetime totals and recent/unmatched transactions — not range-bound. */
+function Activity() {
   const { data, isLoading, isError } = useGetAffiliateOverviewQuery({});
   const o = data as Overview | undefined;
-
-  if (isLoading) return <p className="p-10 text-white/60">Loading…</p>;
-  if (isError || !o) return <p className="p-10 text-white/60">Couldn&apos;t load the affiliate overview.</p>;
+  if (isLoading) return <p className="text-white/60">Loading activity…</p>;
+  if (isError || !o) return <p className="text-white/60">Couldn&apos;t load affiliate activity.</p>;
 
   return (
-    <div className="flex flex-col justify-start gap-4 p-10">
-      <Typography variant="h4" className="text-left">
-        Affiliate (Cuelinks)
-      </Typography>
-
+    <>
       <div className="flex gap-4 flex-wrap">
         <Panel title="Health">
           <table className="text-sm">
@@ -156,46 +175,72 @@ const AffiliateAdmin = () => {
             </tbody>
           </table>
         </Panel>
-        <Panel title="By status">
+        <Panel title="All-time by status">
           <BucketTable rows={o.byStatus} />
         </Panel>
-        <Panel title="By kind">
-          <BucketTable rows={o.byKind} />
-        </Panel>
-        <Panel title="By surface">
-          <BucketTable rows={o.bySurface} />
-        </Panel>
-        <Panel title="By attribution">
+        <Panel title="All-time by attribution">
           <BucketTable rows={o.byAttribution} />
         </Panel>
-        <Panel title="Outbound clicks, last 30 days">
-          {o.clicks30d.length ? (
-            <table className="w-full text-sm">
-              <tbody>
-                {o.clicks30d.map((c) => (
-                  <tr key={`${c._id.type}-${c._id.step}`} className="border-t border-white/5">
-                    <td className="py-1 pr-4 text-white/80">{c._id.type}</td>
-                    <td className="py-1 pr-4 text-white/60">{c._id.step}</td>
-                    <td className="py-1 text-right text-white">{c.count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p className="text-sm text-white/50">No clicks yet</p>
-          )}
-        </Panel>
       </div>
-
-      <Panel title="Top campaigns">
-        <BucketTable rows={o.byCampaign} />
-      </Panel>
       <Panel title="Recent transactions">
         <TxnTable rows={o.recent} />
       </Panel>
       <Panel title="Unmatched (no user — mostly Axis, which drops sub IDs)">
         <TxnTable rows={o.unmatched} />
       </Panel>
+    </>
+  );
+}
+
+const AffiliateAdmin = () => {
+  const [range, setRange] = useState<ReportRange>("30d");
+  const report = useGetAffiliateReportQuery(range);
+  const cuelinks = useGetAffiliateCuelinksQuery(range);
+  const r = report.data;
+
+  return (
+    <div className="flex flex-col justify-start gap-5 p-10 max-md:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Typography variant="h4" className="text-left">
+          Affiliate (Cuelinks)
+        </Typography>
+        <div role="group" aria-label="Date range" className="flex rounded-lg border border-white/15 p-0.5">
+          {RANGES.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              aria-pressed={range === o.value}
+              onClick={() => setRange(o.value)}
+              className={`rounded-md px-3 py-1 text-sm cursor-pointer ${
+                range === o.value ? "bg-white/15 text-white" : "text-white/60 hover:text-white"
+              }`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {report.isError && <p className="text-white/60">Couldn&apos;t load the report.</p>}
+      {report.isFetching && !r && <p className="text-white/60">Loading report…</p>}
+
+      {r && (
+        <>
+          <KpiRow t={r.totals} />
+          <Section title="Trend" hint="Clicks by click date, conversions by transaction date (IST).">
+            <Trend data={r.byDay} />
+          </Section>
+          <FunnelTable title="By surface" hint="Which part of the product the click came from." keyLabel="Surface" rows={r.bySurface} csvName={`by-surface-${range}`} />
+          <FunnelTable title="By card" hint="Card applications: clicks → leads → confirmed." keyLabel="Card" rows={r.byCard} csvName={`by-card-${range}`} />
+          <FunnelTable title="By merchant" hint="Portals, voucher partners and deals." keyLabel="Merchant" rows={r.byMerchant} csvName={`by-merchant-${range}`} />
+          <StepTable rows={r.byStep} />
+          <UnearnedTable rows={r.unearned} />
+          <AccessTable rows={r.accessNeeded} />
+        </>
+      )}
+
+      <CuelinksPanel data={cuelinks.data} loading={cuelinks.isFetching && !cuelinks.data} />
+      <Activity />
     </div>
   );
 };

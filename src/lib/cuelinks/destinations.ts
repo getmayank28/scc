@@ -156,7 +156,8 @@ async function resolveOffer(
     candidates.push({ url: affiliate, network: network === "direct" ? "other" : network });
   }
   candidates.push({ url: portal?.websiteUrl ?? "" });
-  return resolveCandidates(candidates, channelId, subids, convert);
+  const r = await resolveCandidates(candidates, channelId, subids, convert);
+  return r && { ...r, merchant: offer.portalSlugs[0] ?? null };
 }
 
 export function resolveOutbound(

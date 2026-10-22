@@ -1,4 +1,5 @@
 import { Partner } from "@/types/partner";
+import type { CuelinksReport, FunnelReport, ReportRange } from "@/types/affiliateReport";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -6,6 +7,15 @@ export const admin = api.injectEndpoints({
     getAllAvailableCards: builder.query({
       query: () => `/admin/cards/get-all-available-cards`,
       providesTags: ["Cards"],
+    }),
+
+    getAffiliateReport: builder.query<FunnelReport, ReportRange>({
+      query: (range) => `/admin/affiliate/report?range=${range}`,
+      transformResponse: (res: { result: FunnelReport }) => res.result,
+    }),
+    getAffiliateCuelinks: builder.query<CuelinksReport, ReportRange>({
+      query: (range) => `/admin/affiliate/cuelinks?range=${range}`,
+      transformResponse: (res: { result: CuelinksReport }) => res.result,
     }),
 
     getAffiliateOverview: builder.query({
@@ -251,6 +261,8 @@ export const {
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
   useGetAffiliateOverviewQuery,
+  useGetAffiliateReportQuery,
+  useGetAffiliateCuelinksQuery,
   useGetWhatsAppMessagesQuery,
   useGetEmailMessagesQuery,
 } = admin;

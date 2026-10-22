@@ -104,6 +104,50 @@ export async function listTransactions(
   return { data: body.data ?? [], nextPage: body.meta?.next_page ?? null };
 }
 
+/**
+ * GET a Cuelinks report or listing (`/reports/performance`, `/campaigns`, …)
+ * and return the parsed body. Throws on failure; callers decide how to show it.
+ */
+export async function getApi<T>(path: string, params: Record<string, string | number>): Promise<T> {
+  const apiKey = process.env.CUELINKS_API_KEY;
+  if (!apiKey) throw new Error("CUELINKS_API_KEY is not set");
+  const qs = new URLSearchParams(
+    Object.entries(params).map(([k, v]) => [k, String(v)]),
+  );
+  const res = await fetch(`${BASE_URL}${path}?${qs}`, {
+    headers: { Authorization: `Token ${apiKey}` },
+    signal: AbortSignal.timeout(20000),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Cuelinks ${path}: HTTP ${res.status}`);
+  return (await res.json()) as T;
+}
+
+export interface ApiCampaign {
+  id: number;
+  name: string;
+  url: string;
+  domain: string;
+  campaign_type: string;
+  access_status: string;
+  payout: string;
+  payout_type: string;
+}
+
+/** Every campaign running in India (country 252), all pages. */
+export async function listIndiaCampaigns(): Promise<ApiCampaign[]> {
+  const all: ApiCampaign[] = [];
+  for (let page = 1; page <= 30; page++) {
+    const body = await getApi<{ data: ApiCampaign[]; meta: { next_page: number | null } }>(
+      "/campaigns",
+      { country_id: 252, per_page: 500, page },
+    );
+    all.push(...body.data);
+    if (!body.meta.next_page) break;
+  }
+  return all;
+}
+
 /** A row of `GET /offers`, as documented. */
 export interface ApiOffer {
   id: number;

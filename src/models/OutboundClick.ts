@@ -22,6 +22,8 @@ export interface OutboundClickProps {
   targetId: string;
   surface: string;
   cardSlug?: string;
+  /** Portal or giftor slug the click went to; for offers, the deal's portal. */
+  merchantSlug?: string | null;
   channelId?: number;
   step: OutboundStep;
   destination: string;
@@ -39,6 +41,7 @@ const OutboundClickSchema = new Schema<OutboundClickProps>(
     targetId: { type: String, required: true },
     surface: { type: String, required: true },
     cardSlug: { type: String },
+    merchantSlug: { type: String, default: null },
     channelId: { type: Number },
     step: {
       type: String,

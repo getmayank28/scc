@@ -88,6 +88,8 @@ export async function GET(req: NextRequest) {
         targetId: id,
         surface: safeSurface,
         cardSlug,
+        merchantSlug:
+          type === "card" ? null : type === "offer" ? (final.merchant ?? null) : id,
         channelId,
         step: final.step,
         destination: final.destination,
