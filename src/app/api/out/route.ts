@@ -9,7 +9,7 @@ import type { SubIds } from "@/lib/cuelinks/client";
 import type { OutSurface, OutType } from "@/lib/cuelinks/outUrl";
 
 /**
- * GET /api/out?type=card|portal|voucher&id=<slug>&surface=<surface>[&card=<slug>]
+ * GET /api/out?type=card|portal|voucher|offer&id=<slug|offerId>&surface=<surface>[&card=<slug>]
  *
  * Every outbound click goes through here: resolve the destination server-side,
  * monetise it through Cuelinks where possible, log the click, 302 the user on.
@@ -18,8 +18,8 @@ import type { OutSurface, OutType } from "@/lib/cuelinks/outUrl";
  * never dead-ends: anything unresolvable lands back inside the app.
  */
 
-const TYPES: OutType[] = ["card", "portal", "voucher"];
-const SURFACES: OutSurface[] = ["advisor", "card-info", "home", "optimizer"];
+const TYPES: OutType[] = ["card", "portal", "voucher", "offer"];
+const SURFACES: OutSurface[] = ["advisor", "card-info", "home", "optimizer", "deals"];
 const SLUG_RE = /^[a-z0-9][a-z0-9._-]{0,159}$/i;
 
 // Where an unresolvable click lands: the page the user came from.
@@ -27,6 +27,7 @@ const INTERNAL_FALLBACK: Record<OutType, string> = {
   card: "/apply-card",
   portal: "/spend-optimizer",
   voucher: "/spend-optimizer",
+  offer: "/deals",
 };
 
 function internal(type: OutType, req: NextRequest): Resolution {

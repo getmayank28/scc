@@ -18,7 +18,7 @@ export type OutboundStep =
 
 export interface OutboundClickProps {
   userId: string;
-  type: "card" | "portal" | "voucher";
+  type: "card" | "portal" | "voucher" | "offer";
   targetId: string;
   surface: string;
   cardSlug?: string;
@@ -35,7 +35,7 @@ export interface OutboundClickProps {
 const OutboundClickSchema = new Schema<OutboundClickProps>(
   {
     userId: { type: String, required: true, index: true },
-    type: { type: String, enum: ["card", "portal", "voucher"], required: true },
+    type: { type: String, enum: ["card", "portal", "voucher", "offer"], required: true },
     targetId: { type: String, required: true },
     surface: { type: String, required: true },
     cardSlug: { type: String },

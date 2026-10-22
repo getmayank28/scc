@@ -104,6 +104,56 @@ export async function listTransactions(
   return { data: body.data ?? [], nextPage: body.meta?.next_page ?? null };
 }
 
+/** A row of `GET /offers`, as documented. */
+export interface ApiOffer {
+  id: number;
+  title: string;
+  description: string | null;
+  terms: string | null;
+  coupon_code: string | null;
+  offer_type: "coupon" | "deal";
+  campaign_id: number;
+  campaign_name: string;
+  tracking_url: string | null;
+  start_date: string | null;
+  end_date: string | null;
+  original_price: number | null;
+  discount_price: number | null;
+  percent_off: number | null;
+}
+
+/**
+ * Every offer valid today for one campaign. Throws on failure so the refresh
+ * can tell "campaign has no offers" apart from "we couldn't ask", and keep the
+ * campaign's existing offers in the second case.
+ */
+export async function listOffers(campaignId: number): Promise<ApiOffer[]> {
+  const apiKey = process.env.CUELINKS_API_KEY;
+  if (!apiKey) throw new Error("CUELINKS_API_KEY is not set");
+
+  const all: ApiOffer[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const params = new URLSearchParams({
+      campaign_id: String(campaignId),
+      per_page: "500",
+      page: String(page),
+    });
+    const res = await fetch(`${BASE_URL}/offers?${params}`, {
+      headers: { Authorization: `Token ${apiKey}` },
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+    });
+    if (!res.ok) throw new Error(`Cuelinks offers ${campaignId}: HTTP ${res.status}`);
+    const body = (await res.json()) as {
+      data?: ApiOffer[];
+      meta?: { next_page?: number | null };
+    };
+    all.push(...(body.data ?? []));
+    if (!body.meta?.next_page) break;
+  }
+  return all;
+}
+
 export async function convertLink({
   url,
   channelId,

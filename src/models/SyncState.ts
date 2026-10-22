@@ -32,6 +32,7 @@ export const SYNC_KEYS = {
   transactions: "cuelinks-transactions",
   txnWebhook: "cuelinks-webhook-transactions",
   campaignWebhook: "cuelinks-webhook-campaigns",
+  offers: "cuelinks-offers",
 } as const;
 
 /** Stamps `key` as having run now; failures are swallowed (best-effort bookkeeping). */

@@ -52,6 +52,7 @@ const SYNC_LABELS: Record<string, string> = {
   "cuelinks-transactions": "Daily sync",
   "cuelinks-webhook-transactions": "Transaction webhook",
   "cuelinks-webhook-campaigns": "Campaign webhook",
+  "cuelinks-offers": "Offers refresh",
 };
 
 const inr = (n: number | null | undefined) =>

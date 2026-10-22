@@ -4,13 +4,13 @@
  * real destination server-side, so no URL ever travels in the link.
  */
 
-export type OutType = "card" | "portal" | "voucher";
+export type OutType = "card" | "portal" | "voucher" | "offer";
 
-export type OutSurface = "advisor" | "card-info" | "home" | "optimizer";
+export type OutSurface = "advisor" | "card-info" | "home" | "optimizer" | "deals";
 
 export interface OutParams {
   type: OutType;
-  /** Card slug, portal slug or giftor slug, depending on `type`. */
+  /** Card slug, portal slug, giftor slug or Cuelinks offer id, depending on `type`. */
   id: string;
   surface: OutSurface;
   /** Card the user is acting on, for portal/voucher clicks. */

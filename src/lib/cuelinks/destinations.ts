@@ -3,12 +3,15 @@ import Card from "@/models/Card";
 import Bank from "@/models/Bank";
 import Portal from "@/models/Portal";
 import Giftor from "@/models/Giftor";
+import LiveOffer from "@/models/LiveOffer";
 import { resolveLinkCandidates } from "@/lib/utils/linkResolver";
 import { resolveBankForCardSlug } from "@/lib/utils/resolveCardBank";
 import {
   cachedConvert,
+  linkNetwork,
   normalizeUrl,
   resolveCandidates,
+  type Candidate,
   type Converter,
   type Resolution,
 } from "./resolve";
@@ -98,13 +101,18 @@ async function resolvePortal(
   } | null>();
   if (!portal) return null;
   // Website first: converting it carries our sub IDs, which a pre-made
-  // `affiliateLink` can't. The ladder still prefers that link over a raw site.
-  return resolveCandidates(
-    [{ url: portal.websiteUrl ?? "" }, { url: portal.affiliateLink ?? "" }],
-    channelId,
-    subids,
-    convert,
-  );
+  // `affiliateLink` can't. Whatever sits in `affiliateLink` is by definition
+  // somebody's affiliate link — Amazon Associates (amzn.to), Flipkart
+  // (fktr.in), Myntra (myntr.it), vCommission… — so unless it's a Cuelinks
+  // wrapper it is passed through as-is ("other"), never re-converted. Treated
+  // as a plain URL it would lose to the raw website and stop earning.
+  const affiliate = normalizeUrl(portal.affiliateLink);
+  const candidates: Candidate[] = [{ url: portal.websiteUrl ?? "" }];
+  if (affiliate) {
+    const network = linkNetwork({ url: affiliate });
+    candidates.push({ url: affiliate, network: network === "direct" ? "other" : network });
+  }
+  return resolveCandidates(candidates, channelId, subids, convert);
 }
 
 async function resolveVoucher(
@@ -118,6 +126,39 @@ async function resolveVoucher(
   return resolveCandidates([{ url: giftor.url ?? "" }], channelId, subids, convert);
 }
 
+async function resolveOffer(
+  id: string,
+  channelId: number | undefined,
+  subids: SubIds,
+  convert: Converter,
+): Promise<Resolution | null> {
+  const offerId = Number(id);
+  if (!Number.isInteger(offerId) || offerId <= 0) return null;
+  const offer = await LiveOffer.findOne({ offerId }, "landingUrl portalSlugs").lean<{
+    landingUrl: string | null;
+    portalSlugs: string[];
+  } | null>();
+  if (!offer) return null;
+
+  // The deal's own page first (converted with our sub IDs), then the
+  // merchant's portal: its affiliate link passes through as-is, and its
+  // website is the last resort so an odd landing URL never strands the user.
+  const portal = offer.portalSlugs[0]
+    ? await Portal.findOne({ slug: offer.portalSlugs[0] }, "websiteUrl affiliateLink").lean<{
+        websiteUrl?: string;
+        affiliateLink?: string | null;
+      } | null>()
+    : null;
+  const candidates: Candidate[] = [{ url: offer.landingUrl ?? "" }];
+  const affiliate = normalizeUrl(portal?.affiliateLink);
+  if (affiliate) {
+    const network = linkNetwork({ url: affiliate });
+    candidates.push({ url: affiliate, network: network === "direct" ? "other" : network });
+  }
+  candidates.push({ url: portal?.websiteUrl ?? "" });
+  return resolveCandidates(candidates, channelId, subids, convert);
+}
+
 export function resolveOutbound(
   type: OutType,
   id: string,
@@ -125,7 +166,11 @@ export function resolveOutbound(
   subids: SubIds,
   convert: Converter = cachedConvert,
 ): Promise<Resolution | null> {
-  const fn =
-    type === "card" ? resolveCard : type === "portal" ? resolvePortal : resolveVoucher;
+  const fn = {
+    card: resolveCard,
+    portal: resolvePortal,
+    voucher: resolveVoucher,
+    offer: resolveOffer,
+  }[type];
   return fn(id, channelId, subids, convert);
 }

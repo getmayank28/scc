@@ -72,6 +72,7 @@ import type {
 } from "@/lib/logic/advisor/merchantBreakdown";
 import { isDirectSwipeOnlyUiCategory } from "@/lib/logic/advisor/spendOptimizer";
 import { outUrl } from "@/lib/cuelinks/outUrl";
+import { OptimizerDeals } from "./OptimizerDeals";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -1416,6 +1417,15 @@ export default function SpendOptimizerPage() {
                         )}
                       </p>
                     </div>
+                  )}
+
+                  {swipeTarget.kind === "linked" && swipeTarget.slug && (
+                    <OptimizerDeals
+                      portalSlug={swipeTarget.slug}
+                      merchantName={swipeTarget.name}
+                      cardId={shown.cardId}
+                      cardName={shown.cardName}
+                    />
                   )}
                 </div>
               </div>
