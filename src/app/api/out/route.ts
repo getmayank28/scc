@@ -20,7 +20,11 @@ import type { OutSurface, OutType } from "@/lib/cuelinks/outUrl";
 
 const TYPES: OutType[] = ["card", "portal", "voucher", "offer"];
 const SURFACES: OutSurface[] = ["advisor", "card-info", "home", "optimizer", "deals"];
-const SLUG_RE = /^[a-z0-9][a-z0-9._-]{0,159}$/i;
+// Ids are only ever DB lookup values, never URLs, so they don't need a strict
+// charset — and real card slugs contain "/", "&", "+" and "–"
+// ("hpcl-coral-visa/mastercard-…"). Rejecting those sent 27 cards' Apply
+// buttons to the home page. Any non-blank id within a sane length is fine.
+const SLUG_RE = /^\S{1,200}$/u;
 
 // Where an unresolvable click lands: the page the user came from.
 const INTERNAL_FALLBACK: Record<OutType, string> = {

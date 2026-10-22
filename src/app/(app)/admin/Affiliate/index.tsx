@@ -19,6 +19,7 @@ import {
   Trend,
   UnearnedTable,
 } from "./ReportSections";
+import { HealthSection } from "./HealthSection";
 
 /**
  * Cuelinks affiliate report: our funnel for a chosen range (headline numbers,
@@ -70,6 +71,7 @@ const SYNC_LABELS: Record<string, string> = {
   "cuelinks-webhook-transactions": "Transaction webhook",
   "cuelinks-webhook-campaigns": "Campaign webhook",
   "cuelinks-offers": "Offers refresh",
+  "link-health": "Link health check",
 };
 
 const inr = (n: number | null | undefined) =>
@@ -240,6 +242,7 @@ const AffiliateAdmin = () => {
       )}
 
       <CuelinksPanel data={cuelinks.data} loading={cuelinks.isFetching && !cuelinks.data} />
+      <HealthSection />
       <Activity />
     </div>
   );

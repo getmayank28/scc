@@ -24,7 +24,7 @@ const int = (n: number) => n.toLocaleString("en-IN");
 
 // ---- CSV ---------------------------------------------------------------------
 
-type Col<T> = { label: string; value: (row: T) => string | number | null };
+export type Col<T> = { label: string; value: (row: T) => string | number | null };
 
 function downloadCsv<T>(name: string, cols: Col<T>[], rows: T[]) {
   const esc = (v: string | number | null) => {
@@ -67,7 +67,7 @@ export function Section({
   );
 }
 
-function CsvButton<T>({ name, cols, rows }: { name: string; cols: Col<T>[]; rows: T[] }) {
+export function CsvButton<T>({ name, cols, rows }: { name: string; cols: Col<T>[]; rows: T[] }) {
   if (!rows.length) return null;
   return (
     <button
@@ -80,7 +80,7 @@ function CsvButton<T>({ name, cols, rows }: { name: string; cols: Col<T>[]; rows
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
+export function Empty({ children }: { children: React.ReactNode }) {
   return <p className="rounded-xl bg-white/[0.03] p-4 text-sm text-white/55">{children}</p>;
 }
 

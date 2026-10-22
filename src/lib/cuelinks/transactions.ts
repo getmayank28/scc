@@ -37,7 +37,7 @@ const RANK: Record<TxnStatus, number> = {
 };
 
 // Sub IDs that don't identify a person: logged-out clicks and our own report runs.
-const NOT_A_USER = new Set(["", "anon", "coverage-report"]);
+const NOT_A_USER = new Set(["", "anon", "coverage-report", "health-check"]);
 
 export interface TxnInput {
   cuelinksId: number;

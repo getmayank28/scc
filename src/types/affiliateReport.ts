@@ -101,3 +101,42 @@ export interface CuelinksReport {
   /** Sections that failed to load, so the UI can say so instead of showing zeros. */
   errors: string[];
 }
+
+// ---- link health (Phase 5) ----------------------------------------------------
+
+export type HealthTypeName = "card" | "portal" | "voucher";
+
+export interface HealthSummaryRow {
+  type: HealthTypeName;
+  total: number;
+  earning: number;
+  notEarning: number;
+  broken: number;
+  unchecked: number;
+}
+
+export interface HealthItem {
+  key: string;
+  type: HealthTypeName;
+  label: string;
+  step: string | null;
+  affiliated: boolean;
+  destinationHost: string | null;
+  pageStatus: string | null;
+  broken: boolean;
+  /** Why it doesn't earn (or "page_not_found" when the page is gone). */
+  reason: UnearnedReason | "page_not_found" | null;
+  campaign: { id: number; name: string; status: string } | null;
+  clicks30d: number;
+  lastChange: string | null;
+  lastChangeAt: string | null;
+  checkedAt: string | null;
+}
+
+export interface HealthReport {
+  summary: HealthSummaryRow[];
+  /** Oldest check across all targets — every target has been checked since then. */
+  allCheckedSince: string | null;
+  changes: HealthItem[];
+  problems: HealthItem[];
+}

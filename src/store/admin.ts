@@ -1,5 +1,11 @@
 import { Partner } from "@/types/partner";
-import type { CuelinksReport, FunnelReport, ReportRange } from "@/types/affiliateReport";
+import type {
+  CuelinksReport,
+  FunnelReport,
+  HealthItem,
+  HealthReport,
+  ReportRange,
+} from "@/types/affiliateReport";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -16,6 +22,15 @@ export const admin = api.injectEndpoints({
     getAffiliateCuelinks: builder.query<CuelinksReport, ReportRange>({
       query: (range) => `/admin/affiliate/cuelinks?range=${range}`,
       transformResponse: (res: { result: CuelinksReport }) => res.result,
+    }),
+
+    getAffiliateHealth: builder.query<HealthReport, void>({
+      query: () => `/admin/affiliate/health`,
+      transformResponse: (res: { result: HealthReport }) => res.result,
+    }),
+    checkAffiliateHealth: builder.mutation<HealthItem, string>({
+      query: (key) => ({ url: `/admin/affiliate/health`, method: "POST", body: { key } }),
+      transformResponse: (res: { result: HealthItem }) => res.result,
     }),
 
     getAffiliateOverview: builder.query({
@@ -263,6 +278,8 @@ export const {
   useGetAffiliateOverviewQuery,
   useGetAffiliateReportQuery,
   useGetAffiliateCuelinksQuery,
+  useGetAffiliateHealthQuery,
+  useCheckAffiliateHealthMutation,
   useGetWhatsAppMessagesQuery,
   useGetEmailMessagesQuery,
 } = admin;

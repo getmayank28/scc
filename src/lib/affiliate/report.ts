@@ -6,8 +6,7 @@ import Bank from "@/models/Bank";
 import Portal from "@/models/Portal";
 import Giftor from "@/models/Giftor";
 import Link from "@/models/Link";
-import { cached } from "@/models/ReportCache";
-import { listIndiaCampaigns, type ApiCampaign } from "@/lib/cuelinks/client";
+import { explain, loadCampaignIndex, NEEDS_ACCESS } from "./reasons";
 import type {
   AccessNeededRow,
   DayPoint,
@@ -34,7 +33,6 @@ const TZ = "Asia/Kolkata";
 const IST_OFFSET_MS = 330 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const RANGE_DAYS: Record<ReportRange, number> = { "7d": 7, "30d": 30, "90d": 90 };
-const CAMPAIGNS_TTL_MS = 6 * 60 * 60 * 1000;
 
 const CONFIRMED = ["validated", "payable", "invoice_raised", "paid"];
 const NOT_EARNING_STEPS = ["direct", "bank_site", "internal"];
@@ -140,36 +138,6 @@ function mergeRows(
     .sort((a, b) => b.commissionConfirmed + b.commissionPending - (a.commissionConfirmed + a.commissionPending) || b.clicks - a.clicks);
 }
 
-const hostOf = (u: string | null | undefined) => {
-  try {
-    return u ? new URL(u).hostname.replace(/^www\./, "").toLowerCase() : null;
-  } catch {
-    return null;
-  }
-};
-
-// Suffixes many unrelated sites share. Cuelinks files several banks' card
-// campaigns under the domain "bank.in" (AU, Axis, HDFC…), so matching on it
-// would pin yes.bank.in on AU's campaign. Never match at or above these.
-const SHARED_SUFFIXES = new Set(["bank.in", "co.in", "net.in", "org.in", "gov.in", "ac.in", "in", "com", "co", "net", "org"]);
-
-/** Campaign for a host: exact domain first, then parent domains short of a shared suffix. */
-function campaignFor(host: string | null, byDomain: Map<string, ApiCampaign[]>): ApiCampaign | null {
-  if (!host) return null;
-  const parts = host.split(".");
-  for (let i = 0; i < parts.length - 1; i++) {
-    const candidate = parts.slice(i).join(".");
-    if (SHARED_SUFFIXES.has(candidate)) break;
-    const options = byDomain.get(candidate);
-    if (options?.length) {
-      return options.find((c) => c.access_status === "open") ?? options[0];
-    }
-  }
-  return null;
-}
-
-const NEEDS_ACCESS = new Set(["not_applied", "pending"]);
-
 export async function buildFunnelReport(range: ReportRange): Promise<FunnelReport> {
   const { from, to } = rangeBounds(range);
 
@@ -274,37 +242,13 @@ export async function buildFunnelReport(range: ReportRange): Promise<FunnelRepor
   for (const b of txnFacets.byDay as TxnBucket[]) if (b._id && days.has(b._id)) days.get(b._id)!.conversions = b.conversions;
 
   // ---- unearned & access needed ---------------------------------------------
-  let campaigns: ApiCampaign[] = [];
-  try {
-    campaigns = await cached("campaigns:IN", CAMPAIGNS_TTL_MS, listIndiaCampaigns);
-  } catch (err) {
-    // Reasons degrade to "no_campaign"; the rest of the report still renders.
-    console.error("[affiliate report] campaign list unavailable", err);
-  }
-  const byDomain = new Map<string, ApiCampaign[]>();
-  const byId = new Map<number, ApiCampaign>();
-  for (const c of campaigns) {
-    byId.set(c.id, c);
-    // A campaign filed under a shared suffix is indexed by its landing host
-    // instead (HDFC's "bank.in" campaign → applyonline.hdfc.bank.in).
-    const listed = (c.domain || "").replace(/^www\./, "").toLowerCase();
-    const d = listed && !SHARED_SUFFIXES.has(listed) ? listed : hostOf(c.url);
-    if (d) byDomain.set(d, [...(byDomain.get(d) ?? []), c]);
-  }
+  const index = await loadCampaignIndex();
+  const byId = index.byId;
 
   const unearned: UnearnedRow[] = clickFacets.unearned.map(
     (u: { _id: { type: UnearnedRow["type"]; key: string | null }; clicks: number; step: string; destination: string }) => {
       const key = u._id.key ?? "(unknown)";
-      const host = u.step === "internal" ? null : hostOf(u.destination);
-      const campaign = u.step === "internal" ? null : campaignFor(host, byDomain);
-      const reason: UnearnedRow["reason"] =
-        u.step === "internal"
-          ? "no_destination"
-          : !campaign
-            ? "no_campaign"
-            : NEEDS_ACCESS.has(campaign.access_status)
-              ? "needs_access"
-              : "not_linked";
+      const { reason, host, campaign } = explain(u.step, u.destination, index);
       return {
         type: u._id.type,
         key,
@@ -312,9 +256,7 @@ export async function buildFunnelReport(range: ReportRange): Promise<FunnelRepor
         clicks: u.clicks,
         destinationHost: host,
         reason,
-        campaign: campaign
-          ? { id: campaign.id, name: campaign.name, status: campaign.access_status }
-          : null,
+        campaign,
       };
     },
   );
