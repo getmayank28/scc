@@ -25,11 +25,17 @@ export function OptimizerDeals({
   merchantName,
   cardId,
   cardName,
+  compact,
+  className,
 }: {
   portalSlug: string;
   merchantName: string;
   cardId: string;
   cardName: string;
+  /** One-line rows for a narrow column (the result's side panel). */
+  compact?: boolean;
+  /** Replaces the default panel styling. */
+  className?: string;
 }) {
   const { data } = useGetDealsQuery({ portal: portalSlug, cards: false });
   const { track } = useAnalytics();
@@ -44,8 +50,43 @@ export function OptimizerDeals({
 
   if (!deals.length) return null;
 
+  if (compact) {
+    return (
+      <section className={className ?? "flex flex-col gap-2 rounded-2xl border border-white/5 bg-white/[0.03] p-4"}>
+        <div className="px-1">
+          <h3 className="flex items-center gap-2 text-[0.95rem] font-semibold text-white">
+            <Tag className="size-4 text-primary-orange" />
+            Live deals at {merchantName}
+          </h3>
+          <p className="mt-0.5 text-xs text-white/55">
+            Use a code, then pay with your {cardName} to stack both.
+          </p>
+        </div>
+        <div className="mt-1 flex flex-col gap-2">
+          {deals.slice(0, SHOWN).map((d) => (
+            <DealCard
+              key={d.offerId}
+              deal={d}
+              merchant={portalSlug}
+              surface="optimizer"
+              cardId={cardId}
+              variant="row"
+            />
+          ))}
+        </div>
+        <Link
+          href={ROUTES.DEALS}
+          className="inline-flex items-center gap-1 self-start px-1 pt-1 text-xs font-semibold text-primary-orange hover:underline"
+        >
+          {deals.length > SHOWN ? `See all ${deals.length} deals` : "See deals at other stores"}
+          <ArrowRight className="size-3.5" />
+        </Link>
+      </section>
+    );
+  }
+
   return (
-    <section className="mt-6 flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-5 max-md:p-4">
+    <section className={className ?? "mt-6 flex flex-col gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-5 max-md:p-4"}>
       <div className="flex items-center gap-3">
         <div className="flex size-9 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
           <Tag className="size-4" />
