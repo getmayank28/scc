@@ -102,12 +102,6 @@ export const api = createApi({
       }),
       invalidatesTags: ["UserCards"],
     }),
-    getRedirectUrl: builder.query({
-      query: ({ cardId }) => ({
-        url: `redirect`,
-        params: { cardId },
-      }),
-    }),
     // Card-intelligence feed: milestones, reward caps, fee waivers and
     // expiring benefits, ranked. Unwraps the ApiSuccess envelope so components
     // receive the InsightsResult directly.
@@ -134,7 +128,6 @@ export const {
   useRemoveUserCardMutation,
   useChatCommunicationMutation,
   useWaitlistMutation,
-  useLazyGetRedirectUrlQuery,
   useGetInsightsQuery,
 } = api;
 export default api;

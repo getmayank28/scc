@@ -4,7 +4,7 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { BadgeIndianRupee, Brain, House, MessagesSquare, Search, ShieldAlert } from "lucide-react";
+import { BadgeIndianRupee, Brain, House, MessagesSquare, Search, ShieldAlert, Tag } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";
@@ -44,6 +44,11 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       label: "Insights",
       href: ROUTES.INSIGHTS,
       icon: <ShieldAlert className="h-5 w-5 shrink-0" />,
+    },
+    {
+      label: "Deals",
+      href: ROUTES.DEALS,
+      icon: <Tag className="h-5 w-5 shrink-0" />,
     },
     {
       label: "Points Redemption",

@@ -50,6 +50,7 @@ export const config = {
     "/choose-card",
     "/spend-optimizer",
     "/insights",
+    "/deals",
     "/apply-card",
   ],
 };

@@ -18,6 +18,7 @@ export const ROUTES = {
   CHOOSE_CARD: "/choose-card",
   APPLY_CARD: "/apply-card",
   SPEND_OPTIMIZER: "/spend-optimizer",
+  DEALS: "/deals",
   POINTS_REDEMPTION: "/redemption",
   SUPPORT: "support",
   CARD_VALUE_CALCULATOR: "/card-value-calculator",
