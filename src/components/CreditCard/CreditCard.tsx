@@ -20,6 +20,7 @@ const CreditCard = ({
   applyLink,
   bankLogo,
   onApplyClick,
+  compact,
 }: {
   background?: string;
   isCardSpotlightActive?: boolean;
@@ -34,8 +35,12 @@ const CreditCard = ({
   applyLink?: string;
   bankLogo?:string;
   onApplyClick?: () => void;
+  compact?: boolean;
 }) => {
   const Comp = isCardSpotlightActive ? CardSpotlight : "div";
+  const sizeClass = compact
+    ? "w-72 h-[184px] max-md:w-[260px] max-md:h-[166px]"
+    : "w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]";
   const [hovered, setHovered] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,22 +64,22 @@ const CreditCard = ({
     },
   ];
   return (
-    <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  max-md:mb-0 mb-8 lg:mb-0">
+    <div className={`relative ${sizeClass} max-md:mb-0 mb-8 lg:mb-0`}>
       {/* Card Bottom Shadow */}
-      <div className="absolute  w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]  rounded-lg shadow-lg hidden md:block"></div>
+      <div className={`absolute ${sizeClass} rounded-lg shadow-lg hidden md:block`}></div>
 
       {/* Card Top */}
 
       <div
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        className={`absolute group ${hovered ? "overflow-visible" : "overflow-hidden"} border border-secondary-orange top-0 left-0 w-98 h-[250px] max-md:w-[280px] max-md:h-[190px] rounded-lg shadow-xl`}
+        className={`absolute group ${hovered ? "overflow-visible" : "overflow-hidden"} border border-secondary-orange top-0 left-0 ${sizeClass} rounded-lg shadow-xl`}
         style={{
           background: background,
           fontFamily: "Odibee Sans, Montserrat, sans-serif",
         }}
       >
-        <Comp className="w-98 h-[250px]">
+        <Comp className={compact ? "w-full h-full" : "w-98 h-[250px]"}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           {!removeImage && (
             <img
@@ -190,19 +195,19 @@ const CreditCard = ({
               </defs>
             </svg>
           </div>
-          <div className={`absolute top-6 left-4 flex items-start gap-1`}>
+          <div className={`absolute ${compact ? "top-4 right-4 items-center" : "top-6 items-start"} left-4 flex gap-1`}>
             {!forShow && bankLogo && (
                 <Image
                 width={25}
                 height={25}
                 src={`/icons/banks/${bankLogo}`}
                 alt="bank-logo"
-                className="w-[25px] h-[25px]"
+                className={`${compact ? "w-5 h-5" : "w-[25px] h-[25px]"} shrink-0`}
               />
             )}
             <Typography
               variant="caption"
-              className="text-left font-bold opacity-100 max-w-[320px]"
+              className={`text-left font-bold opacity-100 ${compact ? "text-[12px] leading-tight truncate min-w-0" : "max-w-[320px]"}`}
             >
               {normalizeString(cardName as string)}
             </Typography>
@@ -211,7 +216,7 @@ const CreditCard = ({
             <div
               className={`absolute top-0 -right-14 group-hover:right-0 transition-all duration-500 rounded-lg`}
             >
-              <div className="h-[247px] flex flex-col p-4 px-3 bg-brown-sidebar border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14">
+              <div className={`${compact ? "h-[181px] max-md:h-[163px]" : "h-[247px]"} flex flex-col p-4 px-3 bg-brown-sidebar border-l-1 border-secondary-orange rounded-tr-lg rounded-br-lg w-14`}>
                 <AnimatedTooltip
                   iconClassName="w-8 h-8"
                   onClick={onRemove}
@@ -222,14 +227,14 @@ const CreditCard = ({
           )}
 
           {/* Card Number */}
-          <div className="absolute max-md:text-sm top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 text-lg">
+          <div className={`absolute max-md:text-sm top-[48%] left-4 flex items-center gap-2 transform -translate-y-1/2 text-white/80 ${compact ? "text-sm" : "text-lg"}`}>
             {number || "XXXX XXXX XXXX XXXX"}
           </div>
 
           {/* Card Details */}
           <div className="absolute top-[61%] -translate-y-1/2 left-4 flex justify-between items-end text-white opacity-75">
             <div className="flex flex-col w-[150px]">
-              <span className="text-[16px] max-md:text-xs font-medium capitalize">
+              <span className={`${compact ? "text-xs" : "text-[16px]"} max-md:text-xs font-medium capitalize`}>
                 {name || "Jhon Doe"}
               </span>
             </div>
