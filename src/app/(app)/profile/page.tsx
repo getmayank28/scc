@@ -22,6 +22,7 @@ import {
   useUpdateUserByIdMutation,
 } from "@/store/userApi";
 import {
+  Briefcase,
   Check,
   CircleCheck,
   CircleDashed,
@@ -32,6 +33,7 @@ import {
   Phone,
   TrendingUp,
   User,
+  Wallet,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
@@ -60,8 +62,9 @@ function StatusBadge({ done, total }: Status) {
   const complete = done === total;
   return (
     <span
+      title={complete ? "Complete" : `${done} of ${total} done`}
       className={cn(
-        "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap",
+        "flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold whitespace-nowrap max-md:px-1.5",
         complete
           ? "bg-secondary-success/15 text-secondary-success"
           : "bg-primary-orange/15 text-primary-orange"
@@ -72,7 +75,10 @@ function StatusBadge({ done, total }: Status) {
       ) : (
         <CircleDashed className="size-3.5" />
       )}
-      {complete ? "Complete" : `In Progress (${done} of ${total})`}
+      <span className="max-md:hidden">
+        {complete ? "Complete" : `In Progress (${done} of ${total})`}
+      </span>
+      {!complete && <span className="md:hidden">{`${done}/${total}`}</span>}
     </span>
   );
 }
@@ -93,13 +99,13 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-4">
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex size-8 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
+    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-4 max-md:p-3">
+      <div className="flex items-center gap-3 flex-wrap max-md:flex-nowrap max-md:gap-2">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-white/5 text-primary-orange max-md:hidden">
           {icon}
         </div>
-        <h2 className="text-base font-medium text-white mr-auto">{title}</h2>
-        <div className="flex items-center gap-3">
+        <h2 className="text-base font-medium text-white mr-auto max-md:truncate max-md:pl-1 max-md:text-[15px]">{title}</h2>
+        <div className="flex shrink-0 items-center gap-3">
           <StatusBadge {...status} />
           {!editing && (
             <button
@@ -112,7 +118,7 @@ function SectionCard({
           )}
         </div>
       </div>
-      <div className="mt-4 flex flex-1 flex-col gap-3">{children}</div>
+      <div className="mt-4 flex flex-1 flex-col gap-3 max-md:mt-3 max-md:gap-2">{children}</div>
     </section>
   );
 }
@@ -162,7 +168,7 @@ function DetailRow({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5",
+        "flex items-center gap-3 px-4 py-2.5 max-md:px-3.5",
         highlight && "border-l-2 border-primary-orange/70"
       )}
     >
@@ -297,7 +303,7 @@ const Profile = () => {
   );
 
   return (
-    <div className="flex flex-col p-20 max-md:p-4 min-h-screen bg-brown-background">
+    <div className="flex flex-col p-20 max-md:px-4 max-md:pt-20 max-md:pb-28 min-h-screen bg-brown-background">
       <HeaderText
         containerClassName="items-start"
         title="Profile"
@@ -392,7 +398,48 @@ const Profile = () => {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
+            <>
+            {/* Phones: two slim rows, like Personal Details. */}
+            <div className="hidden divide-y divide-white/5 overflow-hidden rounded-xl bg-white/[0.04] max-md:block">
+              <DetailRow
+                icon={<Briefcase className="size-4" />}
+                label="Employment type"
+                highlight={!employmentType}
+                adornment={
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingEmployment(true)}
+                    className="shrink-0 text-xs font-semibold text-primary-orange cursor-pointer"
+                  >
+                    {employmentType ? "Change" : "Set"}
+                  </button>
+                }
+              >
+                <p className="truncate text-sm font-medium text-white">{employmentLabel ?? "Not set yet"}</p>
+              </DetailRow>
+              <DetailRow
+                icon={<Wallet className="size-4" />}
+                label={isStudent ? "Income range" : "Monthly income"}
+                highlight={!hasIncome}
+                adornment={
+                  !isStudent && (
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingEmployment(true)}
+                      className="shrink-0 text-xs font-semibold text-primary-orange cursor-pointer"
+                    >
+                      {incomeLabel ? "Update" : "Set"}
+                    </button>
+                  )
+                }
+              >
+                <p className="truncate text-sm font-medium text-white">
+                  {isStudent ? "Not needed for students" : incomeLabel ?? "Not set yet"}
+                </p>
+              </DetailRow>
+            </div>
+
+            <div className="grid grid-cols-2 max-md:hidden gap-3">
               <Tile
                 label="Employment type"
                 highlight={!employmentType}
@@ -456,9 +503,13 @@ const Profile = () => {
                 )}
               </Tile>
             </div>
+            </>
           )}
 
-          <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] px-4 py-3">
+          <p className="hidden px-1 text-[11px] leading-relaxed text-white/45 max-md:block">
+            Your income range keeps the AI Advisor from suggesting cards you&apos;re unlikely to get.
+          </p>
+          <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] px-4 py-3 max-md:hidden">
             <TrendingUp className="size-4 shrink-0 text-primary-orange" />
             <p className="text-xs leading-relaxed text-white/80">
               <span className="font-semibold text-white">Why this matters: </span>
