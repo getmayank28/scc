@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const CreditCardSkeleton = () => {
   return (
-    <div className="relative w-98 h-[250px] max-md:w-[280px] max-md:h-[190px]">
+    <div className="relative w-72 h-[184px] max-md:w-[260px] max-md:h-[166px]">
       {/* Bottom shadow */}
       <div className="absolute inset-0 rounded-lg hidden md:block bg-muted/40" />
 

@@ -19,7 +19,7 @@ export const usersApi = api.injectEndpoints({
         return `/deals${qs ? `?${qs}` : ""}`;
       },
       transformResponse: (res: { result?: DealsResponse }) =>
-        res.result ?? { merchants: [], walletEmpty: false },
+        res.result ?? { merchants: [], walletEmpty: false, walletBanks: [] },
     }),
     getAffiliateActivity: builder.query<ActivityItem[], void>({
       query: () => `/user/affiliate-activity`,

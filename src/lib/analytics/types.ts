@@ -91,6 +91,7 @@ export enum EventName {
   DEALS_VIEWED = "deals.viewed",
   DEAL_CODE_COPIED = "deals.code_copied",
   DEAL_CLICKED = "deals.clicked",
+  DEALS_STORE_OPENED = "deals.store_opened",
 
   // ── Sign Up (new customer) ──
   SIGNUP_PAGE_VIEWED = "signup.page_viewed",
@@ -356,6 +357,13 @@ interface DealsViewedProperties extends BaseProperties {
   dealCount: number;
 }
 
+interface DealsStoreOpenedProperties extends BaseProperties {
+  merchant: string;
+  dealCount: number;
+  /** Where the store was opened from: the grid, "Ending soon" or "Best for your cards". */
+  from: "grid" | "ending_soon" | "best_for_cards";
+}
+
 interface DealActionProperties extends BaseProperties {
   surface: "deals" | "optimizer";
   merchant: string;
@@ -537,6 +545,7 @@ export interface EventPropertiesMap {
   [EventName.DEALS_VIEWED]: DealsViewedProperties;
   [EventName.DEAL_CODE_COPIED]: DealActionProperties;
   [EventName.DEAL_CLICKED]: DealActionProperties;
+  [EventName.DEALS_STORE_OPENED]: DealsStoreOpenedProperties;
 
   // Sign Up
   [EventName.SIGNUP_PAGE_VIEWED]: BaseProperties;

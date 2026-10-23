@@ -5,6 +5,8 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import LiveOffer, { type LiveOfferProps } from "@/models/LiveOffer";
 import Portal from "@/models/Portal";
 import { bestCardsFor, walletCards } from "@/lib/deals/bestCard";
+import { parseDiscount } from "@/lib/deals/discount";
+import { dealCategory } from "@/lib/deals/categories";
 import type { Deal, DealsResponse, MerchantDeals } from "@/types/deals";
 
 export const runtime = "nodejs";
@@ -23,13 +25,15 @@ export const runtime = "nodejs";
 const SLUG_RE = /^[a-z0-9][a-z0-9._-]{0,159}$/i;
 
 function toDeal(o: LiveOfferProps): Deal {
+  const discount = parseDiscount(o.title);
   return {
     offerId: o.offerId,
     title: o.title,
     description: o.description,
     terms: o.terms,
     couponCode: o.couponCode,
-    percentOff: o.percentOff,
+    percentOff: o.percentOff ?? discount?.percent ?? null,
+    discount,
     endDate: o.endDate ? o.endDate.toISOString() : null,
     bank: o.bank ?? null,
   };
@@ -37,13 +41,53 @@ function toDeal(o: LiveOfferProps): Deal {
 
 // Codes first (they're what people come for), then the biggest stated
 // discount, then whatever ends soonest.
-function byUsefulness(a: LiveOfferProps, b: LiveOfferProps): number {
+function byUsefulness(a: Deal, b: Deal): number {
   if (!!a.couponCode !== !!b.couponCode) return a.couponCode ? -1 : 1;
   const pa = a.percentOff ?? -1;
   const pb = b.percentOff ?? -1;
   if (pa !== pb) return pb - pa;
-  return (a.endDate?.getTime() ?? Infinity) - (b.endDate?.getTime() ?? Infinity);
+  const end = (d: Deal) => (d.endDate ? Date.parse(d.endDate) : Infinity);
+  return end(a) - end(b);
 }
+
+// Cuelinks often lists one coupon several times with reworded titles.
+function dedupe(deals: Deal[]): Deal[] {
+  const seen = new Set<string>();
+  return deals.filter((d) => {
+    const key = d.couponCode
+      ? `code:${d.couponCode.toUpperCase()}`
+      : `title:${d.title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/**
+ * Sister stores on one campaign (Tata CLiQ, Tata CLiQ Fashion, Luxe) carry the
+ * exact same offers; listing them three times buries everything else. Keep the
+ * one whose name prefixes the most others ("Tata CLiQ"), shortest name on ties.
+ */
+function foldSisters(merchants: MerchantDeals[]): MerchantDeals[] {
+  const groups = new Map<string, MerchantDeals[]>();
+  for (const m of merchants) {
+    const key = m.deals.map((d) => d.offerId).sort((a, b) => a - b).join(",");
+    groups.set(key, [...(groups.get(key) ?? []), m]);
+  }
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return group[0];
+    const prefixes = (m: MerchantDeals) =>
+      group.filter((o) => o !== m && o.merchantName.toLowerCase().startsWith(m.merchantName.toLowerCase())).length;
+    const [primary, ...rest] = [...group].sort(
+      (a, b) => prefixes(b) - prefixes(a) || a.merchantName.length - b.merchantName.length,
+    );
+    return { ...primary, alsoAt: rest.map((m) => m.merchantName) };
+  });
+}
+
+// "Kotak" (offer) vs "Kotak Mahindra Bank" (card): compare on the core name.
+const bankKey = (name: string) =>
+  name.toLowerCase().replace(/\b(bank|mahindra|cards?|ltd)\b/g, "").replace(/[^a-z]/g, "");
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
@@ -88,16 +132,23 @@ export async function GET(req: Request) {
         )
       : new Map();
 
-    const merchants: MerchantDeals[] = portals
-      .map((p) => ({
+    const merchants: MerchantDeals[] = foldSisters(
+      portals.map((p) => ({
         portalSlug: p.slug,
         merchantName: p.name,
+        alsoAt: [],
+        category: dealCategory(p.slug, p.portalType),
         bestCard: best.get(p.slug) ?? null,
-        deals: (bySlug.get(p.slug) ?? []).sort(byUsefulness).map(toDeal),
-      }))
-      .sort((a, b) => b.deals.length - a.deals.length);
+        deals: dedupe((bySlug.get(p.slug) ?? []).map(toDeal).sort(byUsefulness)),
+      })),
+    ).sort((a, b) => b.deals.length - a.deals.length);
 
-    const body: DealsResponse = { merchants, walletEmpty: withCards && cards.length === 0 };
+    const held = new Set(cards.map((c) => bankKey(c.bankId)));
+    const walletBanks = [...new Set(offers.map((o) => o.bank).filter((b): b is string => !!b))].filter((b) =>
+      held.has(bankKey(b)),
+    );
+
+    const body: DealsResponse = { merchants, walletEmpty: withCards && cards.length === 0, walletBanks };
     return ApiResponse.success("ok", 200, body);
   } catch (err) {
     console.error("[/api/deals] failed:", err);

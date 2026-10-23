@@ -36,20 +36,20 @@ export default function AffiliateActivity() {
   const hasApplications = items?.some((i) => i.kind === "card_application");
 
   return (
-    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-5 max-md:p-4">
+    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-4">
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
           <Receipt className="size-4" />
         </div>
         <div>
           <h2 className="text-base font-medium text-white">Applications &amp; purchases</h2>
           <p className="text-xs text-white/60">
-            Card applications and shopping you started from FiSense.
+            Card applications and shopping you started from Spend optimizer.
           </p>
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2">
+      <div className="mt-4 flex flex-col gap-2">
         {isLoading &&
           [0, 1].map((i) => (
             <div key={i} className="h-14 animate-pulse rounded-xl bg-white/[0.04]" />
@@ -60,8 +60,8 @@ export default function AffiliateActivity() {
         )}
 
         {!isLoading && !isError && !items?.length && (
-          <p className="rounded-xl bg-white/[0.04] p-4 text-sm text-white/70">
-            Nothing yet. When you apply for a card or shop through FiSense, it&apos;ll show up here.
+          <p className="rounded-xl bg-white/[0.04] px-4 py-3 text-sm text-white/70">
+            Nothing yet. When you apply for a card or shop through spend optimizer, it&apos;ll show up here.
           </p>
         )}
 

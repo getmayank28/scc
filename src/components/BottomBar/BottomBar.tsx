@@ -1,4 +1,4 @@
-import { BadgeIndianRupee, Brain, Home, MessagesSquare, ShieldAlert } from "lucide-react";
+import { Brain, Home, MessagesSquare, ShieldAlert, Tag } from "lucide-react";
 import { ROUTES } from "@/lib/constants/routes";
 import { usePathname, useRouter } from "next/navigation";
 import useChatSidebar from "@/lib/hooks/useChatSidebar";
@@ -26,18 +26,19 @@ const navs = [
     href: ROUTES.DASHBOARD,
   },
   {
+    id: 'deals',
+    label: 'Deals',
+    icon: Tag,
+    href: ROUTES.DEALS,
+  },
+  {
     id: 'chat',
     label: 'AI Advisor',
     icon: MessagesSquare,
     href: ROUTES.CHAT + "/new",
   },
-  {
-    id: 'redemption',
-    label: 'Redeem',
-    icon: BadgeIndianRupee,
-    href: ROUTES.POINTS_REDEMPTION,
-  }
 ]
+// Points Redemption lives in the profile menu on mobile (see Profile.tsx).
 
 const BottomBar = () => {
   const pathname = usePathname()
