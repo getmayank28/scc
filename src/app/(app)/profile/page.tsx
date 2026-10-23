@@ -29,6 +29,7 @@ import {
   Landmark,
   Loader2,
   Mail,
+  Phone,
   TrendingUp,
   User,
 } from "lucide-react";
@@ -92,9 +93,9 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-5 max-md:p-4">
+    <section className="flex flex-col rounded-2xl border border-white/5 bg-white/[0.03] p-4">
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
+        <div className="flex size-8 items-center justify-center rounded-lg bg-white/5 text-primary-orange">
           {icon}
         </div>
         <h2 className="text-base font-medium text-white mr-auto">{title}</h2>
@@ -111,7 +112,7 @@ function SectionCard({
           )}
         </div>
       </div>
-      <div className="mt-5 flex flex-1 flex-col gap-3">{children}</div>
+      <div className="mt-4 flex flex-1 flex-col gap-3">{children}</div>
     </section>
   );
 }
@@ -130,7 +131,7 @@ function Tile({
   return (
     <div
       className={cn(
-        "rounded-xl bg-white/[0.04] p-4",
+        "rounded-xl bg-white/[0.04] px-4 py-3",
         highlight && "border-t-2 border-primary-orange/70"
       )}
     >
@@ -140,7 +141,39 @@ function Tile({
         </p>
         {adornment}
       </div>
-      <div className="mt-1.5">{children}</div>
+      <div className="mt-1">{children}</div>
+    </div>
+  );
+}
+
+function DetailRow({
+  icon,
+  label,
+  adornment,
+  highlight,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  adornment?: React.ReactNode;
+  highlight?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 px-4 py-2.5",
+        highlight && "border-l-2 border-primary-orange/70"
+      )}
+    >
+      <span className="shrink-0 text-white/50">{icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-white/50">
+          {label}
+        </p>
+        <div className="mt-0.5">{children}</div>
+      </div>
+      {adornment}
     </div>
   );
 }
@@ -245,7 +278,7 @@ const Profile = () => {
         }}
         onKeyDown={(e) => e.key === "Enter" && !hasInvalidDraft && savePersonal()}
         className={cn(
-          "h-10 text-sm text-white border-white/15 bg-black/20",
+          "h-9 text-sm text-white border-white/15 bg-black/20",
           errors[field] && "border-destructive"
         )}
       />
@@ -257,7 +290,7 @@ const Profile = () => {
     <button
       type="button"
       onClick={startPersonalEdit}
-      className="text-base font-medium text-primary-orange hover:underline cursor-pointer"
+      className="text-sm font-medium text-primary-orange hover:underline cursor-pointer"
     >
       {text}
     </button>
@@ -272,7 +305,7 @@ const Profile = () => {
         titleClassName="font-bold"
       />
 
-      <div className="mt-6 grid grid-cols-[2fr_3fr] max-lg:grid-cols-1 gap-6">
+      <div className="mt-6 grid grid-cols-[2fr_3fr] max-lg:grid-cols-1 gap-4">
         <SectionCard
           icon={<IdCard className="size-4" />}
           title="Personal Details"
@@ -280,57 +313,57 @@ const Profile = () => {
           onEdit={startPersonalEdit}
           editing={isEditingPersonal}
         >
-          <Tile
-            label="Full name"
-            adornment={<User className="size-4 text-white/70" />}
-            highlight={!data.name}
-          >
-            {isEditingPersonal
-              ? personalField("name", "What should we call you?")
-              : data.name
-                ? <p className="text-base font-medium text-white">{data.name}</p>
-                : missingPrompt("+ Add your name")}
-          </Tile>
+          <div className="divide-y divide-white/5 overflow-hidden rounded-xl bg-white/[0.04]">
+            <DetailRow
+              icon={<User className="size-4" />}
+              label="Full name"
+              highlight={!data.name}
+            >
+              {isEditingPersonal
+                ? personalField("name", "What should we call you?")
+                : data.name
+                  ? <p className="truncate text-sm font-medium text-white">{data.name}</p>
+                  : missingPrompt("+ Add your name")}
+            </DetailRow>
 
-          <Tile
-            label="Email"
-            adornment={<Mail className="size-4 text-white/70" />}
-            highlight={!data.email}
-          >
-            {isEditingPersonal
-              ? personalField("email", "you@example.com", "email")
-              : data.email
-                ? <p className="text-base font-medium text-white break-all">{data.email}</p>
-                : missingPrompt("+ Add your email")}
-            {!isEditingPersonal && (
-              <p className="mt-1 text-xs text-white/40">For card statements and updates.</p>
-            )}
-          </Tile>
+            <DetailRow
+              icon={<Mail className="size-4" />}
+              label="Email"
+              highlight={!data.email}
+            >
+              {isEditingPersonal
+                ? personalField("email", "you@example.com", "email")
+                : data.email
+                  ? <p className="text-sm font-medium text-white break-all">{data.email}</p>
+                  : missingPrompt("+ Add your email")}
+            </DetailRow>
 
-          <Tile
-            label="Phone number"
-            adornment={
-              <span className="rounded-md bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/80">
-                OTP Bound
-              </span>
-            }
-          >
-            <p className="text-base font-medium text-white">
-              +91 {data.phoneNumber?.replace(/(\d{5})(\d{5})/, "$1 $2")}
-            </p>
-          </Tile>
+            <DetailRow
+              icon={<Phone className="size-4" />}
+              label="Phone number"
+              adornment={
+                <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/80">
+                  OTP Bound
+                </span>
+              }
+            >
+              <p className="text-sm font-medium text-white">
+                +91 {data.phoneNumber?.replace(/(\d{5})(\d{5})/, "$1 $2")}
+              </p>
+            </DetailRow>
+          </div>
 
           {isEditingPersonal ? (
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="h-10 grow border-white/20"
+                className="h-9 grow border-white/20"
                 onClick={() => setIsEditingPersonal(false)}
               >
                 Cancel
               </Button>
               <Button
-                className="h-10 grow"
+                className="h-9 grow"
                 disabled={isSavingPersonal || hasInvalidDraft}
                 onClick={savePersonal}
               >
@@ -359,7 +392,7 @@ const Profile = () => {
               />
             </div>
           ) : (
-            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-4">
+            <div className="grid grid-cols-2 max-md:grid-cols-1 gap-3">
               <Tile
                 label="Employment type"
                 highlight={!employmentType}
@@ -377,7 +410,7 @@ const Profile = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditingEmployment(true)}
-                  className="mt-4 text-xs font-semibold text-primary-orange hover:underline cursor-pointer"
+                  className="mt-2 text-xs font-semibold text-primary-orange hover:underline cursor-pointer"
                 >
                   {employmentType ? "Change employment type →" : "Set employment type →"}
                 </button>
@@ -401,7 +434,7 @@ const Profile = () => {
                   </>
                 ) : incomeLabel ? (
                   <>
-                    <p className="text-lg font-semibold text-primary-orange">{incomeLabel}</p>
+                    <p className="text-base font-semibold text-primary-orange">{incomeLabel}</p>
                     <p className="mt-1 text-xs text-white/60">{getIncomeLabel(employmentType!)}</p>
                   </>
                 ) : (
@@ -413,18 +446,19 @@ const Profile = () => {
                   </>
                 )}
                 {!isStudent && (
-                  <Button
+                  <button
+                    type="button"
                     onClick={() => setIsEditingEmployment(true)}
-                    className="mt-3 h-9 w-full text-sm bg-secondary-orange text-primary-orange hover:bg-secondary-orange/80"
+                    className="mt-2 text-xs font-semibold text-primary-orange hover:underline cursor-pointer"
                   >
-                    {incomeLabel ? "Update income range" : "Set income range"}
-                  </Button>
+                    {incomeLabel ? "Update income range →" : "Set income range →"}
+                  </button>
                 )}
               </Tile>
             </div>
           )}
 
-          <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] p-4">
+          <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] px-4 py-3">
             <TrendingUp className="size-4 shrink-0 text-primary-orange" />
             <p className="text-xs leading-relaxed text-white/80">
               <span className="font-semibold text-white">Why this matters: </span>
@@ -435,7 +469,7 @@ const Profile = () => {
         </SectionCard>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-4">
         <AffiliateActivity />
       </div>
 
