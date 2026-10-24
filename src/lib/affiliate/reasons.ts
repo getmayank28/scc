@@ -1,6 +1,6 @@
 import { cached } from "@/models/ReportCache";
 import { listIndiaCampaigns, type ApiCampaign } from "@/lib/cuelinks/client";
-import type { UnearnedReason } from "@/types/affiliateReport";
+import type { CampaignRef, UnearnedReason } from "@/types/affiliateReport";
 
 /**
  * Why a link doesn't earn, from where it actually sends people. Shared by the
@@ -52,7 +52,17 @@ export async function loadCampaignIndex(): Promise<CampaignIndex> {
   return { byDomain, byId };
 }
 
-/** Campaign for a host: exact domain first, then parent domains short of a shared suffix. */
+/**
+ * Campaign for a host: exact domain first, then parent domains short of a
+ * shared suffix.
+ *
+ * One domain often carries several campaigns — ajio.com has the main store
+ * (www.ajio.com) and Ajio Gram (ajiogram.ajio.com); flipkart.com has the store
+ * and a seller sign-up page. Pick the one whose landing page is on the host the
+ * click went to, then the domain's main site, and only then a sub-site.
+ * Preferring "any open campaign" instead blamed main-store clicks on whichever
+ * side programme we happened to have access to.
+ */
 export function campaignFor(host: string | null, index: CampaignIndex): ApiCampaign | null {
   if (!host) return null;
   const parts = host.split(".");
@@ -61,7 +71,14 @@ export function campaignFor(host: string | null, index: CampaignIndex): ApiCampa
     if (SHARED_SUFFIXES.has(candidate)) break;
     const options = index.byDomain.get(candidate);
     if (options?.length) {
-      return options.find((c) => c.access_status === "open") ?? options[0];
+      const fit = (c: ApiCampaign) => {
+        const landing = hostOf(c.url);
+        return landing === host ? 2 : landing === candidate ? 1 : 0;
+      };
+      return [...options].sort(
+        (a, b) =>
+          fit(b) - fit(a) || Number(b.access_status === "open") - Number(a.access_status === "open"),
+      )[0];
     }
   }
   return null;
@@ -70,7 +87,7 @@ export function campaignFor(host: string | null, index: CampaignIndex): ApiCampa
 export interface Explanation {
   reason: UnearnedReason;
   host: string | null;
-  campaign: { id: number; name: string; status: string } | null;
+  campaign: CampaignRef | null;
 }
 
 /** Why a non-earning `step` to `destination` doesn't earn. */
@@ -81,6 +98,6 @@ export function explain(step: string, destination: string | null, index: Campaig
   return {
     reason: !c ? "no_campaign" : NEEDS_ACCESS.has(c.access_status) ? "needs_access" : "not_linked",
     host,
-    campaign: c ? { id: c.id, name: c.name, status: c.access_status } : null,
+    campaign: c ? { id: c.id, name: c.name, status: c.access_status, landingHost: hostOf(c.url) } : null,
   };
 }
