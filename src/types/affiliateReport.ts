@@ -32,6 +32,16 @@ export type UnearnedReason =
   | "no_campaign" // nothing on Cuelinks for this domain
   | "no_destination"; // nothing on file; the click went back into the app
 
+/** The Cuelinks campaign a non-earning link was matched to. */
+export interface CampaignRef {
+  id: number;
+  name: string;
+  /** Our access: "open" (approved), "not_applied", "pending"… */
+  status: string;
+  /** Site the campaign's own landing page is on, e.g. "ajio.com". */
+  landingHost?: string | null;
+}
+
 export interface UnearnedRow {
   type: "card" | "portal" | "voucher" | "offer";
   key: string;
@@ -39,7 +49,7 @@ export interface UnearnedRow {
   clicks: number;
   destinationHost: string | null;
   reason: UnearnedReason;
-  campaign: { id: number; name: string; status: string } | null;
+  campaign: CampaignRef | null;
 }
 
 export interface AccessNeededRow {
@@ -126,7 +136,7 @@ export interface HealthItem {
   broken: boolean;
   /** Why it doesn't earn (or "page_not_found" when the page is gone). */
   reason: UnearnedReason | "page_not_found" | null;
-  campaign: { id: number; name: string; status: string } | null;
+  campaign: CampaignRef | null;
   clicks30d: number;
   lastChange: string | null;
   lastChangeAt: string | null;

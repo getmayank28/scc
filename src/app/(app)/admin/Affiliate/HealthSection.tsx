@@ -6,7 +6,8 @@ import { RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import { useCheckAffiliateHealthMutation, useGetAffiliateHealthQuery } from "@/store/admin";
 import type { HealthItem } from "@/types/affiliateReport";
-import { CsvButton, Empty, Section, type Col } from "./ReportSections";
+import { CsvButton, Empty, ReasonCell, Section, type Col } from "./ReportSections";
+import { describeReason, reasonLine } from "@/lib/affiliate/reasonText";
 
 /**
  * Link health: every card, portal and voucher partner checked ahead of
@@ -21,14 +22,6 @@ const CHANGE_LABEL: Record<string, string> = {
   upgraded: "Moved to a better route",
   broke: "Page broke",
   recovered: "Page recovered",
-};
-
-const REASON_LABEL: Record<string, string> = {
-  page_not_found: "Page not found — update the URL",
-  needs_access: "Campaign needs an access request",
-  not_linked: "Open campaign exists — point it at the campaign's landing page",
-  no_campaign: "No Cuelinks campaign for this site",
-  no_destination: "Nothing on file — add a link",
 };
 
 const PAGE_LABEL: Record<string, string> = {
@@ -97,11 +90,17 @@ function ItemTable({
               <td className="py-1.5 pr-4 text-white/60">{r.type}</td>
               <td className="py-1.5 pr-4 text-right tabular-nums">{r.clicks30d}</td>
               <td className="py-1.5 pr-4">
-                {mode === "changes" ? (CHANGE_LABEL[r.lastChange ?? ""] ?? r.lastChange) : (REASON_LABEL[r.reason ?? ""] ?? "—")}
-                {r.campaign && (
-                  <span className="block text-xs text-white/50">
-                    {r.campaign.name} · #{r.campaign.id} · {r.campaign.status}
-                  </span>
+                {mode === "changes" ? (
+                  <>
+                    {CHANGE_LABEL[r.lastChange ?? ""] ?? r.lastChange}
+                    {r.campaign && (
+                      <span className="block text-xs text-white/50">
+                        {r.campaign.name} · #{r.campaign.id} · {r.campaign.status}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <ReasonCell text={describeReason(r.reason, r.campaign, r.destinationHost)} campaign={r.campaign} />
                 )}
               </td>
               <td className="py-1.5 pr-4 text-white/60">
@@ -134,7 +133,7 @@ export function HealthSection() {
     { label: "Type", value: (r) => r.type },
     { label: "Name", value: (r) => r.label },
     { label: "Clicks (30d)", value: (r) => r.clicks30d },
-    { label: "Problem", value: (r) => REASON_LABEL[r.reason ?? ""] ?? null },
+    { label: "Problem", value: (r) => reasonLine(describeReason(r.reason, r.campaign, r.destinationHost)) },
     { label: "Route", value: (r) => r.step },
     { label: "Goes to", value: (r) => r.destinationHost },
     { label: "Page", value: (r) => r.pageStatus },

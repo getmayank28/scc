@@ -6,11 +6,13 @@ import { Download } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 import type {
   AccessNeededRow,
+  CampaignRef,
   CuelinksReport,
   DayPoint,
   FunnelRow,
   UnearnedRow,
 } from "@/types/affiliateReport";
+import { describeReason, reasonLine, type ReasonText } from "@/lib/affiliate/reasonText";
 
 /**
  * Building blocks for the admin Affiliate report. Values and labels use text
@@ -280,11 +282,26 @@ export function StepTable({ rows }: { rows: { step: string; clicks: number }[] }
 
 // ---- leakage -------------------------------------------------------------------
 
-const REASON: Record<UnearnedRow["reason"], string> = {
-  needs_access: "Campaign needs an access request",
-  not_linked: "Open campaign, but we link somewhere it doesn't cover — point the card/portal at the campaign's landing page",
-  no_campaign: "No Cuelinks campaign for this site",
-  no_destination: "Nothing on file — add a link",
+/** Problem, then what to do, then the campaign it was matched to. */
+export function ReasonCell({ text, campaign }: { text: ReasonText | null; campaign: CampaignRef | null }) {
+  if (!text) return <>—</>;
+  return (
+    <>
+      <span className="block">{text.problem}</span>
+      <span className="block text-xs text-white/55">{text.fix}</span>
+      {campaign && (
+        <span className="mt-0.5 block text-[11px] text-white/35">
+          {campaign.name} · #{campaign.id} · {STATUS_LABEL[campaign.status] ?? campaign.status}
+        </span>
+      )}
+    </>
+  );
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  open: "approved",
+  not_applied: "not applied",
+  pending: "applied, pending",
 };
 
 export function UnearnedTable({ rows }: { rows: UnearnedRow[] }) {
@@ -293,7 +310,7 @@ export function UnearnedTable({ rows }: { rows: UnearnedRow[] }) {
     { label: "Name", value: (r) => r.label },
     { label: "Clicks", value: (r) => r.clicks },
     { label: "Went to", value: (r) => r.destinationHost },
-    { label: "Why it didn't earn", value: (r) => REASON[r.reason] },
+    { label: "Why it didn't earn", value: (r) => reasonLine(describeReason(r.reason, r.campaign, r.destinationHost)) },
     { label: "Campaign", value: (r) => (r.campaign ? `${r.campaign.name} (${r.campaign.id}, ${r.campaign.status})` : null) },
   ];
   return (
@@ -324,12 +341,10 @@ export function UnearnedTable({ rows }: { rows: UnearnedRow[] }) {
                   <td className="py-1.5 pr-4 text-right tabular-nums">{int(r.clicks)}</td>
                   <td className="py-1.5 pr-4 text-white/60">{r.destinationHost ?? "—"}</td>
                   <td className="py-1.5">
-                    {REASON[r.reason]}
-                    {r.campaign && (
-                      <span className="block text-xs text-white/50">
-                        {r.campaign.name} · #{r.campaign.id} · {r.campaign.status}
-                      </span>
-                    )}
+                    <ReasonCell
+                      text={describeReason(r.reason, r.campaign, r.destinationHost)}
+                      campaign={r.campaign}
+                    />
                   </td>
                 </tr>
               ))}
