@@ -1,5 +1,5 @@
 "use client";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { OtpInput, ResendCountdown } from "@/components/OtpInput/OtpInput";
 import { useSignInControl } from "@/contexts/SignInContext";
+import { MetaPixelEvent, trackMetaPixel } from "@/lib/analytics/metaPixel";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
 import { ROUTES } from "@/lib/constants/routes";
@@ -40,6 +41,7 @@ const SignInSection = ({
 
   useEffect(() => {
     trackEvent(EventName.SIGNIN_PAGE_VIEWED, {});
+    trackMetaPixel(MetaPixelEvent.SIGNUP_PAGE_VIEWED);
   }, []);
 
   const sendOtp = useCallback(
@@ -129,6 +131,12 @@ const SignInSection = ({
         }
 
         trackEvent(EventName.SIGNIN_SUCCEEDED, { method: "whatsapp_otp" });
+        const session = await getSession();
+        if (session?.user.isNewUser) {
+          trackMetaPixel(MetaPixelEvent.COMPLETE_REGISTRATION, {
+            method: "whatsapp_otp",
+          });
+        }
         // Honour a post-login destination when one was passed in (e.g. the sale
         // funnel routes here via ?callbackUrl=/sale/continue). Only same-origin
         // relative paths are allowed, to avoid an open-redirect.

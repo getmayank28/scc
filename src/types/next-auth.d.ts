@@ -9,6 +9,7 @@ declare module "next-auth" {
     phoneNumber?: string;
     hasAdvisorProfile?: boolean;
     profileIncomplete?: boolean;
+    isNewUser?: boolean;
   }
 
   interface Session {
@@ -20,6 +21,7 @@ declare module "next-auth" {
       phoneNumber?: string;
       hasAdvisorProfile?: boolean;
       profileIncomplete?: boolean;
+      isNewUser?: boolean;
     } & DefaultSession["user"];
   }
 }
@@ -32,6 +34,7 @@ declare module "next-auth/jwt" {
     phoneNumber?: string;
     hasAdvisorProfile?: boolean;
     profileIncomplete?: boolean;
+    isNewUser?: boolean;
     error?: "RefreshAccessTokenError";
   }
 }

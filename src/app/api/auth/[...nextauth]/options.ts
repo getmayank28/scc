@@ -58,6 +58,7 @@ export const authOptions: NextAuthOptions = {
           phoneNumber,
           isPhoneVerified: true,
         });
+        const isNewUser = !user;
         if (user) {
           if (!user.provider.includes(AUTH_PROVIDERS.WHATSAPP)) {
             user.provider = [...user.provider, AUTH_PROVIDERS.WHATSAPP];
@@ -85,6 +86,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           isVerified: true,
+          isNewUser,
           ...profileFlags(user),
         };
       },
@@ -101,6 +103,9 @@ export const authOptions: NextAuthOptions = {
         token.phoneNumber = user.phoneNumber;
         token.hasAdvisorProfile = user.hasAdvisorProfile;
         token.profileIncomplete = user.profileIncomplete;
+        // Set once at login; the client reads it right after signIn() to
+        // tell a sign-up from a returning login.
+        token.isNewUser = user.isNewUser;
       } else {
         await dbConnect();
         const dbUser = await UserModal.findById(token._id).lean<ProfileSource & { isVerified: boolean }>();
@@ -123,6 +128,7 @@ export const authOptions: NextAuthOptions = {
       session.user.phoneNumber = token.phoneNumber;
       session.user.hasAdvisorProfile = token.hasAdvisorProfile;
       session.user.profileIncomplete = token.profileIncomplete;
+      session.user.isNewUser = token.isNewUser;
 
       return session;
     },

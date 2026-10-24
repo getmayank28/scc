@@ -17,6 +17,7 @@ import { EventName } from "@/lib/analytics/types";
 import LandingCTA from "./LandingCTA";
 import { useEffect } from "react";
 import { trackEvent } from "@/lib/analytics/track";
+import { MetaPixelEvent, trackMetaPixel } from "@/lib/analytics/metaPixel";
 
 const NotificationCard = ({
   message,
@@ -249,6 +250,7 @@ const HeroSection = () => {
       path: window.location.pathname,
       referrer: document.referrer,
     });
+    trackMetaPixel(MetaPixelEvent.LANDING_PAGE_VIEWED);
   }, []);
   return (
     <div className="flex max-md:px-4 max-md:pb-14 max-md:gap-0 max-md:flex-col-reverse max-md:pt-14 pt-16 h-screen max-md:h-auto bg-background-primary gap-30 overflow-hidden items-center justify-center  relative z-10">
