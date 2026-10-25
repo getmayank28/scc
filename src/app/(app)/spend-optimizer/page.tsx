@@ -778,6 +778,32 @@ export default function SpendOptimizerPage() {
                     })}
                   </ol>
 
+                  {/* One card ranks against nothing; say how to get a comparison
+                      instead of floating a lone row in an empty panel. */}
+                  {results.length === 1 && (
+                    <div className="so-rank-solo">
+                      <LayoutGrid className="h-5 w-5 so-mut" aria-hidden />
+                      <p className="text-[0.84rem] font-semibold text-[var(--so-ink)]">Nothing to rank it against yet</p>
+                      {wallet.length > 1 ? (
+                        <p className="text-[0.74rem] so-mut">Pick more cards from the card selector above to compare.</p>
+                      ) : (
+                        <>
+                          <p className="text-[0.74rem] so-mut">Add the other cards you hold to see which one wins here.</p>
+                          <button
+                            onClick={() => {
+                              track(EventName.SPEND_OPTIMIZER_ADD_CARD_CLICKED, {});
+                              navigateToProfile();
+                            }}
+                            className="so-rank-solo-cta"
+                          >
+                            <CirclePlus className="h-4 w-4" />
+                            Add more cards
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
                   {upside > 0 && results.length > 1 && (
                     <div className="so-rank-callout">
                       <div className="min-w-0">
@@ -2571,8 +2597,12 @@ function StyleBlock() {
       /* When the panel is stretched to its neighbour's height, the rows spread
          out and the callout sits at the bottom instead of leaving a gap. */
       .so-rank--list { display: flex; flex-direction: column; }
-      .so-rank-rows { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; margin-top: 4px; }
-      .so-rank-callout { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: color-mix(in oklab, var(--primary-orange) 10%, transparent); border: 1px solid color-mix(in oklab, var(--primary-orange) 25%, transparent); }
+      .so-rank-rows { display: flex; flex-direction: column; margin: 4px 0 12px; }
+      .so-rank-solo { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 20px 16px; border: 1px dashed var(--so-outline); border-radius: 12px; text-align: center; }
+      .so-rank-solo > svg { margin-bottom: 4px; }
+      .so-rank-solo-cta { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 7px 14px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; color: var(--primary-orange); border: 1px solid color-mix(in oklab, var(--primary-orange) 40%, transparent); cursor: pointer; }
+      .so-rank-solo-cta:hover { background: color-mix(in oklab, var(--primary-orange) 10%, transparent); }
+      .so-rank-callout { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; padding: 12px 14px; border-radius: 12px; background: color-mix(in oklab, var(--primary-orange) 10%, transparent); border: 1px solid color-mix(in oklab, var(--primary-orange) 25%, transparent); }
       .so-rank .so-compare-body { border-top: 0; padding: 4px 0 0; }
       .so-compare-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; }
       @media (min-width: 1024px) { .so-compare-grid.has-two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; } }
