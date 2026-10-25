@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Typography from "@/components/Typography/Typography";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 import CardRecommendationModal from "../CardRecommendationModal/CardRecommendationModal";
-import { useLazyGetRedirectUrlQuery } from "@/store/api";
-import { Spinner } from "../ui/spinner";
+import { outUrl } from "@/lib/cuelinks/outUrl";
 import { trackEvent } from "@/lib/analytics/track";
 import { EventName } from "@/lib/analytics/types";
 import {
@@ -19,17 +18,12 @@ import {
 function ChatCard(props: BotRecommendationCreditCardProps) {
   const [open, setOpen] = useState(false);
 
-  const [getRedirectUrl, { data, isLoading }] = useLazyGetRedirectUrlQuery();
-
-  useEffect(() => {
-    if (props?.id) {
-      getRedirectUrl({ cardId: props.id });
-    }
-  }, [props?.id]);
-
-  // Prefer the resolved redirect URL; fall back to any applyLink supplied in
-  // the payload (socket recommendations carry real URLs, local cards send "").
-  const applyLink = data?.data || props?.applyLink || "";
+  // Cards with a slug go through /api/out, which picks and tracks the
+  // destination server-side; the payload's applyLink only covers older socket
+  // recommendations that arrive without one.
+  const applyLink = props?.id
+    ? outUrl({ type: "card", id: props.id, surface: "advisor" })
+    : props?.applyLink || "";
 
   const name = displayCardName(props?.cardName);
   const fee = feeStatus(props);
@@ -230,7 +224,7 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
 
           {applyLink && (
             <a
-              href={isLoading ? "" : applyLink}
+              href={applyLink}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() =>
@@ -238,11 +232,9 @@ function ChatCard(props: BotRecommendationCreditCardProps) {
                   cardName: props?.cardName ?? "",
                 })
               }
-              className={`w-full min-w-[80px] rounded-full border border-secondary-orange p-2 py-1 text-center text-[12px] font-bold text-white transition-opacity focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange ${
-                isLoading ? "bg-primary-orange/40" : "bg-primary-orange/80 hover:bg-primary-orange"
-              }`}
+              className="w-full min-w-[80px] rounded-full border border-secondary-orange bg-primary-orange/80 p-2 py-1 text-center text-[12px] font-bold text-white transition-opacity hover:bg-primary-orange focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-orange"
             >
-              {isLoading ? <Spinner /> : "Apply now"}
+              Apply now
             </a>
           )}
         </div>

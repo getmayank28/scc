@@ -12,6 +12,7 @@ import EmailAdmin from "./Email/page";
 import RulesUpload from "./advisor/RulesUpload";
 import CardsUpload from "./advisor/CardsUpload";
 import MilestonesUpload from "./advisor/MilestonesUpload";
+import AffiliateAdmin from "./Affiliate";
 
 const tabs = [
   {
@@ -29,6 +30,10 @@ const tabs = [
   {
     label: "Affiliate links",
     value: "affiliate-links",
+  },
+  {
+    label: "Affiliate",
+    value: "affiliate",
   },
   {
     label: "Giftors",
@@ -81,6 +86,9 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "affiliate-links" && <AdminLinks />
+      }
+      {
+        selectedValue === "affiliate" && <AffiliateAdmin />
       }
       {
         selectedValue === "giftors"&& <Giftors/>

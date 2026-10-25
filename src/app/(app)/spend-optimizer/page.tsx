@@ -11,13 +11,17 @@ import {
   Check,
   ArrowRight,
   ArrowLeft,
+  ArrowDown,
   CirclePlus,
   ExternalLink,
   LayoutGrid,
   Store,
   Info,
   X,
+  type LucideIcon,
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useGetDealsQuery } from "@/store/userApi";
 import {
   Select,
   SelectContent,
@@ -71,6 +75,8 @@ import type {
   MerchantOption,
 } from "@/lib/logic/advisor/merchantBreakdown";
 import { isDirectSwipeOnlyUiCategory } from "@/lib/logic/advisor/spendOptimizer";
+import { outUrl } from "@/lib/cuelinks/outUrl";
+import { OptimizerDeals } from "./OptimizerDeals";
 
 type Status = "idle" | "loading" | "done";
 type Mode = "category" | "merchant";
@@ -81,7 +87,9 @@ type Mode = "category" | "merchant";
  * disagree about which case they are in.
  */
 type SwipeTarget =
-  | { kind: "linked"; name: string; url: string }
+  // `slug` routes the click through /api/out; `url` is the fallback for a
+  // portal row that somehow lacks one.
+  | { kind: "linked"; name: string; url: string; slug: string | null }
   | { kind: "named"; name: string; url: null }
   | { kind: "unknown"; name: null; url: null };
 
@@ -147,7 +155,6 @@ export default function SpendOptimizerPage() {
   // --- output ---
   const [status, setStatus] = useState<Status>("idle");
   const [results, setResults] = useState<OptimizedCardResult[]>([]);
-  const [showAll, setShowAll] = useState(false);
   const [ranWith, setRanWith] = useState({
     category: "",
     merchant: "",
@@ -296,7 +303,6 @@ export default function SpendOptimizerPage() {
   // ticket at a different card than the user picked.
   const shown = results.find((c) => c.cardId === shownCardId) ?? best;
   const isShowingBest = !!best && shown?.cardId === best.cardId;
-  const runnerUp = results[1];
   const worst = results[results.length - 1];
   const upside =
     best && worst ? best.bestSavingsInInr - worst.bestSavingsInInr : 0;
@@ -379,7 +385,7 @@ export default function SpendOptimizerPage() {
     const portal = portalsByName.get(merchantKey(ranWith.merchant || slug!));
     const url = portal?.affiliateLink || portal?.websiteUrl || null;
     return url
-      ? { kind: "linked", name: portal?.name ?? name, url }
+      ? { kind: "linked", name: portal?.name ?? name, url, slug: portal?.slug ?? null }
       : { kind: "named", name, url: null };
   }, [ranWith.merchant, shown?.directMerchant, portalsByName]);
 
@@ -410,8 +416,8 @@ export default function SpendOptimizerPage() {
         const res = await giftorsByCardSlug(card.cardId).unwrap();
         // A bank with no giftor on file resolves to an empty list; opening the
         // undefined url would land the user on about:blank.
-        const url = res?.[0]?.url;
-        if (!url) {
+        const giftor = res?.[0];
+        if (!giftor?.url) {
           // Deliberately does NOT name the bank. `card.bankName` is mapped from
           // the card's `bankName` field, which holds the NETWORK ("visa",
           // "mastercard") on 306 of 308 active cards — so naming it produced
@@ -420,6 +426,9 @@ export default function SpendOptimizerPage() {
           toast.error(`No voucher partner listed for ${card.cardName} yet`);
           return;
         }
+        const url = giftor.slug
+          ? outUrl({ type: "voucher", id: giftor.slug, surface: "optimizer", card: card.cardId })
+          : giftor.url;
         window.open(url, "_blank", "noopener,noreferrer");
       } catch {
         toast.error("Couldn't open the voucher partner. Please try again.");
@@ -440,7 +449,10 @@ export default function SpendOptimizerPage() {
         hasDestination: swipeTarget.kind === "linked",
       });
       if (swipeTarget.kind === "linked") {
-        window.open(swipeTarget.url, "_blank", "noopener,noreferrer");
+        const url = swipeTarget.slug
+          ? outUrl({ type: "portal", id: swipeTarget.slug, surface: "optimizer", card: card.cardId })
+          : swipeTarget.url;
+        window.open(url, "_blank", "noopener,noreferrer");
         return;
       }
       setExploring(true);
@@ -551,26 +563,31 @@ export default function SpendOptimizerPage() {
      * for an ordinary run, which should always land on the winner.
      */
     keepShownCardId?: string,
+    /**
+     * Amount to run with, for callers that set it in the same tick (the result
+     * bar's amount chips) — `numericAmount` would still hold the old value.
+     */
+    amountOverride?: number,
   ) {
+    const runAmount = amountOverride ?? numericAmount;
     if (selected.length === 0) {
       toast.error("Add at least one card to compare");
       return;
     }
-    if (numericAmount <= 0) {
+    if (runAmount <= 0) {
       toast.error("Enter an amount");
       return;
     }
 
     track(EventName.SPEND_OPTIMIZER_FORM_SUBMITTED, {
       category: runCategory,
-      amount: numericAmount,
+      amount: runAmount,
       merchant: runMerchant,
       transactionMode: mode === "merchant" ? "online" : "offline",
       selectedCardCount: selected.length,
     });
 
     setStatus("loading");
-    setShowAll(false);
     // Scroll now, not on completion: the user sees the skeleton immediately and
     // the page doesn't jump under them once the response lands.
     scrollToResultOnMobile();
@@ -578,7 +595,7 @@ export default function SpendOptimizerPage() {
     try {
       const res = await optimizeSpend({
         category: runCategory,
-        amountInr: numericAmount,
+        amountInr: runAmount,
         merchant: runMerchant || undefined,
         cardSlugs: selected,
       }).unwrap();
@@ -588,7 +605,7 @@ export default function SpendOptimizerPage() {
       setRanWith({
         category: runCategory,
         merchant: runMerchant,
-        amount: numericAmount,
+        amount: runAmount,
         merchantMatched: res?.result?.merchantMatched ?? true,
         unsupportedCards: res?.result?.unsupportedCards ?? [],
         voucherPortals: res?.result?.voucherPortals ?? {},
@@ -611,7 +628,7 @@ export default function SpendOptimizerPage() {
 
       track(EventName.SPEND_OPTIMIZER_RESULT_VIEWED, {
         category: runCategory,
-        amount: numericAmount,
+        amount: runAmount,
         merchant: runMerchant,
         transactionMode: mode === "merchant" ? "online" : "offline",
         bestCardName: cards[0]?.cardName ?? null,
@@ -623,7 +640,7 @@ export default function SpendOptimizerPage() {
       addSpendTransaction({
         userId,
         category: runCategory,
-        amount: String(numericAmount),
+        amount: String(runAmount),
         merchant: runMerchant,
         transactionMode: mode === "merchant" ? "online" : "offline",
         cards: cards.map((c) => ({
@@ -689,27 +706,108 @@ export default function SpendOptimizerPage() {
   }
 
   const busy = status === "loading" || isOptimizing;
+  // Once a run starts, the pickers collapse into the result bar and the result
+  // takes the full width.
+  const resultMode = status !== "idle";
+  const quickMerchant = quickMerchants.find((m) => m.label === ranWith.merchant);
+  const ranCategoryDef = categories.find((c) => c.value === ranWith.category);
+  const barTarget = ranWith.merchant
+    ? { label: ranWith.merchant, logo: quickMerchant?.logo }
+    : { label: ranCategory ?? "Your spend", art: ranCategoryDef?.art, icon: ranCategoryDef?.icon };
+  const dealsSlug = swipeTarget.kind === "linked" ? swipeTarget.slug : null;
+  const { data: dealsData } = useGetDealsQuery(
+    { portal: dealsSlug ?? "", cards: false },
+    { skip: !dealsSlug },
+  );
+  const hasDeals = !!dealsSlug && (dealsData?.merchants[0]?.deals.length ?? 0) > 0;
+  const rerun = (amountOverride?: number) =>
+    runFor(ranWith.category, ranWith.merchant, shown?.cardId, amountOverride);
+
+  // Every scored card, always visible: the answer is clearer next to what it
+  // beat, and any row opens in the ticket. Rendered in the right column or the
+  // second row depending on whether the merchant has deals.
+  const rankPanel = status === "done" && shown && best && (
+                <aside className="so-rank so-rank--list">
+                  <div className="so-rank-head">
+                    <h3>Your cards, ranked</h3>
+                    <span>on {inr(ranWith.amount)}</span>
+                  </div>
+                  <ol className="so-rank-rows">
+                    {results.map((c, i) => {
+                      const width = best.bestSavingsInInr > 0 ? (c.bestSavingsInInr / best.bestSavingsInInr) * 100 : 0;
+                      const isShown = c.cardId === shown.cardId;
+                      return (
+                        <li key={c.cardId}>
+                          <button
+                            onClick={() => {
+                              if (isShown) return;
+                              setShownCardId(c.cardId === best.cardId ? null : c.cardId);
+                              setExploring(false);
+                              scrollToResultOnMobile();
+                            }}
+                            aria-pressed={isShown}
+                            className={`so-rank-row ${isShown ? "is-shown" : ""}`}
+                          >
+                            <span className="so-rank-n">{i + 1}</span>
+                            <Image
+                              width={18}
+                              height={18}
+                              src={`/icons/banks/${bankIcon?.[c.bankName] ?? bankIcon?.default}`}
+                              alt=""
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center gap-2">
+                                <span className="truncate text-[0.84rem] font-semibold">{c.cardName}</span>
+                                {c.isBestCard && <span className="so-best-tag">Best</span>}
+                              </span>
+                              <span className="so-rank-bar">
+                                <span style={{ width: `${Math.max(width, 3)}%` }} />
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-right">
+                              <span className="block so-mono text-[0.9rem] font-semibold">
+                                {inr(c.bestSavingsInInr)}
+                              </span>
+                              <span className="block text-[0.66rem] so-mut">
+                                {c.bestRatePct.toFixed(1)}% · {c.bestRoute === "voucher" ? "voucher" : "swipe"}
+                              </span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ol>
+
+                  {upside > 0 && results.length > 1 && (
+                    <div className="so-rank-callout">
+                      <div className="min-w-0">
+                        <p className="text-[0.72rem] so-mut">Picking the right card earns you</p>
+                        <p className="mt-0.5 truncate text-[0.78rem] text-[var(--so-ink-variant)]">
+                          more than your {worst.cardName}
+                        </p>
+                      </div>
+                      <span className="so-mono so-accent shrink-0 text-2xl font-bold">+{inr(upside)}</span>
+                    </div>
+                  )}
+                </aside>
+  );
 
   return (
     <div className="so-root min-h-screen bg-brown-background">
       <StyleBlock />
 
       <main className="so-page">
-        <header className="so-masthead">
-          <div className="so-eyebrow">
-            <span className="so-dot" />
-            {isCardsLoading
-              ? "Loading your wallet…"
-              : `Card concierge · ${wallet.length} card${wallet.length === 1 ? "" : "s"} on file`}
-          </div>
-          <h1 className="so-display">The one card for this buy.</h1>
-          <p className="so-lede">
-          Tell us what you’re buying, and we’ll instantly find the card that gives you the best return.
-          </p>
-        </header>
+        {/* Only before the first run; after it the result bar heads the page. */}
+        {!resultMode && (
+          <header className="so-masthead">
+            <h1 className="so-display">The one card for this buy</h1>
+            <p className="so-lede">Pick what you&apos;re buying and we&apos;ll find the card that pays you back most.</p>
+          </header>
+        )}
 
-        <div className="so-grid">
-          {/* ============ LEFT: quick selects ============ */}
+        <div className={`so-grid ${resultMode ? "is-result" : ""}`}>
+          {/* ============ LEFT: quick selects (idle only) ============ */}
+          {!resultMode && (
           <div className="so-quick">
             <section>
               <h3 className="so-eyecaps">Jump straight to</h3>
@@ -922,9 +1020,28 @@ export default function SpendOptimizerPage() {
               )}
             </section>
           </div>
+          )}
 
           {/* ============ RIGHT: precision panel OR result ============ */}
           <div className="so-right" ref={resultRef}>
+            {resultMode && (
+              <ResultBar
+                target={barTarget}
+                amount={ranWith.amount || numericAmount}
+                busy={busy}
+                wallet={wallet}
+                selected={selected}
+                atMax={atMax}
+                onChange={reset}
+                onAmount={(n) => {
+                  setAmount(String(n));
+                  track(EventName.SPEND_OPTIMIZER_AMOUNT_ENTERED, { amount: n });
+                  rerun(n);
+                }}
+                onToggleCard={toggleCard}
+                onRerun={() => rerun()}
+              />
+            )}
             {status === "idle" && (
               <section className="so-panel">
                 <h2 className="so-panel-title">Set it up precisely</h2>
@@ -1120,6 +1237,8 @@ export default function SpendOptimizerPage() {
 
             {status === "done" && shown && (
               <div className="so-reveal">
+                <div className="so-result-grid">
+                <div className="min-w-0">
                 <div className="so-ticket">
                   <div className="so-ticket-head">
                     {/* The eyebrow is a recommendation, so it must not claim
@@ -1198,6 +1317,9 @@ export default function SpendOptimizerPage() {
                         {shown.bestRatePct.toFixed(1)}% back on{" "}
                         {inr(ranWith.amount)}
                       </div>
+                      {swipeTarget.kind === "linked" && swipeTarget.slug && (
+                        <DealsTeaser portalSlug={swipeTarget.slug} merchantName={swipeTarget.name} />
+                      )}
                     </div>
                   </div>
 
@@ -1262,25 +1384,6 @@ export default function SpendOptimizerPage() {
                   </p>
                 )}
 
-                {/* Always about the BEST card, never the promoted one —
-                    "picking this" next to a weaker card the user is merely
-                    inspecting would credit it with the winner's upside. */}
-                {isShowingBest && upside > 0 && (
-                  <p className="so-upside">
-                    Picking this over your weakest card is worth{" "}
-                    <span className="so-mono so-accent font-semibold">
-                      +{inr(upside)}
-                    </span>
-                    {runnerUp && (
-                      <>
-                        {" "}
-                        · runner-up {runnerUp.cardName} (
-                        {inr(runnerUp.bestSavingsInInr)})
-                      </>
-                    )}
-                  </p>
-                )}
-
                 {!isShowingBest && best && (
                   <p className="so-upside">
                     You&apos;re viewing {shown.cardName}.{" "}
@@ -1308,21 +1411,36 @@ export default function SpendOptimizerPage() {
                   </p>
                 )}
 
-                <div className="so-compare">
-                  <button
-                    onClick={() => setShowAll((s) => !s)}
-                    className="so-compare-toggle"
-                  >
-                    <span>
-                      See all {results.length} card
-                      {results.length === 1 ? "" : "s"}, side by side
-                    </span>
-                    <ChevronDown
-                      className={`h-4 w-4 so-mut transition ${showAll ? "rotate-180" : ""}`}
-                    />
-                  </button>
+                </div>
 
-                  {showAll && (
+                {/* Right column: the merchant's coupons when it has any (the
+                    tempting part, kept above the fold); otherwise the ranking. */}
+                <div className="flex min-w-0 flex-col gap-4">
+                {hasDeals && swipeTarget.kind === "linked" && swipeTarget.slug && (
+                  <div id="so-deals" className="so-fill scroll-mt-24">
+                    <OptimizerDeals
+                      portalSlug={swipeTarget.slug}
+                      merchantName={swipeTarget.name}
+                      cardId={shown.cardId}
+                      cardName={shown.cardName}
+                      compact
+                      className="so-rank flex flex-col gap-2"
+                    />
+                  </div>
+                )}
+                {!hasDeals && rankPanel}
+                </div>
+                </div>
+
+                {/* Second row: the ranking and the voucher/swipe split side by
+                    side, so neither pushes the other around. */}
+                <div className={`so-compare-grid ${hasDeals ? "has-two" : ""}`}>
+                {hasDeals && rankPanel}
+                <section className="so-rank">
+                  <div className="so-rank-head">
+                    <h3>Voucher vs swipe</h3>
+                    <span>card by card</span>
+                  </div>
                     <div className="so-compare-body">
                       <div className="so-compare-head">
                         <span>Card</span>
@@ -1407,7 +1525,7 @@ export default function SpendOptimizerPage() {
                         )}
                       </p>
                     </div>
-                  )}
+                </section>
                 </div>
               </div>
             )}
@@ -1871,7 +1989,7 @@ function ValueCell({
 
 function ResultSkeleton() {
   return (
-    <div className="so-reveal">
+    <div className="so-reveal so-result-grid">
       <div className="so-ticket so-ticket--loading">
         <div className="so-ticket-body space-y-4">
           <div className="so-skel-dark h-8 w-40" />
@@ -1886,6 +2004,25 @@ function ResultSkeleton() {
           <div className="so-skel-dark h-4 w-full" />
           <div className="so-skel-dark h-11 w-full" />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        {/* Deals, then the ranked cards — same order as the result. */}
+        {[3, 3].map((rows, panel) => (
+          <div key={panel} className="so-rank space-y-3">
+            <div className="so-skel h-4 w-36" />
+            {Array.from({ length: rows }, (_, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="so-skel h-5 w-5 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="so-skel h-3.5 w-3/4" />
+                  <div className="so-skel h-1.5 w-full" />
+                </div>
+                <div className="so-skel h-5 w-12 shrink-0" />
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1927,35 +2064,21 @@ function StyleBlock() {
       .so-win { color: var(--so-win); }
       .so-body { font-size: 0.9rem; color: var(--so-ink-variant); }
 
-      .so-page { max-width: 1180px; margin: 0 auto; padding: 32px 20px 40px; }
-      @media (min-width: 768px) { .so-page { padding: 72px 40px 48px; } }
+      /* 80px on top clears the app header (avatar bar), as on the other pages. */
+      .so-page { max-width: 1180px; margin: 0 auto; padding: 80px 20px 112px; }
+      @media (min-width: 768px) { .so-page { padding: 76px 40px 48px; } }
 
-      .so-eyebrow {
-        display: inline-flex; align-items: center; gap: 8px;
-        font-family: var(--so-mono); font-size: 0.72rem; font-weight: 500;
-        letter-spacing: 0.12em; text-transform: uppercase; color: var(--so-mut);
-      }
-      .so-dot {
-        width: 7px; height: 7px; border-radius: 999px; background: var(--so-action);
-        box-shadow: 0 0 8px color-mix(in oklab, var(--primary-orange) 50%, transparent);
-        animation: so-pulse 2.4s ease-in-out infinite;
-      }
-      @keyframes so-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
       .so-display {
         font-family: var(--so-display-face); font-weight: 700;
-        font-size: clamp(1.75rem, 4vw, 3rem); line-height: 1.05; letter-spacing: -0.02em;
-        margin-top: 16px; color: var(--so-ink);
+        font-size: clamp(1.35rem, 2vw, 1.75rem); line-height: 1.15; letter-spacing: -0.02em;
+        color: var(--so-ink);
       }
-      .so-lede {
-        margin-top: 12px; max-width: 42rem;
-        font-size: 1rem; line-height: 1.6; color: var(--so-ink-variant);
-      }
-      @media (min-width: 768px) { .so-lede { font-size: 1.05rem; } }
+      .so-lede { margin-top: 6px; font-size: 0.875rem; line-height: 1.5; color: var(--so-mut); }
 
       /* One layout, two breakpoints — no separate mobile/desktop trees. */
-      .so-grid { margin-top: 32px; display: grid; grid-template-columns: 1fr; gap: 24px; }
+      .so-grid { margin-top: 20px; display: grid; grid-template-columns: 1fr; gap: 24px; }
       @media (min-width: 1024px) {
-        .so-grid { margin-top: 40px; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: 32px; align-items: start; }
+        .so-grid { margin-top: 28px; grid-template-columns: minmax(0,5fr) minmax(0,7fr); gap: 32px; align-items: start; }
       }
       .so-quick { display: flex; flex-direction: column; gap: 28px; }
       /* scroll-margin keeps the scrolled-to result clear of the app header
@@ -2369,8 +2492,6 @@ function StyleBlock() {
       .so-notice, .so-upside { margin-top: 16px; padding: 13px 16px; border-radius: 12px; border: 1px solid var(--so-outline); background: var(--so-surface-low); font-size: 0.82rem; line-height: 1.45; color: var(--so-ink-variant); text-align: center; }
       .so-notice { border-color: color-mix(in oklab, var(--primary-orange) 40%, transparent); }
 
-      .so-compare { margin-top: 16px; border: 1px solid var(--so-outline); border-radius: 14px; background: var(--so-surface-low); overflow: hidden; }
-      .so-compare-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 15px 18px; font-size: 0.85rem; color: var(--so-ink); cursor: pointer; }
       .so-compare-body { border-top: 1px solid var(--so-outline); padding: 6px; }
       .so-compare-head { display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 8px; padding: 8px 12px; font-family: var(--so-mono); font-size: 0.6rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--so-mut); }
       .so-compare-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center; gap: 8px; padding: 11px 12px; border-radius: 9px; }
@@ -2398,12 +2519,251 @@ function StyleBlock() {
       .so-compare-note { padding: 10px 12px 6px; font-size: 0.72rem; line-height: 1.5; color: var(--so-mut); }
       .so-compare-note b { color: var(--so-ink); }
 
+      /* Result mode: the pickers are gone, the result spans the page. */
+      .so-grid.is-result { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
+      .so-grid.is-result .so-right { position: static; }
+      /* minmax(0,1fr), not the implicit auto track: an auto track grows to fit
+         the longest unbroken line (a card name), overflowing narrow screens. */
+      .so-result-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+      .so-result-grid > *, .so-compare-grid > * { min-width: 0; }
+      @media (min-width: 1024px) {
+        /* Side-by-side panels share a row height: columns stretch, and each
+           column's main panel grows to fill it. */
+        .so-result-grid { grid-template-columns: minmax(0,7fr) minmax(0,5fr); gap: 20px; }
+        .so-result-grid > * { display: flex; flex-direction: column; }
+        .so-result-grid .so-ticket { flex: 1; display: flex; flex-direction: column; }
+        .so-result-grid .so-ticket-body { flex: 1; }
+        .so-result-grid .so-fill, .so-result-grid > * > .so-rank { flex: 1; }
+        .so-fill { display: flex; flex-direction: column; }
+        .so-fill > * { flex: 1; }
+      }
+
+      .so-qbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 16px; padding: 10px 12px; border: 1px solid var(--so-outline); border-radius: 16px; background: var(--so-surface-low); }
+      .so-qbar-target { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 0.95rem; color: var(--so-ink); }
+      .so-qbar-logo { display: grid; place-items: center; width: 32px; height: 32px; flex: none; border-radius: 9px; background: var(--so-surface-high); color: var(--so-primary); font-weight: 700; overflow: hidden; }
+      .so-qbar-link { font-size: 0.75rem; font-weight: 600; color: var(--so-primary); cursor: pointer; }
+      .so-qbar-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+      .so-qbar-amount { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+      @media (min-width: 768px) { .so-qbar-amount { padding-left: 16px; border-left: 1px solid var(--so-outline); } }
+      .so-qbar-field { display: flex; align-items: center; gap: 4px; padding: 6px 10px; border: 1px solid var(--so-outline); border-radius: 10px; background: var(--so-bg); font-family: var(--so-mono); font-size: 0.95rem; }
+      .so-qbar-field:focus-within { border-color: var(--so-primary); }
+      .so-qbar-field input { width: 6.5ch; background: transparent; outline: none; color: var(--so-ink); font-weight: 600; }
+      .so-qbar-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+      .so-qbar-chips::-webkit-scrollbar { display: none; }
+      .so-qbar-chips .so-amt-chip { flex: none; }
+      .so-qbar-cards { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; padding: 7px 12px; border: 1px solid var(--so-outline); border-radius: 999px; font-size: 0.8rem; font-weight: 600; color: var(--so-ink); cursor: pointer; }
+      .so-qbar-cards:hover { border-color: var(--so-primary); }
+      .so-qbar-pop { width: 300px; background: var(--brown-sidebar); border-color: var(--brown-border); color: oklch(0.97 0.008 60); }
+
+      .so-teaser { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 6px 12px; border-radius: 999px; background: color-mix(in oklab, var(--primary-orange) 13%, transparent); color: var(--primary-orange); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+      .so-teaser:hover { background: color-mix(in oklab, var(--primary-orange) 20%, transparent); }
+
+      .so-rank { border: 1px solid var(--so-outline); border-radius: 16px; background: var(--so-surface-low); padding: 14px; }
+      .so-rank-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 2px 8px 6px; }
+      .so-rank-head h3 { font-size: 0.95rem; font-weight: 600; color: var(--so-ink); }
+      .so-rank-head span { font-size: 0.75rem; color: var(--so-mut); }
+      .so-rank-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; border-radius: 10px; text-align: left; color: var(--so-ink); cursor: pointer; }
+      .so-rank-row:hover { background: color-mix(in oklab, var(--so-ink) 6%, transparent); }
+      .so-rank-row.is-shown { background: color-mix(in oklab, var(--primary-orange) 12%, transparent); cursor: default; }
+      .so-rank-n { width: 12px; flex: none; font-family: var(--so-mono); font-size: 0.7rem; color: var(--so-mut); }
+      .so-rank-bar { display: block; height: 4px; margin-top: 6px; border-radius: 999px; background: color-mix(in oklab, var(--so-ink) 10%, transparent); overflow: hidden; }
+      .so-rank-bar > span { display: block; height: 100%; border-radius: inherit; background: var(--primary-orange); }
+      /* When the panel is stretched to its neighbour's height, the rows spread
+         out and the callout sits at the bottom instead of leaving a gap. */
+      .so-rank--list { display: flex; flex-direction: column; }
+      .so-rank-rows { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; margin-top: 4px; }
+      .so-rank-callout { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 12px; background: color-mix(in oklab, var(--primary-orange) 10%, transparent); border: 1px solid color-mix(in oklab, var(--primary-orange) 25%, transparent); }
+      .so-rank .so-compare-body { border-top: 0; padding: 4px 0 0; }
+      .so-compare-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+      @media (min-width: 1024px) { .so-compare-grid.has-two { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; } }
+
       .so-reveal { animation: so-rise .5s cubic-bezier(.2,.7,.3,1) both; }
       @keyframes so-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
 
       @media (prefers-reduced-motion: reduce) {
-        .so-reveal, .so-dot, .so-skel, .so-skel-dark { animation: none !important; transition: none !important; }
+        .so-reveal, .so-skel, .so-skel-dark { animation: none !important; transition: none !important; }
       }
     `}</style>
+  );
+}
+
+/**
+ * The run's inputs, collapsed into one editable line once there's a result:
+ * what it's for (tap Change to go back to the pickers), the amount (a chip or
+ * an edit re-runs immediately), and which cards are in play. Replaces the left
+ * column so the result can use the full width.
+ */
+function ResultBar({
+  target,
+  amount,
+  busy,
+  wallet,
+  selected,
+  atMax,
+  onChange,
+  onAmount,
+  onToggleCard,
+  onRerun,
+}: {
+  target: { label: string; logo?: string; art?: string; icon?: LucideIcon };
+  amount: number;
+  busy: boolean;
+  wallet: WalletCard[];
+  selected: string[];
+  atMax: boolean;
+  onChange: () => void;
+  onAmount: (amount: number) => void;
+  onToggleCard: (slug: string) => void;
+  onRerun: () => void;
+}) {
+  const [draft, setDraft] = useState(String(amount));
+  const [cardsOpen, setCardsOpen] = useState(false);
+  // Selection when the popover opened, to re-run only if it changed.
+  const openedWith = useRef<string[]>([]);
+
+  useEffect(() => setDraft(String(amount)), [amount]);
+
+  const commit = () => {
+    const n = Number(draft.replace(/[^\d]/g, "")) || 0;
+    if (n > 0 && n !== amount) onAmount(n);
+    else setDraft(String(amount));
+  };
+
+  const Icon = target.icon;
+  return (
+    <div className="so-qbar">
+      <div className="so-qbar-target">
+        <span className="so-qbar-logo" aria-hidden>
+          {target.logo || target.art ? (
+            <Image src={(target.logo || target.art)!} alt="" width={22} height={22} />
+          ) : Icon ? (
+            <Icon className="h-4 w-4" />
+          ) : (
+            target.label[0]
+          )}
+        </span>
+        <span className="truncate font-semibold">{target.label}</span>
+        <button onClick={onChange} disabled={busy} className="so-qbar-link">
+          Change
+        </button>
+      </div>
+
+      <div className="so-qbar-amount">
+        <label className="so-qbar-field">
+          <span className="so-mut">₹</span>
+          <input
+            inputMode="numeric"
+            value={formatCurrency(draft).replace("₹", "")}
+            onChange={(e) => setDraft(e.target.value.replace(/[^\d]/g, ""))}
+            onBlur={commit}
+            onKeyDown={(e) => e.key === "Enter" && (e.currentTarget as HTMLInputElement).blur()}
+            disabled={busy}
+            aria-label="Amount"
+          />
+        </label>
+        <div className="so-qbar-chips">
+          {AMOUNT_CHIPS.map((v) => (
+            <button
+              key={v}
+              onClick={() => v !== amount && onAmount(v)}
+              disabled={busy}
+              className={`so-amt-chip ${amount === v ? "is-active" : ""}`}
+            >
+              ₹{v >= 1000 ? `${v / 1000}k` : v}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <Popover
+        open={cardsOpen}
+        onOpenChange={(open) => {
+          if (open) openedWith.current = selected;
+          else if (selected.length > 0 && selected.join() !== openedWith.current.join()) onRerun();
+          setCardsOpen(open);
+        }}
+      >
+        <PopoverTrigger asChild>
+          <button className="so-qbar-cards" disabled={busy}>
+            <span className="so-wallet-stack" aria-hidden>
+              {selected.slice(0, 3).map((slug, i) => {
+                const c = wallet.find((x) => x.slug === slug);
+                return (
+                  <Image
+                    key={slug}
+                    width={16}
+                    height={16}
+                    src={`/icons/banks/${bankIcon?.[c?.bankName ?? ""] ?? bankIcon?.default}`}
+                    alt=""
+                    style={{ marginLeft: i === 0 ? 0 : -7, zIndex: 3 - i }}
+                    className="so-wallet-chip"
+                  />
+                );
+              })}
+            </span>
+            {selected.length} card{selected.length === 1 ? "" : "s"}
+            <ChevronDown className="h-3.5 w-3.5 so-mut" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="so-qbar-pop">
+          <p className="mb-2 text-xs so-mut">
+            {atMax ? `Up to ${MAX_SELECTED} cards. Swap one to change.` : `Compare up to ${MAX_SELECTED} cards.`}
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {wallet.map((card) => {
+              const on = selected.includes(card.slug);
+              const locked = !on && atMax;
+              return (
+                <button
+                  key={card.slug}
+                  onClick={() => onToggleCard(card.slug)}
+                  disabled={locked}
+                  aria-pressed={on}
+                  className={`so-card-pick ${on ? "is-on" : ""} ${locked ? "is-locked" : ""}`}
+                >
+                  <Image
+                    width={18}
+                    height={18}
+                    src={`/icons/banks/${bankIcon?.[card.bankName] ?? bankIcon?.default}`}
+                    alt=""
+                  />
+                  <span className="min-w-0 flex-1 truncate text-left text-[0.8rem] font-semibold">{card.name}</span>
+                  {on && (
+                    <span className="so-tick">
+                      <Check className="h-3 w-3" strokeWidth={3} />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[0.7rem] so-mut">Closing this re-runs the comparison.</p>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+/**
+ * One line in the ticket that points at the coupons below — the result alone
+ * undersells the visit when the merchant also has a live code. Shares the
+ * deals query (and cache) with `OptimizerDeals`, so it costs no extra request.
+ */
+function DealsTeaser({ portalSlug, merchantName }: { portalSlug: string; merchantName: string }) {
+  const { data } = useGetDealsQuery({ portal: portalSlug, cards: false });
+  const deals = data?.merchants[0]?.deals ?? [];
+  if (!deals.length) return null;
+
+  const pct = Math.max(0, ...deals.map((d) => d.discount?.percent ?? 0));
+  const offer = pct > 0 ? `up to ${pct}% off` : `${deals.length} live ${deals.length === 1 ? "deal" : "deals"}`;
+  return (
+    <button
+      onClick={() => document.getElementById("so-deals")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+      className="so-teaser"
+    >
+      <TicketPercent className="h-3.5 w-3.5" />
+      Stack a coupon: {offer} at {merchantName}
+      <ArrowDown className="h-3.5 w-3.5" />
+    </button>
   );
 }

@@ -20,6 +20,9 @@ export interface PortalProps {
 
   affiliateLink?: string | null;
 
+  /** Cuelinks campaign for this merchant, matched by domain. Drives live deals. */
+  campaignId?: number | null;
+
   status: "active" | "inactive";
 
   slug: string;
@@ -62,6 +65,12 @@ const PortalSchema = new mongoose.Schema(
     affiliateLink: {
       type: String,
       default: null,
+    },
+
+    campaignId: {
+      type: Number,
+      default: null,
+      index: true,
     },
 
     status: {

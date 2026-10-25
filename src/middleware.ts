@@ -49,6 +49,7 @@ export const config = {
     "/profile",
     "/choose-card",
     "/spend-optimizer",
+    "/deals",
     "/apply-card",
   ],
 };
