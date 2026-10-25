@@ -113,6 +113,7 @@ const AddCards = () => {
               cardId: { name: string; _id: string; bankName: string };
             }) => (
               <CreditCard
+                compact
                 removeImage
                 background="linear-gradient(135deg,#30251E 60%,#6F4D34 100%,#AD744A 100%)"
                 key={card?._id}

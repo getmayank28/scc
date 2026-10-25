@@ -1,4 +1,11 @@
 import { Partner } from "@/types/partner";
+import type {
+  CuelinksReport,
+  FunnelReport,
+  HealthItem,
+  HealthReport,
+  ReportRange,
+} from "@/types/affiliateReport";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -6,6 +13,29 @@ export const admin = api.injectEndpoints({
     getAllAvailableCards: builder.query({
       query: () => `/admin/cards/get-all-available-cards`,
       providesTags: ["Cards"],
+    }),
+
+    getAffiliateReport: builder.query<FunnelReport, ReportRange>({
+      query: (range) => `/admin/affiliate/report?range=${range}`,
+      transformResponse: (res: { result: FunnelReport }) => res.result,
+    }),
+    getAffiliateCuelinks: builder.query<CuelinksReport, ReportRange>({
+      query: (range) => `/admin/affiliate/cuelinks?range=${range}`,
+      transformResponse: (res: { result: CuelinksReport }) => res.result,
+    }),
+
+    getAffiliateHealth: builder.query<HealthReport, void>({
+      query: () => `/admin/affiliate/health`,
+      transformResponse: (res: { result: HealthReport }) => res.result,
+    }),
+    checkAffiliateHealth: builder.mutation<HealthItem, string>({
+      query: (key) => ({ url: `/admin/affiliate/health`, method: "POST", body: { key } }),
+      transformResponse: (res: { result: HealthItem }) => res.result,
+    }),
+
+    getAffiliateOverview: builder.query({
+      query: () => `/admin/affiliate`,
+      transformResponse: (res: { result?: unknown }) => res.result,
     }),
 
     getAllTickets: builder.query({
@@ -245,6 +275,11 @@ export const {
   useCreatePortalMutation,
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
+  useGetAffiliateOverviewQuery,
+  useGetAffiliateReportQuery,
+  useGetAffiliateCuelinksQuery,
+  useGetAffiliateHealthQuery,
+  useCheckAffiliateHealthMutation,
   useGetWhatsAppMessagesQuery,
   useGetEmailMessagesQuery,
 } = admin;

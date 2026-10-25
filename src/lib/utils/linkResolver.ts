@@ -10,23 +10,17 @@ const TYPE_PRIORITY: Record<LinkType, number> = {
 
 interface ResolveInput {
   cardId: Types.ObjectId;
-  bankId: Types.ObjectId;
+  bankId?: Types.ObjectId | null;
 }
 
-const fallback =
-  "https://www.linkedin.com/company/gofisense/?viewAsMember=true";
+/** Best first: by `type` (affiliate → bank → fallback), then `priority`. */
+export function rankLinks(links: LinkProps[]): LinkProps[] {
+  return [...links].sort((a, b) => {
+    const typeDiff = TYPE_PRIORITY[a.type] - TYPE_PRIORITY[b.type];
+    if (typeDiff !== 0) return typeDiff;
 
-export function pickBest(links: LinkProps[]): string | null {
-  if (!links.length) return fallback;
-
-  return (
-    links.sort((a, b) => {
-      const typeDiff = TYPE_PRIORITY[a.type] - TYPE_PRIORITY[b.type];
-      if (typeDiff !== 0) return typeDiff;
-
-      return a.priority - b.priority;
-    })[0]?.url ?? fallback
-  );
+    return a.priority - b.priority;
+  });
 }
 
 function buildCacheKey(
@@ -44,22 +38,19 @@ function buildCacheKey(
   return `aff:${idPart}:${geo ?? "all"}:${device ?? "all"}`;
 }
 
-export async function resolveLink(input: ResolveInput): Promise<string | null> {
+/**
+ * Every live link that could serve this card, best first: card-level links,
+ * then bank-level, then global. Returns them all rather than one winner because
+ * `/api/out` walks the list — the top-ranked URL may not be affiliated today,
+ * and a lower one (or a GroMo link) can still earn.
+ *
+ * Empty when nothing is on file; the caller owns the last resort (the bank's
+ * website, then our own card page). This used to fall back to a LinkedIn URL.
+ */
+export async function resolveLinkCandidates(
+  input: ResolveInput,
+): Promise<LinkProps[]> {
   const { cardId, bankId } = input;
-
-  // const cacheKey = buildCacheKey(
-  //   cardId?.toString(),
-  //   bankId?.toString(),
-  //   context.geo,
-  //   context.device,
-  // );
-
-  // 1. Cache
-  // const cached = await redis.get(cacheKey);
-  // if (cached) {
-  //   return JSON.parse(cached) as LinkProps;
-  // }
-
   const now = new Date();
 
   const baseQuery = {
@@ -74,45 +65,27 @@ export async function resolveLink(input: ResolveInput): Promise<string | null> {
     ],
   };
 
-  // 1️⃣ Card-level
-  let links;
-  if (!cardId) return fallback;
-
-  links = await Link.find({
-    ...baseQuery,
-    cardId,
-  }).lean<LinkProps[]>();
-  if (links.length) {
-    const best = pickBest(links);
-    if (best) return best;
-    // if (best) return cacheAndReturn(cacheKey, best);
-  }
-
-  // 2️⃣ Bank-level
-  if (bankId) {
-    links = await Link.find({
+  const [cardLinks, bankLinks, globalLinks] = await Promise.all([
+    Link.find({ ...baseQuery, cardId }).lean<LinkProps[]>(),
+    bankId
+      ? Link.find({
+          ...baseQuery,
+          bankId,
+          cardId: { $exists: false },
+        }).lean<LinkProps[]>()
+      : Promise.resolve([] as LinkProps[]),
+    Link.find({
       ...baseQuery,
-      bankId: bankId,
       cardId: { $exists: false },
-    }).lean<LinkProps[]>();
-    if (links.length) {
-      const best = pickBest(links);
-      if (best) return best;
-      // if (best) return cacheAndReturn(cacheKey, best);
-    }
-  }
+      bankId: { $exists: false },
+    }).lean<LinkProps[]>(),
+  ]);
 
-  links = await Link.find({
-    ...baseQuery,
-    cardId: { $exists: false },
-    bankId: { $exists: false },
-  }).lean<LinkProps[]>();
-
-  const best = pickBest(links);
-  // if (best) return cacheAndReturn(cacheKey, best);
-  if (best) return best;
-
-  return fallback;
+  return [
+    ...rankLinks(cardLinks),
+    ...rankLinks(bankLinks),
+    ...rankLinks(globalLinks),
+  ];
 }
 
 // 🔍 Context filter (typed)

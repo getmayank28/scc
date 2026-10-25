@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { HeartHandshake, LogOut, User } from "lucide-react";
+import { BadgeIndianRupee, HeartHandshake, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { ROUTES } from "@/lib/constants/routes";
@@ -75,6 +75,14 @@ export default function ProfileDropdown() {
               Complete
             </span>
           )}
+        </DropdownMenuItem>
+        {/* Mobile only: its bottom-bar slot went to Deals; desktop has it in the sidebar. */}
+        <DropdownMenuItem
+          onClick={() => router.push(ROUTES.POINTS_REDEMPTION)}
+          className="cursor-pointer md:hidden"
+        >
+          <BadgeIndianRupee className="mr-2 h-4 w-4 hover:bg-black" />
+          Redeem points
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => router.push(ROUTES.SUPPORT)}

@@ -87,6 +87,12 @@ export enum EventName {
   SALE_SHOP_CLICKED = "sale_landing.shop_clicked",
   SALE_SAMPLE_OFFER_CLICKED = "sale_landing.sample_offer_clicked",
 
+  // Deals (live Cuelinks offers, on /deals and in the spend optimizer)
+  DEALS_VIEWED = "deals.viewed",
+  DEAL_CODE_COPIED = "deals.code_copied",
+  DEAL_CLICKED = "deals.clicked",
+  DEALS_STORE_OPENED = "deals.store_opened",
+
   // ── Sign Up (new customer) ──
   SIGNUP_PAGE_VIEWED = "signup.page_viewed",
   SIGNUP_USERNAME_CHECK_RESULT = "signup.username_check_result",
@@ -344,6 +350,29 @@ interface SaleShopClickedProperties extends BaseProperties {
   source: string;
 }
 
+interface DealsViewedProperties extends BaseProperties {
+  /** "deals" for the page, "optimizer" for the block. */
+  surface: "deals" | "optimizer";
+  merchantCount: number;
+  dealCount: number;
+}
+
+interface DealsStoreOpenedProperties extends BaseProperties {
+  merchant: string;
+  dealCount: number;
+  /** Where the store was opened from: the grid, "Ending soon" or "Best for your cards". */
+  from: "grid" | "ending_soon" | "best_for_cards";
+}
+
+interface DealActionProperties extends BaseProperties {
+  surface: "deals" | "optimizer";
+  merchant: string;
+  offerId: number;
+  hasCode: boolean;
+  /** The card we told them to pay with, when we had one. */
+  cardId?: string;
+}
+
 interface SaleSampleOfferClickedProperties extends BaseProperties {
   merchant: string;
   bankName: string;
@@ -512,6 +541,11 @@ export interface EventPropertiesMap {
   [EventName.SALE_BREAKDOWN_RESULT_VIEWED]: SaleBreakdownResultViewedProperties;
   [EventName.SALE_SHOP_CLICKED]: SaleShopClickedProperties;
   [EventName.SALE_SAMPLE_OFFER_CLICKED]: SaleSampleOfferClickedProperties;
+
+  [EventName.DEALS_VIEWED]: DealsViewedProperties;
+  [EventName.DEAL_CODE_COPIED]: DealActionProperties;
+  [EventName.DEAL_CLICKED]: DealActionProperties;
+  [EventName.DEALS_STORE_OPENED]: DealsStoreOpenedProperties;
 
   // Sign Up
   [EventName.SIGNUP_PAGE_VIEWED]: BaseProperties;
