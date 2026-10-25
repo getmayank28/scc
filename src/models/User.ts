@@ -1,5 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 import { EmploymentTypeValue, IncomeRangeValue } from "@/schemas/userInfoSchema";
+import type { Attribution } from "@/lib/analytics/attribution";
+import { AttributionSchema } from "./attributionSchema";
 
 export type AuthProviderType = "credentials" | "google" | "whatsapp";
 export type EmploymentType = EmploymentTypeValue;
@@ -22,6 +24,8 @@ export interface User extends Document {
   salaryRange?: SalaryRangeType;
   informationConsent: boolean;
   promotionalConsent: boolean;
+  /** Where the user came from when they signed up (UTMs/fbclid); set once. */
+  signupAttribution?: Attribution;
 }
 
 const UserSchema: Schema<User> = new Schema({
@@ -100,6 +104,10 @@ const UserSchema: Schema<User> = new Schema({
   promotionalConsent: {
     type: Boolean,
     default: true,
+  },
+  signupAttribution: {
+    type: AttributionSchema,
+    required: false,
   },
 });
 

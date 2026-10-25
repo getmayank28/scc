@@ -3,10 +3,17 @@
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { identifyUser, initAmplitude, resetAmplitude } from "@/lib/analytics/amplitude";
+import { captureAttribution } from "@/lib/analytics/attribution";
 
 const AnalyticsIdentifier = () => {
   const { data: session, status } = useSession();
   const userId = session?.user?._id;
+
+  // Immediately, not on idle: the landing URL's UTMs/fbclid must be stored
+  // before the visitor can navigate away from it.
+  useEffect(() => {
+    captureAttribution();
+  }, []);
 
   useEffect(() => {
     const run = () => {

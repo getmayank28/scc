@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from "next/server";
 import { getServerSession } from "next-auth";
+import { Types } from "mongoose";
 import { authOptions } from "../auth/[...nextauth]/options";
 import dbConnect from "@/lib/utils/dbConnet";
 import OutboundClick from "@/models/OutboundClick";
@@ -7,6 +8,12 @@ import { channelFor, resolveOutbound } from "@/lib/cuelinks/destinations";
 import type { Resolution } from "@/lib/cuelinks/resolve";
 import type { SubIds } from "@/lib/cuelinks/client";
 import type { OutSurface, OutType } from "@/lib/cuelinks/outUrl";
+import {
+  ATTRIBUTION_COOKIE,
+  parseAttribution,
+  readCookie,
+} from "@/lib/analytics/attribution";
+import { clientIp, sendMetaEvent } from "@/lib/analytics/metaCapi";
 
 /**
  * GET /api/out?type=card|portal|voucher|offer&id=<slug|offerId>&surface=<surface>[&card=<slug>]
@@ -61,9 +68,10 @@ export async function GET(req: NextRequest) {
 
   const session = await getServerSession(authOptions);
   const userId = session?.user?._id ?? "anon";
-  const device = /Mobi|Android|iPhone|iPad/i.test(req.headers.get("user-agent") ?? "")
-    ? "mobile"
-    : "desktop";
+  const userAgent = req.headers.get("user-agent");
+  const device = /Mobi|Android|iPhone|iPad/i.test(userAgent ?? "") ? "mobile" : "desktop";
+  const cookie = req.headers.get("cookie");
+  const attribution = parseAttribution(readCookie(cookie, ATTRIBUTION_COOKIE));
 
   const subids: SubIds = {
     subid: userId,
@@ -83,10 +91,13 @@ export async function GET(req: NextRequest) {
   }
   const final = resolution ?? internal(type, req);
 
+  const clickId = new Types.ObjectId();
+
   // Logged after the response so the redirect never waits on the write.
   after(async () => {
     try {
       await OutboundClick.create({
+        _id: clickId,
         userId,
         type,
         targetId: id,
@@ -101,9 +112,35 @@ export async function GET(req: NextRequest) {
         affiliated: final.affiliated,
         campaignId: final.campaignId,
         device,
+        ...(attribution ? { attribution } : {}),
       });
     } catch (err) {
       console.error("[api/out] click log failed", err);
+    }
+
+    // Tell Meta about clicks that actually left for a card/merchant. A card
+    // apply is the standard `Lead` (optimisable as an ad goal); shopping clicks
+    // are a custom event. Server-only — the page is gone by now — so the click
+    // id alone is the event id.
+    if (final.step !== "internal") {
+      await sendMetaEvent({
+        eventName: type === "card" ? "Lead" : "AffiliateClick",
+        eventId: `click_${clickId.toString()}`,
+        eventSourceUrl: req.headers.get("referer"),
+        userId,
+        phoneNumber: session?.user?.phoneNumber,
+        ip: clientIp(req.headers.get("x-forwarded-for")),
+        userAgent,
+        fbp: readCookie(cookie, "_fbp"),
+        fbc: readCookie(cookie, "_fbc"),
+        attribution,
+        customData: {
+          content_category: type,
+          content_name: cardSlug ?? id,
+          surface: safeSurface,
+          affiliated: final.affiliated,
+        },
+      });
     }
   });
 

@@ -133,9 +133,12 @@ const SignInSection = ({
         trackEvent(EventName.SIGNIN_SUCCEEDED, { method: "whatsapp_otp" });
         const session = await getSession();
         if (session?.user.isNewUser) {
-          trackMetaPixel(MetaPixelEvent.COMPLETE_REGISTRATION, {
-            method: "whatsapp_otp",
-          });
+          // Same id the server sends via the Conversions API, so Meta dedupes.
+          trackMetaPixel(
+            MetaPixelEvent.COMPLETE_REGISTRATION,
+            { method: "whatsapp_otp" },
+            `reg_${session.user._id}`,
+          );
         }
         // Honour a post-login destination when one was passed in (e.g. the sale
         // funnel routes here via ?callbackUrl=/sale/continue). Only same-origin
