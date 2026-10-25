@@ -80,7 +80,8 @@ const BANK_WEBSITES: Record<string, string> = {
   "north-east-small-finance-bank": "https://www.slice.bank.in",
   "csb-bank": "https://www.csb.bank.in", // behind a bot wall; real browsers pass
   "icici-bank": "https://www.icici.bank.in/personal-banking/cards/credit-card",
-  "kotak-mahindra-bank": "https://www.kotak.bank.in/en/personal-banking/cards/credit-cards.html",
+  "kotak-mahindra-bank":
+    "https://www.kotak.bank.in/en/personal-banking/cards/credit-cards.html",
   "federal-bank": "https://www.federal.bank.in/credit-cards",
   "idfc-first-bank": "https://www.idfcfirst.bank.in/credit-card",
   "rbl-bank": "https://www.rbl.bank.in/personal-banking/cards/credit-cards",
@@ -89,7 +90,8 @@ const BANK_WEBSITES: Record<string, string> = {
   "au-bank": "https://www.au.bank.in/credit-cards",
   "american-express": "https://www.americanexpress.com/in/",
   "yes-bank": "https://www.yes.bank.in/personal-banking/cards/credit-cards",
-  "indusind-bank": "https://www.indusind.bank.in/in/en/personal/cards/credit-card.html",
+  "indusind-bank":
+    "https://www.indusind.bank.in/in/en/personal/cards/credit-card.html",
   "bank-of-baroda": "https://www.bobcard.co.in/",
   "hdfc-bank": "https://www.hdfc.bank.in/credit-cards",
   "hsbc-bank": "https://www.hsbc.co.in/credit-cards/",
@@ -112,9 +114,16 @@ const MOVED_HOSTS: Record<string, string> = {
   "applyonline.hdfcbank.com": "applyonline.hdfc.bank.in",
 };
 
+const MOVED_URLS: Record<string, string> = {
+  "applyonline.hdfcbank.com/cards/credit-cards.html":
+    "https://applyonline.hdfc.bank.in/cards/credit-cards.html#nbb",
+};
+
 function rehost(url: string): string {
   try {
     const u = new URL(url);
+    const exact = MOVED_URLS[`${u.hostname.toLowerCase()}${u.pathname}`];
+    if (exact && !u.hash) return exact;
     const to = MOVED_HOSTS[u.hostname.toLowerCase()];
     if (!to) return url;
     u.hostname = to;
@@ -133,11 +142,16 @@ interface LinkRow {
   campaignId?: number;
 }
 
-/** Same page, ignoring scheme, `www.`, trailing slash and fragment. */
+/**
+ * Same page, ignoring scheme, `www.` and trailing slash. The fragment is kept:
+ * HDFC's general (#nbb) and Swiggy (no fragment) apply pages share one URL and
+ * differ only by it, so dropping it made the two look identical — the general
+ * HDFC row was then skipped as "already present".
+ */
 function pageKey(url: string): string {
   try {
     const u = new URL(url);
-    return `${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/$/, "")}${u.search}`.toLowerCase();
+    return `${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/$/, "")}${u.search}${u.hash}`.toLowerCase();
   } catch {
     return url.toLowerCase();
   }
@@ -181,14 +195,19 @@ async function main() {
   // narrower campaign only where we map it explicitly below.
   for (const { campaignId } of [...BANK_CAMPAIGNS, ...CARD_CAMPAIGNS]) {
     const c = byId.get(campaignId);
-    if (c?.url && !campaignByPage.has(pageKey(c.url))) campaignByPage.set(pageKey(c.url), campaignId);
+    if (c?.url && !campaignByPage.has(pageKey(c.url)))
+      campaignByPage.set(pageKey(c.url), campaignId);
   }
 
   const links = await linksCol.find({}).toArray();
   const banks = await banksCol.find({}).toArray();
 
   // ---- 1-4: repair existing rows -----------------------------------------
-  const updates: { _id: mongoose.Types.ObjectId; set: Partial<LinkRow>; note: string }[] = [];
+  const updates: {
+    _id: mongoose.Types.ObjectId;
+    set: Partial<LinkRow>;
+    note: string;
+  }[] = [];
   const unresolvable: string[] = [];
 
   const shortOnes = links.filter((l) => {
@@ -196,7 +215,10 @@ async function main() {
     return u && isShortLink(u);
   });
   const unwrapped = new Map(
-    (await pool(shortOnes, 6, (l) => unwrap(normalizeUrl(l.url)!))).map((u) => [u.original, u]),
+    (await pool(shortOnes, 6, (l) => unwrap(normalizeUrl(l.url)!))).map((u) => [
+      u.original,
+      u,
+    ]),
   );
 
   for (const l of links) {
@@ -214,7 +236,9 @@ async function main() {
         note = `unwrapped${u?.cid ? ` (was cid ${u.cid})` : ""}`;
         url = dest;
       } else {
-        unresolvable.push(`${l._id} ${l.url} (short link did not resolve; left as is)`);
+        unresolvable.push(
+          `${l._id} ${l.url} (short link did not resolve; left as is)`,
+        );
       }
     }
 
@@ -238,9 +262,14 @@ async function main() {
   // ---- 5: campaign rows ---------------------------------------------------
   // Compare against the repaired URLs so a just-unwrapped row counts as present.
   const finalUrl = new Map(links.map((l) => [String(l._id), l.url]));
-  for (const u of updates) if (u.set.url) finalUrl.set(String(u._id), u.set.url);
+  for (const u of updates)
+    if (u.set.url) finalUrl.set(String(u._id), u.set.url);
   const has = (filter: (l: LinkRow) => boolean, url: string) =>
-    links.some((l) => filter(l) && pageKey(finalUrl.get(String(l._id)) ?? "") === pageKey(url));
+    links.some(
+      (l) =>
+        filter(l) &&
+        pageKey(finalUrl.get(String(l._id)) ?? "") === pageKey(url),
+    );
 
   const inserts: Record<string, unknown>[] = [];
   const skipped: string[] = [];
@@ -260,28 +289,47 @@ async function main() {
   for (const { campaignId, slug } of CARD_CAMPAIGNS) {
     const c = byId.get(campaignId);
     if (!c || c.access_status !== "open") {
-      skipped.push(`campaign ${campaignId}: ${c ? c.access_status : "not found"}`);
+      skipped.push(
+        `campaign ${campaignId}: ${c ? c.access_status : "not found"}`,
+      );
       continue;
     }
-    const cards = await cardsCol.find({ slug: slug }, { projection: { slug: 1 } }).toArray();
+    const cards = await cardsCol
+      .find({ slug: slug }, { projection: { slug: 1 } })
+      .toArray();
     for (const card of cards) {
       if (has((l) => String(l.cardId) === String(card._id), c.url)) continue;
-      inserts.push({ ...row(c, { cardId: card._id }), _slug: card.slug, _campaign: c.name });
+      inserts.push({
+        ...row(c, { cardId: card._id }),
+        _slug: card.slug,
+        _campaign: c.name,
+      });
     }
   }
   for (const { campaignId, bank: bankSlug } of BANK_CAMPAIGNS) {
     const c = byId.get(campaignId);
     const bank = banks.find((b) => b.slug === bankSlug);
     if (!c || c.access_status !== "open" || !bank) {
-      skipped.push(`campaign ${campaignId} / ${bankSlug}: ${!bank ? "bank missing" : c ? c.access_status : "not found"}`);
+      skipped.push(
+        `campaign ${campaignId} / ${bankSlug}: ${!bank ? "bank missing" : c ? c.access_status : "not found"}`,
+      );
       continue;
     }
-    if (has((l) => !l.cardId && String(l.bankId) === String(bank._id), c.url)) continue;
-    inserts.push({ ...row(c, { bankId: bank._id }), _slug: bankSlug, _campaign: c.name });
+    if (has((l) => !l.cardId && String(l.bankId) === String(bank._id), c.url))
+      continue;
+    inserts.push({
+      ...row(c, { bankId: bank._id }),
+      _slug: bankSlug,
+      _campaign: c.name,
+    });
   }
 
   // ---- 6: bank websites ---------------------------------------------------
-  const siteSets: { _id: mongoose.Types.ObjectId; slug: string; website: string }[] = [];
+  const siteSets: {
+    _id: mongoose.Types.ObjectId;
+    slug: string;
+    website: string;
+  }[] = [];
   const siteFails: string[] = [];
   await pool(
     banks.filter((b) => !b.website && BANK_WEBSITES[b.slug]),
@@ -289,11 +337,12 @@ async function main() {
     async (b) => {
       const candidate = BANK_WEBSITES[b.slug];
       const origin = new URL(candidate).origin;
-      const ok = VERIFIED_BY_HAND.has(b.slug) || (await reachable(candidate))
-        ? candidate
-        : (await reachable(origin))
-          ? origin
-          : null;
+      const ok =
+        VERIFIED_BY_HAND.has(b.slug) || (await reachable(candidate))
+          ? candidate
+          : (await reachable(origin))
+            ? origin
+            : null;
       if (ok) siteSets.push({ _id: b._id, slug: b.slug, website: ok });
       else siteFails.push(`${b.slug}: ${candidate} unreachable`);
     },
@@ -304,15 +353,21 @@ async function main() {
   for (const u of updates) {
     const l = links.find((x) => x._id.equals(u._id))!;
     console.log(`  ${u._id}  ${l.url}`);
-    console.log(`      → ${JSON.stringify(u.set)}${u.note ? `  [${u.note}]` : ""}`);
+    console.log(
+      `      → ${JSON.stringify(u.set)}${u.note ? `  [${u.note}]` : ""}`,
+    );
   }
   console.log(`\nCampaign link rows to add: ${inserts.length}`);
-  for (const i of inserts) console.log(`  ${String(i._slug).padEnd(56)} ${i._campaign}  ${i.url}`);
+  for (const i of inserts)
+    console.log(`  ${String(i._slug).padEnd(56)} ${i._campaign}  ${i.url}`);
   console.log(`\nBank websites to set: ${siteSets.length}`);
   for (const s of siteSets) console.log(`  ${s.slug.padEnd(32)} ${s.website}`);
-  if (siteFails.length) console.log(`  not set:\n    ${siteFails.join("\n    ")}`);
-  if (skipped.length) console.log(`\nSkipped campaigns:\n  ${skipped.join("\n  ")}`);
-  if (unresolvable.length) console.log(`\nLeft untouched:\n  ${unresolvable.join("\n  ")}`);
+  if (siteFails.length)
+    console.log(`  not set:\n    ${siteFails.join("\n    ")}`);
+  if (skipped.length)
+    console.log(`\nSkipped campaigns:\n  ${skipped.join("\n  ")}`);
+  if (unresolvable.length)
+    console.log(`\nLeft untouched:\n  ${unresolvable.join("\n  ")}`);
 
   if (!commit) {
     console.log("\nDry run — nothing written. Re-run with --commit to apply.");
@@ -323,11 +378,17 @@ async function main() {
   const backup =
     process.argv.find((a) => a.startsWith("--backup="))?.slice(9) ??
     `cuelinks-backup-${Date.now()}.json`;
-  fs.writeFileSync(backup, JSON.stringify({ db: db.databaseName, links, banks }, null, 2));
+  fs.writeFileSync(
+    backup,
+    JSON.stringify({ db: db.databaseName, links, banks }, null, 2),
+  );
   console.log(`\nBackup written to ${backup}`);
 
   for (const u of updates) {
-    await linksCol.updateOne({ _id: u._id }, { $set: { ...u.set, updatedAt: now } });
+    await linksCol.updateOne(
+      { _id: u._id },
+      { $set: { ...u.set, updatedAt: now } },
+    );
   }
   if (inserts.length) {
     await linksCol.insertMany(
