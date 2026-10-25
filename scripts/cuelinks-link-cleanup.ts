@@ -102,6 +102,28 @@ const BANK_WEBSITES: Record<string, string> = {
  */
 const VERIFIED_BY_HAND = new Set(["bank-of-baroda", "american-express"]);
 
+/**
+ * Hosts a bank retired when it moved to its .bank.in domain, and that no
+ * longer resolve at all (so no redirect saves the user). Checked 2026-10-25:
+ * applyonline.hdfcbank.com has no DNS; IDFC, AU and RBL's old hosts still
+ * redirect, so they're left alone.
+ */
+const MOVED_HOSTS: Record<string, string> = {
+  "applyonline.hdfcbank.com": "applyonline.hdfc.bank.in",
+};
+
+function rehost(url: string): string {
+  try {
+    const u = new URL(url);
+    const to = MOVED_HOSTS[u.hostname.toLowerCase()];
+    if (!to) return url;
+    u.hostname = to;
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
 interface LinkRow {
   _id: mongoose.Types.ObjectId;
   url: string;
@@ -194,6 +216,12 @@ async function main() {
       } else {
         unresolvable.push(`${l._id} ${l.url} (short link did not resolve; left as is)`);
       }
+    }
+
+    const moved = rehost(url);
+    if (moved !== url) {
+      note = note ? `${note}; host moved` : "host moved";
+      url = moved;
     }
 
     const { network } = classify(url);
