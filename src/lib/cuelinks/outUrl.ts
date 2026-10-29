@@ -6,7 +6,7 @@
 
 export type OutType = "card" | "portal" | "voucher" | "offer";
 
-export type OutSurface = "advisor" | "card-info" | "home" | "optimizer" | "deals";
+export type OutSurface = "advisor" | "card-info" | "home" | "optimizer" | "deals" | "campaign";
 
 export interface OutParams {
   type: OutType;

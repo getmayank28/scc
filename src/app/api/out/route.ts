@@ -26,7 +26,7 @@ import { clientIp, sendMetaEvent } from "@/lib/analytics/metaCapi";
  */
 
 const TYPES: OutType[] = ["card", "portal", "voucher", "offer"];
-const SURFACES: OutSurface[] = ["advisor", "card-info", "home", "optimizer", "deals"];
+const SURFACES: OutSurface[] = ["advisor", "card-info", "home", "optimizer", "deals", "campaign"];
 // Ids are only ever DB lookup values, never URLs, so they don't need a strict
 // charset — and real card slugs contain "/", "&", "+" and "–"
 // ("hpcl-coral-visa/mastercard-…"). Rejecting those sent 27 cards' Apply
