@@ -22,9 +22,12 @@ type Step = "phone" | "otp";
 const SignInSection = ({
   showSkip = false,
   onSkip,
+  onSignedIn,
 }: {
   showSkip?: boolean;
   onSkip?: () => void;
+  /** Replaces the post-login navigation, e.g. to hand straight off to a bank. */
+  onSignedIn?: () => void;
 }) => {
   const router = useRouter();
   const { closeSignUpModal } = useSignInControl();
@@ -140,6 +143,11 @@ const SignInSection = ({
             `reg_${session.user._id}`,
           );
         }
+        if (onSignedIn) {
+          closeSignUpModal();
+          onSignedIn();
+          return;
+        }
         // Honour a post-login destination when one was passed in (e.g. the sale
         // funnel routes here via ?callbackUrl=/sale/continue). Only same-origin
         // relative paths are allowed, to avoid an open-redirect.
@@ -163,7 +171,7 @@ const SignInSection = ({
         setIsVerifying(false);
       }
     },
-    [phoneNumber, consent, isVerifying, closeSignUpModal, router],
+    [phoneNumber, consent, isVerifying, closeSignUpModal, router, onSignedIn],
   );
 
   const handleOtpChange = (value: string) => {

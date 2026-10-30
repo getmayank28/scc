@@ -94,6 +94,13 @@ export enum EventName {
   SALE_SHOP_CLICKED = "sale_landing.shop_clicked",
   SALE_SAMPLE_OFFER_CLICKED = "sale_landing.sample_offer_clicked",
 
+  // ── Campaign landing (/credit-card-offers/*) ──
+  CAMPAIGN_VIEWED = "campaign.viewed",
+  CAMPAIGN_APPLY_CLICKED = "campaign.apply_clicked",
+  CAMPAIGN_CARD_SELECTED = "campaign.card_selected",
+  CAMPAIGN_FAQ_OPENED = "campaign.faq_opened",
+  CAMPAIGN_WHATSAPP_CLICKED = "campaign.whatsapp_clicked",
+
   // Deals (live Cuelinks offers, on /deals and in the spend optimizer)
   DEALS_VIEWED = "deals.viewed",
   DEAL_CODE_COPIED = "deals.code_copied",
@@ -327,6 +334,27 @@ interface CardInfoSearchProperties extends BaseProperties {
 // Pre-sign-in merchant sale funnel: page view → calculator engagement →
 // conversion CTA (into sign-in) / outbound shop click.
 
+interface CampaignViewedProperties extends BaseProperties {
+  campaign: string;
+}
+
+interface CampaignCardProperties extends BaseProperties {
+  campaign: string;
+  cardSlug: string;
+  /** Apply only: whether the visitor had to sign in first. */
+  signedIn?: boolean;
+}
+
+interface CampaignFaqOpenedProperties extends BaseProperties {
+  campaign: string;
+  question: string;
+}
+
+interface CampaignWhatsappClickedProperties extends BaseProperties {
+  campaign: string;
+  source: string;
+}
+
 interface SaleViewedProperties extends BaseProperties {
   merchant: string;
   liveOfferCount?: number;
@@ -558,6 +586,13 @@ export interface EventPropertiesMap {
   [EventName.SALE_BREAKDOWN_RESULT_VIEWED]: SaleBreakdownResultViewedProperties;
   [EventName.SALE_SHOP_CLICKED]: SaleShopClickedProperties;
   [EventName.SALE_SAMPLE_OFFER_CLICKED]: SaleSampleOfferClickedProperties;
+
+  // Campaign landing
+  [EventName.CAMPAIGN_VIEWED]: CampaignViewedProperties;
+  [EventName.CAMPAIGN_APPLY_CLICKED]: CampaignCardProperties;
+  [EventName.CAMPAIGN_CARD_SELECTED]: CampaignCardProperties;
+  [EventName.CAMPAIGN_FAQ_OPENED]: CampaignFaqOpenedProperties;
+  [EventName.CAMPAIGN_WHATSAPP_CLICKED]: CampaignWhatsappClickedProperties;
 
   [EventName.DEALS_VIEWED]: DealsViewedProperties;
   [EventName.DEAL_CODE_COPIED]: DealActionProperties;
