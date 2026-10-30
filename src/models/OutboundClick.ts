@@ -1,4 +1,6 @@
 import mongoose, { Schema } from "mongoose";
+import type { Attribution } from "@/lib/analytics/attribution";
+import { AttributionSchema } from "./attributionSchema";
 
 /**
  * One row per outbound click through `/api/out`. This is our own record of the
@@ -31,6 +33,8 @@ export interface OutboundClickProps {
   affiliated: boolean;
   campaignId?: number | null;
   device: "mobile" | "desktop";
+  /** The visitor's ad attribution at click time — covers anonymous clicks too. */
+  attribution?: Attribution;
   createdAt: Date;
 }
 
@@ -61,6 +65,7 @@ const OutboundClickSchema = new Schema<OutboundClickProps>(
     affiliated: { type: Boolean, required: true },
     campaignId: { type: Number, default: null },
     device: { type: String, enum: ["mobile", "desktop"], required: true },
+    attribution: { type: AttributionSchema, required: false },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

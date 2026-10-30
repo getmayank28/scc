@@ -14,6 +14,7 @@ import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
 import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
 import InsightsTeaser from "./components/InsightsTeaser";
+import InstallAppBanner from "@/components/InstallApp/InstallAppBanner";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 
 
@@ -105,6 +106,7 @@ const Home = () => {
       {/* Banner and the panel row share one shrink-to-fit column, so the banner
           spans exactly the panels' width without hardcoding a pixel value. */}
       <div className="flex flex-col gap-8 items-stretch max-md:w-full max-md:gap-4">
+        <InstallAppBanner />
         <InsightsTeaser />
 
         {haveSpendData || isFetching ?

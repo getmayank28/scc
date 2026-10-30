@@ -1,10 +1,17 @@
 import { NextAuthOptions } from "next-auth";
+import { after } from "next/server";
 import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/lib/utils/dbConnet";
 import UserModal from "@/models/User";
 import { AUTH_PROVIDERS } from "@/lib/constants/auth";
 import { verifyOtp } from "@/lib/otp";
 import { verifyOtpSchema } from "@/schemas/userInfoSchema";
+import {
+  ATTRIBUTION_COOKIE,
+  parseAttribution,
+  readCookie,
+} from "@/lib/analytics/attribution";
+import { clientIp, sendMetaEvent } from "@/lib/analytics/metaCapi";
 import {
   hasAdvisorProfile,
   missingProfileFields,
@@ -38,7 +45,7 @@ export const authOptions: NextAuthOptions = {
         otp: { label: "OTP", type: "text" },
         consent: { label: "Consent", type: "text" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         // The sign-in checkbox (terms + WhatsApp messages) is mandatory.
         if (credentials?.consent !== "true") {
           throw new Error("Please accept the terms to continue");
@@ -58,6 +65,7 @@ export const authOptions: NextAuthOptions = {
           phoneNumber,
           isPhoneVerified: true,
         });
+        const isNewUser = !user;
         if (user) {
           if (!user.provider.includes(AUTH_PROVIDERS.WHATSAPP)) {
             user.provider = [...user.provider, AUTH_PROVIDERS.WHATSAPP];
@@ -67,6 +75,9 @@ export const authOptions: NextAuthOptions = {
           user.promotionalConsent = true;
           await user.save();
         } else {
+          const headers = (req?.headers ?? {}) as Record<string, string | undefined>;
+          const cookie = headers.cookie;
+          const signupAttribution = parseAttribution(readCookie(cookie, ATTRIBUTION_COOKIE));
           // Consent comes from the mandatory checkbox on the sign-in screen,
           // which covers terms and WhatsApp updates.
           user = await UserModal.create({
@@ -76,7 +87,27 @@ export const authOptions: NextAuthOptions = {
             provider: [AUTH_PROVIDERS.WHATSAPP],
             informationConsent: true,
             promotionalConsent: true,
+            ...(signupAttribution ? { signupAttribution } : {}),
           });
+
+          // Server copy of the browser's CompleteRegistration; same event id
+          // (`reg_<userId>`, see SignInSection) so Meta counts it once.
+          const userId = user._id.toString();
+          after(() =>
+            sendMetaEvent({
+              eventName: "CompleteRegistration",
+              eventId: `reg_${userId}`,
+              eventSourceUrl: headers.referer,
+              userId,
+              phoneNumber,
+              ip: clientIp(headers["x-forwarded-for"]),
+              userAgent: headers["user-agent"],
+              fbp: readCookie(cookie, "_fbp"),
+              fbc: readCookie(cookie, "_fbc"),
+              attribution: signupAttribution,
+              customData: { method: "whatsapp_otp" },
+            }),
+          );
         }
 
         return {
@@ -85,6 +116,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           isVerified: true,
+          isNewUser,
           ...profileFlags(user),
         };
       },
@@ -101,6 +133,9 @@ export const authOptions: NextAuthOptions = {
         token.phoneNumber = user.phoneNumber;
         token.hasAdvisorProfile = user.hasAdvisorProfile;
         token.profileIncomplete = user.profileIncomplete;
+        // Set once at login; the client reads it right after signIn() to
+        // tell a sign-up from a returning login.
+        token.isNewUser = user.isNewUser;
       } else {
         await dbConnect();
         const dbUser = await UserModal.findById(token._id).lean<ProfileSource & { isVerified: boolean }>();
@@ -123,6 +158,7 @@ export const authOptions: NextAuthOptions = {
       session.user.phoneNumber = token.phoneNumber;
       session.user.hasAdvisorProfile = token.hasAdvisorProfile;
       session.user.profileIncomplete = token.profileIncomplete;
+      session.user.isNewUser = token.isNewUser;
 
       return session;
     },
