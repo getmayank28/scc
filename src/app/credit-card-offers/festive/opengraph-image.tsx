@@ -46,7 +46,7 @@ export default function OgImage() {
               <div style={{ fontSize: 20, fontWeight: 600 }}>{c.name}</div>
               <div style={{ fontSize: 22, marginTop: 14, color: "#FDBA74", fontWeight: 700 }}>
                 {/* One text node (Satori), and "Rs" because its fallback font has no ₹. */}
-                {`Rs ${c.voucher.toLocaleString("en-IN")} back`}
+                {`Rs ${c.voucher.toLocaleString("en-IN")} ${c.joiningFee > 0 ? "back" : "voucher"}`}
               </div>
             </div>
           ))}

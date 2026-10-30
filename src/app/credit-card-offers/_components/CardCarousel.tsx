@@ -7,7 +7,7 @@ import { Check, ChevronDown, MapPin, MessageCircle } from "lucide-react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
 import { usePrefersReducedMotion } from "@/app/sale/[merchant]/hooks/usePrefersReducedMotion";
-import { WHATSAPP_URL, inr, type CampaignCard } from "../_data/festive";
+import { WHATSAPP_URL, feeLabel, inr, voucherLine, type CampaignCard } from "../_data/festive";
 import { ApplyButton } from "./ApplyButton";
 import { PortraitCard } from "./Hero";
 import { WhatsAppLink } from "./Tracked";
@@ -313,14 +313,14 @@ function CardPanel({
             <div className="flex shrink-0 flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:gap-3">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-white/45">Joining fee</p>
-                <p className="whitespace-nowrap text-sm font-semibold text-white">{inr(card.joiningFee)} + GST</p>
+                <p className="whitespace-nowrap text-sm font-semibold text-white">{feeLabel(card.joiningFee)}</p>
               </div>
-              <VoucherChip amount={card.voucher} />
+              <VoucherChip amount={card.voucher} refund={card.joiningFee > 0} />
             </div>
             <div className="min-w-0 flex-1 border-l border-white/10 pl-3 sm:pl-5">
               <p className="text-[10px] uppercase tracking-wider text-white/45">Annual fee</p>
               <p className="whitespace-nowrap text-sm font-semibold text-white">
-                {inr(card.annualFee)} + GST
+                {feeLabel(card.annualFee)}
               </p>
               <p className="text-[11px] leading-snug text-white/50 sm:text-xs">{card.annualWaiver}</p>
             </div>
@@ -331,7 +331,7 @@ function CardPanel({
         </div>
 
         <p className="mt-3 hidden text-xs leading-relaxed text-white/45 sm:block">
-          Pay {inr(card.joiningFee)} joining fee. Get a {inr(card.voucher)} voucher back from FiSense.{" "}
+          {voucherLine(card)}.{" "}
           <span className="font-semibold text-white/60">Good to know: </span>
           {card.details.join(" ")}
         </p>
@@ -347,9 +347,12 @@ function CardPanel({
   );
 }
 
-/** Splits "5% cashback on online spends" into the figure and the words after it. */
+/**
+ * Splits "5% cashback on online spends" (or "10 free airport lounge visits")
+ * into the leading figure and the words after it.
+ */
 function splitFigure(text: string) {
-  const m = text.match(/^(Up to )?(\d+(?:\.\d+)?%)\s+(.+)$/);
+  const m = text.match(/^(Up to )?(\d+(?:\.\d+)?%?)\s+(.+)$/);
   return m ? { prefix: m[1]?.trim(), figure: m[2], rest: m[3] } : null;
 }
 
@@ -394,7 +397,8 @@ function HeroBenefit({ card, compact = false }: { card: CampaignCard; compact?: 
 }
 
 /** Ticket-shaped FiSense voucher — notched edges cut with radial masks. */
-function VoucherChip({ amount }: { amount: number }) {
+/** `refund`: the voucher pays back a joining fee ("₹999 back"); otherwise a flat festive voucher. */
+function VoucherChip({ amount, refund }: { amount: number; refund: boolean }) {
   const mask =
     "radial-gradient(circle 5px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 5px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat";
   return (
@@ -402,7 +406,9 @@ function VoucherChip({ amount }: { amount: number }) {
       className="shrink-0 bg-primary-orange px-3 py-1.5 text-white shadow-[0_8px_24px_-10px_var(--primary-orange)]"
       style={{ borderRadius: 8, WebkitMask: mask, mask }}
     >
-      <p className="font-satoshi text-sm font-bold leading-none">{inr(amount)} back</p>
+      <p className="font-satoshi text-sm font-bold leading-none">
+        {inr(amount)} {refund ? "back" : "voucher"}
+      </p>
       <p className="mt-0.5 text-[9px] font-medium uppercase leading-none tracking-wider text-white/85">
         FiSense voucher
       </p>

@@ -14,7 +14,7 @@ import {
   Sparkles,
   Bike,
   Gem,
-  UtensilsCrossed,
+  Smartphone,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -48,19 +48,19 @@ const TRUST_LOOK: Record<TrustPoint["icon"], { icon: LucideIcon; tile: string }>
 const HERO_LOOK: Record<string, { title: string; icon: LucideIcon }> = {
   "sbi-cashback": { title: "Cashback SBI", icon: ShoppingCart },
   "tata-neu-plus-hdfc": { title: "Tata Neu Plus", icon: Gem },
-  "flipkart-axis": { title: "Flipkart Axis", icon: ShoppingBag },
-  "hsbc-live-plus": { title: "HSBC Live+", icon: UtensilsCrossed },
+  "kiwi-yes-bank": { title: "Kiwi Klick", icon: Smartphone },
+  "indusind-tiger": { title: "IndusInd Tiger", icon: Plane },
   "swiggy-ornge-hdfc": { title: "Swiggy ORNGE", icon: Bike },
 };
 
 /** Left-to-right fan order: the middle card is raised to the front. */
-// Tata Neu leads: upright, vivid art. Flipkart Axis (black) sits back where it
+// Tata Neu leads: upright, vivid art. The black Tiger card sits off-centre, where it
 // doesn't sink into the dark page.
 const FAN_ORDER = [
   "sbi-cashback",
-  "flipkart-axis",
+  "kiwi-yes-bank",
   "tata-neu-plus-hdfc",
-  "hsbc-live-plus",
+  "indusind-tiger",
   "swiggy-ornge-hdfc",
 ];
 
@@ -78,7 +78,7 @@ export function CampaignHero({
   const vouchers = cards.map((c) => c.voucher);
   const min = Math.min(...vouchers);
   const max = Math.max(...vouchers);
-  // "Get your joining fee back / on 5 top credit cards": break before "on" on
+  // "Get up to ₹999 cashback / on 5 top credit cards": break before "on" on
   // wider screens and accent the card count, as in the reference layout.
   const m = headline.match(/^(.*?)\s+(on\s+)(\d+ top credit cards)$/);
 
@@ -106,8 +106,8 @@ export function CampaignHero({
           )}
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/60 sm:mt-5 sm:text-lg">
-          Apply through FiSense and get a cashback voucher of {inr(min)} to {inr(max)}, the same
-          as your card&apos;s joining fee.
+          Apply through FiSense and get a festive voucher of {inr(min)} to {inr(max)} once your card
+          is approved.
         </p>
         <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row">
           <a
@@ -359,7 +359,7 @@ export function PortraitCard({ card, front }: { card: CampaignCard; front: boole
             <p className="mt-1 text-[4.8cqw] text-white/70">{card.bank}</p>
           </div>
           <span className="rounded-full bg-white/20 px-[3.5cqw] py-[1cqw] text-[4.8cqw] font-semibold backdrop-blur">
-            {inr(card.voucher)} back
+            {inr(card.voucher)} {card.joiningFee > 0 ? "back" : "voucher"}
           </span>
         </div>
       </div>

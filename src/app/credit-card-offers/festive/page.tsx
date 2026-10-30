@@ -10,6 +10,8 @@ import {
   FOOTER_LINE,
   HEADLINE,
   TRUST_POINTS,
+  feeLabel,
+  voucherLine,
 } from "../_data/festive";
 import { CardCarousel } from "../_components/CardCarousel";
 import {
@@ -23,9 +25,9 @@ import { CampaignHero } from "../_components/Hero";
 const SITE_URL = "https://www.gofisense.com";
 const PAGE_URL = `${SITE_URL}${CAMPAIGN_PATH}`;
 
-const title = "Festive Credit Card Offers: Get Your Joining Fee Back | FiSense";
+const title = "Festive Credit Card Offers: Get Up to ₹999 Cashback | FiSense";
 const description =
-  "Apply for Cashback SBI, HSBC Live+, Tata Neu Plus HDFC, Flipkart Axis or Swiggy ORNGE HDFC through FiSense and get a cashback voucher worth your joining fee. Limited-period festive offer.";
+  "Apply for Cashback SBI, IndusInd Tiger, Tata Neu Plus HDFC, Kiwi YES Bank or Swiggy ORNGE HDFC through FiSense and get a festive voucher of up to ₹999. Limited-period festive offer.";
 
 export const metadata: Metadata = {
   title,
@@ -37,13 +39,13 @@ export const metadata: Metadata = {
     type: "website",
     url: PAGE_URL,
     siteName: "FiSense",
-    title: "Get your joining fee back on 5 top credit cards",
+    title: HEADLINE,
     description,
     locale: "en_IN",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Get your joining fee back on 5 top credit cards",
+    title: HEADLINE,
     description,
   },
 };
@@ -63,10 +65,10 @@ function jsonLd() {
           name: card.name,
           description: `${card.bestFor}. ${card.hero.value}.`,
           provider: { "@type": "BankOrCreditUnion", name: card.bank },
-          feesAndCommissionsSpecification: `Joining fee ₹${card.joiningFee} + GST. Annual fee ₹${card.annualFee} + GST, ${card.annualWaiver.toLowerCase()}.`,
+          feesAndCommissionsSpecification: `Joining fee: ${feeLabel(card.joiningFee)}. Annual fee: ${feeLabel(card.annualFee)}, ${card.annualWaiver.toLowerCase()}.`,
           offers: {
             "@type": "Offer",
-            description: `Pay ₹${card.joiningFee} joining fee. Get a ₹${card.voucher} cashback voucher back from FiSense.`,
+            description: `${voucherLine(card)}.`,
             price: card.joiningFee,
             priceCurrency: "INR",
             seller: { "@type": "Organization", name: "FiSense" },
