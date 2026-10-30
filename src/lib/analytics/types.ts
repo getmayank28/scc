@@ -44,6 +44,13 @@ export enum EventName {
   HOME_WELCOME_CHECK_BEST_CARD_CLICKED = "home.welcome_check_best_card_clicked",
   HOME_RECOMMENDATION_CARD_APPLY_CLICKED = "home.recommendation_card_apply_clicked",
 
+  // ── Install App (PWA) ──
+  INSTALL_APP_CTA_SHOWN = "install_app.cta_shown",
+  INSTALL_APP_CTA_CLICKED = "install_app.cta_clicked",
+  INSTALL_APP_CTA_DISMISSED = "install_app.cta_dismissed",
+  INSTALL_APP_PROMPT_RESULT = "install_app.prompt_result",
+  INSTALL_APP_INSTALLED = "install_app.installed",
+
   // ── Chat ──
   CHAT_SESSION_VIEWED = "chat.session_viewed",
   CHAT_MESSAGE_SENT = "chat.message_sent",
@@ -230,6 +237,11 @@ interface SpendOptimizerPortalProperties extends BaseProperties {
 
 interface SpendOptimizerTabProperties extends BaseProperties {
   tab: string;
+}
+
+interface InstallAppProperties extends BaseProperties {
+  installPlatform: "android" | "ios" | "in_app_browser" | "other";
+  outcome?: "accepted" | "dismissed";
 }
 
 interface HomeViewedProperties extends BaseProperties {
@@ -494,6 +506,11 @@ export interface EventPropertiesMap {
   // Home
   [EventName.HOME_VIEWED]: HomeViewedProperties;
   [EventName.HOME_ERROR_RETRY_CLICKED]: BaseProperties;
+  [EventName.INSTALL_APP_CTA_SHOWN]: InstallAppProperties;
+  [EventName.INSTALL_APP_CTA_CLICKED]: InstallAppProperties;
+  [EventName.INSTALL_APP_CTA_DISMISSED]: InstallAppProperties;
+  [EventName.INSTALL_APP_PROMPT_RESULT]: InstallAppProperties;
+  [EventName.INSTALL_APP_INSTALLED]: InstallAppProperties;
   [EventName.HOME_WELCOME_SMART_SPENDING_CLICKED]: BaseProperties;
   [EventName.HOME_WELCOME_GET_PERSONALIZED_CARD_CLICKED]: BaseProperties;
   [EventName.HOME_WELCOME_CHECK_BEST_CARD_CLICKED]: BaseProperties;

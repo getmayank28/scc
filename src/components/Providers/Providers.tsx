@@ -13,6 +13,7 @@ import { WebSocketConnectionProvider } from "@/contexts/WebSocketConnection";
 import BottomBar from "../BottomBar/BottomBar";
 import { usePathname } from "next/navigation";
 import AnalyticsIdentifier from "./AnalyticsIdentifier";
+import { InstallPromptProvider } from "@/contexts/InstallPromptContext";
 
 
 const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
@@ -33,6 +34,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SessionProvider>
+      <InstallPromptProvider>
       <AnalyticsIdentifier />
       <FeatureFlagProvider flags={featureFlags}>
         <SignInProvider>
@@ -56,6 +58,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
           </ChatContextProvider>
         </SignInProvider>
       </FeatureFlagProvider>
+      </InstallPromptProvider>
     </SessionProvider>
   );
 };

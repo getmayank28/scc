@@ -13,6 +13,7 @@ import { EventName } from "@/lib/analytics/types";
 import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
 import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
+import InstallAppBanner from "@/components/InstallApp/InstallAppBanner";
 import { BotRecommendationCreditCardProps } from "@/types/card";
 
 
@@ -101,6 +102,7 @@ const Home = () => {
 
   return (
     <div className="w-full grow bg-brown-background text-white min-h-screen pt-20 pb-10 max-md:px-5 max-md:py-20 max-md:pb-10 flex flex-col justify-start gap-8 items-center">
+      <InstallAppBanner className="-mb-4" />
       {haveSpendData || isFetching ?
         <div className="flex gap-8 justify-center mx-auto max-md:w-full max-md:flex-col max-md:gap-4">
           <TopPerformingCardSection isLoading={isFetching} topCards={data?.topCards} />
