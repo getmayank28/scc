@@ -23,6 +23,8 @@ export interface IWhatsAppMessage extends Document {
   senderName?: string;
   messageType?: string; // text, image, template, ...
   templateId?: string; // Gupshup template UUID (for dedup)
+  userId?: string; // set on messages sent to a known user (campaign claims)
+  claimId?: mongoose.Types.ObjectId; // the CampaignClaim the message is about
   text?: string;
   errorCode?: string;
   errorReason?: string;
@@ -79,6 +81,8 @@ const WhatsAppMessageSchema: Schema<IWhatsAppMessage> = new Schema(
     senderName: String,
     messageType: String,
     templateId: { type: String, index: true },
+    userId: { type: String, index: true },
+    claimId: { type: Schema.Types.ObjectId, index: true },
     text: String,
     errorCode: String,
     errorReason: String,

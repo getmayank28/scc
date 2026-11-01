@@ -36,7 +36,10 @@ export function ApplyButton({
       status === "authenticated" || (status === "loading" && Boolean(await getSession()));
     track(EventName.CAMPAIGN_APPLY_CLICKED, { campaign, cardSlug: slug, signedIn });
     if (signedIn) goToBank();
-    else setSigningIn(true);
+    else {
+      track(EventName.CAMPAIGN_SIGNIN_STARTED, { campaign, cardSlug: slug });
+      setSigningIn(true);
+    }
   };
 
   return (
@@ -74,7 +77,12 @@ export function ApplyButton({
             >
               <X className="size-5" />
             </button>
-            <SignInSection onSignedIn={goToBank} />
+            <SignInSection
+              onSignedIn={() => {
+                track(EventName.CAMPAIGN_SIGNIN_COMPLETED, { campaign, cardSlug: slug });
+                goToBank();
+              }}
+            />
           </div>
         </Modal>
       )}

@@ -47,6 +47,7 @@ export const config = {
     "/chat",
     "/home",
     "/profile",
+    "/profile/rewards",
     "/choose-card",
     "/spend-optimizer",
     "/deals",

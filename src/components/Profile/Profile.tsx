@@ -6,11 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BadgeIndianRupee, HeartHandshake, LogOut, User } from "lucide-react";
+import { BadgeIndianRupee, Gift, HeartHandshake, LogOut, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { ROUTES } from "@/lib/constants/routes";
 import useUserData from "@/lib/hooks/useUserData";
+import { useGetRewardsQuery } from "@/store/userApi";
 import Typography from "../Typography/Typography";
 import { Skeleton } from "../ui/skeleton";
 
@@ -19,6 +20,9 @@ export default function ProfileDropdown() {
   const { nameInitials, isUserDataLoading } = useUserData();
   const { data: session } = useSession();
   const profileIncomplete = !!session?.user?.profileIncomplete;
+  // Red dot until an issued voucher has been opened.
+  const { data: rewards } = useGetRewardsQuery(undefined, { skip: !session?.user });
+  const unrevealed = !!rewards?.hasUnrevealed;
 
   const handleLogout = () => {
     if (typeof window === "undefined") return null;
@@ -44,11 +48,18 @@ export default function ProfileDropdown() {
               ) : (
                 <User className="h-5 w-5 text-[#C7C4C6]" />
               )}
-              {profileIncomplete && (
+              {unrevealed ? (
                 <span
-                  aria-label="Profile incomplete"
-                  className="absolute top-0 right-0 h-3 w-3 rounded-full bg-primary-orange ring-2 ring-brown-background"
+                  aria-label="Your voucher is ready"
+                  className="absolute top-0 right-0 h-3 w-3 rounded-full bg-red-500 ring-2 ring-brown-background"
                 />
+              ) : (
+                profileIncomplete && (
+                  <span
+                    aria-label="Profile incomplete"
+                    className="absolute top-0 right-0 h-3 w-3 rounded-full bg-primary-orange ring-2 ring-brown-background"
+                  />
+                )
               )}
             </div>
           )
@@ -74,6 +85,16 @@ export default function ProfileDropdown() {
             <span className="ml-auto text-[10px] font-semibold text-primary-orange">
               Complete
             </span>
+          )}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => router.push(ROUTES.REWARDS)}
+          className="cursor-pointer"
+        >
+          <Gift className="mr-2 h-4 w-4 hover:bg-black" />
+          My rewards
+          {unrevealed && (
+            <span aria-label="Voucher ready" className="ml-auto h-2 w-2 rounded-full bg-red-500" />
           )}
         </DropdownMenuItem>
         {/* Mobile only: its bottom-bar slot went to Deals; desktop has it in the sidebar. */}

@@ -6,6 +6,7 @@ import type {
   HealthReport,
   ReportRange,
 } from "@/types/affiliateReport";
+import type { AdminClaimDetail, CampaignAdminReport, CampaignRange } from "@/types/rewards";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -31,6 +32,24 @@ export const admin = api.injectEndpoints({
     checkAffiliateHealth: builder.mutation<HealthItem, string>({
       query: (key) => ({ url: `/admin/affiliate/health`, method: "POST", body: { key } }),
       transformResponse: (res: { result: HealthItem }) => res.result,
+    }),
+
+    getCampaignReport: builder.query<CampaignAdminReport, CampaignRange>({
+      query: (range) => `/admin/campaign?range=${range}`,
+      transformResponse: (res: { result: CampaignAdminReport }) => res.result,
+      providesTags: ["Rewards"],
+    }),
+    getCampaignClaimsByPhone: builder.query<AdminClaimDetail[], string>({
+      query: (phone) => `/admin/campaign/claims?phone=${encodeURIComponent(phone)}`,
+      transformResponse: (res: { result: AdminClaimDetail[] }) => res.result,
+      providesTags: ["Rewards"],
+    }),
+    issueCampaignVoucher: builder.mutation<
+      void,
+      { id: string; brand: string; code: string; pin?: string; expiry?: string }
+    >({
+      query: ({ id, ...body }) => ({ url: `/admin/campaign/claims/${id}/issue`, method: "POST", body }),
+      invalidatesTags: ["Rewards"],
     }),
 
     getAffiliateOverview: builder.query({
@@ -276,6 +295,9 @@ export const {
   useDeletePortalMutation,
   useLazyGetGiftorsByCardSlugQuery,
   useGetAffiliateOverviewQuery,
+  useGetCampaignReportQuery,
+  useLazyGetCampaignClaimsByPhoneQuery,
+  useIssueCampaignVoucherMutation,
   useGetAffiliateReportQuery,
   useGetAffiliateCuelinksQuery,
   useGetAffiliateHealthQuery,

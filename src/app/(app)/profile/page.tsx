@@ -41,6 +41,7 @@ import toast from "react-hot-toast";
 import { z } from "zod";
 import { cn } from "@/lib/utils/index";
 import AffiliateActivity from "./AffiliateActivity";
+import RewardsLink from "./RewardsLink";
 
 const personalSchema = z.object({
   name: nameSchema,
@@ -519,6 +520,8 @@ const Profile = () => {
           </div>
         </SectionCard>
       </div>
+
+      <RewardsLink />
 
       <div className="mt-4">
         <AffiliateActivity />
