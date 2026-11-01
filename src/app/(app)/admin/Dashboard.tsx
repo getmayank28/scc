@@ -13,6 +13,7 @@ import RulesUpload from "./advisor/RulesUpload";
 import CardsUpload from "./advisor/CardsUpload";
 import MilestonesUpload from "./advisor/MilestonesUpload";
 import AffiliateAdmin from "./Affiliate";
+import CampaignAdmin from "./Campaign";
 
 const tabs = [
   {
@@ -34,6 +35,10 @@ const tabs = [
   {
     label: "Affiliate",
     value: "affiliate",
+  },
+  {
+    label: "Festive campaign",
+    value: "campaign",
   },
   {
     label: "Giftors",
@@ -89,6 +94,9 @@ const AdminDashboard = () => {
       }
       {
         selectedValue === "affiliate" && <AffiliateAdmin />
+      }
+      {
+        selectedValue === "campaign" && <CampaignAdmin />
       }
       {
         selectedValue === "giftors"&& <Giftors/>

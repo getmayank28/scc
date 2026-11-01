@@ -4,11 +4,13 @@ import { SYNC_KEYS, touchSyncState } from "@/models/SyncState";
 import { syncTransactions } from "@/lib/cuelinks/sync";
 import { refreshOffers } from "@/lib/cuelinks/offers";
 import { runHealthCheck } from "@/lib/affiliate/health";
+import { runCampaignJobs } from "@/lib/campaign/jobs";
 
 /**
  * Daily Cuelinks jobs, run by Vercel Cron (see vercel.json): the transaction
- * sync, the live-offers refresh, then the link-health check with whatever time
- * is left. One cron entry for all three because the Hobby plan limits how many
+ * sync, the live-offers refresh, campaign-claim upkeep (reconcile, voucher
+ * reminders, WhatsApp retries), then the link-health check with whatever time
+ * is left. One cron entry for all of them because the Hobby plan limits how many
  * cron jobs a project can have. They're independent — one failing doesn't skip
  * the others — and the health check resumes on the next run if time runs out.
  * Vercel sends `Authorization: Bearer $CRON_SECRET`; anything else is refused.
@@ -17,6 +19,8 @@ export const maxDuration = 60;
 
 // Leave headroom under maxDuration for the final writes and the response.
 const HEALTH_DEADLINE_MS = 50_000;
+// Claims are a handful a day; cap them so the health check keeps its share.
+const CAMPAIGN_DEADLINE_MS = 30_000;
 
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -51,6 +55,16 @@ export async function GET(req: NextRequest) {
     await touchSyncState(SYNC_KEYS.offers, { lastResult: { ok: false, error: String(err) } });
   }
 
+  let campaign: unknown = null;
+  try {
+    campaign = await runCampaignJobs({ deadline: startedAt + CAMPAIGN_DEADLINE_MS });
+    await touchSyncState(SYNC_KEYS.campaignJobs, { lastResult: { ...(campaign as object), ok: true } });
+  } catch (err) {
+    ok = false;
+    console.error("[cron/cuelinks-sync] campaign jobs failed", err);
+    await touchSyncState(SYNC_KEYS.campaignJobs, { lastResult: { ok: false, error: String(err) } });
+  }
+
   let health: unknown = null;
   try {
     health = await runHealthCheck({ deadline: startedAt + HEALTH_DEADLINE_MS });
@@ -61,5 +75,5 @@ export async function GET(req: NextRequest) {
     await touchSyncState(SYNC_KEYS.linkHealth, { lastResult: { ok: false, error: String(err) } });
   }
 
-  return NextResponse.json({ ok, transactions, offers, health }, { status: ok ? 200 : 500 });
+  return NextResponse.json({ ok, transactions, offers, campaign, health }, { status: ok ? 200 : 500 });
 }

@@ -34,6 +34,7 @@ export const SYNC_KEYS = {
   campaignWebhook: "cuelinks-webhook-campaigns",
   offers: "cuelinks-offers",
   linkHealth: "link-health",
+  campaignJobs: "campaign-jobs",
 } as const;
 
 /** Stamps `key` as having run now; failures are swallowed (best-effort bookkeeping). */

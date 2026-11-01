@@ -8,6 +8,7 @@ import AffiliateTransaction, {
 import OutboundClick, { type OutboundClickProps } from "@/models/OutboundClick";
 import Link from "@/models/Link";
 import type { ApiTransaction } from "./client";
+import { syncClaimForTransaction } from "@/lib/campaign/claims";
 
 /**
  * Turns Cuelinks transactions — from the Transaction Update webhook or the
@@ -267,6 +268,24 @@ export type UpsertOutcome = "created" | "updated" | "ignored";
 export async function upsertTransaction(
   input: TxnInput,
   source: TxnSource,
+): Promise<UpsertOutcome> {
+  const outcome = await upsertTransactionRow(input, source);
+  if (outcome !== "ignored") {
+    // Campaign claims follow their transaction. A claim failure must not fail
+    // the delivery (a 5xx makes Cuelinks retry and eventually disable the
+    // webhook); the nightly sync re-runs it.
+    try {
+      await syncClaimForTransaction(input.cuelinksId);
+    } catch (err) {
+      console.error("[cuelinks/transactions] claim sync failed", input.cuelinksId, err);
+    }
+  }
+  return outcome;
+}
+
+async function upsertTransactionRow(
+  input: TxnInput,
+  source: TxnSource,
   retried = false,
 ): Promise<UpsertOutcome> {
   const existing = await AffiliateTransaction.findOne(
@@ -334,7 +353,7 @@ export async function upsertTransaction(
   } catch (err) {
     // Two deliveries for a new transaction raced; the loser re-runs as an update.
     if (!retried && (err as { code?: number }).code === 11000) {
-      return upsertTransaction(input, source, true);
+      return upsertTransactionRow(input, source, true);
     }
     throw err;
   }

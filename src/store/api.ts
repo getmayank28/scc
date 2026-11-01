@@ -4,7 +4,7 @@ import { ZIJUS_API_URL } from "@/lib/constants/zijus";
 export const api = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({ baseUrl: "/api/" }), // adjust backend URL
-  tagTypes: ["User", "UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp", "Email"],
+  tagTypes: ["User", "UserCards", "Cards", "Partner", "Links", "Giftor", "Portal", "WhatsApp", "Email", "Rewards"],
   endpoints: (builder) => ({
     getQuestions: builder.query({
       query: () => "/questions",

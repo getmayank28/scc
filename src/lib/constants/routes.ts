@@ -8,6 +8,7 @@ export const ROUTES = {
   SAVING_CALCULATOR: "/tools/saving-calculator",
   LOGGED_IN_HOME: "/home",
   PROFILE: "/profile",
+  REWARDS: "/profile/rewards",
   FAVORITES: "/favourites",
   DASHBOARD: "/home",
   LOGOUT: "/logout",

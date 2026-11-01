@@ -100,6 +100,15 @@ export enum EventName {
   CAMPAIGN_CARD_SELECTED = "campaign.card_selected",
   CAMPAIGN_FAQ_OPENED = "campaign.faq_opened",
   CAMPAIGN_WHATSAPP_CLICKED = "campaign.whatsapp_clicked",
+  CAMPAIGN_SIGNIN_STARTED = "campaign.signin_started",
+  CAMPAIGN_SIGNIN_COMPLETED = "campaign.signin_completed",
+
+  // My rewards (campaign cashback). Server-side steps (application received,
+  // approved, rejected, voucher issued) are sent from lib/campaign/claims.ts.
+  CASHBACK_PAGE_VIEWED = "cashback.page_viewed",
+  CASHBACK_VOUCHER_REVEALED = "cashback.voucher_revealed",
+  CASHBACK_VOUCHER_COPIED = "cashback.voucher_copied",
+  CASHBACK_VOUCHER_MARKED_USED = "cashback.voucher_marked_used",
 
   // Deals (live Cuelinks offers, on /deals and in the spend optimizer)
   DEALS_VIEWED = "deals.viewed",
@@ -355,6 +364,17 @@ interface CampaignWhatsappClickedProperties extends BaseProperties {
   source: string;
 }
 
+interface CashbackPageViewedProperties extends BaseProperties {
+  claimCount: number;
+}
+
+interface CashbackVoucherProperties extends BaseProperties {
+  campaign: string;
+  cardSlug: string;
+  amount: number;
+  field?: "code" | "pin";
+}
+
 interface SaleViewedProperties extends BaseProperties {
   merchant: string;
   liveOfferCount?: number;
@@ -593,6 +613,13 @@ export interface EventPropertiesMap {
   [EventName.CAMPAIGN_CARD_SELECTED]: CampaignCardProperties;
   [EventName.CAMPAIGN_FAQ_OPENED]: CampaignFaqOpenedProperties;
   [EventName.CAMPAIGN_WHATSAPP_CLICKED]: CampaignWhatsappClickedProperties;
+  [EventName.CAMPAIGN_SIGNIN_STARTED]: CampaignCardProperties;
+  [EventName.CAMPAIGN_SIGNIN_COMPLETED]: CampaignCardProperties;
+
+  [EventName.CASHBACK_PAGE_VIEWED]: CashbackPageViewedProperties;
+  [EventName.CASHBACK_VOUCHER_REVEALED]: CashbackVoucherProperties;
+  [EventName.CASHBACK_VOUCHER_COPIED]: CashbackVoucherProperties;
+  [EventName.CASHBACK_VOUCHER_MARKED_USED]: CashbackVoucherProperties & { used: boolean };
 
   [EventName.DEALS_VIEWED]: DealsViewedProperties;
   [EventName.DEAL_CODE_COPIED]: DealActionProperties;

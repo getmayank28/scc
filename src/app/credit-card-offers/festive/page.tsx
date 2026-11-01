@@ -21,6 +21,7 @@ import {
 } from "../_components/Sections";
 import { CampaignViewTracker } from "../_components/Tracked";
 import { CampaignHero } from "../_components/Hero";
+import { YourClaims } from "../_components/YourClaims";
 
 const SITE_URL = "https://www.gofisense.com";
 const PAGE_URL = `${SITE_URL}${CAMPAIGN_PATH}`;
@@ -112,6 +113,8 @@ export default function FestiveCampaignPage() {
       {/* One rhythm for every section gap after the hero. */}
       {/* mt is 8px short of the gap: the hero keeps 8px under its trust bar for the shadow. */}
       <div className="mt-[88px] space-y-24 pb-20 sm:mt-[120px] sm:space-y-32 sm:pb-24">
+        <YourClaims campaign={CAMPAIGN_KEY} />
+
         <BeforeYouApply />
 
         <section id="cards" aria-labelledby="cards-heading" className="scroll-mt-24 px-5 sm:px-8">

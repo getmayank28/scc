@@ -95,8 +95,8 @@ export const CASHBACK_STEPS = [
   { title: "Apply in one go", text: "Complete your application in one go." },
   { title: "Get your card", text: "Get your card from the bank." },
   {
-    title: "Use FiSense once",
-    text: "Log in to FiSense, route one transaction through FiSense and request your cashback.",
+    title: "Track it on FiSense",
+    text: "Nothing more to do. Follow your application under My rewards in FiSense, and we update you on WhatsApp.",
   },
   {
     title: "Get your voucher",
@@ -309,15 +309,11 @@ export const CARDS: CampaignCard[] = [
 export const FAQ: FaqItem[] = [
   {
     q: "Do I still pay the joining fee to the bank?",
-    a: "Yes. The bank charges the joining fee on your card as usual. FiSense sends you a cashback voucher once you complete the steps above.",
+    a: "Yes. The bank charges the joining fee on your card as usual. FiSense gives you a cashback voucher once the bank confirms your card to us.",
   },
   {
     q: "When will I get my cashback voucher?",
-    a: "Within 48 hours of the bank confirming your card to us. We message you on WhatsApp as soon as we have the update.",
-  },
-  {
-    q: "What does “route one transaction through FiSense” mean?",
-    a: "Before any purchase, open Spend Optimizer on FiSense. Select your favourite shopping app to see the offers and rewards on your card. Complete the shopping on your selected app and you're done. We will send your cashback voucher within 48 hours of the bank confirming your card to us.",
+    a: "Within 48 hours of the bank confirming your card to us. We message you on WhatsApp as soon as it's ready, and you can view it in FiSense under My rewards.",
   },
   {
     q: "Can I apply for more than one card?",
@@ -325,7 +321,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "What if I could not finish my application?",
-    a: "Apply again from this page, or use the link we send you on WhatsApp 24 hours after you start. If you apply any other way, we cannot track your application, and the cashback cannot be paid.",
+    a: "Apply again from this page. If you apply any other way, we cannot track your application, and the cashback cannot be paid. Banks can take a few days to confirm an application to us, so check My rewards in FiSense before applying again.",
   },
   {
     q: "What if the bank rejects my application?",
@@ -337,7 +333,7 @@ export const FAQ: FaqItem[] = [
   },
   {
     q: "Who will contact me after I apply?",
-    a: "FiSense will never call you, unless you ask us to in exceptional cases. We message you on WhatsApp about your application and give you your voucher. The bank may call or message you to verify your application.",
+    a: "FiSense will never call you, unless you ask us to in exceptional cases. We message you on WhatsApp about your application, and your voucher is shown to you in FiSense under My rewards. The bank may call or message you to verify your application.",
   },
 ];
 
