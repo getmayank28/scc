@@ -20,13 +20,14 @@ import {
   CashbackSteps,
 } from "../_components/Sections";
 import { CampaignViewTracker } from "../_components/Tracked";
+import { StickyPickCard } from "../_components/StickyPickCard";
 import { CampaignHero } from "../_components/Hero";
 import { YourClaims } from "../_components/YourClaims";
 
 const SITE_URL = "https://www.gofisense.com";
 const PAGE_URL = `${SITE_URL}${CAMPAIGN_PATH}`;
 
-const title = "Festive Credit Card Offers: Get Up to ₹999 Cashback | FiSense";
+const title = "Festive Credit Card Offers: Get a Voucher of Up to ₹999 | FiSense";
 const description =
   "Apply for Cashback SBI, IndusInd Tiger, Tata Neu Plus HDFC, Kiwi YES Bank or Swiggy ORNGE HDFC through FiSense and get a festive voucher of up to ₹999. Limited-period festive offer.";
 
@@ -105,6 +106,10 @@ export default function FestiveCampaignPage() {
         // Static copy from our own config; "<" is escaped so it can't close the tag.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd()).replace(/</g, "\\u003c") }}
       />
+      {/* Pixel script host: open the connection before the script asks for it. */}
+      <link rel="preconnect" href="https://connect.facebook.net" />
+      {/* "Pick my card" and the hero's anchor links glide instead of jumping. */}
+      <style>{`@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }`}</style>
       <CampaignViewTracker campaign={CAMPAIGN_KEY} />
       <Header />
 
@@ -114,8 +119,6 @@ export default function FestiveCampaignPage() {
       {/* mt is 8px short of the gap: the hero keeps 8px under its trust bar for the shadow. */}
       <div className="mt-[88px] space-y-24 pb-20 sm:mt-[120px] sm:space-y-32 sm:pb-24">
         <YourClaims campaign={CAMPAIGN_KEY} />
-
-        <BeforeYouApply />
 
         <section id="cards" aria-labelledby="cards-heading" className="scroll-mt-24 px-5 sm:px-8">
           <div className="mx-auto max-w-6xl">
@@ -131,6 +134,8 @@ export default function FestiveCampaignPage() {
           </div>
         </section>
 
+        <BeforeYouApply />
+
         <CashbackSteps campaign={CAMPAIGN_KEY} />
 
         {/* the bank-terms line belongs with the FAQs, not a full section gap away */}
@@ -143,6 +148,7 @@ export default function FestiveCampaignPage() {
       </div>
 
       <Footer />
+      <StickyPickCard />
     </main>
   );
 }

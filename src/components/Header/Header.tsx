@@ -1,14 +1,15 @@
 "use client";
 import { cn } from "@/lib/utils";
-import { HoveredLink, Menu, MenuItem } from "@/components/ui/navbar-menu";
+import { HoveredLink, Menu } from "@/components/ui/navbar-menu";
 import { ROUTES } from "@/lib/constants/routes";
+import { CAMPAIGN_PATH } from "@/app/credit-card-offers/_data/festive";
 import { useState } from "react";
 import Image from "next/image";
 import { useFeatureFlag } from "@/contexts/FeatureContext";
 import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
 
 const Header = ({ className }: { className?: string }) => {
-  const [active, setActive] = useState<string | null>(null);
+  const [, setActive] = useState<string | null>(null);
 
   const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
 
@@ -38,25 +39,14 @@ const Header = ({ className }: { className?: string }) => {
               </HoveredLink>
             )}
 
-            {/* Live sale — dropdown to the active sale landing pages */}
-            <div className="relative">
-              <MenuItem setActive={setActive} active={active} item="Sale">
-                <div className="flex flex-col space-y-3 text-sm">
-                  <HoveredLink
-                    href="/sale/flipkart"
-                    className="flex items-center gap-2 font-semibold max-md:text-[14px]"
-                  >
-                    <Image
-                      width={18}
-                      height={18}
-                      src="/icons/flipkart.png"
-                      alt="Flipkart"
-                      className="rounded-sm"
-                    />
-                    Flipkart GOAT Sale
-                  </HoveredLink>
-                </div>
-              </MenuItem>
+            {/* Live campaign. The sale dropdown (/sale/flipkart) is off for now. */}
+            <div className="relative mr-2">
+              <HoveredLink
+                href={CAMPAIGN_PATH}
+                className="whitespace-nowrap max-md:text-[14px] max-md:font-semibold"
+              >
+                Festive offers
+              </HoveredLink>
               <span className="pointer-events-none absolute -right-2.5 -top-1 flex size-2">
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary-orange/70" />
                 <span className="relative inline-flex size-2 rounded-full bg-primary-orange" />

@@ -8,7 +8,7 @@ import { ROUTES } from "@/lib/constants/routes";
 import { useGetRewardsQuery } from "@/store/userApi";
 
 /**
- * "Your cashback" on the campaign page for signed-in visitors who already
+ * "Your vouchers" on the campaign page for signed-in visitors who already
  * applied: the same tracker as My rewards, so a returning user sees where
  * they stand before scrolling to the cards. Renders nothing otherwise.
  */
@@ -19,14 +19,14 @@ export function YourClaims({ campaign }: { campaign: string }) {
   if (!claims.length) return null;
 
   return (
-    <section aria-labelledby="your-cashback-heading" className="px-5 sm:px-8">
+    <section aria-labelledby="your-vouchers-heading" className="px-5 sm:px-8">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-end justify-between gap-3">
           <h2
-            id="your-cashback-heading"
+            id="your-vouchers-heading"
             className="font-satoshi text-2xl font-semibold tracking-tight text-white sm:text-3xl"
           >
-            Your cashback
+            Your vouchers
           </h2>
           <Link
             href={ROUTES.REWARDS}

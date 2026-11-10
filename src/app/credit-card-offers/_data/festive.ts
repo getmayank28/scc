@@ -48,7 +48,9 @@ export const CAMPAIGN_PATH = "/credit-card-offers/festive";
 export const WHATSAPP_NUMBER = "+91 75676 01600";
 export const WHATSAPP_URL = "https://wa.me/917567601600?text=Hi";
 
-export const HEADLINE = "Get up to ₹999 cashback on 5 top credit cards";
+// "Voucher", never "cashback", for the FiSense reward: the SBI card is itself
+// called Cashback SBI and earns its own cashback, so the word was ambiguous.
+export const HEADLINE = "Get up to ₹999 voucher on 5 top credit cards";
 export const EYEBROW = "Limited-period festive offer";
 /** The brief's trust line as three points under the hero; `short` is the phone label. */
 export const TRUST_POINTS = [
@@ -75,11 +77,11 @@ export const FOOTER_LINE =
 export const BEFORE_YOU_APPLY = [
   {
     lead: "One card per bank.",
-    text: "If you already hold an SBI credit card, do not apply for another SBI card. Your application may be rejected, and the cashback offer will be withdrawn. Choose another card that suits your spending.",
+    text: "If you already hold a credit card from a bank, pick a card from another bank. A second card from the same bank may be rejected, and only one card per bank earns a voucher.",
   },
   {
     lead: "Finish in one go.",
-    text: "Complete the bank's form in one sitting after you tap Apply now. If you drop off, apply again from this page or from the link we send you on WhatsApp.",
+    text: "Complete the bank's form in one sitting after you tap Apply now. If you drop off, apply again from this page. Banks can take a few days to confirm, so check My rewards first.",
   },
   {
     lead: "Keep these ready.",
@@ -92,17 +94,20 @@ export const BEFORE_YOU_APPLY = [
 
 /** The step text is the agreed copy; titles are short labels for the step cards. */
 export const CASHBACK_STEPS = [
-  { title: "Apply in one go", text: "Complete your application in one go." },
-  { title: "Get your card", text: "Get your card from the bank." },
+  { title: "Pick a card and apply", text: "Apply from this page and finish the bank's form in one go." },
+  { title: "The bank approves", text: "The bank decides on your application and sends you the card." },
   {
     title: "Track it on FiSense",
-    text: "Nothing more to do. Follow your application under My rewards in FiSense, and we update you on WhatsApp.",
+    text: "Nothing more to do. Follow it under My rewards, and we update you on WhatsApp.",
   },
   {
     title: "Get your voucher",
-    text: "Your cashback voucher will be given to you within 48 hours of the bank confirming your card to us.",
+    text: "Ready in My rewards within 48 hours of the bank confirming your card.",
   },
 ] as const;
+
+/** The one timing sentence used everywhere the voucher's arrival is mentioned. */
+export const VOUCHER_TIMING = "Your voucher arrives within 48 hours of the bank confirming your card.";
 
 export const CARDS: CampaignCard[] = [
   {
@@ -309,19 +314,23 @@ export const CARDS: CampaignCard[] = [
 export const FAQ: FaqItem[] = [
   {
     q: "Do I still pay the joining fee to the bank?",
-    a: "Yes. The bank charges the joining fee on your card as usual. FiSense gives you a cashback voucher once the bank confirms your card to us.",
+    a: "Yes. The bank charges the joining fee plus GST on your card as usual. FiSense gives you a voucher for the joining fee amount once the bank confirms your card to us.",
   },
   {
-    q: "When will I get my cashback voucher?",
+    q: "Does the voucher cover GST?",
+    a: "No. The voucher equals the joining fee. GST on the fee (18%) is charged by the bank and isn't covered. Kiwi and IndusInd Tiger have no joining fee, so there's no GST to pay.",
+  },
+  {
+    q: "When will I get my voucher?",
     a: "Within 48 hours of the bank confirming your card to us. We message you on WhatsApp as soon as it's ready, and you can view it in FiSense under My rewards.",
   },
   {
     q: "Can I apply for more than one card?",
-    a: "Yes, you can apply for more than one card, but only one card from each bank. If you apply for two cards from the same bank, the bank will reject one of them.",
+    a: "Yes, you can apply for more than one card, but only one card from each bank. A second card from the same bank may be rejected, and only one voucher is given per bank.",
   },
   {
     q: "What if I could not finish my application?",
-    a: "Apply again from this page. If you apply any other way, we cannot track your application, and the cashback cannot be paid. Banks can take a few days to confirm an application to us, so check My rewards in FiSense before applying again.",
+    a: "Apply again from this page. If you apply any other way, we cannot track your application, and no voucher can be given. Banks can take a few days to confirm an application to us, so check My rewards in FiSense before applying again.",
   },
   {
     q: "What if the bank rejects my application?",
@@ -348,5 +357,9 @@ export const voucherLine = (
   card: Pick<CampaignCard, "joiningFee" | "voucher">,
 ) =>
   card.joiningFee > 0
-    ? `Pay ${inr(card.joiningFee)} joining fee. Get a ${inr(card.voucher)} voucher back from FiSense`
-    : `Get a ${inr(card.voucher)} festive voucher from FiSense`;
+    ? `${inr(card.voucher)} FiSense voucher on a ${inr(card.joiningFee)} joining fee. GST on the fee is extra`
+    : `No joining fee, plus a ${inr(card.voucher)} FiSense voucher`;
+
+/** Short sub-label under the voucher amount on a card tile. */
+export const voucherSub = (card: Pick<CampaignCard, "joiningFee">) =>
+  card.joiningFee > 0 ? `on ${inr(card.joiningFee)} fee + GST` : "no joining fee";

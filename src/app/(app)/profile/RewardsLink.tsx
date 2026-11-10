@@ -23,7 +23,7 @@ export default function RewardsLink() {
       <div className="mr-auto">
         <p className="text-base font-medium text-white">My rewards</p>
         <p className="text-xs text-white/60">
-          {ready ? "Your voucher is ready to view" : "Track your festive card cashback"}
+          {ready ? "Your voucher is ready to view" : "Track your festive card vouchers"}
         </p>
       </div>
       <ChevronRight className="size-4 text-white/50" />

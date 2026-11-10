@@ -93,6 +93,7 @@ export enum EventName {
   CAMPAIGN_CARD_SELECTED = "campaign.card_selected",
   CAMPAIGN_FAQ_OPENED = "campaign.faq_opened",
   CAMPAIGN_WHATSAPP_CLICKED = "campaign.whatsapp_clicked",
+  CAMPAIGN_PICK_CARD_CLICKED = "campaign.pick_card_clicked",
   CAMPAIGN_SIGNIN_STARTED = "campaign.signin_started",
   CAMPAIGN_SIGNIN_COMPLETED = "campaign.signin_completed",
 
@@ -596,6 +597,7 @@ export interface EventPropertiesMap {
   [EventName.CAMPAIGN_CARD_SELECTED]: CampaignCardProperties;
   [EventName.CAMPAIGN_FAQ_OPENED]: CampaignFaqOpenedProperties;
   [EventName.CAMPAIGN_WHATSAPP_CLICKED]: CampaignWhatsappClickedProperties;
+  [EventName.CAMPAIGN_PICK_CARD_CLICKED]: CampaignWhatsappClickedProperties;
   [EventName.CAMPAIGN_SIGNIN_STARTED]: CampaignCardProperties;
   [EventName.CAMPAIGN_SIGNIN_COMPLETED]: CampaignCardProperties;
 
