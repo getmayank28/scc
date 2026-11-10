@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Check, ChevronDown, MapPin, MessageCircle } from "lucide-react";
+import { Check, ChevronDown, Info, MapPin, MessageCircle } from "lucide-react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
 import { usePrefersReducedMotion } from "@/app/sale/[merchant]/hooks/usePrefersReducedMotion";
-import { WHATSAPP_URL, feeLabel, inr, voucherLine, type CampaignCard } from "../_data/festive";
+import { CARDS, WHATSAPP_URL, feeLabel, inr, voucherLine, voucherSub, type CampaignCard } from "../_data/festive";
 import { ApplyButton } from "./ApplyButton";
 import { PortraitCard } from "./Hero";
 import { WhatsAppLink } from "./Tracked";
@@ -315,7 +315,7 @@ function CardPanel({
                 <p className="text-[10px] uppercase tracking-wider text-white/45">Joining fee</p>
                 <p className="whitespace-nowrap text-sm font-semibold text-white">{feeLabel(card.joiningFee)}</p>
               </div>
-              <VoucherChip amount={card.voucher} refund={card.joiningFee > 0} />
+              <VoucherChip amount={card.voucher} sub={voucherSub(card)} />
             </div>
             <div className="min-w-0 flex-1 border-l border-white/10 pl-3 sm:pl-5">
               <p className="text-[10px] uppercase tracking-wider text-white/45">Annual fee</p>
@@ -329,6 +329,11 @@ function CardPanel({
             <ApplyButton slug={card.slug} cardName={card.name} campaign={campaign} />
           </div>
         </div>
+
+        <p className="mt-3 flex items-start gap-1.5 text-xs leading-relaxed text-amber-200/80">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          {bankNote(card)}
+        </p>
 
         <p className="mt-3 hidden text-xs leading-relaxed text-white/45 sm:block">
           {voucherLine(card)}.{" "}
@@ -396,9 +401,16 @@ function HeroBenefit({ card, compact = false }: { card: CampaignCard; compact?: 
   );
 }
 
+/** One card per bank: the warning shown on each card, naming the sibling card when the bank has two. */
+function bankNote(card: CampaignCard) {
+  const sibling = CARDS.find((c) => c.bank === card.bank && c.slug !== card.slug);
+  return sibling
+    ? `One ${card.bank} card per person: pick this or ${sibling.name}, not both. Skip both if you already have a credit card from ${card.bank}.`
+    : `Already have a credit card from ${card.bank}? Pick a card from another bank instead.`;
+}
+
 /** Ticket-shaped FiSense voucher — notched edges cut with radial masks. */
-/** `refund`: the voucher pays back a joining fee ("₹999 back"); otherwise a flat festive voucher. */
-function VoucherChip({ amount, refund }: { amount: number; refund: boolean }) {
+function VoucherChip({ amount, sub }: { amount: number; sub: string }) {
   const mask =
     "radial-gradient(circle 5px at 0 50%, transparent 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle 5px at 100% 50%, transparent 98%, #000) right / 51% 100% no-repeat";
   return (
@@ -407,10 +419,10 @@ function VoucherChip({ amount, refund }: { amount: number; refund: boolean }) {
       style={{ borderRadius: 8, WebkitMask: mask, mask }}
     >
       <p className="font-satoshi text-sm font-bold leading-none">
-        {inr(amount)} {refund ? "back" : "voucher"}
+        {inr(amount)} voucher
       </p>
       <p className="mt-0.5 text-[9px] font-medium uppercase leading-none tracking-wider text-white/85">
-        FiSense voucher
+        {sub}
       </p>
     </div>
   );

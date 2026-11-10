@@ -14,6 +14,20 @@ import {
   readCookie,
 } from "@/lib/analytics/attribution";
 import { clientIp, sendMetaEvent } from "@/lib/analytics/metaCapi";
+import Card from "@/models/Card";
+import { festiveCard } from "@/lib/campaign/festive";
+
+/** Readable card name for ad reporting: the campaign's own label, else the catalog name. */
+async function cardNameFor(slug: string): Promise<string> {
+  const festive = festiveCard(slug);
+  if (festive) return festive.name;
+  try {
+    const card = await Card.findOne({ slug }, "name").lean<{ name?: string } | null>();
+    return card?.name ?? slug;
+  } catch {
+    return slug;
+  }
+}
 
 /**
  * GET /api/out?type=card|portal|voucher|offer&id=<slug|offerId>&surface=<surface>[&card=<slug>]
@@ -123,6 +137,8 @@ export async function GET(req: NextRequest) {
     // are a custom event. Server-only — the page is gone by now — so the click
     // id alone is the event id.
     if (final.step !== "internal") {
+      // card_name lets Ads Manager split applications per card ("Cashback SBI Card").
+      const cardName = type === "card" && cardSlug ? await cardNameFor(cardSlug) : null;
       await sendMetaEvent({
         eventName: type === "card" ? "Lead" : "AffiliateClick",
         eventId: `click_${clickId.toString()}`,
@@ -137,6 +153,7 @@ export async function GET(req: NextRequest) {
         customData: {
           content_category: type,
           content_name: cardSlug ?? id,
+          ...(cardName ? { card_name: cardName } : {}),
           surface: safeSurface,
           affiliated: final.affiliated,
         },

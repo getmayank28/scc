@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { usePrefersReducedMotion } from "@/app/sale/[merchant]/hooks/usePrefersReducedMotion";
 import { inr, type CampaignCard, type TrustPoint } from "../_data/festive";
+import { TrackedPickCard } from "./Tracked";
 
 /**
  * Layered drop shadow, like a real card lifted off the page: a tight contact
@@ -78,7 +79,7 @@ export function CampaignHero({
   const vouchers = cards.map((c) => c.voucher);
   const min = Math.min(...vouchers);
   const max = Math.max(...vouchers);
-  // "Get up to ₹999 cashback / on 5 top credit cards": break before "on" on
+  // "Get up to ₹999 voucher / on 5 top credit cards": break before "on" on
   // wider screens and accent the card count, as in the reference layout.
   const m = headline.match(/^(.*?)\s+(on\s+)(\d+ top credit cards)$/);
 
@@ -106,12 +107,13 @@ export function CampaignHero({
           )}
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-white/60 sm:mt-5 sm:text-lg">
-          Apply through FiSense and get a festive voucher of {inr(min)} to {inr(max)} once your card
-          is approved.
+          Pick a card, apply through FiSense, and get a {inr(min)} to {inr(max)} voucher within 48
+          hours of the bank confirming your card.
         </p>
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:mt-8 sm:flex-row">
-          <a
-            href="#cards"
+        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:mt-8">
+          <TrackedPickCard
+            id="hero-cta"
+            source="hero"
             className="group/cta relative inline-flex h-[54px] items-center gap-4 overflow-hidden rounded-full bg-[linear-gradient(135deg,#FF8A3D_0%,var(--primary-orange)_45%,#E5391B_100%)] pl-7 pr-1.5 font-satoshi text-base font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_14px_34px_-12px_var(--primary-orange)] ring-1 ring-white/15 transition duration-300 hover:-translate-y-0.5 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_20px_44px_-12px_var(--primary-orange)] active:translate-y-0 active:scale-[0.98]"
           >
             {/* light sweep on hover */}
@@ -119,20 +121,21 @@ export function CampaignHero({
               aria-hidden
               className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-out group-hover/cta:translate-x-[520%]"
             />
-            <span className="relative">See the {cards.length} cards</span>
+            <span className="relative">Pick my card</span>
             <span className="relative flex size-[42px] items-center justify-center rounded-full bg-white text-primary-orange shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-transform duration-300 group-hover/cta:translate-y-0.5">
               <ArrowDown className="size-[18px]" strokeWidth={2.5} aria-hidden />
             </span>
-          </a>
-          <a
-            href="#how-it-works"
-            className="group/how hidden h-[54px] sm:inline-flex items-center gap-2.5 rounded-full border border-white/12 bg-white/[0.05] pl-2 pr-5 text-[15px] font-medium text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
-          >
-            <span className="flex size-[38px] items-center justify-center rounded-full bg-white/10 ring-1 ring-white/15 transition group-hover/how:bg-white/15">
-              <Gift className="size-[17px] text-amber-300" aria-hidden />
-            </span>
-            How the cashback works
-          </a>
+          </TrackedPickCard>
+          <p className="text-xs text-white/50 sm:text-[13px]">
+            Keep PAN, income proof and your Aadhaar-linked number ready.{" "}
+            <a
+              href="#how-it-works"
+              className="inline-flex items-center gap-1 font-medium text-white/75 underline-offset-4 hover:text-white hover:underline"
+            >
+              <Gift className="size-3.5 text-amber-300" aria-hidden />
+              How the voucher works
+            </a>
+          </p>
         </div>
       </div>
 
@@ -173,7 +176,10 @@ function Backdrop() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
       <div className="absolute inset-0 opacity-[0.07] [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:64px_64px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_30%,black,transparent)]" />
-      <div className="absolute left-1/2 top-[58%] h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklch,#3B6FE8_45%,transparent),transparent)] blur-2xl" />
+      {/* Fixed offset, not a % of the hero: the hero's height changes when the web
+          font swaps in and the headline rewraps, and a %-placed glow this large
+          then counts as a big layout shift. */}
+      <div className="absolute left-1/2 top-[440px] h-[420px] w-[620px] -translate-x-1/2 rounded-full sm:top-[600px] bg-[radial-gradient(closest-side,color-mix(in_oklch,#3B6FE8_45%,transparent),transparent)] blur-2xl" />
       <div className="absolute left-1/2 top-0 h-[320px] w-[760px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklch,var(--primary-orange)_18%,transparent),transparent)] blur-2xl" />
     </div>
   );
@@ -273,12 +279,14 @@ function CardFan({ cards }: { cards: CampaignCard[] }) {
             aria-label={`${card.name}: ${card.hero.value}`}
             className="group absolute left-1/2 top-0 w-[var(--card-w)] origin-bottom"
             style={{ zIndex: 10 - depth, marginLeft: "calc(var(--card-w) / -2)" }}
-            initial={reduced ? final : { x: "0%", y: "12%", rotate: 0, scale: 0.9, opacity: 0 }}
+            // The front card is the page's largest paint: render it in place from
+            // the server HTML instead of fading it in after hydration.
+            initial={reduced || depth === 0 ? final : { x: "0%", y: "12%", rotate: 0, scale: 0.9, opacity: 0 }}
             animate={final}
             transition={{ type: "spring", stiffness: 120, damping: 18, delay: 0.15 + depth * 0.08 }}
           >
             <div className="transition-transform duration-300 group-hover:-translate-y-4">
-              <PortraitCard card={card} front={depth === 0} />
+              <PortraitCard card={card} front={depth === 0} priority={depth === 0} />
             </div>
           </motion.a>
         );
@@ -297,8 +305,17 @@ function CardFan({ cards }: { cards: CampaignCard[] }) {
  * card's own colours, styled after the reference art. Text
  * is sized in container units so it scales with the card wherever it's used.
  */
-export function PortraitCard({ card, front }: { card: CampaignCard; front: boolean }) {
-  if (card.image) return <OfficialCard card={card} image={card.image} front={front} />;
+export function PortraitCard({
+  card,
+  front,
+  priority = false,
+}: {
+  card: CampaignCard;
+  front: boolean;
+  /** Load eagerly at high priority — only the above-the-fold front card. */
+  priority?: boolean;
+}) {
+  if (card.image) return <OfficialCard card={card} image={card.image} front={front} priority={priority} />;
   const look = HERO_LOOK[card.anchor];
   const Icon = look?.icon ?? Sparkles;
   const { from, to, accent } = card.face;
@@ -359,7 +376,7 @@ export function PortraitCard({ card, front }: { card: CampaignCard; front: boole
             <p className="mt-1 text-[4.8cqw] text-white/70">{card.bank}</p>
           </div>
           <span className="rounded-full bg-white/20 px-[3.5cqw] py-[1cqw] text-[4.8cqw] font-semibold backdrop-blur">
-            {inr(card.voucher)} {card.joiningFee > 0 ? "back" : "voucher"}
+            {inr(card.voucher)} voucher
           </span>
         </div>
       </div>
@@ -375,10 +392,12 @@ function OfficialCard({
   card,
   image,
   front,
+  priority,
 }: {
   card: CampaignCard;
   image: NonNullable<CampaignCard["image"]>;
   front: boolean;
+  priority: boolean;
 }) {
   const landscape = image.width > image.height;
   return (
@@ -392,6 +411,7 @@ function OfficialCard({
         width={image.width}
         height={image.height}
         sizes="(min-width: 768px) 240px, 160px"
+        priority={priority}
         className={
           landscape
             ? // Card ratio 1.586: the rotated art's width spans the frame's height.

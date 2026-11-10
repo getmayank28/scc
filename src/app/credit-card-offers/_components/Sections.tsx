@@ -14,6 +14,7 @@ import { Reveal } from "@/app/sale/[merchant]/animations/Reveal";
 import {
   BEFORE_YOU_APPLY,
   CASHBACK_STEPS,
+  VOUCHER_TIMING,
   WHATSAPP_NUMBER,
   WHATSAPP_URL,
   type FaqItem,
@@ -113,11 +114,9 @@ export function CashbackSteps({ campaign }: { campaign: string }) {
             id="steps-heading"
             className="mt-4 font-satoshi text-3xl font-semibold tracking-tight text-white sm:text-4xl"
           >
-            How to get your cashback
+            How to get your voucher
           </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/60">
-            Your voucher is given to you within 48 hours of the bank confirming your card to us.
-          </p>
+          <p className="mt-3 text-[15px] leading-relaxed text-white/60">{VOUCHER_TIMING}</p>
         </Reveal>
 
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

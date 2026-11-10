@@ -190,7 +190,7 @@ function GiftCard({ claim }: { claim: RewardClaim }) {
 
         <div className="mt-3 flex items-center gap-2 text-[13px] text-white/60">
           <CardArt slug={claim.cardSlug} className="h-[26px] w-4 rounded-[3px]" />
-          Cashback for your {claim.cardName}
+          For your {claim.cardName}
         </div>
 
         {/* code strip: fixed rows, so revealing swaps text in place */}

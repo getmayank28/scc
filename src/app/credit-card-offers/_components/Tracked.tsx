@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
+import { CAMPAIGN_KEY } from "../_data/festive";
 
 /** Fires the page-view event once. Renders nothing. */
 export function CampaignViewTracker({ campaign }: { campaign: string }) {
@@ -63,6 +64,31 @@ export function WhatsAppLink({
       rel="noopener noreferrer"
       className={className}
       onClick={() => track(EventName.CAMPAIGN_WHATSAPP_CLICKED, { campaign, source })}
+    >
+      {children}
+    </a>
+  );
+}
+
+/** "Pick my card": jumps to the card tiles, with a click event per placement. */
+export function TrackedPickCard({
+  id,
+  source,
+  className,
+  children,
+}: {
+  id?: string;
+  source: "hero" | "sticky";
+  className?: string;
+  children: React.ReactNode;
+}) {
+  const { track } = useAnalytics();
+  return (
+    <a
+      id={id}
+      href="#cards"
+      className={className}
+      onClick={() => track(EventName.CAMPAIGN_PICK_CARD_CLICKED, { campaign: CAMPAIGN_KEY, source })}
     >
       {children}
     </a>

@@ -31,7 +31,7 @@ const Footer: React.FC = () => {
               </Link>
               <Link href='/legal-compliance'>
                 <h3 className="text-[12px] text-[#fff] text-start">
-                  Compilance
+                  Compliance
                 </h3>
               </Link>
               <Link href='/terms'>
@@ -63,7 +63,7 @@ const Footer: React.FC = () => {
         <div>
           <div className="w-full h-[1px] bg-white opacity-5 mb-7"></div>
           <h3 className="text-[12px] text-[#828282] text-center">
-            © 2025 FiSense. All rights reserved.
+            © {new Date().getFullYear()} FiSense. All rights reserved.
           </h3>
         </div>
       </div>
@@ -107,7 +107,7 @@ const Footer: React.FC = () => {
               </Link>
               <Link href='/legal-compliance'>
                 <h3 className="text-[12px] text-[#fff]">
-                  Compilance
+                  Compliance
                 </h3>
               </Link>
               <Link href='/terms'>
@@ -126,7 +126,7 @@ const Footer: React.FC = () => {
         <div>
           <div className="w-full h-[1px] bg-white opacity-5 mb-7"></div>
           <h3 className="text-[12px] text-[#828282] text-center">
-            © 2025 FiSense. All rights reserved.
+            © {new Date().getFullYear()} FiSense. All rights reserved.
           </h3>
         </div>
       </div>
