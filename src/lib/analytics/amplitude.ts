@@ -1,12 +1,13 @@
 import * as amplitude from "@amplitude/analytics-browser";
-import { identify, Identify, reset, setUserId } from "@amplitude/analytics-browser";
+import { getUserId, identify, Identify, reset, setUserId } from "@amplitude/analytics-browser";
 
-let initialized = false;
+let initPromise: Promise<unknown> | null = null;
 
+/** Idempotent; resolves once the SDK has loaded the stored identity. */
 export const initAmplitude = () => {
-  if (initialized) return;
+  if (initPromise) return initPromise;
 
-  amplitude.init(process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY as string, undefined, {
+  initPromise = amplitude.init(process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY as string, undefined, {
     defaultTracking: {
       sessions: true,
       pageViews: false,
@@ -15,9 +16,8 @@ export const initAmplitude = () => {
       process.env.NODE_ENV === "development"
         ? amplitude.Types.LogLevel.Debug
         : amplitude.Types.LogLevel.Warn,
-  });
-
-  initialized = true;
+  }).promise;
+  return initPromise;
 };
 
 interface IdentifyUserArgs {
@@ -36,6 +36,13 @@ export const identifyUser = ({ id, email, username }: IdentifyUserArgs) => {
   identify(identifyObj);
 };
 
-export const resetAmplitude = () => {
-  reset();
+/**
+ * Clears the identity of a user who has signed out. Only when one is stored:
+ * reset() also mints a new device id, so calling it for every logged-out page
+ * load gave each anonymous visit a fresh identity and split pre-sign-in
+ * funnels (and their UTMs) across devices.
+ */
+export const resetAmplitude = async () => {
+  await initAmplitude();
+  if (getUserId()) reset();
 };

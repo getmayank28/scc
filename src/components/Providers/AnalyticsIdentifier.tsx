@@ -26,7 +26,7 @@ const AnalyticsIdentifier = () => {
           username: session?.user?.username,
         });
       } else if (status === "unauthenticated") {
-        resetAmplitude();
+        void resetAmplitude();
       }
     };
 
