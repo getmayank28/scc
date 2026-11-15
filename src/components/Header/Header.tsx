@@ -4,6 +4,7 @@ import { HoveredLink, Menu } from "@/components/ui/navbar-menu";
 import { ROUTES } from "@/lib/constants/routes";
 import { CAMPAIGN_PATH } from "@/app/credit-card-offers/_data/festive";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useFeatureFlag } from "@/contexts/FeatureContext";
 import { FeatureFlagsConfig } from "@/lib/constants/featureFlags";
@@ -12,6 +13,10 @@ const Header = ({ className }: { className?: string }) => {
   const [, setActive] = useState<string | null>(null);
 
   const isWaitlistEnabled = useFeatureFlag(FeatureFlagsConfig.WAITLIST);
+  // Public pages are reachable while signed in (e.g. the festive banner on
+  // /home), so offer a way back into the app instead of "Sign in".
+  const { status } = useSession();
+  const isSignedIn = status === "authenticated";
 
   return (
     <div
@@ -80,10 +85,15 @@ const Header = ({ className }: { className?: string }) => {
                   </div>
                 </MenuItem> */}
                 <HoveredLink
-                  href={ROUTES.SIGN_IN}
-                  className="border max-md:text-[14px] border-primary-orange text-white font-semibold rounded-full px-3 py-1 hover:bg-secondary-orange hover:text-white"
+                  href={isSignedIn ? ROUTES.LOGGED_IN_HOME : ROUTES.SIGN_IN}
+                  className={cn(
+                    "border max-md:text-[14px] border-primary-orange text-white font-semibold rounded-full px-3 py-1 hover:bg-secondary-orange hover:text-white",
+                    // Hold the slot while the session resolves so a signed-in
+                    // user doesn't see "Sign in" flash first.
+                    status === "loading" && "invisible"
+                  )}
                 >
-                  Sign in
+                  {isSignedIn ? "Home" : "Sign in"}
                 </HoveredLink>
               </>
             )}
