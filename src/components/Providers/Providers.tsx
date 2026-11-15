@@ -4,6 +4,8 @@ import { SessionProvider} from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import { SidebarContainer } from "../SidebarConatainer/SidebarConatainer";
 import SignInModal from "../SignInModal/SignInModal";
+import AddCardModal from "../AddCardModal/AddCardModal";
+import { AddCardProvider } from "@/contexts/AddCardContext";
 import { SignInProvider } from "@/contexts/SignInContext";
 import { WaitlistProvider } from "@/contexts/WaitlistContext";
 import { FeatureFlagProvider } from "@/contexts/FeatureContext";
@@ -44,8 +46,10 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
             <WaitlistProvider>
               <Toaster position="top-right" />
               <StateProviders>
+                <AddCardProvider>
                 <WebSocketConnectionProvider>
                   <SignInModal />
+                  <AddCardModal />
                   {isHiddenRoute ? <></> : <BottomBar />}
                   <div
                     className={`${isHiddenRoute ? "max-md:pb-0" : "max-md:pb-22"}`}
@@ -55,6 +59,7 @@ const ProvderContainer = ({ children }: { children: React.ReactNode }) => {
                       </SidebarContainer>
                   </div>
                 </WebSocketConnectionProvider>
+                </AddCardProvider>
               </StateProviders>
             </WaitlistProvider>
           </ChatContextProvider>
