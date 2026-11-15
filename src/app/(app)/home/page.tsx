@@ -1,16 +1,11 @@
 "use client";
-import HomeHero from "./components/HomeHero";
-import WalletCheatSheet from "./components/WalletCheatSheet";
-import FindNextCard from "./components/FindNextCard";
-import FestiveRewards from "./components/FestiveRewards";
-import PointsWorth from "./components/PointsWorth";
-import TopDeals from "./components/TopDeals";
-import { useGetDealsQuery, useGetRewardsQuery } from "@/store/userApi";
-import { useGetLatestPointsQuery } from "@/store/redemption";
-import {
-  useGetUserSpendTransactionQuery,
-  useGetWalletCheatSheetQuery,
-} from "@/store/spendTransaction";
+import WelcomeScreen from "@/components/WelcomeScreen/WelcomeScreen";
+import TopPerformingCardSection from "./components/TopPerformingCardSection";
+import RecendSpendTransactionSection from "./components/RecendSpendTransactionSection";
+import StatsSection from "./components/StatsSection";
+import { useGetTransactionAnalyticsQuery, useGetUserSpendTransactionQuery } from "@/store/spendTransaction";
+import Typography from "@/components/Typography/Typography";
+import { Button } from "@/components/ui/stateful-button";
 import { useGetUserBotChatSessionsDetailsQuery, useGetUserBotChatSessionsQuery } from "@/store/api";
 import { useEffect, useMemo } from "react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
@@ -19,9 +14,7 @@ import { BaseMessage, MESSAGE_SOURCE } from "@/types/chatMessages";
 import { safeParseJson } from "@/lib/utils/markdown";
 import LastRecommendation from "./components/LastRecommendation";
 import { BotRecommendationCreditCardProps } from "@/types/card";
-import type { CheatSheet, CheatSheetCard, CheatSheetRow } from "@/lib/advisor/walletCheatSheet";
-import { homeStyles } from "./homeStyles";
-import { Skeleton } from "@/components/ui/skeleton";
+
 
 interface UserChatSession {
   channel: "recommendation";
@@ -32,28 +25,18 @@ interface UserChatSession {
 
 const Home = () => {
   const { track } = useAnalytics();
+  const { data, isFetching: isAnalyticsLoading, isError: isAnalyticsError, refetch: refetchAnalytics } = useGetTransactionAnalyticsQuery({})
 
   const {
     data: spendTransaction,
-    isFetching: isLookupsLoading,
-    // Only the home.viewed `hasSpendData` flag reads this, so one row is enough.
-  } = useGetUserSpendTransactionQuery({ limit: 1 });
-
-  const {
-    data: cheatSheet,
-    isFetching: isCheatSheetLoading,
-    isError: isCheatSheetError,
-    refetch: refetchCheatSheet,
-  } = useGetWalletCheatSheetQuery({});
-
-  // Both secondary: a failure just hides the section rather than the page.
-  const { data: rewards, isError: isRewardsError } = useGetRewardsQuery();
-  const { data: deals } = useGetDealsQuery();
-  const { data: points, isFetching: isPointsLoading, isError: isPointsError } =
-    useGetLatestPointsQuery();
+    isFetching,
+    isError: isSpendError,
+    refetch: refetchSpendData,
+  } = useGetUserSpendTransactionQuery({});
 
   const { data: userSessions,
     isFetching: userSessionsLoading,
+    isError: userSessionsError,
   } = useGetUserBotChatSessionsQuery({})
 
   const latestSession = useMemo(() => userSessions?.sessions
@@ -65,6 +48,7 @@ const Home = () => {
 
   const { data: userLastSessionDetail,
     isFetching: userSessionDetailsLoading,
+    isError: userSessionDetailsError,
   } = useGetUserBotChatSessionsDetailsQuery(latestSession?.session_id, {
     skip: !latestSession?.session_id
   })
@@ -80,84 +64,67 @@ const Home = () => {
         (a:{ts:string}, b:{ts:string}) =>
           new Date(b.ts).getTime() - new Date(a.ts).getTime()
       )[0]?.content;
-
+  
     if (!content) return [];
-
+  
     const parsed = safeParseJson<{ cards: BotRecommendationCreditCardProps[] }>(content);
     return parsed?.cards ?? [];
   }, [userLastSessionDetail]);
 
-  const hasSpendData = Array.isArray(spendTransaction) && spendTransaction.length > 0;
-  const cheatSheetCards: CheatSheetCard[] = cheatSheet?.result?.cards ?? [];
-  const cheatSheetRows: CheatSheetRow[] = cheatSheet?.result?.rows ?? [];
-  const walletCardCount: number = cheatSheet?.result?.walletCardCount ?? 0;
-  // Sent inside the cheat-sheet response when the wallet has nothing to show,
-  // so the no-cards layout renders whole in one go.
-  const example: CheatSheet | null = cheatSheet?.result?.example ?? null;
-
-  const walletSlugs = useMemo(() => cheatSheetCards.map((c) => c.slug), [cheatSheetCards]);
-
-  const isRecommendationLoading = userSessionsLoading || userSessionDetailsLoading;
-  const isLoading = isLookupsLoading || isCheatSheetLoading || isRecommendationLoading;
+  const haveSpendData = spendTransaction?.length;
+  const isLoading = isFetching || isAnalyticsLoading || userSessionsLoading || userSessionDetailsLoading
+  const isError = isSpendError || isAnalyticsError || userSessionsError || userSessionDetailsError
 
   useEffect(() => {
     if (!isLoading) {
       track(EventName.HOME_VIEWED, {
-        hasSpendData,
-        hasRecommendations: lastRecommendationCards.length > 0,
-        walletCardCount,
+        hasSpendData: !!haveSpendData,
+        hasRecommendations: !!lastRecommendationCards?.length,
       });
     }
   }, [isLoading]);
 
-  return (
-    <div className="w-full grow bg-brown-background min-h-screen">
-      <style>{homeStyles}</style>
-      <div className="hm">
-        {/* Needs both claims and wallet, so it never promotes a bank already
-            claimed or a card already held. Space is held while they load so
-            the page doesn't jump when the banner arrives above the hero. */}
-        {(!rewards && !isRewardsError) || isCheatSheetLoading ? (
-          <Skeleton className="h-[236px] w-full rounded-[22px] bg-white/5 max-md:h-[150px]" />
-        ) : (
-          rewards && !isCheatSheetError && (
-            <FestiveRewards mode="promo" claims={rewards.claims} walletSlugs={walletSlugs} />
-          )
-        )}
-
-        <HomeHero
-          loading={isCheatSheetLoading}
-          noCards={!isCheatSheetLoading && !isCheatSheetError && cheatSheetCards.length === 0}
-          example={example}
-          exampleLoading={isCheatSheetLoading}
-        />
-
-        <WalletCheatSheet
-          cards={cheatSheetCards}
-          rows={cheatSheetRows}
-          walletCardCount={walletCardCount}
-          example={example}
-          exampleLoading={isCheatSheetLoading}
-          isLoading={isCheatSheetLoading}
-          isError={isCheatSheetError}
-          onRetry={refetchCheatSheet}
-        />
-
-        {deals && <TopDeals merchants={deals.merchants} />}
-
-        {/* Voucher status sits with the other rewards, just above points. */}
-        {rewards && (
-          <FestiveRewards mode="status" claims={rewards.claims} walletSlugs={walletSlugs} />
-        )}
-
-        {!isPointsLoading && !isPointsError && <PointsWorth cards={points ?? []} />}
-
-        {lastRecommendationCards.length || isRecommendationLoading ? (
-          <LastRecommendation isLoading={isRecommendationLoading} cards={lastRecommendationCards} />
-        ) : (
-          <FindNextCard />
-        )}
+  if (isError) {
+    return (
+      <div className="w-full flex justify-center items-center  bg-brown-background  min-h-screen">
+        <div className="flex flex-col justify-center items-center gap-4">
+          <Typography variant="h3">Failed to get data</Typography>
+          <Button onClick={() => {
+            track(EventName.HOME_ERROR_RETRY_CLICKED, {});
+            refetchAnalytics?.()
+            refetchSpendData?.()
+          }}>Retry</Button>
+        </div>
       </div>
+    )
+  }
+
+  return (
+    <div className="w-full grow bg-brown-background text-white min-h-screen pt-20 pb-10 max-md:px-5 max-md:py-20 max-md:pb-10 flex flex-col justify-start gap-8 items-center">
+      {haveSpendData || isFetching ?
+        <div className="flex gap-8 justify-center mx-auto max-md:w-full max-md:flex-col max-md:gap-4">
+          <TopPerformingCardSection isLoading={isFetching} topCards={data?.topCards} />
+          <StatsSection isLoading={isFetching} spendAnalytics={data?.spendAnalytics} />
+          <RecendSpendTransactionSection isLoading={isFetching} spendTransaction={spendTransaction} />
+        </div>:<></>
+      }
+      {
+        (!haveSpendData || !lastRecommendationCards) && !isLoading? (
+          <WelcomeScreen
+            showUserCard={!haveSpendData}
+            showRecommendationCard={!lastRecommendationCards || !lastRecommendationCards?.length}
+            showOptimizerCard={!haveSpendData}
+            track={track} />
+        ) : (
+          <></>
+        )
+      }
+      {
+        lastRecommendationCards?.length || userSessionsLoading || userSessionDetailsLoading ? <LastRecommendation isLoading={userSessionsLoading || userSessionDetailsLoading} cards={lastRecommendationCards} />:<></>
+      }
+
+      {/* <Divider className="mt-28 mb-10 max-md:w-[300px] max-md:mt-16"/> */}
+      {/* <BestMarketCard/> */}
     </div>
   );
 };

@@ -21,8 +21,6 @@ export const usersApi = api.injectEndpoints({
       },
       transformResponse: (res: { result?: DealsResponse }) =>
         res.result ?? { merchants: [], walletEmpty: false, walletBanks: [] },
-      // Best-card picks depend on the wallet.
-      providesTags: ["UserCards"],
     }),
     getAffiliateActivity: builder.query<ActivityItem[], void>({
       query: () => `/user/affiliate-activity`,

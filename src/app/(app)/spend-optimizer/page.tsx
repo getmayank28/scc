@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import { SearchboxInput } from "@/components/SearchBoxInput";
 import { formatCurrency } from "@/lib/utils/number";
 import { bankIcon } from "@/lib/data/banks";
-import { useAddCardModal } from "@/contexts/AddCardContext";
+import useNav from "@/lib/hooks/useNav";
 import useUserData from "@/lib/hooks/useUserData";
 import { useGetUserCardsQuery } from "@/store/api";
 import {
@@ -121,7 +121,7 @@ interface WalletCard {
 export default function SpendOptimizerPage() {
   const { track } = useAnalytics();
   const { userId } = useUserData();
-  const { openAddCard } = useAddCardModal();
+  const { navigateToProfile } = useNav();
 
   const { data: rawCards, isFetching: isCardsLoading } = useGetUserCardsQuery({
     userId,
@@ -202,41 +202,6 @@ export default function SpendOptimizerPage() {
       prev.length > 0 ? prev : wallet.slice(0, MAX_SELECTED).map((c) => c.slug),
     );
   }, [wallet]);
-
-  // Deep links from home (`?merchant=Amazon&amount=5000`, or `?category=fuel`)
-  // prefill the inputs and run once the wallet preselection lands. Read from
-  // window rather than useSearchParams so the page needn't sit in a Suspense
-  // boundary; the params are stripped so a refresh doesn't re-run.
-  const pendingAutoRun = useRef(false);
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const merchant = params.get("merchant")?.trim();
-    const cat = params.get("category");
-    const amt = Number(params.get("amount"));
-    if (!merchant && !cat) return;
-
-    if (merchant) {
-      setMode("merchant");
-      setMerchantValue(merchant);
-      setMerchantText(merchant);
-      if (cat) setCategory(cat);
-    } else if (cat && categories.some((c) => c.value === cat)) {
-      setMode("category");
-      setCategory(cat);
-    } else {
-      return;
-    }
-    if (amt > 0) setAmount(String(Math.round(amt)));
-    pendingAutoRun.current = true;
-    window.history.replaceState(null, "", window.location.pathname);
-  }, []);
-
-  useEffect(() => {
-    if (!pendingAutoRun.current || selected.length === 0) return;
-    pendingAutoRun.current = false;
-    // handleOptimize reads the prefilled state from this render's closure.
-    void handleOptimize();
-  }, [selected]);
 
   const merchantOptions = useMemo(
     () =>
@@ -827,7 +792,7 @@ export default function SpendOptimizerPage() {
                           <button
                             onClick={() => {
                               track(EventName.SPEND_OPTIMIZER_ADD_CARD_CLICKED, {});
-                              openAddCard("spend_optimizer");
+                              navigateToProfile();
                             }}
                             className="so-rank-solo-cta"
                           >
@@ -984,7 +949,7 @@ export default function SpendOptimizerPage() {
                 <button
                   onClick={() => {
                     track(EventName.SPEND_OPTIMIZER_ADD_CARD_CLICKED, {});
-                    openAddCard("spend_optimizer");
+                    navigateToProfile();
                   }}
                   className="so-empty-wallet mt-3"
                 >

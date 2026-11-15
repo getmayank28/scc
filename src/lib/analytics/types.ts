@@ -43,15 +43,6 @@ export enum EventName {
   HOME_WELCOME_GET_PERSONALIZED_CARD_CLICKED = "home.welcome_get_personalized_card_clicked",
   HOME_WELCOME_CHECK_BEST_CARD_CLICKED = "home.welcome_check_best_card_clicked",
   HOME_RECOMMENDATION_CARD_APPLY_CLICKED = "home.recommendation_card_apply_clicked",
-  HOME_QUICK_SPEND_SUBMITTED = "home.quick_spend_submitted",
-  HOME_ADD_CARDS_CLICKED = "home.add_cards_clicked",
-  HOME_REWARDS_CLICKED = "home.rewards_clicked",
-  HOME_POINTS_CLICKED = "home.points_clicked",
-
-  // ── Add-card modal (shared) ──
-  ADD_CARD_MODAL_OPENED = "add_card.modal_opened",
-  ADD_CARD_ADDED = "add_card.added",
-  ADD_CARD_REMOVED = "add_card.removed",
 
   // ── Chat ──
   CHAT_SESSION_VIEWED = "chat.session_viewed",
@@ -261,33 +252,6 @@ interface SpendOptimizerTabProperties extends BaseProperties {
 interface HomeViewedProperties extends BaseProperties {
   hasSpendData: boolean;
   hasRecommendations: boolean;
-  walletCardCount: number;
-}
-
-interface HomeRewardsProperties extends BaseProperties {
-  /** What the festive strip was showing when clicked. */
-  state: "ready" | "coming" | "promo";
-}
-
-interface HomePointsProperties extends BaseProperties {
-  cardName: string | null;
-}
-
-interface AddCardModalProperties extends BaseProperties {
-  source: string;
-}
-
-interface AddCardChangeProperties extends BaseProperties {
-  source: string;
-  cardName: string;
-}
-
-interface HomeQuickSpendProperties extends BaseProperties {
-  merchant: string | null;
-  category: string | null;
-  amount: number;
-  /** Which home surface started the optimizer run. */
-  source: "input" | "chip" | "cheat_sheet";
 }
 
 interface HomeRecommendationCardProperties extends BaseProperties {
@@ -450,7 +414,7 @@ interface DealsStoreOpenedProperties extends BaseProperties {
 }
 
 interface DealActionProperties extends BaseProperties {
-  surface: "deals" | "optimizer" | "home";
+  surface: "deals" | "optimizer";
   merchant: string;
   offerId: number;
   hasCode: boolean;
@@ -583,13 +547,6 @@ export interface EventPropertiesMap {
   [EventName.HOME_WELCOME_GET_PERSONALIZED_CARD_CLICKED]: BaseProperties;
   [EventName.HOME_WELCOME_CHECK_BEST_CARD_CLICKED]: BaseProperties;
   [EventName.HOME_RECOMMENDATION_CARD_APPLY_CLICKED]: HomeRecommendationCardProperties;
-  [EventName.HOME_QUICK_SPEND_SUBMITTED]: HomeQuickSpendProperties;
-  [EventName.HOME_ADD_CARDS_CLICKED]: BaseProperties;
-  [EventName.HOME_REWARDS_CLICKED]: HomeRewardsProperties;
-  [EventName.HOME_POINTS_CLICKED]: HomePointsProperties;
-  [EventName.ADD_CARD_MODAL_OPENED]: AddCardModalProperties;
-  [EventName.ADD_CARD_ADDED]: AddCardChangeProperties;
-  [EventName.ADD_CARD_REMOVED]: AddCardChangeProperties;
 
   // Chat
   [EventName.CHAT_SESSION_VIEWED]: ChatSessionViewedProperties;
