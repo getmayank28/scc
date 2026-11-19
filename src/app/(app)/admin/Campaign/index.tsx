@@ -16,6 +16,7 @@ import type {
 } from "@/types/rewards";
 import { CsvButton, Empty, Section, inr, type Col } from "../Affiliate/ReportSections";
 import { cn } from "@/lib/utils/index";
+import CampaignUsers from "./Users";
 
 /**
  * Festive campaign admin: health, money, funnel, the voucher queue (issue
@@ -302,14 +303,35 @@ function ClaimLookup() {
   );
 }
 
+type View = "overview" | "users";
+const VIEWS: { value: View; label: string }[] = [
+  { value: "overview", label: "Overview" },
+  { value: "users", label: "Users" },
+];
+
 export default function CampaignAdmin() {
   const [range, setRange] = useState<CampaignRange>("30d");
-  const { data, isLoading, isError } = useGetCampaignReportQuery(range);
+  const [view, setView] = useState<View>("overview");
 
   return (
     <div className="flex flex-col gap-4 py-4">
-      <div className="flex items-center gap-2">
-        <h2 className="mr-auto text-lg font-semibold text-white">Festive campaign</h2>
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="text-lg font-semibold text-white">Festive campaign</h2>
+        <div className="ml-3 mr-auto flex gap-1 rounded-lg bg-white/5 p-1">
+          {VIEWS.map((v) => (
+            <button
+              key={v.value}
+              type="button"
+              onClick={() => setView(v.value)}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs font-semibold",
+                view === v.value ? "bg-white/15 text-white" : "text-white/60 hover:text-white",
+              )}
+            >
+              {v.label}
+            </button>
+          ))}
+        </div>
         {RANGES.map((r) => (
           <button
             key={r}
@@ -325,6 +347,16 @@ export default function CampaignAdmin() {
         ))}
       </div>
 
+      {view === "overview" ? <CampaignOverview range={range} /> : <CampaignUsers range={range} />}
+    </div>
+  );
+}
+
+function CampaignOverview({ range }: { range: CampaignRange }) {
+  const { data, isLoading, isError } = useGetCampaignReportQuery(range);
+
+  return (
+    <>
       {isLoading && <div className="h-40 animate-pulse rounded-2xl bg-white/[0.04]" />}
       {isError && <Empty>Couldn&apos;t load the campaign report.</Empty>}
 
@@ -433,6 +465,6 @@ export default function CampaignAdmin() {
           </Section>
         </>
       )}
-    </div>
+    </>
   );
 }

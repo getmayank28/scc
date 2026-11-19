@@ -6,7 +6,7 @@ import type {
   HealthReport,
   ReportRange,
 } from "@/types/affiliateReport";
-import type { AdminClaimDetail, CampaignAdminReport, CampaignRange } from "@/types/rewards";
+import type { AdminClaimDetail, CampaignAdminReport, CampaignRange, FestiveUserRow } from "@/types/rewards";
 import api from "./api";
 
 export const admin = api.injectEndpoints({
@@ -37,6 +37,11 @@ export const admin = api.injectEndpoints({
     getCampaignReport: builder.query<CampaignAdminReport, CampaignRange>({
       query: (range) => `/admin/campaign?range=${range}`,
       transformResponse: (res: { result: CampaignAdminReport }) => res.result,
+      providesTags: ["Rewards"],
+    }),
+    getCampaignUsers: builder.query<FestiveUserRow[], CampaignRange>({
+      query: (range) => `/admin/campaign/users?range=${range}`,
+      transformResponse: (res: { result: FestiveUserRow[] }) => res.result,
       providesTags: ["Rewards"],
     }),
     getCampaignClaimsByPhone: builder.query<AdminClaimDetail[], string>({
@@ -296,6 +301,7 @@ export const {
   useLazyGetGiftorsByCardSlugQuery,
   useGetAffiliateOverviewQuery,
   useGetCampaignReportQuery,
+  useGetCampaignUsersQuery,
   useLazyGetCampaignClaimsByPhoneQuery,
   useIssueCampaignVoucherMutation,
   useGetAffiliateReportQuery,
