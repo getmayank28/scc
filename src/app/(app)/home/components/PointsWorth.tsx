@@ -1,11 +1,18 @@
 import Link from "next/link";
 import dayjs from "dayjs";
-import { ArrowRight, Coins } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useAnalytics } from "@/lib/analytics/hooks/useAnalytics";
 import { EventName } from "@/lib/analytics/types";
 import { ROUTES } from "@/lib/constants/routes";
 import type { PointsSnapshot } from "@/app/api/redemption/latest/route";
 import { inr } from "./optimizerHref";
+import Slider from "./Slider";
+
+const STEPS = [
+  "Pick your card & enter points",
+  "Compare options & their value",
+  "Redeem the best one",
+];
 
 /**
  * What the user's reward points are worth, from their last check on
@@ -17,24 +24,28 @@ const PointsWorth = ({ cards }: { cards: PointsSnapshot[] }) => {
   const click = (cardName: string | null) =>
     track(EventName.HOME_POINTS_CLICKED, { cardName });
 
+  // No check yet: the same steps-and-button layout as the Card Advisor block.
   if (cards.length === 0) {
     return (
-      <section className="hm-points-empty">
-        <span className="hm-strip-icon"><Coins className="h-5 w-5" aria-hidden /></span>
-        <span className="hm-strip-text">
-          <span className="hm-strip-title">Sitting on reward points?</span>
-          <span className="hm-strip-sub">
-            Enter your balance and see the redemption that gets you the most for them.
-          </span>
-        </span>
-        <Link href={ROUTES.POINTS_REDEMPTION} className="hm-strip-cta" onClick={() => click(null)}>
-          Check my points <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
+      <section className="hm-next hm-next--solo">
+        <div className="hm-next-copy">
+          <div className="hm-eyecaps">Reward points</div>
+          <h2 className="hm-h2 hm-next-title">Sitting on reward points?</h2>
+          <ol className="hm-steps">
+            {STEPS.map((s, i) => (
+              <li key={s}>
+                <span className="hm-step-n">{i + 1}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+          <Link href={ROUTES.POINTS_REDEMPTION} className="hm-btn" onClick={() => click(null)}>
+            Check my points <ArrowRight className="h-4 w-4" aria-hidden />
+          </Link>
+        </div>
       </section>
     );
   }
-
-  const total = cards.reduce((s, c) => s + c.best.valueInr, 0);
 
   return (
     <section>
@@ -42,7 +53,7 @@ const PointsWorth = ({ cards }: { cards: PointsSnapshot[] }) => {
         <div>
           <h2 className="hm-h2">Your points</h2>
           <p className="hm-lede">
-            Worth up to {inr(total)} if you redeem them well. Based on your last check.
+            What your points could be worth, depending on how you redeem them.
           </p>
         </div>
         <Link href={ROUTES.POINTS_REDEMPTION} className="hm-link" onClick={() => click(null)}>
@@ -50,7 +61,7 @@ const PointsWorth = ({ cards }: { cards: PointsSnapshot[] }) => {
         </Link>
       </div>
 
-      <div className="hm-points">
+      <Slider className="hm-points" count={cards.length} label="Your points">
         {cards.map((c) => (
           <Link
             key={c.cardName}
@@ -61,7 +72,7 @@ const PointsWorth = ({ cards }: { cards: PointsSnapshot[] }) => {
             <span className="hm-point-card">
               <span className="hm-point-name">{c.cardName}</span>
               <span className="hm-point-meta">
-                {c.points.toLocaleString("en-IN")} pts · checked {dayjs(c.checkedAt).format("D MMM")}
+                {c.points.toLocaleString("en-IN")} pts · Last checked on {dayjs(c.checkedAt).format("D MMM")}
               </span>
             </span>
             <span className="hm-point-value">
@@ -75,7 +86,7 @@ const PointsWorth = ({ cards }: { cards: PointsSnapshot[] }) => {
             </span>
           </Link>
         ))}
-      </div>
+      </Slider>
     </section>
   );
 };

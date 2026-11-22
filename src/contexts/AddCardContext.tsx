@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useState, type PropsWithChildre
 export type AddCardSource =
   | "home_hero"
   | "home_wallet"
+  | "home_my_cards"
   | "spend_optimizer"
   | "profile"
   | "other";

@@ -4,7 +4,8 @@ import { Sidebar, SidebarBody, SidebarLink } from "../ui/sidebar";
 import { motion } from "motion/react";
 import Image from "next/image";
 import { PUBLIC_ROUTES, ROUTES } from "@/lib/constants/routes";
-import { BadgeIndianRupee, Brain, House, MessagesSquare, Search, ShieldAlert, Tag } from "lucide-react";
+import { BadgeIndianRupee, House, Search, ShieldAlert, Tag, WalletCards } from "lucide-react";
+import MessageSquareSparkle from "../icons/MessageSquareSparkle";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import LoggedInHeader from "../LoggedInHeader";
@@ -31,14 +32,14 @@ export function SidebarContainer({ children }: { children: ReactNode }) {
       icon: <House className="h-5 w-5 shrink-0" />,
     },
     {
-      label: "AI Advisor",
+      label: "Card Advisor",
       href: ROUTES.CHAT + "/new",
-      icon: <MessagesSquare className="h-5 w-5 shrink-0" />,
+      icon: <MessageSquareSparkle className="h-5 w-5 shrink-0" />,
     },
     {
-      label: "Spend Optimizer",
+      label: "SmartPay",
       href: ROUTES.SPEND_OPTIMIZER,
-      icon: <Brain className="h-5 w-5 shrink-0" />,
+      icon: <WalletCards className="h-5 w-5 shrink-0" />,
     },
     {
       label: "Insights",
