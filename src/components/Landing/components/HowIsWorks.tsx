@@ -51,7 +51,7 @@ const content = [
   {
     title: "Use the Best Credit Card for Every Spend",
     description:
-      "FiSense Spend Optimizer tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.",
+      "FiSense SmartPay tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.",
     content: (
       <div className="flex -mt-0 w-[440px] h-[440px]  items-center justify-center text-white">
         <Image

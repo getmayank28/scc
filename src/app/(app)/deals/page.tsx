@@ -304,19 +304,17 @@ function StoreSheet({
               {walletEmpty ? (
                 <p className="text-xs text-white/50">Add your cards in your profile to see which one to pay with here.</p>
               ) : m.bestCard && m.bestCard.ratePct > 0 ? (
-                <div className="flex items-center justify-between gap-4 rounded-xl bg-white/[0.04] px-4 py-3 max-md:px-3.5 max-md:py-2.5">
+                <div className="flex items-center justify-between gap-4 rounded-2xl bg-[linear-gradient(135deg,#FF8A3D_0%,var(--primary-orange)_50%,#E5391B_100%)] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]">
                   <div className="min-w-0">
-                    <p className="text-xs text-white/45">Pay with</p>
-                    <p className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-white max-md:text-[13px]">
+                    <p className="text-xs font-medium text-white/80">Pay with</p>
+                    <p className="mt-1 line-clamp-2 text-[15px] font-bold leading-snug text-white">
                       {m.bestCard.cardName}
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="text-xs text-white/45">
-                      {m.bestCard.route === "voucher" ? "Back via gift voucher" : "Card back"}
-                    </p>
-                    <p className="mt-0.5 text-lg font-semibold leading-none text-primary-orange">
-                      {m.bestCard.ratePct}%
+                    <p className="text-2xl font-extrabold leading-none text-white">{m.bestCard.ratePct}%</p>
+                    <p className="mt-1.5 text-xs font-medium text-white/80">
+                      {m.bestCard.route === "voucher" ? "via gift voucher" : "card back"}
                     </p>
                   </div>
                 </div>

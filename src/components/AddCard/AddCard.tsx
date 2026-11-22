@@ -8,6 +8,8 @@ import useUserData from "@/lib/hooks/useUserData";
 import { useGetUserCardsQuery, useRemoveUserCardMutation } from "@/store/api";
 import { useAddCardModal } from "@/contexts/AddCardContext";
 import { CirclePlus, Plus } from "lucide-react";
+import { useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 
 const AddCardButton = ({ onClick }: { onClick: () => void }) => {
   return (
@@ -34,6 +36,28 @@ const AddCards = () => {
 
   const [removeUserCard] = useRemoveUserCardMutation();
 
+  // Rows whose card was deleted from the catalogue come back with a null
+  // cardId; there's nothing to draw for them.
+  const cards = (userCards ?? []).filter(
+    (c: { cardId?: unknown }) => c?.cardId,
+  );
+
+  // Phones: cards swipe sideways, with dots for position.
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const onRowScroll = () => {
+    const el = rowRef.current;
+    const first = el?.firstElementChild as HTMLElement | null;
+    if (!el || !first) return;
+    setActive(Math.min(cards.length - 1, Math.round(el.scrollLeft / (first.offsetWidth + 12))));
+  };
+  const goTo = (i: number) => {
+    const el = rowRef.current;
+    const slide = el?.children[i] as HTMLElement | undefined;
+    const first = el?.children[0] as HTMLElement | undefined;
+    if (el && slide && first) el.scrollTo({ left: slide.offsetLeft - first.offsetLeft, behavior: "smooth" });
+  };
+
   const handleCardRemove = async (cardId: string) => {
     await removeUserCard({
       userId,
@@ -54,7 +78,11 @@ const AddCards = () => {
         Add a card
       </button>
 
-      <div className="flex gap-5 flex-wrap py-6">
+      <div
+        ref={rowRef}
+        onScroll={onRowScroll}
+        className="flex gap-5 flex-wrap py-6 max-md:-mx-4 max-md:flex-nowrap max-md:gap-3 max-md:overflow-x-auto max-md:overscroll-x-contain max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:px-4 max-md:pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-md:[&>*]:shrink-0 max-md:[&>*]:snap-start"
+      >
         {isCardsLoading ? (
           <>
             <CreditCardSkeleton />
@@ -62,7 +90,7 @@ const AddCards = () => {
             <CreditCardSkeleton />
           </>
         ) : (
-          userCards?.map(
+          cards.map(
             (card: {
               _id: string;
               cardId: { name: string; _id: string; bankName: string };
@@ -85,7 +113,26 @@ const AddCards = () => {
         )}
       </div>
 
-      {!userCards?.length && !isCardsLoading && (
+      {!isCardsLoading && cards.length > 1 && (
+        <div className="hidden justify-center gap-1.5 max-md:flex" role="tablist" aria-label="Your cards">
+          {cards.map((c: { _id: string }, i: number) => (
+            <button
+              key={c._id}
+              type="button"
+              role="tab"
+              aria-selected={i === active}
+              aria-label={`${i + 1} of ${cards.length}`}
+              onClick={() => goTo(i)}
+              className={cn(
+                "h-1.5 rounded-full transition-all duration-300",
+                i === active ? "w-[18px] bg-primary-orange" : "w-1.5 bg-white/25",
+              )}
+            />
+          ))}
+        </div>
+      )}
+
+      {!cards.length && !isCardsLoading && (
         <div className="flex flex-col items-start gap-2">
           <HeaderText
             title="Oh no! No cards yet"

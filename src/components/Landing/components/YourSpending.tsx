@@ -35,7 +35,7 @@ const YourSpendings = () => {
             Use right card, <br/> every time
             </Typography>
             <Typography variant="body" className="text-left opacity-90 max-md:text-center">
-            FiSense Spend Optimizer analyzes your spending  and <br/>tells you the best credit card for every transaction  to <br/>maximize rewards, cashback, and points.            </Typography>
+            FiSense SmartPay analyzes your spending  and <br/>tells you the best credit card for every transaction  to <br/>maximize rewards, cashback, and points.            </Typography>
           </div>
 
           <div>

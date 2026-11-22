@@ -170,17 +170,11 @@ const EmptyWallet = ({
   );
 };
 
-const SectionHead = ({ walletCardCount }: { walletCardCount: number }) => (
+const SectionHead = () => (
   <div className="hm-section-head">
     <div>
-      <h2 className="hm-h2">Which card where</h2>
-      <p className="hm-lede">
-        {walletCardCount > 1
-          ? `Your ${walletCardCount} cards, matched to the spends each one wins.`
-          : walletCardCount === 1
-            ? "Where your card earns the most on everyday spends."
-            : "Which of your cards to use, wherever you pay."}
-      </p>
+      <h2 className="hm-h2">Where your cards win</h2>
+      <p className="hm-lede">Your best card for every spend, and where you&apos;re missing out.</p>
     </div>
   </div>
 );
@@ -211,7 +205,7 @@ const WalletCheatSheet = ({
   if (isLoading) {
     return (
       <section>
-        <SectionHead walletCardCount={walletCardCount} />
+        <SectionHead />
         <div className="hm-group">
           <Skeleton className="aspect-[1.586] rounded-[14px] bg-white/10 max-md:h-16 max-md:aspect-auto" />
           <div className="hm-use-grid">
@@ -227,7 +221,7 @@ const WalletCheatSheet = ({
   if (isError) {
     return (
       <section>
-        <SectionHead walletCardCount={walletCardCount} />
+        <SectionHead />
         <div className="hm-notes">
           <span>
             Couldn&apos;t load your cards.{" "}
@@ -243,7 +237,7 @@ const WalletCheatSheet = ({
   if (walletCardCount === 0 || cards.length === 0) {
     return (
       <section>
-        <SectionHead walletCardCount={0} />
+        <SectionHead />
         <EmptyWallet
           example={example}
           loading={exampleLoading}
@@ -261,7 +255,7 @@ const WalletCheatSheet = ({
 
   return (
     <section>
-      <SectionHead walletCardCount={walletCardCount} />
+      <SectionHead />
       <Slider className="hm-wallet" count={groups.length} label="Your cards">
         {groups.map((g, i) => (
           <div key={g.card.slug} className="hm-group">

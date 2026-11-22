@@ -4,6 +4,7 @@ import WalletCheatSheet from "./components/WalletCheatSheet";
 import FindNextCard from "./components/FindNextCard";
 import FestiveRewards from "./components/FestiveRewards";
 import PointsWorth from "./components/PointsWorth";
+import MyCards from "./components/MyCards";
 import TopDeals from "./components/TopDeals";
 import { useGetDealsQuery, useGetRewardsQuery } from "@/store/userApi";
 import { useGetLatestPointsQuery } from "@/store/redemption";
@@ -91,6 +92,8 @@ const Home = () => {
   const cheatSheetCards: CheatSheetCard[] = cheatSheet?.result?.cards ?? [];
   const cheatSheetRows: CheatSheetRow[] = cheatSheet?.result?.rows ?? [];
   const walletCardCount: number = cheatSheet?.result?.walletCardCount ?? 0;
+  // Whole wallet, including cards the cheat sheet can't score.
+  const walletCards: CheatSheetCard[] = cheatSheet?.result?.walletCards ?? cheatSheetCards;
   // Sent inside the cheat-sheet response when the wallet has nothing to show,
   // so the no-cards layout renders whole in one go.
   const example: CheatSheet | null = cheatSheet?.result?.example ?? null;
@@ -132,6 +135,8 @@ const Home = () => {
           exampleLoading={isCheatSheetLoading}
         />
 
+        {!isCheatSheetLoading && !isCheatSheetError && <MyCards cards={walletCards} />}
+
         <WalletCheatSheet
           cards={cheatSheetCards}
           rows={cheatSheetRows}
@@ -145,18 +150,19 @@ const Home = () => {
 
         {deals && <TopDeals merchants={deals.merchants} />}
 
-        {/* Voucher status sits with the other rewards, just above points. */}
+        {/* Voucher status, after deals and before the advisor and points. */}
         {rewards && (
           <FestiveRewards mode="status" claims={rewards.claims} walletSlugs={walletSlugs} />
         )}
-
-        {!isPointsLoading && !isPointsError && <PointsWorth cards={points ?? []} />}
 
         {lastRecommendationCards.length || isRecommendationLoading ? (
           <LastRecommendation isLoading={isRecommendationLoading} cards={lastRecommendationCards} />
         ) : (
           <FindNextCard />
         )}
+
+        {!isPointsLoading && !isPointsError && <PointsWorth cards={points ?? []} />}
+
       </div>
     </div>
   );
