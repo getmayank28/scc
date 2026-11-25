@@ -3,7 +3,10 @@ import api from "./api";
 export const spendTransaction = api.injectEndpoints({
   endpoints: (builder) => ({
     getUserSpendTransaction: builder.query({
-      query: () => `/spend-transactions/get`,
+      query: (args?: { limit?: number }) =>
+        args?.limit
+          ? `/spend-transactions/get?limit=${args.limit}`
+          : `/spend-transactions/get`,
     }),
     addSpendTransaction: builder.mutation({
       query: (body) => ({
@@ -31,6 +34,13 @@ export const spendTransaction = api.injectEndpoints({
       query: (merchant: string) =>
         `/spend-optimizer/merchant-categories?merchant=${encodeURIComponent(merchant)}`,
     }),
+    // Home cheat sheet: best wallet card per everyday spend, scored by the
+    // same engine as the optimizer.
+    getWalletCheatSheet: builder.query({
+      query: () => `/home/cheat-sheet`,
+      // Re-scored whenever a card is added or removed anywhere.
+      providesTags: ["UserCards"],
+    }),
   }),
   overrideExisting: false, // safe default
 });
@@ -42,4 +52,5 @@ export const {
   useOptimizeSpendMutation,
   useGetMerchantCategoriesQuery,
   useLazyGetMerchantCategoriesQuery,
+  useGetWalletCheatSheetQuery,
 } = spendTransaction;

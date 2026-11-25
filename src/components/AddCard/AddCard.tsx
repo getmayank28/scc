@@ -1,19 +1,13 @@
 "use client";
 import { CreditCard } from "@/components/CreditCard";
 import HeaderText from "@/components/HeaderText/HeaderText";
-import SearchSelect from "@/components/SearchInput/SearchInput";
 import CreditCardSkeleton from "@/components/SkeletonLoader/CreditCardSkeletonLoader";
 import Typography from "@/components/Typography/Typography";
 import { bankIcon } from "@/lib/data/banks";
 import useUserData from "@/lib/hooks/useUserData";
-import {
-  useAddCardMutation,
-  useGetUserCardsQuery,
-  useRemoveUserCardMutation,
-} from "@/store/api";
-import { CirclePlus } from "lucide-react";
-import { useRef, useState } from "react";
-import toast from "react-hot-toast";
+import { useGetUserCardsQuery, useRemoveUserCardMutation } from "@/store/api";
+import { useAddCardModal } from "@/contexts/AddCardContext";
+import { CirclePlus, Plus } from "lucide-react";
 
 const AddCardButton = ({ onClick }: { onClick: () => void }) => {
   return (
@@ -28,16 +22,8 @@ const AddCardButton = ({ onClick }: { onClick: () => void }) => {
 };
 
 const AddCards = () => {
-  const [selected, setSelected] = useState<{
-    _id: string;
-    name: string;
-    bankName: string;
-  } | null>(null);
-  const [query, setQuery] = useState("");
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const { userId, name } = useUserData();
-
-  const [addCard, { isLoading: isAddingCard }] = useAddCardMutation();
+  const { openAddCard } = useAddCardModal();
 
   const { data: userCards, isFetching: isCardsLoading } = useGetUserCardsQuery(
     { userId },
@@ -48,31 +34,6 @@ const AddCards = () => {
 
   const [removeUserCard] = useRemoveUserCardMutation();
 
-  // Picking a search result adds it straight away — no separate Add step.
-  const handleSelect = async (
-    card: { _id: string; name: string; bankName: string } | null,
-  ) => {
-    setSelected(card);
-    if (!card) return;
-
-    const alreadyAdded = userCards?.some(
-      (c: { cardId?: { _id: string } }) => c?.cardId?._id === card._id,
-    );
-    if (alreadyAdded) {
-      toast("This card is already in your profile");
-    } else {
-      try {
-        await addCard({ userId, cardId: card._id }).unwrap();
-        toast.success(`${card.name} added`);
-      } catch {
-        toast.error("Failed to add card");
-      }
-    }
-
-    setSelected(null);
-    setQuery("");
-  };
-
   const handleCardRemove = async (cardId: string) => {
     await removeUserCard({
       userId,
@@ -80,24 +41,18 @@ const AddCards = () => {
     });
   };
 
-  const handleAddCard = () => {
-    if (searchInputRef.current) searchInputRef.current.focus();
-  };
+  const handleAddCard = () => openAddCard("profile");
 
   return (
     <div className="flex flex-col mt-3">
-      <SearchSelect
-        searchInputRef={searchInputRef}
-        query={query}
-        setQuery={setQuery}
-        selected={selected}
-        setSelected={handleSelect}
-        disabled={isAddingCard}
-        onClearInput={() => {
-          setQuery("");
-          setSelected(null);
-        }}
-      />
+      <button
+        type="button"
+        onClick={handleAddCard}
+        className="inline-flex w-fit items-center gap-2 rounded-lg bg-primary-orange px-4 py-2.5 text-sm font-semibold text-white hover:brightness-110 cursor-pointer"
+      >
+        <Plus className="size-4" aria-hidden />
+        Add a card
+      </button>
 
       <div className="flex gap-5 flex-wrap py-6">
         {isCardsLoading ? (
