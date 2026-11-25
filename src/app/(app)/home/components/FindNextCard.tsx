@@ -5,8 +5,8 @@ import { EventName } from "@/lib/analytics/types";
 
 const STEPS = [
   "Tell us how you spend",
-  "See the cards that fit you",
-  "Apply for the one you like",
+  "See matches & ask anything",
+  "Apply directly with the bank",
 ];
 
 /**
@@ -21,10 +21,8 @@ const FindNextCard = () => {
   return (
     <section className="hm-next">
       <div className="hm-next-copy">
-        <div className="hm-eyecaps">Your next card</div>
-        <h2 className="hm-h2 hm-next-title">
-          Find a card that pays you more for how you already spend
-        </h2>
+        <div className="hm-eyecaps">Card Advisor</div>
+        <h2 className="hm-h2 hm-next-title">Find the card that pays you more</h2>
 
         <ol className="hm-steps">
           {STEPS.map((s, i) => (

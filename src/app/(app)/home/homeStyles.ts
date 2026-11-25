@@ -36,16 +36,27 @@ export const homeStyles = `
 }
 .hm-display {
   font-family: var(--hm-display); font-weight: 700; color: var(--hm-ink);
-  font-size: clamp(1.9rem, 4vw, 2.75rem); line-height: 1.05; letter-spacing: -0.025em;
+  font-size: 1.6rem; line-height: 1.2; letter-spacing: -0.015em;
 }
-.hm-h2 { font-family: var(--hm-display); font-weight: 700; font-size: 1.35rem; letter-spacing: -0.015em; line-height: 1.2; }
+.hm-h2 { font-family: var(--hm-display); font-weight: 700; font-size: 1.6rem; letter-spacing: -0.015em; line-height: 1.2; }
+/* Hero question and section headings share one size: 25.6px on desktop,
+   21.6px on phones (so the hero question fits on one line). */
+@media (max-width: 760px) { .hm-display, .hm-h2 { font-size: 1.35rem; } }
 .hm-lede { font-size: 0.92rem; line-height: 1.5; color: var(--hm-mut); margin-top: 6px; }
 .hm-section-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; }
+/* Phones: link beside the heading, lede full width below, so the lede isn't
+   squeezed into a narrow column next to the link. */
+@media (max-width: 760px) {
+  .hm-section-head { flex-wrap: wrap; align-items: center; gap: 0 12px; }
+  .hm-section-head > div { display: contents; }
+  .hm-section-head .hm-h2 { flex: 1; min-width: 0; }
+  .hm-section-head .hm-lede { order: 1; flex-basis: 100%; }
+}
 
 /* ── Hero ─────────────────────────────────────────────── */
 .hm-hero .hm-display { margin-top: 10px; }
 .hm-search {
-  margin-top: 28px; display: flex; align-items: center;
+  margin-top: 20px; display: flex; align-items: center;
   background: var(--hm-surface); border: 1px solid var(--hm-line);
   border-radius: 16px; padding: 6px 6px 6px 18px;
   box-shadow: 0 24px 60px -36px rgba(0,0,0,0.8);
@@ -59,6 +70,19 @@ export const homeStyles = `
 }
 .hm-search input::placeholder { color: var(--hm-faint); }
 .hm-search-merchant { flex: 1; padding: 14px 12px; }
+.hm-search-field { position: relative; flex: 1; min-width: 0; display: flex; }
+.hm-search-field .hm-search-merchant { width: 100%; }
+.hm-suggest {
+  position: absolute; top: calc(100% + 10px); left: -6px; right: -6px; z-index: 50;
+  list-style: none; margin: 0; padding: 6px; border-radius: 14px;
+  background: var(--hm-surface-high); border: 1px solid var(--hm-line);
+  box-shadow: 0 24px 48px -16px rgba(0,0,0,0.7);
+}
+.hm-suggest-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 10px;
+  color: var(--hm-ink); font-size: 0.95rem; cursor: pointer;
+}
+.hm-suggest-item.is-on { background: color-mix(in oklab, var(--hm-accent) 14%, transparent); }
 .hm-search-amount {
   display: flex; align-items: center; gap: 4px; padding: 0 16px;
   border-left: 1px solid var(--hm-line); color: var(--hm-mut);
@@ -79,7 +103,7 @@ export const homeStyles = `
 @media (max-width: 640px) {
   .hm-search { flex-wrap: wrap; padding: 6px; }
   .hm-search-icon { margin-left: 12px; }
-  .hm-search-merchant { flex: 1 1 calc(100% - 40px); }
+  .hm-search-field { flex: 1 1 calc(100% - 40px); }
   .hm-search-amount { flex: 1; border-left: 0; border-top: 1px solid var(--hm-line); padding: 12px; }
   .hm-search .hm-btn { margin-top: 6px; flex: 1 1 100%; }
 }
@@ -162,11 +186,13 @@ export const homeStyles = `
 /* ── No cards: faded example + the ask ──────────────────── */
 .hm-ghost { position: relative; border-radius: 20px; overflow: hidden; }
 .hm-ghost-example {
-  opacity: .5; filter: saturate(.7); pointer-events: none; user-select: none;
+  /* Dimmed so it reads as a sample, but still legible. */
+  opacity: .65; filter: saturate(.75); pointer-events: none; user-select: none;
   /* Fades out toward the prompt so the two never compete. */
-  -webkit-mask-image: linear-gradient(90deg, black 35%, transparent 88%);
-          mask-image: linear-gradient(90deg, black 35%, transparent 88%);
+  -webkit-mask-image: linear-gradient(90deg, black 50%, transparent 95%);
+          mask-image: linear-gradient(90deg, black 50%, transparent 95%);
 }
+.hm-ghost-example .hm-use-how { color: var(--hm-win); }
 .hm-ghost-face { position: relative; }
 .hm-ghost-tag {
   position: absolute; top: 10px; right: 10px; z-index: 2; padding: 3px 8px; border-radius: 999px;
@@ -186,8 +212,8 @@ export const homeStyles = `
 .hm-ghost.is-bare .hm-ghost-cta { position: static; transform: none; width: auto; max-width: 520px; }
 @media (max-width: 760px) {
   .hm-ghost-example {
-    -webkit-mask-image: linear-gradient(180deg, black 30%, transparent 92%);
-            mask-image: linear-gradient(180deg, black 30%, transparent 92%);
+    -webkit-mask-image: linear-gradient(180deg, black 50%, transparent 95%);
+            mask-image: linear-gradient(180deg, black 50%, transparent 95%);
   }
   .hm-ghost-example .hm-use:nth-child(n+4) { display: none; }
   .hm-ghost-cta { position: relative; top: auto; right: auto; transform: none; width: auto; margin: -56px 12px 0; padding: 20px; }
@@ -243,15 +269,15 @@ export const homeStyles = `
   .hm-dot.is-on { width: 18px; background: var(--hm-accent); }
 }
 
-.hm-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--hm-mut); white-space: nowrap; transition: color .2s; }
+.hm-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; color: var(--hm-ink); white-space: nowrap; transition: color .2s; }
 .hm-link:hover { color: var(--hm-accent); }
 
 /* ── Hero, no cards: faded example lookup + the ask ─── */
-/* Tall enough for the prompt box, with the example centred beside it, so the
-   box never rises into the headline. */
+/* Tall enough for the prompt box (centred on this area) that it never rises
+   into the headline; the example sits at the top, right under the heading. */
 .hm-hero-ghost {
-  margin-top: 28px; overflow: visible; min-height: 210px;
-  display: flex; flex-direction: column; justify-content: center;
+  margin-top: 20px; overflow: visible; min-height: 210px;
+  display: flex; flex-direction: column; justify-content: flex-start;
 }
 .hm-hero-example .hm-search { margin-top: 0; box-shadow: none; }
 .hm-search-static { color: var(--hm-ink); }
@@ -265,16 +291,25 @@ export const homeStyles = `
 .hm-hero-answer-card { font-weight: 600; color: var(--hm-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hm-hero-answer-gain { display: flex; flex-direction: column; align-items: flex-end; }
 .hm-hero-tag { top: -9px; right: 14px; }
+/* The hero example has to be read but still look like a sample: dimmed, not faded out, and
+   only the search bar fades (it runs under the prompt; the answer stops short). */
+.hm-hero-ghost .hm-hero-example { opacity: .65; filter: saturate(.75); -webkit-mask-image: none; mask-image: none; }
+.hm-hero-ghost .hm-hero-example .hm-search {
+  -webkit-mask-image: linear-gradient(90deg, black 45%, transparent 92%);
+          mask-image: linear-gradient(90deg, black 45%, transparent 92%);
+}
+.hm-hero-answer-label { color: var(--hm-mut); }
+.hm-hero-answer-gain .hm-use-how { color: var(--hm-win); font-weight: 500; }
 @media (max-width: 760px) {
   .hm-hero-example .hm-search .hm-btn { display: none; }
   .hm-hero-ghost { min-height: 0; }
   /* Short example: keep it whole (dimmed only) so the answer stays readable. */
-  .hm-hero-ghost .hm-hero-example { -webkit-mask-image: none; mask-image: none; }
+  .hm-hero-ghost .hm-hero-example .hm-search { -webkit-mask-image: none; mask-image: none; }
   .hm-hero-ghost .hm-ghost-cta { margin-top: 14px; }
 }
 
 /* ── Festive status strip / points prompt ─────────────── */
-.hm-strip, .hm-points-empty {
+.hm-strip {
   display: flex; align-items: center; gap: 16px; padding: 16px 20px;
   border-radius: 16px; background: var(--hm-surface); border: 1px solid var(--hm-line);
   transition: border-color .2s;
@@ -302,7 +337,7 @@ export const homeStyles = `
    to its own row underneath, aligned with the text. Without the flex-basis
    the text is squeezed to a word per line beside the CTA. */
 @media (max-width: 760px) {
-  .hm-strip, .hm-points-empty { flex-wrap: wrap; gap: 10px 14px; padding: 14px 16px; }
+  .hm-strip { flex-wrap: wrap; gap: 10px 14px; padding: 14px 16px; }
   .hm-strip-text { flex: 1 1 calc(100% - 54px); }
   .hm-strip-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hm-track { flex: 1 1 100%; padding-left: 54px; gap: 6px 14px; flex-wrap: wrap; }
@@ -420,6 +455,39 @@ export const homeStyles = `
 .hm-deal-code:focus-visible, .hm-deal-shop:focus-visible, .hm-link:focus-visible { outline: 2px solid var(--hm-accent); outline-offset: 2px; }
 
 /* ── Your points ──────────────────────────────────────── */
+/* ── My cards ─────────────────────────────────────────── */
+.hm-mycards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.hm-cc {
+  position: relative; aspect-ratio: 1.586; border-radius: 16px; padding: 16px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  background: linear-gradient(135deg, #30251E 0%, #4A3527 60%, #8A5E3E 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 16px 32px -20px rgba(0,0,0,0.8);
+  overflow: hidden;
+}
+.hm-cc::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 80% at 100% 0%, rgba(255,255,255,0.10), transparent 55%);
+}
+.hm-cc-bank {
+  width: 34px; height: 34px; border-radius: 9px; background: var(--hm-paper);
+  display: grid; place-items: center; overflow: hidden;
+}
+.hm-cc-name {
+  font-weight: 600; font-size: 0.95rem; line-height: 1.3; color: var(--hm-ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.hm-cc-add {
+  align-items: center; justify-content: center; flex-direction: row; gap: 8px;
+  background: transparent; box-shadow: none; border: 1px dashed var(--hm-line);
+  color: var(--hm-mut); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: border-color .2s, color .2s;
+}
+.hm-cc-add::after { display: none; }
+.hm-cc-add:hover { border-color: var(--hm-accent); color: var(--hm-ink); }
+.hm-cc-add:focus-visible { outline: 2px solid var(--hm-accent); outline-offset: 2px; }
+/* Phones: smaller faces than the other sliders, so two cards show at once. */
+@media (max-width: 760px) { .hm .hm-mycards.hm-slider > * { flex-basis: 62%; } }
+
 .hm-points { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .hm-point {
   display: flex; flex-direction: column; gap: 14px; min-width: 0;
@@ -441,6 +509,7 @@ export const homeStyles = `
   display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: center;
   padding: 32px; border-radius: 20px; background: var(--hm-surface); border: 1px solid var(--hm-line);
 }
+.hm-next--solo { grid-template-columns: minmax(0, 1fr); }
 .hm-next-title { margin-top: 8px; font-size: clamp(1.3rem, 2.2vw, 1.6rem); max-width: 520px; }
 .hm-steps { list-style: none; padding: 0; margin: 22px 0 26px; display: flex; flex-direction: column; gap: 12px; }
 .hm-steps li { display: flex; align-items: center; gap: 10px; font-size: 0.92rem; color: var(--hm-ink-2); }

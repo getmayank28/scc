@@ -17,7 +17,7 @@ const features = [
   },
   {
     title: "Use the Best Credit Card for Every Spend",
-    description: "FiSense Spend Optimizer tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.."
+    description: "FiSense SmartPay tells you exactly which card to use for each transaction. So, you maximize rewards on every purchase.."
   },
   {
     title: "Redeem Credit Card Points for Maximum Value",

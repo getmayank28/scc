@@ -4,12 +4,17 @@ import { ApiResponse } from "@/lib/utils/ApiResponse";
 import dbConnect from "@/lib/utils/dbConnet";
 import UserCardModel from "@/models/UserCard";
 import "@/models/Card";
-import { buildWalletCheatSheet, EXAMPLE_CARD_SLUG } from "@/lib/advisor/walletCheatSheet";
+import "@/models/Bank";
+import {
+  buildWalletCheatSheet,
+  EXAMPLE_CARD_SLUG,
+  type CheatSheetCard,
+} from "@/lib/advisor/walletCheatSheet";
 
 export const runtime = "nodejs";
 
 interface PopulatedUserCard {
-  cardId?: { slug?: string } | null;
+  cardId?: { slug?: string; name?: string; bankId?: { name?: string } | null } | null;
 }
 
 /**
@@ -26,7 +31,7 @@ export async function GET() {
     await dbConnect();
 
     const owned = await UserCardModel.find({ userId })
-      .populate("cardId", "slug")
+      .populate({ path: "cardId", select: "slug name bankId", populate: { path: "bankId", select: "name" } })
       .lean<PopulatedUserCard[]>();
 
     const slugs = [
@@ -50,8 +55,23 @@ export async function GET() {
         ? await buildWalletCheatSheet([EXAMPLE_CARD_SLUG]).catch(() => null)
         : null;
 
+    // Every card in the wallet, for "My cards". `sheet.cards` only has the ones
+    // with advisor data (the rest can't be scored), so it under-counts.
+    const scored = new Map(sheet.cards.map((c) => [c.slug, c]));
+    const walletCards: CheatSheetCard[] = slugs.map((slug) => {
+      const card = owned.find((u) => u.cardId?.slug === slug)?.cardId;
+      return (
+        scored.get(slug) ?? {
+          slug,
+          name: card?.name ?? slug,
+          bankName: card?.bankId?.name ?? "",
+        }
+      );
+    });
+
     return ApiResponse.success("ok", 200, {
       walletCardCount: slugs.length,
+      walletCards,
       ...sheet,
       example,
     });

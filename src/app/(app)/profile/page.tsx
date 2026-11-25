@@ -36,7 +36,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { z } from "zod";
 import { cn } from "@/lib/utils/index";
@@ -185,7 +185,24 @@ function DetailRow({
   );
 }
 
+const DETAIL_SLIDES = 2;
+
 const Profile = () => {
+  // Phones: the two detail cards swipe sideways, like the home deals row.
+  const detailsRef = useRef<HTMLDivElement>(null);
+  const [detailSlide, setDetailSlide] = useState(0);
+  const onDetailsScroll = () => {
+    const el = detailsRef.current;
+    const first = el?.firstElementChild as HTMLElement | null;
+    if (!el || !first) return;
+    setDetailSlide(Math.min(DETAIL_SLIDES - 1, Math.round(el.scrollLeft / (first.offsetWidth + 12))));
+  };
+  const goToDetail = (i: number) => {
+    const el = detailsRef.current;
+    const slide = el?.children[i] as HTMLElement | undefined;
+    const first = el?.children[0] as HTMLElement | undefined;
+    if (el && slide && first) el.scrollTo({ left: slide.offsetLeft - first.offsetLeft, behavior: "smooth" });
+  };
   const { userId } = useUserData();
   const { update } = useSession();
   const [isEditingPersonal, setIsEditingPersonal] = useState(false);
@@ -312,7 +329,11 @@ const Profile = () => {
         titleClassName="font-bold"
       />
 
-      <div className="mt-6 grid grid-cols-[2fr_3fr] max-lg:grid-cols-1 gap-4">
+      <div
+        ref={detailsRef}
+        onScroll={onDetailsScroll}
+        className="mt-6 grid grid-cols-[2fr_3fr] max-lg:grid-cols-1 gap-4 max-md:-mx-4 max-md:flex max-md:gap-3 max-md:overflow-x-auto max-md:overscroll-x-contain max-md:snap-x max-md:snap-mandatory max-md:scroll-px-4 max-md:px-4 max-md:pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-md:[&>*]:shrink-0 max-md:[&>*]:basis-[86%] max-md:[&>*]:snap-start"
+      >
         <SectionCard
           icon={<IdCard className="size-4" />}
           title="Personal Details"
@@ -508,17 +529,34 @@ const Profile = () => {
           )}
 
           <p className="hidden px-1 text-[11px] leading-relaxed text-white/45 max-md:block">
-            Your income range keeps the AI Advisor from suggesting cards you&apos;re unlikely to get.
+            Your income range keeps the Card Advisor from suggesting cards you&apos;re unlikely to get.
           </p>
           <div className="mt-auto flex gap-3 rounded-xl bg-white/[0.03] px-4 py-3 max-md:hidden">
             <TrendingUp className="size-4 shrink-0 text-primary-orange" />
             <p className="text-xs leading-relaxed text-white/80">
               <span className="font-semibold text-white">Why this matters: </span>
               Premium cards have minimum income requirements. Setting your range keeps
-              the AI Advisor from recommending cards you&apos;re unlikely to be approved for.
+              the Card Advisor from recommending cards you&apos;re unlikely to be approved for.
             </p>
           </div>
         </SectionCard>
+      </div>
+
+      <div className="mt-3 hidden justify-center gap-1.5 max-md:flex" role="tablist" aria-label="Profile details">
+        {Array.from({ length: DETAIL_SLIDES }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            role="tab"
+            aria-selected={i === detailSlide}
+            aria-label={`${i + 1} of ${DETAIL_SLIDES}`}
+            onClick={() => goToDetail(i)}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              i === detailSlide ? "w-[18px] bg-primary-orange" : "w-1.5 bg-white/25",
+            )}
+          />
+        ))}
       </div>
 
       <RewardsLink />
