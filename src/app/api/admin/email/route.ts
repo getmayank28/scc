@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import EmailMessage from "@/models/EmailMessage";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,9 @@ export const dynamic = "force-dynamic";
  * Returns outbound email messages for the admin dashboard.
  */
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     await dbConnect();
 

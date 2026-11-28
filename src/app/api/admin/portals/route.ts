@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Portal from "@/models/Portal";
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 // GET ALL PORTALS
 export async function GET() {
@@ -20,6 +21,9 @@ export async function GET() {
 
 // CREATE PORTAL
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   try {

@@ -94,7 +94,9 @@ export function WebSocketInner({
   useEffect(() => {
     if (!session && typeof window !== 'undefined' && !PUBLIC_ROUTES?.includes(pathname) && status === AUTH_STATE.UNAUTHENTICATED) {
       localStorage.clear()
-      signOut({ callbackUrl: "/sign-in" });
+      signOut({
+        callbackUrl: `/sign-in?callbackUrl=${encodeURIComponent(pathname)}`,
+      });
     }
   }, [session]);
 

@@ -4,6 +4,7 @@ import { Waitlist } from "@/models/Waitlist";
 import EmailMessage from "@/models/EmailMessage";
 import { resend } from "@/lib/utils/resend";
 import { getEmailTemplate } from "@/lib/utils/emailTemplates";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 /**
  * POST /api/communication/email/campaign
@@ -84,6 +85,9 @@ async function sendTemplatedEmail(
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { batches } = (await req.json()) as { batches: BatchConfig[] };
 

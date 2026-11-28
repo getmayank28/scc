@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import WhatsAppMessage from "@/models/WhatsAppMessage";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 /**
  * GET /api/communication/whatsapp/responses
@@ -20,6 +21,9 @@ import WhatsAppMessage from "@/models/WhatsAppMessage";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     await dbConnect();
 

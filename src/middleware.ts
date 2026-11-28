@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
 
   if (!token && !PUBLIC_ROUTES.includes(url.pathname)) {
     const signIn = new URL(ROUTES.SIGN_IN, request.url);
-    signIn.searchParams.set("callbackUrl", url.pathname);
+    signIn.searchParams.set("callbackUrl", url.pathname + url.search);
     return NextResponse.redirect(signIn);
   }
 
@@ -45,6 +45,7 @@ export const config = {
     "/sign-in",
     "/",
     "/chat",
+    "/chat/:path*",
     "/home",
     "/profile",
     "/profile/rewards",

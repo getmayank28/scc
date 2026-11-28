@@ -125,3 +125,14 @@ export interface ClaimTimelineEvent {
 export interface AdminClaimDetail extends AdminClaimRow {
   timeline: ClaimTimelineEvent[];
 }
+
+/** A user who came through the festive page (Apply click there, or signed up landing on it). */
+export interface FestiveUserRow {
+  id: string;
+  phone: string | null;
+  name: string | null;
+  employmentType: string | null;
+  salaryRange: string | null;
+  /** First festive Apply click or signup in the range. */
+  firstSeenAt: string;
+}

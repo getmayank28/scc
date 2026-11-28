@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import Partner from "@/models/Partner";
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   const partners = await Partner.find().sort({ createdAt: -1 }).lean();
@@ -11,6 +15,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   try {

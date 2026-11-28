@@ -1,7 +1,11 @@
 // app/api/whatsapp/send/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { to, message } = await req.json();
 
   const params = new URLSearchParams({

@@ -3,8 +3,12 @@ import dbConnect from "@/lib/utils/dbConnet";
 import FeedbackSchema from "@/models/FeedbackSchema";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const session = await getServerSession(authOptions);
 

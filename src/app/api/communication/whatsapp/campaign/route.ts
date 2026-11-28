@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import { Waitlist } from "@/models/Waitlist";
 import WhatsAppMessage from "@/models/WhatsAppMessage";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 /**
  * POST /api/communication/whatsapp/campaign
@@ -108,6 +109,9 @@ async function sendTemplate(
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     const { batches } = (await req.json()) as { batches: BatchConfig[] };
 

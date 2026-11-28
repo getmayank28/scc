@@ -3,10 +3,14 @@ import CardModel from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 export async function PUT(req: Request, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = await context.params;
 
   const session = await getServerSession(authOptions);
@@ -38,6 +42,9 @@ export async function PUT(req: Request, context: RouteContext) {
 }
 
 export async function DELETE(_: Request, context: RouteContext) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { id } = await context.params;
 
   const session = await getServerSession(authOptions);
