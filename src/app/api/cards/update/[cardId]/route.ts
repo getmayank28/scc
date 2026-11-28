@@ -2,11 +2,15 @@
 import { NextResponse } from "next/server";
 import CardModel from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ cardId: string }> }
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { cardId } = await params;
   await dbConnect();
 

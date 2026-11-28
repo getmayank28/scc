@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import WhatsAppMessage from "@/models/WhatsAppMessage";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ export const dynamic = "force-dynamic";
  * combined independently.
  */
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   try {
     await dbConnect();
 

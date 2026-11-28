@@ -4,6 +4,7 @@ import dbConnect from "@/lib/utils/dbConnet";
 import { createLink, deleteLink, getLinks, updateLink } from "./logic";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/options";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 // Utility to extract userId from session
 async function getUserId() {
@@ -12,6 +13,9 @@ async function getUserId() {
 }
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   const userId = await getUserId();
@@ -23,6 +27,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const userId = await getUserId();
 
@@ -42,6 +49,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const userId = await getUserId();
 
@@ -61,6 +71,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const userId = await getUserId();
 

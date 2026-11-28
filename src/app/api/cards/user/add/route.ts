@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import UserCardModel from "@/models/UserCard";
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireUser } from "@/lib/user/requireUser";
 
 export async function POST(req: Request) {
+  const auth = await requireUser();
+  if (auth instanceof Response) return auth;
+  const { userId } = auth;
+
   await dbConnect();
 
-  const { userId, cardId } = await req.json();
+  const { cardId } = await req.json();
 
   try {
     const userCard = await UserCardModel.create({

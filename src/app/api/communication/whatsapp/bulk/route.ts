@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/utils/dbConnet";
 import WhatsAppMessage from "@/models/WhatsAppMessage";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const { recipients, templateId, templateParams } = await req.json();
   // recipients: ["919876543210", "918765432109", ...]
   // templateParams: ["John", "Order #123"] — values for {{1}}, {{2}} etc.

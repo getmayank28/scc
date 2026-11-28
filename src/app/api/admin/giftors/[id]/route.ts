@@ -4,6 +4,7 @@ import "@/models/Bank";
 import dbConnect from "@/lib/utils/dbConnet";
 import CardModel from "@/models/Card";
 import { resolveBankForCardSlug } from "@/lib/utils/resolveCardBank";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 // GET single giftor
 export async function GET(
@@ -50,6 +51,9 @@ export async function PUT(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const { id } = await context.params;
 
@@ -81,6 +85,9 @@ export async function DELETE(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const { id } = await context.params;
 

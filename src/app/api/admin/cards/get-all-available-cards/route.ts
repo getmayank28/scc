@@ -3,8 +3,12 @@ import CardModel from "@/models/Card";
 import dbConnect from "@/lib/utils/dbConnet";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/options";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   const session = await getServerSession(authOptions);
 
   if (!session) {

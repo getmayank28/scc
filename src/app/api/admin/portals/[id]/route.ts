@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import Portal from "@/models/Portal";
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 // GET SINGLE
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const { id } = await params;
 
@@ -34,6 +38,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const { id } = await params;
 
@@ -74,6 +81,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
   const { id } = await params;
 

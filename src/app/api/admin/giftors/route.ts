@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import Giftor from "@/models/Giftor";
 import "@/models/Bank"; // important for populate
 import dbConnect from "@/lib/utils/dbConnet";
+import { requireAdmin } from "@/lib/advisor/adminAuth";
 
 // GET all giftors
 export async function GET() {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   try {
@@ -23,6 +27,9 @@ export async function GET() {
 
 // CREATE giftor
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   await dbConnect();
 
   try {
